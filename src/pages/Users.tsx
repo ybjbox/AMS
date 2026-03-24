@@ -46,6 +46,7 @@ export interface ExportScript {
 }
 
 interface SortableColumnProps {
+  key?: React.Key;
   col: ExportColumn;
   onToggle: () => void;
 }
@@ -665,7 +666,12 @@ function DepartmentTreeFilter({
 
 export default function Users() {
   const { hasPermission } = useAuth();
-  const { users, addUser, updateUser, deleteUser } = useUserStore();
+  const { users, fetchUsers, isLoading, addUser, updateUser, deleteUser } = useUserStore();
+  
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1321,7 +1327,16 @@ export default function Users() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-              {currentUsers.length > 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={11} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                      <p>加载中...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : currentUsers.length > 0 ? (
                 currentUsers.map((user) => (
                   <tr 
                     key={user.id} 
@@ -1491,499 +1506,481 @@ export default function Users() {
       </div>
 
       {/* Export Configuration Modal */}
-      {isExportModalOpen && (
-        <div className="fixed inset-0 z-[60] overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen p-4">
-            <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onClick={() => setIsExportModalOpen(false)}></div>
-            
-            <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full sm:w-[95vw] sm:max-w-[1600px] h-[95vh] sm:h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
-              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between shrink-0">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">导出配置</h3>
-                <button onClick={() => setIsExportModalOpen(false)} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
-                  <X className="h-5 w-5" />
-                </button>
+      <BaseModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        title="导出配置"
+        size="full"
+        footer={
+          <div className="flex items-center justify-end space-x-3 w-full">
+            <button 
+              onClick={() => setIsExportModalOpen(false)}
+              className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+            >
+              取消
+            </button>
+            <button 
+              onClick={handlePrintRoster}
+              disabled={exportConfig.columns.filter(c => c.selected).length === 0}
+              className="inline-flex items-center justify-center px-6 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-all shadow-sm disabled:opacity-50"
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              打印
+            </button>
+            <button 
+              onClick={handleExport}
+              disabled={isExporting || exportConfig.columns.filter(c => c.selected).length === 0}
+              className="inline-flex items-center justify-center px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-200 disabled:opacity-50"
+            >
+              {isExporting ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  导出中...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4 mr-2" />
+                  确认导出
+                </>
+              )}
+            </button>
+          </div>
+        }
+      >
+        <div className="flex-1 overflow-hidden flex flex-col md:flex-row h-full">
+          <div className="w-full md:w-1/3 p-6 space-y-6 overflow-y-auto border-r border-slate-100 dark:border-slate-700 custom-scrollbar h-full">
+            {/* Title */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">表格大标题</label>
+              <input 
+                type="text" 
+                value={exportConfig.title}
+                onChange={(e) => setExportConfig(prev => ({ ...prev, title: e.target.value }))}
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+                placeholder="请输入表格标题"
+              />
+            </div>
+
+            {/* Business Logic */}
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="flex items-center cursor-pointer group">
+                  <div className="relative">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only" 
+                      checked={exportConfig.includeResigned}
+                      onChange={(e) => setExportConfig(prev => ({ ...prev, includeResigned: e.target.checked }))}
+                    />
+                    <div className={`block w-10 h-6 rounded-full transition-colors ${exportConfig.includeResigned ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
+                    <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${exportConfig.includeResigned ? 'translate-x-4' : ''}`}></div>
+                  </div>
+                  <span className="ml-3 text-sm font-medium text-slate-700 dark:text-slate-300">包含离职人员</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Print Settings */}
+            <div className="space-y-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">打印设置</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张大小</label>
+                  <select
+                    value={exportConfig.paperSize}
+                    onChange={(e) => setExportConfig(prev => ({ ...prev, paperSize: e.target.value }))}
+                    className="w-full px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                  >
+                    <option value="A4">A4</option>
+                    <option value="A3">A3</option>
+                    <option value="Letter">Letter</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张方向</label>
+                  <select
+                    value={exportConfig.orientation}
+                    onChange={(e) => setExportConfig(prev => ({ ...prev, orientation: e.target.value }))}
+                    className="w-full px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                  >
+                    <option value="portrait">纵向</option>
+                    <option value="landscape">横向</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex items-center justify-between pt-2">
+                <label className="flex items-center cursor-pointer group">
+                  <div className="relative">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only" 
+                      checked={exportConfig.isDoubleSided}
+                      onChange={(e) => setExportConfig(prev => ({ ...prev, isDoubleSided: e.target.checked }))}
+                    />
+                    <div className={`block w-8 h-5 rounded-full transition-colors ${exportConfig.isDoubleSided ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
+                    <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${exportConfig.isDoubleSided ? 'translate-x-3' : ''}`}></div>
+                  </div>
+                  <span className="ml-2 text-sm text-slate-600 dark:text-slate-400">双面打印 (预留装订边距)</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Mode Selection */}
+            <div className="flex p-1 bg-slate-100 dark:bg-slate-700 rounded-lg">
+              <button
+                onClick={() => setExportConfig(prev => ({ ...prev, mode: 'theme' }))}
+                className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
+                  exportConfig.mode === 'theme' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                }`}
+              >
+                配色主题模式
+              </button>
+              <button
+                onClick={() => setExportConfig(prev => ({ ...prev, mode: 'script' }))}
+                className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
+                  exportConfig.mode === 'script' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                }`}
+              >
+                JS 脚本模式
+              </button>
+            </div>
+
+            {/* Theme Selection */}
+            {exportConfig.mode === 'theme' ? (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">选择表格主题</label>
+                <div className="grid grid-cols-4 gap-3">
+                  {Object.values(themes).map((theme: ExportTheme) => (
+                    <button
+                      key={theme.id}
+                      onClick={() => setExportConfig(prev => ({ ...prev, themeId: theme.id }))}
+                      className={`flex flex-col items-center p-2 rounded-xl border transition-all ${
+                        exportConfig.themeId === theme.id 
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500/20' 
+                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
+                      }`}
+                    >
+                      <div 
+                        className="w-full h-8 rounded-lg mb-2" 
+                        style={{ backgroundColor: `#${theme.headerFill.substring(2)}` }}
+                      ></div>
+                      <span className={`text-[10px] font-medium truncate w-full text-center ${exportConfig.themeId === theme.id ? 'text-blue-700 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}>
+                        {theme.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">选择脚本模板</label>
+                <div className="space-y-2">
+                  {scripts.map((script) => (
+                    <button
+                      key={script.name}
+                      onClick={() => setExportConfig(prev => ({ ...prev, templateName: script.name }))}
+                      className={`w-full flex items-center p-3 rounded-xl border transition-all ${
+                        exportConfig.templateName === script.name 
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500/20' 
+                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
+                      }`}
+                    >
+                      <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3">
+                        <FileCode className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="text-left">
+                        <div className={`text-sm font-semibold ${exportConfig.templateName === script.name ? 'text-blue-700 dark:text-blue-400' : 'text-slate-900 dark:text-white'}`}>
+                          {script.name}.js
+                        </div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
+                          {script.code.substring(0, 50)}...
+                        </div>
+                      </div>
+                      {exportConfig.templateName === script.name && (
+                        <div className="ml-auto w-2 h-2 bg-blue-600 rounded-full"></div>
+                      )}
+                    </button>
+                  ))}
+                  {scripts.length === 0 && (
+                    <div className="py-6 text-center border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">暂无脚本，请前往系统设置创建</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Columns Selection */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">选择并排序导出列</label>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">拖拽左侧图标进行排序</span>
               </div>
               
-              <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
-                <div className="w-full md:w-1/3 p-6 space-y-6 overflow-y-auto border-r border-slate-100 dark:border-slate-700 custom-scrollbar h-full">
-                  {/* Title */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">表格大标题</label>
-                    <input 
-                      type="text" 
-                      value={exportConfig.title}
-                      onChange={(e) => setExportConfig(prev => ({ ...prev, title: e.target.value }))}
-                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
-                      placeholder="请输入表格标题"
-                    />
+              <DndContext 
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext 
+                  items={exportConfig.columns.map(c => c.key)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                    {exportConfig.columns.map((col, idx) => {
+                      return (
+                        <SortableColumn 
+                          key={col.key} 
+                          col={col} 
+                          onToggle={() => {
+                            const newCols = [...exportConfig.columns];
+                            newCols[idx].selected = !newCols[idx].selected;
+                            setExportConfig(prev => ({ ...prev, columns: newCols }));
+                          }}
+                        />
+                      );
+                    })}
                   </div>
+                </SortableContext>
+              </DndContext>
+            </div>
+          </div>
 
-                  {/* Business Logic */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <label className="flex items-center cursor-pointer group">
-                        <div className="relative">
-                          <input 
-                            type="checkbox" 
-                            className="sr-only" 
-                            checked={exportConfig.includeResigned}
-                            onChange={(e) => setExportConfig(prev => ({ ...prev, includeResigned: e.target.checked }))}
-                          />
-                          <div className={`block w-10 h-6 rounded-full transition-colors ${exportConfig.includeResigned ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
-                          <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${exportConfig.includeResigned ? 'translate-x-4' : ''}`}></div>
-                        </div>
-                        <span className="ml-3 text-sm font-medium text-slate-700 dark:text-slate-300">包含离职人员</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Print Settings */}
-                  <div className="space-y-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">打印设置</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张大小</label>
-                        <select
-                          value={exportConfig.paperSize}
-                          onChange={(e) => setExportConfig(prev => ({ ...prev, paperSize: e.target.value }))}
-                          className="w-full px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        >
-                          <option value="A4">A4</option>
-                          <option value="A3">A3</option>
-                          <option value="Letter">Letter</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张方向</label>
-                        <select
-                          value={exportConfig.orientation}
-                          onChange={(e) => setExportConfig(prev => ({ ...prev, orientation: e.target.value }))}
-                          className="w-full px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        >
-                          <option value="portrait">纵向</option>
-                          <option value="landscape">横向</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pt-2">
-                      <label className="flex items-center cursor-pointer group">
-                        <div className="relative">
-                          <input 
-                            type="checkbox" 
-                            className="sr-only" 
-                            checked={exportConfig.isDoubleSided}
-                            onChange={(e) => setExportConfig(prev => ({ ...prev, isDoubleSided: e.target.checked }))}
-                          />
-                          <div className={`block w-8 h-5 rounded-full transition-colors ${exportConfig.isDoubleSided ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
-                          <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${exportConfig.isDoubleSided ? 'translate-x-3' : ''}`}></div>
-                        </div>
-                        <span className="ml-2 text-sm text-slate-600 dark:text-slate-400">双面打印 (预留装订边距)</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Mode Selection */}
-                  <div className="flex p-1 bg-slate-100 dark:bg-slate-700 rounded-lg">
-                    <button
-                      onClick={() => setExportConfig(prev => ({ ...prev, mode: 'theme' }))}
-                      className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
-                        exportConfig.mode === 'theme' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                      }`}
-                    >
-                      配色主题模式
-                    </button>
-                    <button
-                      onClick={() => setExportConfig(prev => ({ ...prev, mode: 'script' }))}
-                      className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
-                        exportConfig.mode === 'script' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                      }`}
-                    >
-                      JS 脚本模式
-                    </button>
-                  </div>
-
-                  {/* Theme Selection */}
-                  {exportConfig.mode === 'theme' ? (
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">选择表格主题</label>
-                      <div className="grid grid-cols-4 gap-3">
-                        {Object.values(themes).map((theme: ExportTheme) => (
-                          <button
-                            key={theme.id}
-                            onClick={() => setExportConfig(prev => ({ ...prev, themeId: theme.id }))}
-                            className={`flex flex-col items-center p-2 rounded-xl border transition-all ${
-                              exportConfig.themeId === theme.id 
-                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500/20' 
-                                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
-                            }`}
-                          >
-                            <div 
-                              className="w-full h-8 rounded-lg mb-2" 
-                              style={{ backgroundColor: `#${theme.headerFill.substring(2)}` }}
-                            ></div>
-                            <span className={`text-[10px] font-medium truncate w-full text-center ${exportConfig.themeId === theme.id ? 'text-blue-700 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}>
-                              {theme.name}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">选择脚本模板</label>
-                      <div className="space-y-2">
-                        {scripts.map((script) => (
-                          <button
-                            key={script.name}
-                            onClick={() => setExportConfig(prev => ({ ...prev, templateName: script.name }))}
-                            className={`w-full flex items-center p-3 rounded-xl border transition-all ${
-                              exportConfig.templateName === script.name 
-                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500/20' 
-                                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
-                            }`}
-                          >
-                            <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3">
-                              <FileCode className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <div className="text-left">
-                              <div className={`text-sm font-semibold ${exportConfig.templateName === script.name ? 'text-blue-700 dark:text-blue-400' : 'text-slate-900 dark:text-white'}`}>
-                                {script.name}.js
-                              </div>
-                              <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
-                                {script.code.substring(0, 50)}...
-                              </div>
-                            </div>
-                            {exportConfig.templateName === script.name && (
-                              <div className="ml-auto w-2 h-2 bg-blue-600 rounded-full"></div>
-                            )}
-                          </button>
-                        ))}
-                        {scripts.length === 0 && (
-                          <div className="py-6 text-center border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                            <p className="text-xs text-slate-500 dark:text-slate-400">暂无脚本，请前往系统设置创建</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Columns Selection */}
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">选择并排序导出列</label>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">拖拽左侧图标进行排序</span>
-                    </div>
-                    
-                    <DndContext 
-                      sensors={sensors}
-                      collisionDetection={closestCenter}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <SortableContext 
-                        items={exportConfig.columns.map(c => c.key)}
-                        strategy={verticalListSortingStrategy}
-                      >
-                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                          {exportConfig.columns.map((col, idx) => {
-                            return (
-                              <SortableColumn 
-                                key={col.key} 
-                                col={col} 
-                                onToggle={() => {
-                                  const newCols = [...exportConfig.columns];
-                                  newCols[idx].selected = !newCols[idx].selected;
-                                  setExportConfig(prev => ({ ...prev, columns: newCols }));
-                                }}
-                              />
-                            );
-                          })}
-                        </div>
-                      </SortableContext>
-                    </DndContext>
-                  </div>
-                </div>
-
-                <div className="w-full md:w-2/3 flex flex-col items-center bg-slate-100 dark:bg-slate-900 p-6 overflow-auto relative min-h-[400px] h-full custom-scrollbar">
-                  <div className="sticky top-0 self-start text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-6 -ml-6 mb-4">打印预览</div>
-                  <div className="w-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 p-8">
-                    <div className="text-center mb-6">
-                      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{exportConfig.title}</h1>
-                    </div>
-                    <table className="w-full border-collapse text-sm">
-                      <thead>
-                        <tr>
-                          {exportConfig.columns.filter(c => c.selected).map(col => (
-                            <th key={col.key} className="border border-slate-300 dark:border-slate-600 px-3 py-2 bg-slate-50 dark:bg-slate-700 text-left font-semibold text-slate-700 dark:text-slate-200">
-                              {col.label}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {users
-                          .filter(u => exportConfig.includeResigned ? true : u.status !== '离职')
-                          .slice(0, 10)
-                          .map(user => (
-                            <tr key={user.id}>
-                              {exportConfig.columns.filter(c => c.selected).map(col => (
-                                <td key={col.key} className="border border-slate-300 dark:border-slate-600 px-3 py-2 text-slate-600 dark:text-slate-300">
-                                  {(user as Record<string, any>)[col.key] || '-'}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                    {users.filter(u => exportConfig.includeResigned ? true : u.status !== '离职').length > 10 && (
-                      <div className="text-center py-4 text-sm text-slate-500 dark:text-slate-400">
-                        ... 仅显示前 10 条预览数据，共 {users.filter(u => exportConfig.includeResigned ? true : u.status !== '离职').length} 条 ...
-                      </div>
-                    )}
-                  </div>
-                </div>
+          <div className="w-full md:w-2/3 flex flex-col items-center bg-slate-100 dark:bg-slate-900 p-6 overflow-auto relative min-h-[400px] h-full custom-scrollbar">
+            <div className="sticky top-0 self-start text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-6 -ml-6 mb-4">打印预览</div>
+            <div className="w-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 p-8">
+              <div className="text-center mb-6">
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{exportConfig.title}</h1>
               </div>
-
-              <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-700 flex items-center justify-end space-x-3 shrink-0">
-                <button 
-                  onClick={() => setIsExportModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-                >
-                  取消
-                </button>
-                <button 
-                  onClick={handlePrintRoster}
-                  disabled={exportConfig.columns.filter(c => c.selected).length === 0}
-                  className="inline-flex items-center justify-center px-6 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-all shadow-sm disabled:opacity-50"
-                >
-                  <Printer className="h-4 w-4 mr-2" />
-                  打印
-                </button>
-                <button 
-                  onClick={handleExport}
-                  disabled={isExporting || exportConfig.columns.filter(c => c.selected).length === 0}
-                  className="inline-flex items-center justify-center px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-200 disabled:opacity-50"
-                >
-                  {isExporting ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      导出中...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="h-4 w-4 mr-2" />
-                      确认导出
-                    </>
-                  )}
-                </button>
-              </div>
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr>
+                    {exportConfig.columns.filter(c => c.selected).map(col => (
+                      <th key={col.key} className="border border-slate-300 dark:border-slate-600 px-3 py-2 bg-slate-50 dark:bg-slate-700 text-left font-semibold text-slate-700 dark:text-slate-200">
+                        {col.label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {users
+                    .filter(u => exportConfig.includeResigned ? true : u.status !== '离职')
+                    .slice(0, 10)
+                    .map(user => (
+                      <tr key={user.id}>
+                        {exportConfig.columns.filter(c => c.selected).map(col => (
+                          <td key={col.key} className="border border-slate-300 dark:border-slate-600 px-3 py-2 text-slate-600 dark:text-slate-300">
+                            {(user as Record<string, any>)[col.key] || '-'}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+              {users.filter(u => exportConfig.includeResigned ? true : u.status !== '离职').length > 10 && (
+                <div className="text-center py-4 text-sm text-slate-500 dark:text-slate-400">
+                  ... 仅显示前 10 条预览数据，共 {users.filter(u => exportConfig.includeResigned ? true : u.status !== '离职').length} 条 ...
+                </div>
+              )}
             </div>
           </div>
         </div>
-      )}
+      </BaseModal>
 
       {/* Address Book Configuration Modal */}
-      {isAddressBookModalOpen && (
-        <div className="fixed inset-0 z-[60] overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen p-4">
-            <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onClick={() => setIsAddressBookModalOpen(false)}></div>
-            
-            <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full sm:w-[95vw] sm:max-w-[1600px] h-[95vh] sm:h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
-              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between shrink-0">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">导出通讯录</h3>
-                <button onClick={() => setIsAddressBookModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-                  <X className="h-5 w-5" />
-                </button>
+      <BaseModal
+        isOpen={isAddressBookModalOpen}
+        onClose={() => setIsAddressBookModalOpen(false)}
+        title="导出通讯录"
+        size="full"
+        footer={
+          <div className="flex items-center justify-end space-x-3 w-full">
+            <button 
+              onClick={() => setIsAddressBookModalOpen(false)}
+              className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+            >
+              取消
+            </button>
+            <button 
+              onClick={handlePrintAddressBook}
+              disabled={addressBookConfig.columns.filter(c => c.selected).length === 0}
+              className="inline-flex items-center justify-center px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-200 disabled:opacity-50"
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              打印通讯录
+            </button>
+          </div>
+        }
+      >
+        <div className="flex-1 overflow-hidden flex flex-col md:flex-row h-full">
+          <div className="w-full md:w-1/3 p-6 space-y-6 overflow-y-auto border-r border-slate-100 dark:border-slate-700 custom-scrollbar h-full bg-white dark:bg-slate-800">
+            {/* Title */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">通讯录大标题</label>
+              <input 
+                type="text" 
+                value={addressBookConfig.title}
+                onChange={(e) => setAddressBookConfig(prev => ({ ...prev, title: e.target.value }))}
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+                placeholder="请输入通讯录标题"
+              />
+            </div>
+
+            {/* Business Logic */}
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="flex items-center cursor-pointer group">
+                  <div className="relative">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only" 
+                      checked={addressBookConfig.includeResigned}
+                      onChange={(e) => setAddressBookConfig(prev => ({ ...prev, includeResigned: e.target.checked }))}
+                    />
+                    <div className={`block w-10 h-6 rounded-full transition-colors ${addressBookConfig.includeResigned ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
+                    <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${addressBookConfig.includeResigned ? 'translate-x-4' : ''}`}></div>
+                  </div>
+                  <span className="ml-3 text-sm font-medium text-slate-700 dark:text-slate-300">包含离职人员</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Print Settings */}
+            <div className="space-y-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">打印设置</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张大小</label>
+                  <select
+                    value={addressBookConfig.paperSize}
+                    onChange={(e) => setAddressBookConfig(prev => ({ ...prev, paperSize: e.target.value }))}
+                    className="w-full px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                  >
+                    <option value="A4">A4</option>
+                    <option value="A3">A3</option>
+                    <option value="Letter">Letter</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张方向</label>
+                  <select
+                    value={addressBookConfig.orientation}
+                    onChange={(e) => setAddressBookConfig(prev => ({ ...prev, orientation: e.target.value }))}
+                    className="w-full px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                  >
+                    <option value="portrait">纵向</option>
+                    <option value="landscape">横向</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex items-center justify-between pt-2">
+                <label className="flex items-center cursor-pointer group">
+                  <div className="relative">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only" 
+                      checked={addressBookConfig.isDoubleSided}
+                      onChange={(e) => setAddressBookConfig(prev => ({ ...prev, isDoubleSided: e.target.checked }))}
+                    />
+                    <div className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.isDoubleSided ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
+                    <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${addressBookConfig.isDoubleSided ? 'translate-x-3' : ''}`}></div>
+                  </div>
+                  <span className="ml-2 text-sm text-slate-600 dark:text-slate-400">双面打印 (预留装订边距)</span>
+                </label>
+              </div>
+              <div className="flex items-center justify-between pt-2">
+                <label className="flex items-center cursor-pointer group">
+                  <div className="relative">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only" 
+                      checked={addressBookConfig.isTwoColumn}
+                      onChange={(e) => setAddressBookConfig(prev => ({ ...prev, isTwoColumn: e.target.checked }))}
+                    />
+                    <div className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.isTwoColumn ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
+                    <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${addressBookConfig.isTwoColumn ? 'translate-x-3' : ''}`}></div>
+                  </div>
+                  <span className="ml-2 text-sm text-slate-600 dark:text-slate-400">双栏排版 (适合字段较少)</span>
+                </label>
+              </div>
+              <div className="flex items-center justify-between pt-2">
+                <label className="flex items-center cursor-pointer group">
+                  <div className="relative">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only" 
+                      checked={addressBookConfig.mergeDepartments}
+                      onChange={(e) => setAddressBookConfig(prev => ({ ...prev, mergeDepartments: e.target.checked }))}
+                    />
+                    <div className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.mergeDepartments ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
+                    <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${addressBookConfig.mergeDepartments ? 'translate-x-3' : ''}`}></div>
+                  </div>
+                  <span className="ml-2 text-sm text-slate-600 dark:text-slate-400">按部门合并并统计人数</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Columns Selection */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">选择并排序导出列</label>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">拖拽左侧图标进行排序</span>
               </div>
               
-              <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
-                <div className="w-full md:w-1/3 p-6 space-y-6 overflow-y-auto border-r border-slate-100 dark:border-slate-700 custom-scrollbar h-full bg-white dark:bg-slate-800">
-                  {/* Title */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">通讯录大标题</label>
-                    <input 
-                      type="text" 
-                      value={addressBookConfig.title}
-                      onChange={(e) => setAddressBookConfig(prev => ({ ...prev, title: e.target.value }))}
-                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
-                      placeholder="请输入通讯录标题"
-                    />
-                  </div>
-
-                  {/* Business Logic */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <label className="flex items-center cursor-pointer group">
-                        <div className="relative">
-                          <input 
-                            type="checkbox" 
-                            className="sr-only" 
-                            checked={addressBookConfig.includeResigned}
-                            onChange={(e) => setAddressBookConfig(prev => ({ ...prev, includeResigned: e.target.checked }))}
-                          />
-                          <div className={`block w-10 h-6 rounded-full transition-colors ${addressBookConfig.includeResigned ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
-                          <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${addressBookConfig.includeResigned ? 'translate-x-4' : ''}`}></div>
-                        </div>
-                        <span className="ml-3 text-sm font-medium text-slate-700 dark:text-slate-300">包含离职人员</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Print Settings */}
-                  <div className="space-y-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">打印设置</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张大小</label>
-                        <select
-                          value={addressBookConfig.paperSize}
-                          onChange={(e) => setAddressBookConfig(prev => ({ ...prev, paperSize: e.target.value }))}
-                          className="w-full px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        >
-                          <option value="A4">A4</option>
-                          <option value="A3">A3</option>
-                          <option value="Letter">Letter</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张方向</label>
-                        <select
-                          value={addressBookConfig.orientation}
-                          onChange={(e) => setAddressBookConfig(prev => ({ ...prev, orientation: e.target.value }))}
-                          className="w-full px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        >
-                          <option value="portrait">纵向</option>
-                          <option value="landscape">横向</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pt-2">
-                      <label className="flex items-center cursor-pointer group">
-                        <div className="relative">
-                          <input 
-                            type="checkbox" 
-                            className="sr-only" 
-                            checked={addressBookConfig.isDoubleSided}
-                            onChange={(e) => setAddressBookConfig(prev => ({ ...prev, isDoubleSided: e.target.checked }))}
-                          />
-                          <div className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.isDoubleSided ? 'bg-blue-600' : 'bg-slate-300'}`}></div>
-                          <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${addressBookConfig.isDoubleSided ? 'translate-x-3' : ''}`}></div>
-                        </div>
-                        <span className="ml-2 text-sm text-slate-600">双面打印 (预留装订边距)</span>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between pt-2">
-                      <label className="flex items-center cursor-pointer group">
-                        <div className="relative">
-                          <input 
-                            type="checkbox" 
-                            className="sr-only" 
-                            checked={addressBookConfig.isTwoColumn}
-                            onChange={(e) => setAddressBookConfig(prev => ({ ...prev, isTwoColumn: e.target.checked }))}
-                          />
-                          <div className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.isTwoColumn ? 'bg-blue-600' : 'bg-slate-300'}`}></div>
-                          <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${addressBookConfig.isTwoColumn ? 'translate-x-3' : ''}`}></div>
-                        </div>
-                        <span className="ml-2 text-sm text-slate-600">双栏排版 (适合字段较少)</span>
-                      </label>
-                    </div>
-                    <div className="flex items-center justify-between pt-2">
-                      <label className="flex items-center cursor-pointer group">
-                        <div className="relative">
-                          <input 
-                            type="checkbox" 
-                            className="sr-only" 
-                            checked={addressBookConfig.mergeDepartments}
-                            onChange={(e) => setAddressBookConfig(prev => ({ ...prev, mergeDepartments: e.target.checked }))}
-                          />
-                          <div className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.mergeDepartments ? 'bg-blue-600' : 'bg-slate-300'}`}></div>
-                          <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${addressBookConfig.mergeDepartments ? 'translate-x-3' : ''}`}></div>
-                        </div>
-                        <span className="ml-2 text-sm text-slate-600">按部门合并并统计人数</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Columns Selection */}
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <label className="block text-sm font-medium text-slate-700">选择并排序导出列</label>
-                      <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">拖拽左侧图标进行排序</span>
-                    </div>
-                    
-                    <DndContext 
-                      sensors={sensors}
-                      collisionDetection={closestCenter}
-                      onDragEnd={handleAddressBookDragEnd}
-                    >
-                      <SortableContext 
-                        items={addressBookConfig.columns.map(c => c.key)}
-                        strategy={verticalListSortingStrategy}
-                      >
-                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                          {addressBookConfig.columns.map((col, idx) => {
-                            return (
-                              <SortableColumn 
-                                key={col.key} 
-                                col={col} 
-                                onToggle={() => {
-                                  const newCols = [...addressBookConfig.columns];
-                                  newCols[idx].selected = !newCols[idx].selected;
-                                  setAddressBookConfig(prev => ({ ...prev, columns: newCols }));
-                                }}
-                              />
-                            );
-                          })}
-                        </div>
-                      </SortableContext>
-                    </DndContext>
-                  </div>
-                </div>
-
-                <div className="w-full md:w-2/3 flex flex-col items-center bg-slate-100 p-6 overflow-auto relative min-h-[400px] h-full custom-scrollbar">
-                  <div className="sticky top-0 self-start text-xs font-medium text-slate-500 uppercase tracking-wider z-10 bg-white/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-6 -ml-6 mb-4">打印预览</div>
-                  <div className="w-full bg-white shadow-sm border border-slate-200 p-8">
-                    <div className="text-center mb-6">
-                      <h1 className="text-2xl font-bold text-slate-900">{addressBookConfig.title}</h1>
-                    </div>
-                    <div className={`flex ${addressBookConfig.isTwoColumn ? 'gap-6' : ''} items-start`}>
-                      <div className="flex-1">
-                        {renderTableContent(previewLeft, addressBookConfig)}
-                      </div>
-                      {addressBookConfig.isTwoColumn && (
-                        <div className="flex-1">
-                          {renderTableContent(previewRight, addressBookConfig)}
-                        </div>
-                      )}
-                    </div>
-                    {processedAddressBookUsers.length > 20 && (
-                      <div className="text-center py-4 text-sm text-slate-500">
-                        ... 仅显示前 20 条预览数据，共 {processedAddressBookUsers.length} 条 ...
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end space-x-3 shrink-0">
-                <button 
-                  onClick={() => setIsAddressBookModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900"
+              <DndContext 
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleAddressBookDragEnd}
+              >
+                <SortableContext 
+                  items={addressBookConfig.columns.map(c => c.key)}
+                  strategy={verticalListSortingStrategy}
                 >
-                  取消
-                </button>
-                <button 
-                  onClick={handlePrintAddressBook}
-                  disabled={addressBookConfig.columns.filter(c => c.selected).length === 0}
-                  className="inline-flex items-center justify-center px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-200 disabled:opacity-50"
-                >
-                  <Printer className="h-4 w-4 mr-2" />
-                  打印通讯录
-                </button>
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                    {addressBookConfig.columns.map((col, idx) => {
+                      return (
+                        <SortableColumn 
+                          key={col.key} 
+                          col={col} 
+                          onToggle={() => {
+                            const newCols = [...addressBookConfig.columns];
+                            newCols[idx].selected = !newCols[idx].selected;
+                            setAddressBookConfig(prev => ({ ...prev, columns: newCols }));
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            </div>
+          </div>
+
+          <div className="w-full md:w-2/3 flex flex-col items-center bg-slate-100 dark:bg-slate-900 p-6 overflow-auto relative min-h-[400px] h-full custom-scrollbar">
+            <div className="sticky top-0 self-start text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-6 -ml-6 mb-4">打印预览</div>
+            <div className="w-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 p-8">
+              <div className="text-center mb-6">
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{addressBookConfig.title}</h1>
               </div>
+              <div className={`flex ${addressBookConfig.isTwoColumn ? 'gap-6' : ''} items-start`}>
+                <div className="flex-1">
+                  {renderTableContent(previewLeft, addressBookConfig)}
+                </div>
+                {addressBookConfig.isTwoColumn && (
+                  <div className="flex-1">
+                    {renderTableContent(previewRight, addressBookConfig)}
+                  </div>
+                )}
+              </div>
+              {processedAddressBookUsers.length > 20 && (
+                <div className="text-center py-4 text-sm text-slate-500 dark:text-slate-400">
+                  ... 仅显示前 20 条预览数据，共 {processedAddressBookUsers.length} 条 ...
+                </div>
+              )}
             </div>
           </div>
         </div>
-      )}
+      </BaseModal>
 
       {/* Hidden Printable Area for Roster */}
       <div className="hidden">

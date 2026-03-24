@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useUserStore } from '../store/users';
 import { useDepartments, flattenDepartments } from '../store/departments';
 import { Armchair, Users, ChevronRight, Printer, RefreshCw, Download, LayoutGrid, List, Trash2, Settings2, X, CheckSquare, Square, ExternalLink, Upload, FileDown, ChevronDown } from 'lucide-react';
+import { BaseModal } from '../components/ui/BaseModal';
 
 interface Table {
   number: number;
@@ -9,8 +10,13 @@ interface Table {
 }
 
 export default function Seating() {
-  const { users } = useUserStore();
+  const { users, fetchUsers } = useUserStore();
   const { departments, roles } = useDepartments();
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
   const [tableCapacities, setTableCapacities] = useState<{id: string, tableNumber: number, capacity: number}[]>([{ id: Math.random().toString(36), tableNumber: 1, capacity: 10 }]);
   const [tables, setTables] = useState<Table[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -503,540 +509,519 @@ export default function Seating() {
           </p>
         </div>
       )}
+      </div>
 
       {/* Participant Selection Modal */}
-      {isParticipantModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onClick={() => setIsParticipantModalOpen(false)}></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="relative z-10 inline-block align-bottom w-full bg-white dark:bg-slate-800 rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full animate-in zoom-in-95 duration-200">
-              <div className="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="flex justify-between items-center mb-5">
-                  <div className="flex items-center space-x-4">
-                    <h3 className="text-lg leading-6 font-medium text-slate-900 dark:text-white" id="modal-title">选择参与人员</h3>
-                    <button 
-                      onClick={toggleAllDeptsExpand}
-                      className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
-                    >
-                      {expandedDepts.size === Object.keys(groupedUsers).length ? '全部收起' : '全部展开'}
-                    </button>
+      <BaseModal
+        isOpen={isParticipantModalOpen}
+        onClose={() => setIsParticipantModalOpen(false)}
+        title={
+          <div className="flex items-center space-x-4">
+            <span className="text-lg leading-6 font-medium text-slate-900 dark:text-white">选择参与人员</span>
+            <button 
+              onClick={toggleAllDeptsExpand}
+              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+            >
+              {expandedDepts.size === Object.keys(groupedUsers).length ? '全部收起' : '全部展开'}
+            </button>
+          </div>
+        }
+        size="2xl"
+        bodyClassName="p-4 sm:p-6 max-h-[60vh] overflow-y-auto"
+        footer={
+          <button type="button" onClick={() => setIsParticipantModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">完成</button>
+        }
+      >
+        <div className="space-y-4 pr-2">
+          {Object.entries(groupedUsers).map(([dept, deptUsers]: [string, any[]]) => {
+            const allSelected = deptUsers.every(u => selectedUserIds.has(u.id));
+            const someSelected = deptUsers.some(u => selectedUserIds.has(u.id)) && !allSelected;
+            const isExpanded = expandedDepts.has(dept);
+            return (
+              <div key={dept} className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+                <div 
+                  className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  onClick={() => toggleDepartmentSelection(dept, !allSelected)}
+                >
+                  <div className="flex items-center">
+                    {allSelected ? (
+                      <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-500 mr-3" />
+                    ) : someSelected ? (
+                      <div className="w-5 h-5 bg-blue-600 dark:bg-blue-500 rounded flex items-center justify-center mr-3">
+                        <div className="w-3 h-0.5 bg-white"></div>
+                      </div>
+                    ) : (
+                      <Square className="w-5 h-5 text-slate-400 dark:text-slate-500 mr-3" />
+                    )}
+                    <span className="font-medium text-slate-800 dark:text-slate-200">{dept}</span>
+                    <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">({deptUsers.filter(u => selectedUserIds.has(u.id)).length}/{deptUsers.length})</span>
                   </div>
-                  <button onClick={() => setIsParticipantModalOpen(false)} className="text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 transition-colors">
-                    <X className="h-5 w-5" />
+                  <button 
+                    onClick={(e) => toggleDeptExpand(dept, e)}
+                    className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    <ChevronRight className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                   </button>
                 </div>
-                <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-4">
-                  {Object.entries(groupedUsers).map(([dept, deptUsers]: [string, any[]]) => {
-                    const allSelected = deptUsers.every(u => selectedUserIds.has(u.id));
-                    const someSelected = deptUsers.some(u => selectedUserIds.has(u.id)) && !allSelected;
-                    const isExpanded = expandedDepts.has(dept);
-                    return (
-                      <div key={dept} className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
-                        <div 
-                          className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                          onClick={() => toggleDepartmentSelection(dept, !allSelected)}
-                        >
-                          <div className="flex items-center">
-                            {allSelected ? (
-                              <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-500 mr-3" />
-                            ) : someSelected ? (
-                              <div className="w-5 h-5 bg-blue-600 dark:bg-blue-500 rounded flex items-center justify-center mr-3">
-                                <div className="w-3 h-0.5 bg-white"></div>
-                              </div>
-                            ) : (
-                              <Square className="w-5 h-5 text-slate-400 dark:text-slate-500 mr-3" />
-                            )}
-                            <span className="font-medium text-slate-800 dark:text-slate-200">{dept}</span>
-                            <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">({deptUsers.filter(u => selectedUserIds.has(u.id)).length}/{deptUsers.length})</span>
-                          </div>
-                          <button 
-                            onClick={(e) => toggleDeptExpand(dept, e)}
-                            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                          >
-                            <ChevronRight className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                          </button>
-                        </div>
-                        {isExpanded && (
-                          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
-                            {deptUsers.map(u => (
-                              <label key={u.id} className="flex items-center space-x-2 cursor-pointer group">
-                                <input 
-                                  type="checkbox" 
-                                  checked={selectedUserIds.has(u.id)}
-                                  onChange={() => toggleUserSelection(u.id)}
-                                  className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 dark:bg-slate-700"
-                                />
-                                <span className="text-sm text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white">{u.name}</span>
-                              </label>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                {isExpanded && (
+                  <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
+                    {deptUsers.map(u => (
+                      <label key={u.id} className="flex items-center space-x-2 cursor-pointer group">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedUserIds.has(u.id)}
+                          onChange={() => toggleUserSelection(u.id)}
+                          className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-white dark:bg-slate-900"
+                        />
+                        <span className="text-sm text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{u.name}</span>
+                        <span className="text-xs text-slate-400 dark:text-slate-500">({u.role})</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200 dark:border-slate-700">
-                <button type="button" onClick={() => setIsParticipantModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">完成</button>
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
-      )}
+      </BaseModal>
 
       {/* Print Settings Modal */}
-      {isPrintModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onClick={() => setIsPrintModalOpen(false)}></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="relative z-10 inline-flex flex-col align-bottom bg-white dark:bg-slate-800 rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle w-full sm:w-[95vw] sm:max-w-[1600px] h-[95vh] sm:h-[90vh] animate-in zoom-in-95 duration-200">
-              <div className="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 flex-1 flex flex-col overflow-hidden">
-                <div className="flex justify-between items-center mb-5 shrink-0">
-                  <h3 className="text-lg leading-6 font-medium text-slate-900 dark:text-white" id="modal-title">台卡打印设置</h3>
-                  <button onClick={() => setIsPrintModalOpen(false)} className="text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 transition-colors">
-                    <X className="h-5 w-5" />
-                  </button>
+      <BaseModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        title="台卡打印设置"
+        size="full"
+        bodyClassName="p-0 flex flex-col overflow-hidden"
+        footer={
+          <>
+            <button type="button" onClick={() => setIsPrintModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">保存设置</button>
+            <button type="button" onClick={handlePrint} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">直接打印</button>
+          </>
+        }
+      >
+        <div className="flex flex-col md:flex-row gap-8 flex-1 overflow-hidden p-4 sm:p-6">
+          {/* Settings Panel */}
+          <div className="w-full md:w-5/12 space-y-3 overflow-y-auto pr-2 h-full">
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">台卡样式</label>
+                <select 
+                  value={printSettings.cardStyle}
+                  onChange={(e) => {
+                    const newStyle = e.target.value;
+                    setPrintSettings(prev => ({ 
+                      ...prev, 
+                      cardStyle: newStyle,
+                      contentFontSize: 30,
+                      titleFontSize: newStyle === 'style2' ? 30 : 24
+                    }));
+                  }}
+                  className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                >
+                  <option value="style1">样式1 (经典双列)</option>
+                  <option value="style2">样式2 (极简单列)</option>
+                </select>
+              </div>
+              {printSettings.cardStyle === 'style1' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">台卡标题</label>
+                    <input 
+                      type="text" 
+                      value={printSettings.cardTitle}
+                      onChange={(e) => setPrintSettings(prev => ({ ...prev, cardTitle: e.target.value }))}
+                      className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">底部文字</label>
+                    <input 
+                      type="text" 
+                      value={printSettings.footerText}
+                      onChange={(e) => setPrintSettings(prev => ({ ...prev, footerText: e.target.value }))}
+                      className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                    />
+                  </div>
                 </div>
-                <div className="flex flex-col md:flex-row gap-8 flex-1 overflow-hidden">
-                  {/* Settings Panel */}
-                  <div className="w-full md:w-5/12 space-y-3 overflow-y-auto pr-2 h-full">
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">台卡样式</label>
-                        <select 
-                          value={printSettings.cardStyle}
-                          onChange={(e) => {
-                            const newStyle = e.target.value;
-                            setPrintSettings(prev => ({ 
-                              ...prev, 
-                              cardStyle: newStyle,
-                              contentFontSize: 30,
-                              titleFontSize: newStyle === 'style2' ? 30 : 24
-                            }));
-                          }}
-                          className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        >
-                          <option value="style1">样式1 (经典双列)</option>
-                          <option value="style2">样式2 (极简单列)</option>
-                        </select>
-                      </div>
-                      {printSettings.cardStyle === 'style1' && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">台卡标题</label>
-                            <input 
-                              type="text" 
-                              value={printSettings.cardTitle}
-                              onChange={(e) => setPrintSettings(prev => ({ ...prev, cardTitle: e.target.value }))}
-                              className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">底部文字</label>
-                            <input 
-                              type="text" 
-                              value={printSettings.footerText}
-                              onChange={(e) => setPrintSettings(prev => ({ ...prev, footerText: e.target.value }))}
-                              className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
-                            />
-                          </div>
-                        </div>
-                      )}
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">主题颜色</label>
-                        <div className="flex items-center space-x-3">
-                          <input 
-                            type="color" 
-                            value={printSettings.themeColor}
-                            onChange={(e) => setPrintSettings(prev => ({ ...prev, themeColor: e.target.value }))}
-                            className="h-9 w-14 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 cursor-pointer p-0.5" 
-                          />
-                          <span className="text-sm text-slate-500 dark:text-slate-400 uppercase">{printSettings.themeColor}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">宽度 (cm)</label>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">主题颜色</label>
+                <div className="flex items-center space-x-3">
+                  <input 
+                    type="color" 
+                    value={printSettings.themeColor}
+                    onChange={(e) => setPrintSettings(prev => ({ ...prev, themeColor: e.target.value }))}
+                    className="h-9 w-14 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 cursor-pointer p-0.5" 
+                  />
+                  <span className="text-sm text-slate-500 dark:text-slate-400 uppercase">{printSettings.themeColor}</span>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">宽度 (cm)</label>
+                <input 
+                  type="number" 
+                  step="0.1"
+                  value={printSettings.cardWidth / 10}
+                  onChange={(e) => setPrintSettings(prev => ({ ...prev, cardWidth: Math.round(parseFloat(e.target.value) * 10) || 210 }))}
+                  className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">高度 (cm)</label>
+                <input 
+                  type="number" 
+                  step="0.1"
+                  value={printSettings.cardHeight / 10}
+                  onChange={(e) => setPrintSettings(prev => ({ ...prev, cardHeight: Math.round(parseFloat(e.target.value) * 10) || 297 }))}
+                  className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                />
+              </div>
+            </div>
+            <div className="text-xs text-blue-500 mt-1">默认使用A4纸的尺寸</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">标题字号 (px)</label>
+                <input 
+                  type="number" 
+                  value={printSettings.titleFontSize}
+                  onChange={(e) => setPrintSettings(prev => ({ ...prev, titleFontSize: parseInt(e.target.value) || (prev.cardStyle === 'style2' ? 30 : 24) }))}
+                  className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">桌号字号 (px)</label>
+                <input 
+                  type="number" 
+                  value={printSettings.numberFontSize}
+                  onChange={(e) => setPrintSettings(prev => ({ ...prev, numberFontSize: parseInt(e.target.value) || 48 }))}
+                  className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">标题字体</label>
+                <select 
+                  value={printSettings.titleFontFamily}
+                  onChange={(e) => setPrintSettings(prev => ({ ...prev, titleFontFamily: e.target.value }))}
+                  className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                >
+                  <option value='"Noto Serif SC", "SimSun", serif'>思源宋体 / 宋体</option>
+                  <option value='"Microsoft YaHei", "SimHei", sans-serif'>微软雅黑 / 黑体</option>
+                  <option value='"KaiTi", "STKaiti", serif'>楷体</option>
+                  <option value='"FangSong", "STFangsong", serif'>仿宋</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">桌号字体</label>
+                <select 
+                  value={printSettings.numberFontFamily}
+                  onChange={(e) => setPrintSettings(prev => ({ ...prev, numberFontFamily: e.target.value }))}
+                  className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                >
+                  <option value='"Microsoft YaHei", "SimHei", sans-serif'>微软雅黑 / 黑体</option>
+                  <option value='"Noto Serif SC", "SimSun", serif'>思源宋体 / 宋体</option>
+                  <option value='"KaiTi", "STKaiti", serif'>楷体</option>
+                  <option value='"FangSong", "STFangsong", serif'>仿宋</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">内容字体</label>
+                <select 
+                  value={printSettings.contentFontFamily}
+                  onChange={(e) => setPrintSettings(prev => ({ ...prev, contentFontFamily: e.target.value }))}
+                  className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                >
+                  <option value='"Microsoft YaHei", "SimHei", sans-serif'>微软雅黑 / 黑体</option>
+                  <option value='"Noto Serif SC", "SimSun", serif'>思源宋体 / 宋体</option>
+                  <option value='"KaiTi", "STKaiti", serif'>楷体</option>
+                  <option value='"FangSong", "STFangsong", serif'>仿宋</option>
+                </select>
+              </div>
+              {printSettings.cardStyle === 'style1' && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">底部字体</label>
+                  <select 
+                    value={printSettings.footerFontFamily}
+                    onChange={(e) => setPrintSettings(prev => ({ ...prev, footerFontFamily: e.target.value }))}
+                    className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  >
+                    <option value='"Microsoft YaHei", "SimHei", sans-serif'>微软雅黑 / 黑体</option>
+                    <option value='"Noto Serif SC", "SimSun", serif'>思源宋体 / 宋体</option>
+                    <option value='"KaiTi", "STKaiti", serif'>楷体</option>
+                    <option value='"FangSong", "STFangsong", serif'>仿宋</option>
+                  </select>
+                </div>
+              )}
+            </div>
+            <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+              {printSettings.cardStyle === 'style1' && (
+                <>
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={printSettings.showMembers}
+                      onChange={(e) => setPrintSettings(prev => ({ ...prev, showMembers: e.target.checked }))}
+                      className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 dark:bg-slate-700"
+                    />
+                    <span className="text-sm text-slate-700 dark:text-slate-300">显示成员名单</span>
+                  </label>
+                  {printSettings.showMembers && (
+                    <div className="pl-6 space-y-2">
+                      <label className="flex items-center space-x-2 cursor-pointer">
                         <input 
-                          type="number" 
-                          step="0.1"
-                          value={printSettings.cardWidth / 10}
-                          onChange={(e) => setPrintSettings(prev => ({ ...prev, cardWidth: Math.round(parseFloat(e.target.value) * 10) || 210 }))}
-                          className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                          type="checkbox" 
+                          checked={printSettings.showIndex}
+                          onChange={(e) => setPrintSettings(prev => ({ ...prev, showIndex: e.target.checked }))}
+                          className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 dark:bg-slate-700"
                         />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">高度 (cm)</label>
+                        <span className="text-sm text-slate-700 dark:text-slate-300">显示序号</span>
+                      </label>
+                      <label className="flex items-center space-x-2 cursor-pointer">
                         <input 
-                          type="number" 
-                          step="0.1"
-                          value={printSettings.cardHeight / 10}
-                          onChange={(e) => setPrintSettings(prev => ({ ...prev, cardHeight: Math.round(parseFloat(e.target.value) * 10) || 297 }))}
-                          className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                          type="checkbox" 
+                          checked={printSettings.showDepartment}
+                          onChange={(e) => setPrintSettings(prev => ({ ...prev, showDepartment: e.target.checked }))}
+                          className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 dark:bg-slate-700"
                         />
-                      </div>
-                    </div>
-                    <div className="text-xs text-blue-500 mt-1">默认使用A4纸的尺寸</div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">标题字号 (px)</label>
+                        <span className="text-sm text-slate-700 dark:text-slate-300">显示部门</span>
+                      </label>
+                      <label className="flex items-center space-x-2 cursor-pointer">
                         <input 
-                          type="number" 
-                          value={printSettings.titleFontSize}
-                          onChange={(e) => setPrintSettings(prev => ({ ...prev, titleFontSize: parseInt(e.target.value) || (prev.cardStyle === 'style2' ? 30 : 24) }))}
-                          className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                          type="checkbox" 
+                          checked={printSettings.showRole}
+                          onChange={(e) => setPrintSettings(prev => ({ ...prev, showRole: e.target.checked }))}
+                          className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 dark:bg-slate-700"
                         />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">桌号字号 (px)</label>
-                        <input 
-                          type="number" 
-                          value={printSettings.numberFontSize}
-                          onChange={(e) => setPrintSettings(prev => ({ ...prev, numberFontSize: parseInt(e.target.value) || 48 }))}
-                          className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">标题字体</label>
-                        <select 
-                          value={printSettings.titleFontFamily}
-                          onChange={(e) => setPrintSettings(prev => ({ ...prev, titleFontFamily: e.target.value }))}
-                          className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        >
-                          <option value='"Noto Serif SC", "SimSun", serif'>思源宋体 / 宋体</option>
-                          <option value='"Microsoft YaHei", "SimHei", sans-serif'>微软雅黑 / 黑体</option>
-                          <option value='"KaiTi", "STKaiti", serif'>楷体</option>
-                          <option value='"FangSong", "STFangsong", serif'>仿宋</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">桌号字体</label>
-                        <select 
-                          value={printSettings.numberFontFamily}
-                          onChange={(e) => setPrintSettings(prev => ({ ...prev, numberFontFamily: e.target.value }))}
-                          className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        >
-                          <option value='"Microsoft YaHei", "SimHei", sans-serif'>微软雅黑 / 黑体</option>
-                          <option value='"Noto Serif SC", "SimSun", serif'>思源宋体 / 宋体</option>
-                          <option value='"KaiTi", "STKaiti", serif'>楷体</option>
-                          <option value='"FangSong", "STFangsong", serif'>仿宋</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">内容字体</label>
-                        <select 
-                          value={printSettings.contentFontFamily}
-                          onChange={(e) => setPrintSettings(prev => ({ ...prev, contentFontFamily: e.target.value }))}
-                          className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        >
-                          <option value='"Microsoft YaHei", "SimHei", sans-serif'>微软雅黑 / 黑体</option>
-                          <option value='"Noto Serif SC", "SimSun", serif'>思源宋体 / 宋体</option>
-                          <option value='"KaiTi", "STKaiti", serif'>楷体</option>
-                          <option value='"FangSong", "STFangsong", serif'>仿宋</option>
-                        </select>
-                      </div>
-                      {printSettings.cardStyle === 'style1' && (
+                        <span className="text-sm text-slate-700 dark:text-slate-300">显示职位</span>
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">底部字体</label>
-                          <select 
-                            value={printSettings.footerFontFamily}
-                            onChange={(e) => setPrintSettings(prev => ({ ...prev, footerFontFamily: e.target.value }))}
-                            className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                          >
-                            <option value='"Microsoft YaHei", "SimHei", sans-serif'>微软雅黑 / 黑体</option>
-                            <option value='"Noto Serif SC", "SimSun", serif'>思源宋体 / 宋体</option>
-                            <option value='"KaiTi", "STKaiti", serif'>楷体</option>
-                            <option value='"FangSong", "STFangsong", serif'>仿宋</option>
-                          </select>
-                        </div>
-                      )}
-                    </div>
-                    <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700">
-                      {printSettings.cardStyle === 'style1' && (
-                        <>
-                          <label className="flex items-center space-x-2 cursor-pointer">
-                            <input 
-                              type="checkbox" 
-                              checked={printSettings.showMembers}
-                              onChange={(e) => setPrintSettings(prev => ({ ...prev, showMembers: e.target.checked }))}
-                              className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 dark:bg-slate-700"
-                            />
-                            <span className="text-sm text-slate-700 dark:text-slate-300">显示成员名单</span>
-                          </label>
-                          {printSettings.showMembers && (
-                            <div className="pl-6 space-y-2">
-                              <label className="flex items-center space-x-2 cursor-pointer">
-                                <input 
-                                  type="checkbox" 
-                                  checked={printSettings.showIndex}
-                                  onChange={(e) => setPrintSettings(prev => ({ ...prev, showIndex: e.target.checked }))}
-                                  className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 dark:bg-slate-700"
-                                />
-                                <span className="text-sm text-slate-700 dark:text-slate-300">显示序号</span>
-                              </label>
-                              <label className="flex items-center space-x-2 cursor-pointer">
-                                <input 
-                                  type="checkbox" 
-                                  checked={printSettings.showDepartment}
-                                  onChange={(e) => setPrintSettings(prev => ({ ...prev, showDepartment: e.target.checked }))}
-                                  className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 dark:bg-slate-700"
-                                />
-                                <span className="text-sm text-slate-700 dark:text-slate-300">显示部门</span>
-                              </label>
-                              <label className="flex items-center space-x-2 cursor-pointer">
-                                <input 
-                                  type="checkbox" 
-                                  checked={printSettings.showRole}
-                                  onChange={(e) => setPrintSettings(prev => ({ ...prev, showRole: e.target.checked }))}
-                                  className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 dark:bg-slate-700"
-                                />
-                                <span className="text-sm text-slate-700 dark:text-slate-300">显示职位</span>
-                              </label>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <div>
-                                  <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">内容字号 (px)</label>
-                                  <input 
-                                    type="number" 
-                                    value={printSettings.contentFontSize}
-                                    onChange={(e) => setPrintSettings(prev => ({ ...prev, contentFontSize: parseInt(e.target.value) || 30 }))}
-                                    className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">内容对齐</label>
-                                  <select 
-                                    value={printSettings.textAlign}
-                                    onChange={(e) => setPrintSettings(prev => ({ ...prev, textAlign: e.target.value }))}
-                                    className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                  >
-                                    <option value="left">居左</option>
-                                    <option value="center">居中</option>
-                                    <option value="right">居右</option>
-                                  </select>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      )}
-                      
-                      {printSettings.cardStyle === 'style2' && (
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">内容字号 (px)</label>
+                          <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">内容字号 (px)</label>
                           <input 
                             type="number" 
                             value={printSettings.contentFontSize}
                             onChange={(e) => setPrintSettings(prev => ({ ...prev, contentFontSize: parseInt(e.target.value) || 30 }))}
-                            className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                            className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
                           />
                         </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Preview Panel */}
-                  <div className="w-full md:w-7/12 flex flex-col items-center bg-slate-100 dark:bg-slate-900 rounded-lg p-6 overflow-auto relative min-h-[400px] h-full">
-                    <div className="sticky top-0 self-start text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-6 -ml-6 mb-4">打印预览 ({tables.length}桌)</div>
-                    
-                    <div className="flex flex-col gap-8 items-center w-full pt-2">
-                      {tables.map((table, tableIndex) => (
-                        <div key={table.number} className="flex flex-col items-center">
-                          <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">第 {tableIndex + 1} 页</div>
-                          {/* Scale wrapper to maintain layout space for scaled content */}
-                          <div 
-                            style={{ 
-                              width: `${printSettings.cardWidth * 0.5}mm`, 
-                              minHeight: `${printSettings.cardHeight * 0.5}mm` 
-                            }}
-                            className="flex-shrink-0 relative"
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">内容对齐</label>
+                          <select 
+                            value={printSettings.textAlign}
+                            onChange={(e) => setPrintSettings(prev => ({ ...prev, textAlign: e.target.value }))}
+                            className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                           >
-                            <div 
-                              className="absolute top-0 left-0 flex flex-col bg-white box-border break-inside-avoid shadow-lg transition-all duration-300 origin-top-left"
-                              style={{ 
-                                width: `${printSettings.cardWidth}mm`, 
-                                minHeight: `${printSettings.cardHeight}mm`,
-                                border: printSettings.cardStyle === 'style1' ? `4px double ${printSettings.themeColor}` : 'none',
-                                borderRadius: printSettings.cardStyle === 'style1' ? '20px' : '0',
-                                padding: '20px',
-                                transform: 'scale(0.5)'
-                              }}
-                            >
-                            {printSettings.cardStyle === 'style1' ? (
-                              <>
-                                <div className="text-center border-b-2 pb-3 mb-3" style={{ borderColor: printSettings.themeColor }}>
-                                  <div 
-                                    className="mb-1"
-                                    style={{ 
-                                      color: printSettings.themeColor,
-                                      fontFamily: printSettings.titleFontFamily, 
-                                      fontSize: `${printSettings.titleFontSize}px`,
-                                      letterSpacing: '4px'
-                                    }}
-                                  >
-                                    {printSettings.cardTitle}
-                                  </div>
-                                  <div 
-                                    className="font-black"
-                                    style={{ color: printSettings.themeColor, fontSize: `${printSettings.numberFontSize}px`, fontFamily: printSettings.numberFontFamily }}
-                                  >
-                                    {table.number}号桌
-                                  </div>
-                                </div>
-                                
-                                {printSettings.showMembers ? (
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1" style={{ fontFamily: printSettings.contentFontFamily }}>
-                                    {table.members.map((m, idx) => (
-                                      <div key={m.id} className="flex items-center p-2 bg-slate-50 rounded-lg">
-                                        {printSettings.showIndex && (
-                                          <div 
-                                            className="font-bold text-slate-400 mr-3 flex-shrink-0 text-right"
-                                            style={{ 
-                                              fontSize: `${printSettings.contentFontSize * 1.2}px`,
-                                              width: '1.5em'
-                                            }}
-                                          >
-                                            {idx + 1}
-                                          </div>
-                                        )}
-                                        <div className="flex-1 overflow-hidden" style={{ textAlign: printSettings.textAlign as any }}>
-                                          <div 
-                                            className="font-bold text-slate-900 whitespace-nowrap overflow-hidden text-ellipsis"
-                                            style={{ fontSize: `${printSettings.contentFontSize * 1.2}px` }}
-                                          >
-                                            {m.name}
-                                          </div>
-                                          {(printSettings.showDepartment || printSettings.showRole) && (
-                                            <div 
-                                              className="text-slate-500 mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis"
-                                              style={{ fontSize: `${printSettings.contentFontSize}px` }}
-                                            >
-                                              {printSettings.showDepartment ? m.department : ''}
-                                              {printSettings.showDepartment && printSettings.showRole ? ' · ' : ''}
-                                              {printSettings.showRole ? m.role : ''}
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <div className="flex-1"></div>
-                                )}
-                                
-                                <div className="mt-3 text-center text-[10px] text-slate-400" style={{ fontFamily: printSettings.footerFontFamily }}>
-                                  {printSettings.footerText}
-                                </div>
-                              </>
-                            ) : (
-                              <div className="flex flex-col h-full" style={{ color: printSettings.themeColor }}>
-                                <div className="text-center mb-8">
-                                  <div className="flex items-baseline justify-center gap-2 mb-4">
-                                    <span 
-                                      className="font-black"
-                                      style={{ fontSize: `${printSettings.numberFontSize}px`, fontFamily: printSettings.numberFontFamily }}
-                                    >
-                                      {table.number} 号桌
-                                    </span>
-                                    <span 
-                                      className="font-medium"
-                                      style={{ fontSize: `${printSettings.titleFontSize}px`, fontFamily: printSettings.titleFontFamily }}
-                                    >
-                                      ({table.members.length}人)
-                                    </span>
-                                  </div>
-                                  <div 
-                                    className="font-medium"
-                                    style={{ fontSize: `${printSettings.titleFontSize * 0.8}px`, fontFamily: printSettings.titleFontFamily }}
-                                  >
-                                    ({getTableDepartments(table.members)})
-                                  </div>
-                                </div>
-                                
-                                <div className="flex-1 flex flex-col items-center justify-start gap-4" style={{ fontFamily: printSettings.contentFontFamily }}>
-                                  {table.members.map(m => (
-                                    <div 
-                                      key={m.id} 
-                                      className="font-bold whitespace-nowrap"
-                                      style={{ fontSize: `${printSettings.contentFontSize * 1.5}px` }}
-                                    >
-                                      {renderJustifiedName(m.name, printSettings.contentFontSize * 1.5)}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            </div>
+                            <option value="left">居左</option>
+                            <option value="center">居中</option>
+                            <option value="right">居右</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+              
+              {printSettings.cardStyle === 'style2' && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">内容字号 (px)</label>
+                  <input 
+                    type="number" 
+                    value={printSettings.contentFontSize}
+                    onChange={(e) => setPrintSettings(prev => ({ ...prev, contentFontSize: parseInt(e.target.value) || 30 }))}
+                    className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Preview Panel */}
+          <div className="w-full md:w-7/12 flex flex-col items-center bg-slate-100 dark:bg-slate-900 rounded-lg p-6 overflow-auto relative min-h-[400px] h-full">
+            <div className="sticky top-0 self-start text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-6 -ml-6 mb-4">打印预览 ({tables.length}桌)</div>
+            
+            <div className="flex flex-col gap-8 items-center w-full pt-2">
+              {tables.map((table, tableIndex) => (
+                <div key={table.number} className="flex flex-col items-center">
+                  <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">第 {tableIndex + 1} 页</div>
+                  {/* Scale wrapper to maintain layout space for scaled content */}
+                  <div 
+                    style={{ 
+                      width: `${printSettings.cardWidth * 0.5}mm`, 
+                      minHeight: `${printSettings.cardHeight * 0.5}mm` 
+                    }}
+                    className="flex-shrink-0 relative"
+                  >
+                    <div 
+                      className="absolute top-0 left-0 flex flex-col bg-white box-border break-inside-avoid shadow-lg transition-all duration-300 origin-top-left"
+                      style={{ 
+                        width: `${printSettings.cardWidth}mm`, 
+                        minHeight: `${printSettings.cardHeight}mm`,
+                        border: printSettings.cardStyle === 'style1' ? `4px double ${printSettings.themeColor}` : 'none',
+                        borderRadius: printSettings.cardStyle === 'style1' ? '20px' : '0',
+                        padding: '20px',
+                        transform: 'scale(0.5)'
+                      }}
+                    >
+                    {printSettings.cardStyle === 'style1' ? (
+                      <>
+                        <div className="text-center border-b-2 pb-3 mb-3" style={{ borderColor: printSettings.themeColor }}>
+                          <div 
+                            className="mb-1"
+                            style={{ 
+                              color: printSettings.themeColor,
+                              fontFamily: printSettings.titleFontFamily, 
+                              fontSize: `${printSettings.titleFontSize}px`,
+                              letterSpacing: '4px'
+                            }}
+                          >
+                            {printSettings.cardTitle}
+                          </div>
+                          <div 
+                            className="font-black"
+                            style={{ color: printSettings.themeColor, fontSize: `${printSettings.numberFontSize}px`, fontFamily: printSettings.numberFontFamily }}
+                          >
+                            {table.number}号桌
                           </div>
                         </div>
-                      ))}
+                        
+                        {printSettings.showMembers ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1" style={{ fontFamily: printSettings.contentFontFamily }}>
+                            {table.members.map((m, idx) => (
+                              <div key={m.id} className="flex items-center p-2 bg-slate-50 rounded-lg">
+                                {printSettings.showIndex && (
+                                  <div 
+                                    className="font-bold text-slate-400 mr-3 flex-shrink-0 text-right"
+                                    style={{ 
+                                      fontSize: `${printSettings.contentFontSize * 1.2}px`,
+                                      width: '1.5em'
+                                    }}
+                                  >
+                                    {idx + 1}
+                                  </div>
+                                )}
+                                <div className="flex-1 overflow-hidden" style={{ textAlign: printSettings.textAlign as any }}>
+                                  <div 
+                                    className="font-bold text-slate-900 whitespace-nowrap overflow-hidden text-ellipsis"
+                                    style={{ fontSize: `${printSettings.contentFontSize * 1.2}px` }}
+                                  >
+                                    {m.name}
+                                  </div>
+                                  {(printSettings.showDepartment || printSettings.showRole) && (
+                                    <div 
+                                      className="text-slate-500 mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis"
+                                      style={{ fontSize: `${printSettings.contentFontSize}px` }}
+                                    >
+                                      {printSettings.showDepartment ? m.department : ''}
+                                      {printSettings.showDepartment && printSettings.showRole ? ' · ' : ''}
+                                      {printSettings.showRole ? m.role : ''}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="flex-1"></div>
+                        )}
+                        
+                        <div className="mt-3 text-center text-[10px] text-slate-400" style={{ fontFamily: printSettings.footerFontFamily }}>
+                          {printSettings.footerText}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col h-full" style={{ color: printSettings.themeColor }}>
+                        <div className="text-center mb-8">
+                          <div className="flex items-baseline justify-center gap-2 mb-4">
+                            <span 
+                              className="font-black"
+                              style={{ fontSize: `${printSettings.numberFontSize}px`, fontFamily: printSettings.numberFontFamily }}
+                            >
+                              {table.number} 号桌
+                            </span>
+                            <span 
+                              className="font-medium"
+                              style={{ fontSize: `${printSettings.titleFontSize}px`, fontFamily: printSettings.titleFontFamily }}
+                            >
+                              ({table.members.length}人)
+                            </span>
+                          </div>
+                          <div 
+                            className="font-medium"
+                            style={{ fontSize: `${printSettings.titleFontSize * 0.8}px`, fontFamily: printSettings.titleFontFamily }}
+                          >
+                            ({getTableDepartments(table.members)})
+                          </div>
+                        </div>
+                        
+                        <div className="flex-1 flex flex-col items-center justify-start gap-4" style={{ fontFamily: printSettings.contentFontFamily }}>
+                          {table.members.map(m => (
+                            <div 
+                              key={m.id} 
+                              className="font-bold whitespace-nowrap"
+                              style={{ fontSize: `${printSettings.contentFontSize * 1.5}px` }}
+                            >
+                              {renderJustifiedName(m.name, printSettings.contentFontSize * 1.5)}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     </div>
                   </div>
                 </div>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200 dark:border-slate-700 shrink-0">
-                <button type="button" onClick={() => setIsPrintModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">保存设置</button>
-                <button type="button" onClick={handlePrint} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">直接打印</button>
-              </div>
+              ))}
             </div>
           </div>
         </div>
-      )}
-      </div>
+      </BaseModal>
 
       {/* Print Warning Modal */}
-      {isPrintWarningOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto print:hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onClick={() => setIsPrintWarningOpen(false)}></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="relative z-10 inline-block align-bottom w-full bg-white dark:bg-slate-800 rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full animate-in zoom-in-95 duration-200">
-              <div className="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-amber-100 dark:bg-amber-900/30 sm:mx-0 sm:h-10 sm:w-10">
-                    <Printer className="h-6 w-6 text-amber-600" />
-                  </div>
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                    <h3 className="text-lg leading-6 font-medium text-slate-900 dark:text-white" id="modal-title">
-                      打印功能受限
-                    </h3>
-                    <div className="mt-2">
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        由于您当前处于预览模式，浏览器的打印功能可能无法正常工作。
-                        <br /><br />
-                        请点击右上角的<strong className="text-slate-700 dark:text-slate-300">“在新标签页中打开”</strong>按钮，或者复制当前网址到新标签页中打开，然后再进行打印。
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200 dark:border-slate-700">
-                <button 
-                  type="button" 
-                  onClick={() => setIsPrintWarningOpen(false)} 
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm"
-                >
-                  我知道了
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => {
-                    setIsPrintWarningOpen(false);
-                    window.print(); // 尝试强制打印
-                  }} 
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                >
-                  仍然尝试打印
-                </button>
-              </div>
+      <BaseModal
+        isOpen={isPrintWarningOpen}
+        onClose={() => setIsPrintWarningOpen(false)}
+        title="打印功能受限"
+        size="md"
+        footer={
+          <>
+            <button 
+              type="button" 
+              onClick={() => setIsPrintWarningOpen(false)} 
+              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm"
+            >
+              我知道了
+            </button>
+            <button 
+              type="button" 
+              onClick={() => {
+                setIsPrintWarningOpen(false);
+                window.print(); // 尝试强制打印
+              }} 
+              className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+            >
+              仍然尝试打印
+            </button>
+          </>
+        }
+      >
+        <div className="sm:flex sm:items-start">
+          <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-amber-100 dark:bg-amber-900/30 sm:mx-0 sm:h-10 sm:w-10">
+            <Printer className="h-6 w-6 text-amber-600" />
+          </div>
+          <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+            <div className="mt-2">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                由于您当前处于预览模式，浏览器的打印功能可能无法正常工作。
+                <br /><br />
+                请点击右上角的<strong className="text-slate-700 dark:text-slate-300">“在新标签页中打开”</strong>按钮，或者复制当前网址到新标签页中打开，然后再进行打印。
+              </p>
             </div>
           </div>
         </div>
-      )}
+      </BaseModal>
 
       {/* Printable Area */}
       <div id="printable-area" className="hidden print:flex print:flex-wrap print:gap-[10mm] print:justify-center print:items-start print:p-[10mm] print:w-full print:bg-white">

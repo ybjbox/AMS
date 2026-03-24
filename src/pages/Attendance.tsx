@@ -6,8 +6,14 @@ import { attendanceService } from '../services/attendance';
 
 export default function Attendance() {
   const [activeTab, setActiveTab] = useState<'records' | 'schedules' | 'anomalies' | 'shifts'>('records');
-  const { records, schedules, anomalies, setRecords, setSchedules, analyzeAnomalies, shifts, addShift, updateShift, deleteShift } = useAttendanceStore();
-  const { users } = useUserStore();
+  const { records, schedules, anomalies, setRecords, setSchedules, analyzeAnomalies, shifts, addShift, updateShift, deleteShift, fetchData, isLoading } = useAttendanceStore();
+  const { users, fetchUsers } = useUserStore();
+  
+  useEffect(() => {
+    fetchData();
+    fetchUsers();
+  }, [fetchData, fetchUsers]);
+
   const [recordsInput, setRecordsInput] = useState('');
   const [schedulesInput, setSchedulesInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -261,7 +267,16 @@ export default function Attendance() {
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-                    {records.slice(0, 50).map((record) => (
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                          <div className="flex flex-col items-center justify-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                            <p>加载中...</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : records.slice(0, 50).map((record) => (
                       <tr key={record.id}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-200">{record.employeeId}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-200">{record.employeeName}</td>
@@ -414,7 +429,16 @@ export default function Attendance() {
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-                    {filteredSchedules.slice(0, 50).map((schedule, idx) => (
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                          <div className="flex flex-col items-center justify-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                            <p>加载中...</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : filteredSchedules.slice(0, 50).map((schedule, idx) => (
                       <tr key={idx}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-200">{schedule.employeeId}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-200">{schedule.employeeName}</td>
@@ -496,7 +520,16 @@ export default function Attendance() {
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-                    {filteredAnomalies.map((anomaly) => (
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                          <div className="flex flex-col items-center justify-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                            <p>加载中...</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : filteredAnomalies.map((anomaly) => (
                       <tr key={anomaly.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-200">{anomaly.date}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{anomaly.employeeId}</td>
@@ -603,7 +636,16 @@ export default function Attendance() {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-                  {shifts.map((shift) => (
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                        <div className="flex flex-col items-center justify-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                          <p>加载中...</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : shifts.map((shift) => (
                     <tr key={shift.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-slate-200">{shift.name}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{shift.startTime}</td>

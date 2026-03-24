@@ -7,7 +7,7 @@ interface BaseModalProps {
   title: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | 'full';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | 'full';
   className?: string;
   bodyClassName?: string;
 }
@@ -47,6 +47,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
     '2xl': 'sm:max-w-2xl',
     '3xl': 'sm:max-w-3xl',
     '4xl': 'sm:max-w-4xl',
+    '5xl': 'sm:max-w-5xl',
     full: 'sm:max-w-[1600px] sm:w-[95vw] h-[95vh] sm:h-[90vh]',
   };
 

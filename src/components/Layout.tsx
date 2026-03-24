@@ -18,7 +18,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
     addTodo,
     addNotification
   } = useTodoStore();
-  const { users } = useUserStore();
+  const { users, fetchUsers } = useUserStore();
   const { systemIcon, theme, setTheme } = useAppSettings();
   
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -27,6 +27,10 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
   
   const location = useLocation();
   const notificationRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   useEffect(() => {
     if (sidebarOpen) {

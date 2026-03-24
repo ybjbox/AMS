@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { api } from '../services/mockApi';
 
 export type Folder = {
   id: string;
@@ -35,77 +35,166 @@ interface DocumentState {
   folders: Folder[];
   documents: Document[];
   documentSets: DocumentSet[];
-  addFolder: (folder: Folder) => void;
-  updateFolder: (id: string, folder: Partial<Folder>) => void;
-  removeFolder: (id: string) => void;
-  addDocument: (doc: Document) => void;
-  updateDocument: (id: string, doc: Partial<Document>) => void;
-  removeDocument: (id: string) => void;
-  addDocumentSet: (set: DocumentSet) => void;
-  updateDocumentSet: (id: string, set: Partial<DocumentSet>) => void;
-  removeDocumentSet: (id: string) => void;
+  isLoading: boolean;
+  error: string | null;
+  
+  fetchData: () => Promise<void>;
+  
+  addFolder: (folder: Folder) => Promise<void>;
+  updateFolder: (id: string, folder: Partial<Folder>) => Promise<void>;
+  removeFolder: (id: string) => Promise<void>;
+  
+  addDocument: (doc: Document) => Promise<void>;
+  updateDocument: (id: string, doc: Partial<Document>) => Promise<void>;
+  removeDocument: (id: string) => Promise<void>;
+  
+  addDocumentSet: (set: DocumentSet) => Promise<void>;
+  updateDocumentSet: (id: string, set: Partial<DocumentSet>) => Promise<void>;
+  removeDocumentSet: (id: string) => Promise<void>;
 }
 
-export const useDocumentStore = create<DocumentState>()(
-  persist(
-    (set) => ({
-      folders: [
-        { id: 'f1', name: '人事文件', parentId: null },
-        { id: 'f2', name: '入职办理', parentId: 'f1' },
-        { id: 'f3', name: '离职办理', parentId: 'f1' },
-        { id: 'f4', name: '公司制度', parentId: null },
-      ],
-      documents: [
-        { id: '1', name: '员工入职登记表.pdf', type: 'pdf', url: '#', size: 1024 * 500, uploadedAt: '2026-03-01', folderId: 'f2' },
-        { id: '2', name: '保密协议.pdf', type: 'pdf', url: '#', size: 1024 * 800, uploadedAt: '2026-03-01', folderId: 'f2' },
-        { id: '3', name: '员工手册.pdf', type: 'pdf', url: '#', size: 1024 * 2000, uploadedAt: '2026-03-01', folderId: 'f4' },
-        { id: '4', name: '离职申请表.pdf', type: 'pdf', url: '#', size: 1024 * 300, uploadedAt: '2026-03-02', folderId: 'f3' },
-        { id: '5', name: '交接清单.pdf', type: 'pdf', url: '#', size: 1024 * 400, uploadedAt: '2026-03-02', folderId: 'f3' },
-      ],
-      documentSets: [
-        { id: 'set1', name: '入职文件套件', description: '新员工入职需要填写的全部文件', documentIds: ['1', '2', '3'] },
-        { id: 'set2', name: '离职文件套件', description: '员工离职需要填写的全部文件', documentIds: ['4', '5'] },
-      ],
-      addFolder: (folder) => set((state) => ({ folders: [...state.folders, folder] })),
-      updateFolder: (id, folder) => set((state) => ({
-        folders: state.folders.map(f => f.id === id ? { ...f, ...folder } : f)
-      })),
-      removeFolder: (id) => set((state) => {
-        // Find all subfolders recursively to delete them and their documents
+export const useDocumentStore = create<DocumentState>()((set) => ({
+  folders: [],
+  documents: [],
+  documentSets: [],
+  isLoading: false,
+  error: null,
+
+  fetchData: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const [folders, documents, documentSets] = await Promise.all([
+        api.fetchFolders(),
+        api.fetchDocuments(),
+        api.fetchDocumentSets()
+      ]);
+      set({ folders, documents, documentSets, isLoading: false });
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+  addFolder: async (folder) => {
+    set({ isLoading: true, error: null });
+    try {
+      const newFolder = await api.createFolder(folder);
+      set((state) => ({ folders: [...state.folders, newFolder], isLoading: false }));
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+  updateFolder: async (id, folder) => {
+    set({ isLoading: true, error: null });
+    try {
+      const updatedFolder = await api.updateFolder(id, folder);
+      set((state) => ({
+        folders: state.folders.map(f => f.id === id ? updatedFolder : f),
+        isLoading: false
+      }));
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+  removeFolder: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.deleteFolder(id);
+      set((state) => {
         const getSubFolders = (parentId: string, allFolders: Folder[]): string[] => {
           const children = allFolders.filter(f => f.parentId === parentId).map(f => f.id);
           return children.reduce((acc, childId) => [...acc, ...getSubFolders(childId, allFolders)], children);
         };
         const folderIdsToRemove = [id, ...getSubFolders(id, state.folders)];
         
-        const remainingDocs = state.documents.filter(d => d.folderId === null || !folderIdsToRemove.includes(d.folderId));
         const removedDocIds = state.documents.filter(d => d.folderId !== null && folderIdsToRemove.includes(d.folderId)).map(d => d.id);
 
         return {
           folders: state.folders.filter(f => !folderIdsToRemove.includes(f.id)),
-          documents: remainingDocs,
+          documents: state.documents.filter(d => d.folderId === null || !folderIdsToRemove.includes(d.folderId)),
           documentSets: state.documentSets.map(s => ({
             ...s,
             documentIds: s.documentIds.filter(did => !removedDocIds.includes(did))
-          }))
+          })),
+          isLoading: false
         };
-      }),
-      addDocument: (doc) => set((state) => ({ documents: [...state.documents, doc] })),
-      updateDocument: (id, doc) => set((state) => ({
-        documents: state.documents.map(d => d.id === id ? { ...d, ...doc } : d)
-      })),
-      removeDocument: (id) => set((state) => ({ 
-        documents: state.documents.filter(d => d.id !== id),
-        documentSets: state.documentSets.map(s => ({ ...s, documentIds: s.documentIds.filter(did => did !== id) }))
-      })),
-      addDocumentSet: (docSet) => set((state) => ({ documentSets: [...state.documentSets, docSet] })),
-      updateDocumentSet: (id, docSet) => set((state) => ({
-        documentSets: state.documentSets.map(s => s.id === id ? { ...s, ...docSet } : s)
-      })),
-      removeDocumentSet: (id) => set((state) => ({ documentSets: state.documentSets.filter(s => s.id !== id) })),
-    }),
-    {
-      name: 'document-storage',
+      });
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
     }
-  )
-);
+  },
+
+  addDocument: async (doc) => {
+    set({ isLoading: true, error: null });
+    try {
+      const newDoc = await api.createDocument(doc);
+      set((state) => ({ documents: [...state.documents, newDoc], isLoading: false }));
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+  updateDocument: async (id, doc) => {
+    set({ isLoading: true, error: null });
+    try {
+      const updatedDoc = await api.updateDocument(id, doc);
+      set((state) => ({
+        documents: state.documents.map(d => d.id === id ? updatedDoc : d),
+        isLoading: false
+      }));
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+  removeDocument: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.deleteDocument(id);
+      set((state) => ({ 
+        documents: state.documents.filter(d => d.id !== id),
+        documentSets: state.documentSets.map(s => ({ ...s, documentIds: s.documentIds.filter(did => did !== id) })),
+        isLoading: false
+      }));
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+  addDocumentSet: async (docSet) => {
+    set({ isLoading: true, error: null });
+    try {
+      const newSet = await api.createDocumentSet(docSet);
+      set((state) => ({ documentSets: [...state.documentSets, newSet], isLoading: false }));
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+  updateDocumentSet: async (id, docSet) => {
+    set({ isLoading: true, error: null });
+    try {
+      const updatedSet = await api.updateDocumentSet(id, docSet);
+      set((state) => ({
+        documentSets: state.documentSets.map(s => s.id === id ? updatedSet : s),
+        isLoading: false
+      }));
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+  removeDocumentSet: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.deleteDocumentSet(id);
+      set((state) => ({ 
+        documentSets: state.documentSets.filter(s => s.id !== id),
+        isLoading: false
+      }));
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+}));

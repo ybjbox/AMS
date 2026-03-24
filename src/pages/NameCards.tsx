@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useUserStore } from '../store/users';
 import { useDepartments } from '../store/departments';
 import { IdCard, Users, Printer, Settings2, X, CheckSquare, Square, Plus, Minus, ChevronRight, Upload, FileDown, ChevronDown, FileText } from 'lucide-react';
+import { BaseModal } from '../components/ui/BaseModal';
 
 interface PrintSettings {
   paperSize: 'A4' | 'A5' | 'custom';
@@ -29,8 +30,12 @@ interface PrintSettings {
 }
 
 export default function NameCards() {
-  const { users } = useUserStore();
+  const { users, fetchUsers } = useUserStore();
   const { departments } = useDepartments();
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const [isUploadMenuOpen, setIsUploadMenuOpen] = useState(false);
   const [isManualInputOpen, setIsManualInputOpen] = useState(false);
@@ -838,138 +843,124 @@ export default function NameCards() {
       </div>
 
       {/* Participant Selection Modal */}
-      {isParticipantModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onClick={() => setIsParticipantModalOpen(false)}></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="relative z-10 inline-block align-bottom w-full bg-white dark:bg-slate-800 rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full animate-in zoom-in-95 duration-200">
-              <div className="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="flex justify-between items-center mb-5">
-                  <div className="flex items-center space-x-4">
-                    <h3 className="text-lg leading-6 font-medium text-slate-900 dark:text-white" id="modal-title">选择参与人员</h3>
-                    <button 
-                      onClick={toggleAllDeptsExpand}
-                      className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
-                    >
-                      {expandedDepts.size === Object.keys(groupedUsers).length ? '全部收起' : '全部展开'}
-                    </button>
+      <BaseModal
+        isOpen={isParticipantModalOpen}
+        onClose={() => setIsParticipantModalOpen(false)}
+        title={
+          <div className="flex items-center space-x-4">
+            <span className="text-lg leading-6 font-medium text-slate-900 dark:text-white">选择参与人员</span>
+            <button 
+              onClick={toggleAllDeptsExpand}
+              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+            >
+              {expandedDepts.size === Object.keys(groupedUsers).length ? '全部收起' : '全部展开'}
+            </button>
+          </div>
+        }
+        size="2xl"
+        bodyClassName="p-4 sm:p-6 max-h-[60vh] overflow-y-auto"
+        footer={
+          <button type="button" onClick={() => setIsParticipantModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">完成</button>
+        }
+      >
+        <div className="space-y-4 pr-2">
+          {Object.entries(groupedUsers).map(([dept, deptUsers]: [string, any[]]) => {
+            const allSelected = deptUsers.every(u => selectedUserIds.has(u.id));
+            const someSelected = deptUsers.some(u => selectedUserIds.has(u.id)) && !allSelected;
+            const isExpanded = expandedDepts.has(dept);
+            return (
+              <div key={dept} className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+                <div 
+                  className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
+                  onClick={() => toggleDepartmentSelection(dept, !allSelected)}
+                >
+                  <div className="flex items-center">
+                    {allSelected ? (
+                      <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-500 mr-3" />
+                    ) : someSelected ? (
+                      <div className="w-5 h-5 bg-blue-600 dark:bg-blue-500 rounded flex items-center justify-center mr-3">
+                        <div className="w-3 h-0.5 bg-white"></div>
+                      </div>
+                    ) : (
+                      <Square className="w-5 h-5 text-slate-400 dark:text-slate-500 mr-3" />
+                    )}
+                    <span className="font-medium text-slate-800 dark:text-slate-200">{dept}</span>
+                    <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">({deptUsers.filter(u => selectedUserIds.has(u.id)).length}/{deptUsers.length})</span>
                   </div>
-                  <button onClick={() => setIsParticipantModalOpen(false)} className="text-slate-400 dark:text-slate-500 hover:text-slate-500 dark:hover:text-slate-400 transition-colors">
-                    <X className="h-5 w-5" />
+                  <button 
+                    onClick={(e) => toggleDeptExpand(dept, e)}
+                    className="p-1 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    <ChevronRight className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                   </button>
                 </div>
-                <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-4">
-                  {Object.entries(groupedUsers).map(([dept, deptUsers]: [string, any[]]) => {
-                    const allSelected = deptUsers.every(u => selectedUserIds.has(u.id));
-                    const someSelected = deptUsers.some(u => selectedUserIds.has(u.id)) && !allSelected;
-                    const isExpanded = expandedDepts.has(dept);
-                    return (
-                      <div key={dept} className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
-                        <div 
-                          className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
-                          onClick={() => toggleDepartmentSelection(dept, !allSelected)}
-                        >
-                          <div className="flex items-center">
-                            {allSelected ? (
-                              <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-500 mr-3" />
-                            ) : someSelected ? (
-                              <div className="w-5 h-5 bg-blue-600 dark:bg-blue-500 rounded flex items-center justify-center mr-3">
-                                <div className="w-3 h-0.5 bg-white"></div>
-                              </div>
-                            ) : (
-                              <Square className="w-5 h-5 text-slate-400 dark:text-slate-500 mr-3" />
-                            )}
-                            <span className="font-medium text-slate-800 dark:text-slate-200">{dept}</span>
-                            <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">({deptUsers.filter(u => selectedUserIds.has(u.id)).length}/{deptUsers.length})</span>
-                          </div>
-                          <button 
-                            onClick={(e) => toggleDeptExpand(dept, e)}
-                            className="p-1 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                          >
-                            <ChevronRight className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                          </button>
-                        </div>
-                        {isExpanded && (
-                          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
-                            {deptUsers.map(u => (
-                              <label key={u.id} className="flex items-center space-x-2 cursor-pointer group">
-                                <input 
-                                  type="checkbox" 
-                                  checked={selectedUserIds.has(u.id)}
-                                  onChange={() => toggleUserSelection(u.id)}
-                                  className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-white dark:bg-slate-700"
-                                />
-                                <span className="text-sm text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white">{u.name}</span>
-                              </label>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                {isExpanded && (
+                  <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
+                    {deptUsers.map(u => (
+                      <label key={u.id} className="flex items-center space-x-2 cursor-pointer group">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedUserIds.has(u.id)}
+                          onChange={() => toggleUserSelection(u.id)}
+                          className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-white dark:bg-slate-700"
+                        />
+                        <span className="text-sm text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white">{u.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200 dark:border-slate-700">
-                <button type="button" onClick={() => setIsParticipantModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">完成</button>
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
-      )}
+      </BaseModal>
 
       {/* Manual Input Modal */}
-      {isManualInputOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" aria-hidden="true" onClick={() => setIsManualInputOpen(false)}></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="relative z-10 inline-block align-bottom w-full bg-white dark:bg-slate-800 rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full animate-in zoom-in-95 duration-200">
-              <div className="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 sm:mx-0 sm:h-10 sm:w-10">
-                    <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" aria-hidden="true" />
-                  </div>
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                    <h3 className="text-lg leading-6 font-medium text-slate-900 dark:text-white" id="modal-title">
-                      手动输入名单
-                    </h3>
-                    <div className="mt-2">
-                      <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                        请输入人员名单，每行一个。支持使用空格或逗号分隔姓名、部门和职务。例如：<br/>
-                        <span className="font-mono bg-slate-100 dark:bg-slate-700 px-1 rounded">张三 技术部 工程师</span>
-                      </p>
-                      <textarea
-                        rows={10}
-                        className="w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm font-mono bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                        placeholder="张三 技术部 工程师&#10;李四 市场部 总监"
-                        value={manualInputText}
-                        onChange={(e) => setManualInputText(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200 dark:border-slate-700">
-                <button 
-                  type="button" 
-                  onClick={handleManualInputSubmit} 
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm"
-                >
-                  确认导入
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => setIsManualInputOpen(false)} 
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                >
-                  取消
-                </button>
-              </div>
+      <BaseModal
+        isOpen={isManualInputOpen}
+        onClose={() => setIsManualInputOpen(false)}
+        title="手动输入名单"
+        size="2xl"
+        footer={
+          <>
+            <button 
+              type="button" 
+              onClick={() => setIsManualInputOpen(false)} 
+              className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+            >
+              取消
+            </button>
+            <button 
+              type="button" 
+              onClick={handleManualInputSubmit} 
+              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm"
+            >
+              确认导入
+            </button>
+          </>
+        }
+      >
+        <div className="sm:flex sm:items-start">
+          <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 sm:mx-0 sm:h-10 sm:w-10">
+            <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" aria-hidden="true" />
+          </div>
+          <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+            <div className="mt-2">
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                请输入人员名单，每行一个。支持使用空格或逗号分隔姓名、部门和职务。例如：<br/>
+                <span className="font-mono bg-slate-100 dark:bg-slate-700 px-1 rounded">张三 技术部 工程师</span>
+              </p>
+              <textarea
+                rows={10}
+                className="w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm font-mono bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                placeholder="张三 技术部 工程师&#10;李四 市场部 总监"
+                value={manualInputText}
+                onChange={(e) => setManualInputText(e.target.value)}
+              />
             </div>
           </div>
         </div>
-      )}
+      </BaseModal>
 
       {/* Print Styles */}
       <style>{`

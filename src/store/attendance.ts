@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { api } from '../services/mockApi';
 
 export type Shift = {
   id: string;
@@ -37,68 +37,110 @@ interface AttendanceState {
   schedules: EmployeeSchedule[];
   records: PunchRecord[];
   anomalies: Anomaly[];
+  isLoading: boolean;
+  error: string | null;
   
-  addShift: (shift: Shift) => void;
-  updateShift: (id: string, shift: Partial<Shift>) => void;
-  deleteShift: (id: string) => void;
+  fetchData: () => Promise<void>;
   
-  setSchedules: (schedules: EmployeeSchedule[]) => void;
-  setRecords: (records: PunchRecord[]) => void;
+  addShift: (shift: Shift) => Promise<void>;
+  updateShift: (id: string, shift: Partial<Shift>) => Promise<void>;
+  deleteShift: (id: string) => Promise<void>;
   
-  analyzeAnomalies: () => void;
+  setSchedules: (schedules: EmployeeSchedule[]) => Promise<void>;
+  setRecords: (records: PunchRecord[]) => Promise<void>;
+  
+  analyzeAnomalies: () => Promise<void>;
 }
 
-export const useAttendanceStore = create<AttendanceState>()(
-  persist(
-    (set, get) => ({
-      shifts: [
-        { id: '1', name: '正常班', startTime: '09:00', endTime: '18:00' }
-      ],
-      schedules: [],
-      records: [],
-      anomalies: [],
-      
-      addShift: (shift) => set((state) => ({ shifts: [...state.shifts, shift] })),
-      updateShift: (id, shift) => set((state) => ({
-        shifts: state.shifts.map(s => s.id === id ? { ...s, ...shift } : s)
-      })),
-      deleteShift: (id) => set((state) => ({
-        shifts: state.shifts.filter(s => s.id !== id)
-      })),
-      
-      setSchedules: (schedules) => set({ schedules }),
-      setRecords: (records) => set({ records }),
-      
-      analyzeAnomalies: () => {
-        // Mock backend processing
-        const mockAnomalies: Anomaly[] = [
-          {
-            id: '1',
-            employeeId: 'EMP001',
-            employeeName: '张三',
-            date: '2026-03-16',
-            type: 'LATE_5',
-            minutes: 10,
-            description: '迟到 10 分钟'
-          },
-          {
-            id: '2',
-            employeeId: 'EMP002',
-            employeeName: '李四',
-            date: '2026-03-16',
-            type: 'MISSING_OUT',
-            description: '缺下班卡'
-          }
-        ];
-        
-        set({ anomalies: mockAnomalies });
-      }
-    }),
-    {
-      name: 'attendance-storage',
+export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
+  shifts: [],
+  schedules: [],
+  records: [],
+  anomalies: [],
+  isLoading: false,
+  error: null,
+
+  fetchData: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const [shifts, schedules, records, anomalies] = await Promise.all([
+        api.fetchShifts(),
+        api.fetchSchedules(),
+        api.fetchRecords(),
+        api.fetchAnomalies()
+      ]);
+      set({ shifts, schedules, records, anomalies, isLoading: false });
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
     }
-  )
-);
+  },
+
+  addShift: async (shift) => {
+    set({ isLoading: true, error: null });
+    try {
+      const newShift = await api.createShift(shift);
+      set((state) => ({ shifts: [...state.shifts, newShift], isLoading: false }));
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+  updateShift: async (id, shift) => {
+    set({ isLoading: true, error: null });
+    try {
+      const updatedShift = await api.updateShift(id, shift);
+      set((state) => ({
+        shifts: state.shifts.map(s => s.id === id ? updatedShift : s),
+        isLoading: false
+      }));
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+  deleteShift: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.deleteShift(id);
+      set((state) => ({
+        shifts: state.shifts.filter(s => s.id !== id),
+        isLoading: false
+      }));
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+  setSchedules: async (schedules) => {
+    set({ isLoading: true, error: null });
+    try {
+      const updatedSchedules = await api.updateSchedules(schedules);
+      set({ schedules: updatedSchedules, isLoading: false });
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+  setRecords: async (records) => {
+    set({ isLoading: true, error: null });
+    try {
+      const updatedRecords = await api.updateRecords(records);
+      set({ records: updatedRecords, isLoading: false });
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
+
+  analyzeAnomalies: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const anomalies = await api.analyzeAnomalies();
+      set({ anomalies, isLoading: false });
+    } catch (error: any) {
+      set({ error: error.message, isLoading: false });
+    }
+  }
+}));
 
 function timeToMinutes(time: string): number {
   const [h, m] = time.split(':').map(Number);

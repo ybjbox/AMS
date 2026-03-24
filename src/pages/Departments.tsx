@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronDown, Folder, FolderOpen, Plus, Edit2, Trash2, Building2, X, Briefcase } from 'lucide-react';
 import { useDepartments, DepartmentNode, RoleNode, flattenDepartments } from '../store/departments';
+import { BaseModal } from '../components/ui/BaseModal';
 
 type ModalState = {
   isOpen: boolean;
@@ -393,131 +394,95 @@ export default function Departments() {
       </div>
 
       {/* Department Modal */}
-      {modal.isOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div 
-              className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" 
-              aria-hidden="true"
-              onClick={() => setModal(prev => ({ ...prev, isOpen: false }))}
-            ></div>
-
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-            <div className="relative z-10 inline-block align-bottom w-full bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full animate-in zoom-in-95 duration-200">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="flex justify-between items-center mb-5">
-                  <h3 className="text-lg leading-6 font-medium text-slate-900" id="modal-title">
-                    {modal.mode === 'add' ? (modal.parentId ? '新增子部门' : '新增一级部门') : '编辑部门'}
-                  </h3>
-                  <button onClick={() => setModal(prev => ({ ...prev, isOpen: false }))} className="text-slate-400 hover:text-slate-500 transition-colors">
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                
-                <form id="dept-form" onSubmit={handleModalSubmit} className="space-y-4">
-                  {modal.mode === 'add' && modal.parentId && (
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">上级部门</label>
-                      <input 
-                        type="text" 
-                        disabled 
-                        value={flatDepts.find(d => d.id === modal.parentId)?.name || ''} 
-                        className="block w-full border border-slate-200 bg-slate-50 rounded-md shadow-sm py-2 px-3 text-slate-500 sm:text-sm" 
-                      />
-                    </div>
-                  )}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">部门名称 <span className="text-red-500">*</span></label>
-                    <input 
-                      required 
-                      autoFocus
-                      name="name"
-                      type="text" 
-                      defaultValue={modal.defaultName} 
-                      placeholder="请输入部门名称"
-                      className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">优先级</label>
-                    <input 
-                      name="priority"
-                      type="number" 
-                      defaultValue={modal.defaultPriority} 
-                      placeholder="数字越大越靠前"
-                      className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
-                    />
-                    <p className="mt-1 text-xs text-slate-500">数字越大，在列表中的排序越靠前</p>
-                  </div>
-                </form>
-              </div>
-              <div className="bg-slate-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200">
-                <button type="submit" form="dept-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button>
-                <button type="button" onClick={() => setModal(prev => ({ ...prev, isOpen: false }))} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
-              </div>
+      <BaseModal
+        isOpen={modal.isOpen}
+        onClose={() => setModal(prev => ({ ...prev, isOpen: false }))}
+        title={modal.mode === 'add' ? (modal.parentId ? '新增子部门' : '新增一级部门') : '编辑部门'}
+        size="md"
+        footer={
+          <>
+            <button type="button" onClick={() => setModal(prev => ({ ...prev, isOpen: false }))} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
+            <button type="submit" form="dept-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+          </>
+        }
+      >
+        <form id="dept-form" onSubmit={handleModalSubmit} className="space-y-4">
+          {modal.mode === 'add' && modal.parentId && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">上级部门</label>
+              <input 
+                type="text" 
+                disabled 
+                value={flatDepts.find(d => d.id === modal.parentId)?.name || ''} 
+                className="block w-full border border-slate-200 bg-slate-50 rounded-md shadow-sm py-2 px-3 text-slate-500 sm:text-sm" 
+              />
             </div>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">部门名称 <span className="text-red-500">*</span></label>
+            <input 
+              required 
+              autoFocus
+              name="name"
+              type="text" 
+              defaultValue={modal.defaultName} 
+              placeholder="请输入部门名称"
+              className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+            />
           </div>
-        </div>
-      )}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">优先级</label>
+            <input 
+              name="priority"
+              type="number" 
+              defaultValue={modal.defaultPriority} 
+              placeholder="数字越大越靠前"
+              className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+            />
+            <p className="mt-1 text-xs text-slate-500">数字越大，在列表中的排序越靠前</p>
+          </div>
+        </form>
+      </BaseModal>
 
       {/* Role Modal */}
-      {roleModal.isOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div 
-              className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" 
-              aria-hidden="true"
-              onClick={() => setRoleModal(prev => ({ ...prev, isOpen: false }))}
-            ></div>
-
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-            <div className="relative z-10 inline-block align-bottom w-full bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full animate-in zoom-in-95 duration-200">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="flex justify-between items-center mb-5">
-                  <h3 className="text-lg leading-6 font-medium text-slate-900" id="modal-title">
-                    {roleModal.mode === 'add' ? '新增职位' : '编辑职位'}
-                  </h3>
-                  <button onClick={() => setRoleModal(prev => ({ ...prev, isOpen: false }))} className="text-slate-400 hover:text-slate-500 transition-colors">
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                
-                <form id="role-form" onSubmit={handleRoleModalSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">职位名称 <span className="text-red-500">*</span></label>
-                    <input 
-                      required 
-                      autoFocus
-                      name="name"
-                      type="text" 
-                      defaultValue={roleModal.defaultName} 
-                      placeholder="请输入职位名称"
-                      className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">优先级</label>
-                    <input 
-                      name="priority"
-                      type="number" 
-                      defaultValue={roleModal.defaultPriority} 
-                      placeholder="数字越大越靠前"
-                      className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
-                    />
-                    <p className="mt-1 text-xs text-slate-500">数字越大，在列表中的排序越靠前</p>
-                  </div>
-                </form>
-              </div>
-              <div className="bg-slate-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200">
-                <button type="submit" form="role-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button>
-                <button type="button" onClick={() => setRoleModal(prev => ({ ...prev, isOpen: false }))} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
-              </div>
-            </div>
+      <BaseModal
+        isOpen={roleModal.isOpen}
+        onClose={() => setRoleModal(prev => ({ ...prev, isOpen: false }))}
+        title={roleModal.mode === 'add' ? '新增职位' : '编辑职位'}
+        size="md"
+        footer={
+          <>
+            <button type="button" onClick={() => setRoleModal(prev => ({ ...prev, isOpen: false }))} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
+            <button type="submit" form="role-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+          </>
+        }
+      >
+        <form id="role-form" onSubmit={handleRoleModalSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">职位名称 <span className="text-red-500">*</span></label>
+            <input 
+              required 
+              autoFocus
+              name="name"
+              type="text" 
+              defaultValue={roleModal.defaultName} 
+              placeholder="请输入职位名称"
+              className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+            />
           </div>
-        </div>
-      )}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">优先级</label>
+            <input 
+              name="priority"
+              type="number" 
+              defaultValue={roleModal.defaultPriority} 
+              placeholder="数字越大越靠前"
+              className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+            />
+            <p className="mt-1 text-xs text-slate-500">数字越大，在列表中的排序越靠前</p>
+          </div>
+        </form>
+      </BaseModal>
     </div>
   );
 }

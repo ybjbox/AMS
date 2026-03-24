@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useUserStore } from '../store/users';
 import { useContractStore, defaultTemplate } from '../store/contracts';
 import { Search, Filter, FileSignature, Printer, Eye, X, FileEdit, Upload, Save } from 'lucide-react';
+import { BaseModal } from '../components/ui/BaseModal';
 
 const ContractTemplate = ({ user }: { user: any }) => {
   const { template } = useContractStore();
@@ -41,9 +42,13 @@ const ContractTemplate = ({ user }: { user: any }) => {
 };
 
 export default function Contracts() {
-  const { users } = useUserStore();
+  const { users, fetchUsers } = useUserStore();
   const { template, setTemplate } = useContractStore();
   
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
@@ -261,52 +266,56 @@ export default function Contracts() {
       </div>
 
       {/* Contract Preview Modal */}
-      {isPreviewOpen && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center">
-                <FileSignature className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
-                劳动合同预览 - {selectedUser.name}
-              </h3>
-              <div className="flex items-center space-x-2">
-                <div className="flex items-center bg-slate-100 dark:bg-slate-700 p-1 rounded-lg mr-2">
-                  <button
-                    onClick={() => setIsDoubleSided(false)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${!isDoubleSided ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
-                  >
-                    单面
-                  </button>
-                  <button
-                    onClick={() => setIsDoubleSided(true)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${isDoubleSided ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
-                  >
-                    双面
-                  </button>
-                </div>
-                <button
-                  onClick={handlePrint}
-                  className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Printer className="w-4 h-4 mr-2" />
-                  打印合同
-                </button>
-                <button
-                  onClick={() => setIsPreviewOpen(false)}
-                  className="p-2 text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+      <BaseModal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        title={
+          <div className="flex items-center">
+            <FileSignature className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
+            劳动合同预览 - {selectedUser?.name}
+          </div>
+        }
+        size="4xl"
+        bodyClassName="p-0"
+        footer={
+          <div className="flex items-center w-full justify-between">
+            <div className="flex items-center bg-slate-100 dark:bg-slate-700 p-1 rounded-lg">
+              <button
+                onClick={() => setIsDoubleSided(false)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${!isDoubleSided ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+              >
+                单面
+              </button>
+              <button
+                onClick={() => setIsDoubleSided(true)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${isDoubleSided ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+              >
+                双面
+              </button>
             </div>
-            
-            <div className="flex-1 overflow-y-auto p-8 bg-slate-100 dark:bg-slate-900">
-              {/* Printable Contract Area */}
-              <ContractTemplate user={selectedUser} />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsPreviewOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={handlePrint}
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Printer className="w-4 h-4 mr-2" />
+                打印合同
+              </button>
             </div>
           </div>
+        }
+      >
+        <div className="flex-1 overflow-y-auto p-8 bg-slate-100 dark:bg-slate-900 w-full h-[70vh]">
+          {/* Printable Contract Area */}
+          {selectedUser && <ContractTemplate user={selectedUser} />}
         </div>
-      )}
+      </BaseModal>
 
       {/* Hidden Printable Area for Direct Print */}
       <div className="hidden">
@@ -316,95 +325,101 @@ export default function Contracts() {
       </div>
 
       {/* Template Editor Modal */}
-      {isTemplateEditorOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center">
-                <FileEdit className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
-                劳动合同模板设置
-              </h3>
-              <div className="flex items-center space-x-2">
-                <input 
-                  type="file" 
-                  accept=".html,.txt" 
-                  className="hidden" 
-                  ref={fileInputRef}
-                  onChange={handleFileUpload}
-                />
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 transition-colors"
-                >
-                  <Upload className="w-4 h-4 mr-1" />
-                  上传模板
-                </button>
-                <button
-                  onClick={() => {
-                    setTemplate(editingTemplate);
-                    setIsTemplateEditorOpen(false);
-                  }}
-                  className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  保存
-                </button>
-                <button
-                  onClick={() => setIsTemplateEditorOpen(false)}
-                  className="p-2 text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+      <BaseModal
+        isOpen={isTemplateEditorOpen}
+        onClose={() => setIsTemplateEditorOpen(false)}
+        title={
+          <div className="flex items-center">
+            <FileEdit className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
+            劳动合同模板设置
+          </div>
+        }
+        size="5xl"
+        bodyClassName="p-0"
+        footer={
+          <div className="flex items-center w-full justify-between">
+            <div className="flex items-center">
+              <input 
+                type="file" 
+                accept=".html,.txt" 
+                className="hidden" 
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center px-3 py-1.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 transition-colors"
+              >
+                <Upload className="w-4 h-4 mr-1" />
+                上传模板
+              </button>
             </div>
-            
-            <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
-              <div className="w-full md:w-2/3 p-4 flex flex-col border-r border-slate-200 dark:border-slate-700">
-                 <div className="mb-2 flex justify-between items-center">
-                   <span className="text-sm font-medium text-slate-700 dark:text-slate-300">HTML 模板源码</span>
-                   <button 
-                     onClick={() => setEditingTemplate(defaultTemplate)}
-                     className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                   >
-                     恢复默认模板
-                   </button>
-                 </div>
-                 <textarea
-                   value={editingTemplate}
-                   onChange={(e) => setEditingTemplate(e.target.value)}
-                   className="flex-1 w-full p-4 font-mono text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                   spellCheck={false}
-                 />
-              </div>
-              <div className="w-full md:w-1/3 p-4 bg-slate-50 dark:bg-slate-800/50 overflow-y-auto">
-                <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-4">可用变量</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">在左侧模板中使用以下变量，生成合同时会自动替换为员工的实际信息。</p>
-                <div className="space-y-2">
-                  {[
-                    { key: '{name}', desc: '员工姓名' },
-                    { key: '{idCard}', desc: '身份证号码' },
-                    { key: '{phone}', desc: '联系电话' },
-                    { key: '{department}', desc: '所属部门' },
-                    { key: '{role}', desc: '担任岗位' },
-                    { key: '{contractYears}', desc: '合同年限' },
-                    { key: '{signYear}', desc: '签订年份' },
-                    { key: '{signMonth}', desc: '签订月份' },
-                    { key: '{signDay}', desc: '签订日期' },
-                    { key: '{expiryYear}', desc: '到期年份' },
-                    { key: '{expiryMonth}', desc: '到期月份' },
-                    { key: '{expiryDay}', desc: '到期日期' },
-                  ].map(v => (
-                    <div key={v.key} className="flex items-center justify-between bg-white dark:bg-slate-700 p-2 rounded border border-slate-200 dark:border-slate-600">
-                      <code className="text-xs text-blue-600 dark:text-blue-400 font-mono bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">{v.key}</code>
-                      <span className="text-xs text-slate-600 dark:text-slate-300">{v.desc}</span>
-                    </div>
-                  ))}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsTemplateEditorOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={() => {
+                  setTemplate(editingTemplate);
+                  setIsTemplateEditorOpen(false);
+                }}
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                保存
+              </button>
+            </div>
+          </div>
+        }
+      >
+        <div className="flex-1 overflow-hidden flex flex-col md:flex-row w-full h-[70vh]">
+          <div className="w-full md:w-2/3 p-4 flex flex-col border-r border-slate-200 dark:border-slate-700">
+             <div className="mb-2 flex justify-between items-center">
+               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">HTML 模板源码</span>
+               <button 
+                 onClick={() => setEditingTemplate(defaultTemplate)}
+                 className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
+               >
+                 恢复默认模板
+               </button>
+             </div>
+             <textarea
+               value={editingTemplate}
+               onChange={(e) => setEditingTemplate(e.target.value)}
+               className="flex-1 w-full p-4 font-mono text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+               spellCheck={false}
+             />
+          </div>
+          <div className="w-full md:w-1/3 p-4 bg-slate-50 dark:bg-slate-800/50 overflow-y-auto">
+            <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-4">可用变量</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">在左侧模板中使用以下变量，生成合同时会自动替换为员工的实际信息。</p>
+            <div className="space-y-2">
+              {[
+                { key: '{name}', desc: '员工姓名' },
+                { key: '{idCard}', desc: '身份证号码' },
+                { key: '{phone}', desc: '联系电话' },
+                { key: '{department}', desc: '所属部门' },
+                { key: '{role}', desc: '担任岗位' },
+                { key: '{contractYears}', desc: '合同年限' },
+                { key: '{signYear}', desc: '签订年份' },
+                { key: '{signMonth}', desc: '签订月份' },
+                { key: '{signDay}', desc: '签订日期' },
+                { key: '{expiryYear}', desc: '到期年份' },
+                { key: '{expiryMonth}', desc: '到期月份' },
+                { key: '{expiryDay}', desc: '到期日期' },
+              ].map(v => (
+                <div key={v.key} className="flex items-center justify-between bg-white dark:bg-slate-700 p-2 rounded border border-slate-200 dark:border-slate-600">
+                  <code className="text-xs text-blue-600 dark:text-blue-400 font-mono bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">{v.key}</code>
+                  <span className="text-xs text-slate-600 dark:text-slate-300">{v.desc}</span>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
-      )}
+      </BaseModal>
     </div>
   );
 }

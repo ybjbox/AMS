@@ -1,11 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FileText, Folder, Plus, Trash2, Printer, Upload, File, Image as ImageIcon, FileArchive, MoreVertical, X, Edit2, Check, Download, FolderPlus, ChevronRight, ChevronDown, FolderOpen, CornerDownRight, Search } from 'lucide-react';
 import { useDocumentStore, Document, DocumentSet, Folder as FolderType } from '../store/documents';
+import { BaseModal } from '../components/ui/BaseModal';
 
 export default function Documents() {
-  const { folders, documents, documentSets, addFolder, updateFolder, removeFolder, addDocument, updateDocument, removeDocument, addDocumentSet, updateDocumentSet, removeDocumentSet } = useDocumentStore();
+  const { folders, documents, documentSets, fetchData, isLoading, addFolder, updateFolder, removeFolder, addDocument, updateDocument, removeDocument, addDocumentSet, updateDocumentSet, removeDocumentSet } = useDocumentStore();
   const [activeTab, setActiveTab] = useState<'files' | 'sets'>('sets');
   
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
   // Folder state
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
@@ -447,7 +452,16 @@ export default function Documents() {
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-                      {currentDocs.map((doc) => (
+                      {isLoading ? (
+                        <tr>
+                          <td colSpan={4} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                            <div className="flex flex-col items-center justify-center">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                              <p>加载中...</p>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : currentDocs.map((doc) => (
                         <tr key={doc.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
@@ -512,7 +526,14 @@ export default function Documents() {
 
       {activeTab === 'sets' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {documentSets.length === 0 ? (
+          {isLoading ? (
+            <div className="col-span-full text-center py-16 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+              <div className="flex flex-col items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                <p className="text-slate-500 dark:text-slate-400">加载中...</p>
+              </div>
+            </div>
+          ) : documentSets.length === 0 ? (
             <div className="col-span-full text-center py-16 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 border-dashed">
               <Folder className="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600" />
               <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-200">暂无文件套件</h3>
@@ -592,349 +613,292 @@ export default function Documents() {
       )}
 
       {/* Set Modal */}
-      {isSetModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div 
-              className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" 
-              aria-hidden="true"
-              onClick={() => setIsSetModalOpen(false)}
-            ></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="relative z-10 inline-block align-bottom w-full bg-white dark:bg-slate-800 rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full animate-in zoom-in-95 duration-200">
-              <div className="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="flex justify-between items-center mb-5">
-                  <h3 className="text-lg leading-6 font-medium text-slate-900 dark:text-white" id="modal-title">
-                    {editingSet ? '编辑文件套件' : '新建文件套件'}
-                  </h3>
-                  <button onClick={() => setIsSetModalOpen(false)} className="text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 transition-colors">
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                
-                <form id="set-form" onSubmit={handleSaveSet} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">套件名称 <span className="text-red-500">*</span></label>
-                    <input 
-                      required 
-                      autoFocus
-                      name="name"
-                      type="text" 
-                      defaultValue={editingSet?.name} 
-                      placeholder="如：入职文件套件"
-                      className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">描述说明</label>
-                    <textarea 
-                      name="description"
-                      rows={2}
-                      defaultValue={editingSet?.description} 
-                      placeholder="简要说明该套件的用途"
-                      className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 sm:text-sm resize-none" 
-                    />
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">选择包含的文件</label>
-                      <button 
-                        type="button"
-                        onClick={toggleAllModalFolders}
-                        className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-                      >
-                        {expandedModalFolders.size === folders.filter(f => documents.some(d => d.folderId === f.id)).length && expandedModalFolders.size > 0 ? '全部收起' : '全部展开'}
-                      </button>
-                    </div>
-                    <div className="max-h-60 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-md bg-slate-50 dark:bg-slate-800/50 p-2 space-y-1">
-                      {documents.length === 0 ? (
-                        <div className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">暂无文件，请先在文件库上传</div>
-                      ) : (
-                        <>
-                          {/* Root files */}
-                          {documents.filter(d => d.folderId === null).map(doc => (
-                            <label key={doc.id} className="flex items-center p-2 hover:bg-white dark:hover:bg-slate-700 rounded-md cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
-                              <input 
-                                type="checkbox" 
-                                checked={selectedDocIds.includes(doc.id)}
-                                onChange={(e) => handleDocToggle(doc.id, e.target.checked)}
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded"
-                              />
-                              <FileText className="w-4 h-4 ml-3 mr-2 text-slate-400 dark:text-slate-500" />
-                              <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{doc.name}</span>
-                            </label>
-                          ))}
-                          
-                          {/* Folders and their files */}
-                          {folders.map(folder => {
-                            const folderDocs = documents.filter(d => d.folderId === folder.id);
-                            if (folderDocs.length === 0) return null;
-                            const isExpanded = expandedModalFolders.has(folder.id);
-                            return (
-                              <div key={folder.id} className="pt-2">
-                                <div 
-                                  className="flex items-center px-2 py-1 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
-                                  onClick={() => toggleModalFolder(folder.id)}
-                                >
-                                  {isExpanded ? <ChevronDown className="w-3 h-3 mr-1" /> : <ChevronRight className="w-3 h-3 mr-1" />}
-                                  <Folder className="w-3 h-3 mr-1.5" />
-                                  {folder.name}
-                                </div>
-                                {isExpanded && (
-                                  <div className="pl-4 space-y-1 mt-1">
-                                    {folderDocs.map(doc => (
-                                      <label key={doc.id} className="flex items-center p-2 hover:bg-white dark:hover:bg-slate-700 rounded-md cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
-                                        <input 
-                                          type="checkbox" 
-                                          checked={selectedDocIds.includes(doc.id)}
-                                          onChange={(e) => handleDocToggle(doc.id, e.target.checked)}
-                                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded"
-                                        />
-                                        <FileText className="w-4 h-4 ml-3 mr-2 text-slate-400 dark:text-slate-500" />
-                                        <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{doc.name}</span>
-                                      </label>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </>
-                      )}
-                    </div>
-                  </div>
+      <BaseModal
+        isOpen={isSetModalOpen}
+        onClose={() => setIsSetModalOpen(false)}
+        title={editingSet ? '编辑文件套件' : '新建文件套件'}
+        size="lg"
+        footer={
+          <>
+            <button type="button" onClick={() => setIsSetModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
+            <button type="submit" form="set-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+          </>
+        }
+      >
+        <form id="set-form" onSubmit={handleSaveSet} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">套件名称 <span className="text-red-500">*</span></label>
+            <input 
+              required 
+              autoFocus
+              name="name"
+              type="text" 
+              defaultValue={editingSet?.name} 
+              placeholder="如：入职文件套件"
+              className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">描述说明</label>
+            <textarea 
+              name="description"
+              rows={2}
+              defaultValue={editingSet?.description} 
+              placeholder="简要说明该套件的用途"
+              className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 sm:text-sm resize-none" 
+            />
+          </div>
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">选择包含的文件</label>
+              <button 
+                type="button"
+                onClick={toggleAllModalFolders}
+                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+              >
+                {expandedModalFolders.size === folders.filter(f => documents.some(d => d.folderId === f.id)).length && expandedModalFolders.size > 0 ? '全部收起' : '全部展开'}
+              </button>
+            </div>
+            <div className="max-h-60 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-md bg-slate-50 dark:bg-slate-800/50 p-2 space-y-1">
+              {documents.length === 0 ? (
+                <div className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">暂无文件，请先在文件库上传</div>
+              ) : (
+                <>
+                  {/* Root files */}
+                  {documents.filter(d => d.folderId === null).map(doc => (
+                    <label key={doc.id} className="flex items-center p-2 hover:bg-white dark:hover:bg-slate-700 rounded-md cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedDocIds.includes(doc.id)}
+                        onChange={(e) => handleDocToggle(doc.id, e.target.checked)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded"
+                      />
+                      <FileText className="w-4 h-4 ml-3 mr-2 text-slate-400 dark:text-slate-500" />
+                      <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{doc.name}</span>
+                    </label>
+                  ))}
                   
-                  {selectedDocIds.length > 0 && (
-                    <div className="mt-4 border-t border-slate-200 dark:border-slate-700 pt-4">
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">已选文件打印设置</label>
-                      <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
-                        {selectedDocIds.map(id => {
-                          const doc = documents.find(d => d.id === id);
-                          if (!doc) return null;
-                          const settings = printSettings[id] || { duplex: false, color: false, copies: 1 };
-                          return (
-                            <div key={id} className="flex flex-col sm:flex-row sm:items-center justify-between p-2 bg-slate-50 dark:bg-slate-800/50 rounded-md border border-slate-200 dark:border-slate-700 gap-2">
-                              <span className="text-sm text-slate-700 dark:text-slate-300 truncate flex-1" title={doc.name}>{doc.name}</span>
-                              <div className="flex items-center space-x-3 shrink-0">
-                                <div className="flex items-center space-x-1 bg-white dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 p-0.5">
-                                  <button type="button" onClick={() => setPrintSettings(prev => ({...prev, [id]: {...settings, color: false}}))} className={`px-2 py-1 text-xs rounded ${!settings.color ? 'bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>黑白</button>
-                                  <button type="button" onClick={() => setPrintSettings(prev => ({...prev, [id]: {...settings, color: true}}))} className={`px-2 py-1 text-xs rounded ${settings.color ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'}`}>彩色</button>
-                                </div>
-                                <div className="flex items-center space-x-1 bg-white dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 p-0.5">
-                                  <button type="button" onClick={() => setPrintSettings(prev => ({...prev, [id]: {...settings, duplex: false}}))} className={`px-2 py-1 text-xs rounded ${!settings.duplex ? 'bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>单面</button>
-                                  <button type="button" onClick={() => setPrintSettings(prev => ({...prev, [id]: {...settings, duplex: true}}))} className={`px-2 py-1 text-xs rounded ${settings.duplex ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'}`}>双面</button>
-                                </div>
-                                <div className="flex items-center bg-white dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600">
-                                  <button type="button" onClick={() => setPrintSettings(prev => ({...prev, [id]: {...settings, copies: Math.max(1, settings.copies - 1)}}))} className="px-2 py-1 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">-</button>
-                                  <span className="text-xs w-6 text-center text-slate-700 dark:text-slate-300">{settings.copies}</span>
-                                  <button type="button" onClick={() => setPrintSettings(prev => ({...prev, [id]: {...settings, copies: settings.copies + 1}}))} className="px-2 py-1 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">+</button>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
+                  {/* Folders and their files */}
+                  {folders.map(folder => {
+                    const folderDocs = documents.filter(d => d.folderId === folder.id);
+                    if (folderDocs.length === 0) return null;
+                    const isExpanded = expandedModalFolders.has(folder.id);
+                    return (
+                      <div key={folder.id} className="pt-2">
+                        <div 
+                          className="flex items-center px-2 py-1 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+                          onClick={() => toggleModalFolder(folder.id)}
+                        >
+                          {isExpanded ? <ChevronDown className="w-3 h-3 mr-1" /> : <ChevronRight className="w-3 h-3 mr-1" />}
+                          <Folder className="w-3 h-3 mr-1.5" />
+                          {folder.name}
+                        </div>
+                        {isExpanded && (
+                          <div className="pl-4 space-y-1 mt-1">
+                            {folderDocs.map(doc => (
+                              <label key={doc.id} className="flex items-center p-2 hover:bg-white dark:hover:bg-slate-700 rounded-md cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
+                                <input 
+                                  type="checkbox" 
+                                  checked={selectedDocIds.includes(doc.id)}
+                                  onChange={(e) => handleDocToggle(doc.id, e.target.checked)}
+                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded"
+                                />
+                                <FileText className="w-4 h-4 ml-3 mr-2 text-slate-400 dark:text-slate-500" />
+                                <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{doc.name}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+          </div>
+          
+          {selectedDocIds.length > 0 && (
+            <div className="mt-4 border-t border-slate-200 dark:border-slate-700 pt-4">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">已选文件打印设置</label>
+              <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                {selectedDocIds.map(id => {
+                  const doc = documents.find(d => d.id === id);
+                  if (!doc) return null;
+                  const settings = printSettings[id] || { duplex: false, color: false, copies: 1 };
+                  return (
+                    <div key={id} className="flex flex-col sm:flex-row sm:items-center justify-between p-2 bg-slate-50 dark:bg-slate-800/50 rounded-md border border-slate-200 dark:border-slate-700 gap-2">
+                      <span className="text-sm text-slate-700 dark:text-slate-300 truncate flex-1" title={doc.name}>{doc.name}</span>
+                      <div className="flex items-center space-x-3 shrink-0">
+                        <div className="flex items-center space-x-1 bg-white dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 p-0.5">
+                          <button type="button" onClick={() => setPrintSettings(prev => ({...prev, [id]: {...settings, color: false}}))} className={`px-2 py-1 text-xs rounded ${!settings.color ? 'bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>黑白</button>
+                          <button type="button" onClick={() => setPrintSettings(prev => ({...prev, [id]: {...settings, color: true}}))} className={`px-2 py-1 text-xs rounded ${settings.color ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'}`}>彩色</button>
+                        </div>
+                        <div className="flex items-center space-x-1 bg-white dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 p-0.5">
+                          <button type="button" onClick={() => setPrintSettings(prev => ({...prev, [id]: {...settings, duplex: false}}))} className={`px-2 py-1 text-xs rounded ${!settings.duplex ? 'bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>单面</button>
+                          <button type="button" onClick={() => setPrintSettings(prev => ({...prev, [id]: {...settings, duplex: true}}))} className={`px-2 py-1 text-xs rounded ${settings.duplex ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'}`}>双面</button>
+                        </div>
+                        <div className="flex items-center bg-white dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600">
+                          <button type="button" onClick={() => setPrintSettings(prev => ({...prev, [id]: {...settings, copies: Math.max(1, settings.copies - 1)}}))} className="px-2 py-1 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">-</button>
+                          <span className="text-xs w-6 text-center text-slate-700 dark:text-slate-300">{settings.copies}</span>
+                          <button type="button" onClick={() => setPrintSettings(prev => ({...prev, [id]: {...settings, copies: settings.copies + 1}}))} className="px-2 py-1 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">+</button>
+                        </div>
                       </div>
                     </div>
-                  )}
-                </form>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-800/80 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200 dark:border-slate-700">
-                <button type="submit" form="set-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button>
-                <button type="button" onClick={() => setIsSetModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
+                  );
+                })}
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
+        </form>
+      </BaseModal>
 
       {/* Print Modal */}
-      {isPrintModalOpen && printingSet && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div 
-              className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" 
-              aria-hidden="true"
-            ></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="relative z-10 inline-block align-bottom w-full bg-white dark:bg-slate-800 rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full animate-in zoom-in-95 duration-200">
-              <div className="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 mb-4">
-                  <Printer className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div className="text-center">
-                  <h3 className="text-lg leading-6 font-medium text-slate-900 dark:text-white" id="modal-title">
-                    准备打印：{printingSet.name}
-                  </h3>
-                  <div className="mt-2">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      即将为您调用系统打印机，批量打印以下 {printingSet.documentIds.length} 份文件：
-                    </p>
-                    <div className="mt-4 text-left bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 max-h-60 overflow-y-auto border border-slate-100 dark:border-slate-700">
-                      <ul className="space-y-2">
-                        {printingSet.documentIds.map(id => {
-                          const doc = documents.find(d => d.id === id);
-                          if (!doc) return null;
-                          const settings = printingSet.printSettings?.[id] || { duplex: false, color: false, copies: 1 };
-                          return (
-                            <li key={id} className="flex flex-col sm:flex-row sm:items-center justify-between text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700 gap-2">
-                              <div className="flex items-center overflow-hidden">
-                                <Check className="w-4 h-4 mr-2 text-emerald-500 shrink-0" />
-                                <span className="truncate">{doc.name}</span>
-                              </div>
-                              <div className="flex items-center space-x-2 shrink-0 text-xs">
-                                <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300">{settings.copies}份</span>
-                                <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300">{settings.color ? '彩色' : '黑白'}</span>
-                                <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300">{settings.duplex ? '双面' : '单面'}</span>
-                              </div>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-800/80 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200 dark:border-slate-700">
-                <button 
-                  type="button" 
-                  onClick={handlePrint}
-                  disabled={isPrinting}
-                  className="w-full inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
-                >
-                  {isPrinting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                      处理中...
-                    </>
-                  ) : (
-                    <>
-                      <Printer className="w-4 h-4 mr-2" />
-                      确认打印
-                    </>
-                  )}
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => setIsPrintModalOpen(false)} 
-                  disabled={isPrinting}
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
-                >
-                  取消
-                </button>
-              </div>
+      <BaseModal
+        isOpen={isPrintModalOpen && !!printingSet}
+        onClose={() => !isPrinting && setIsPrintModalOpen(false)}
+        title={`准备打印：${printingSet?.name}`}
+        size="md"
+        footer={
+          <>
+            <button 
+              type="button" 
+              onClick={() => setIsPrintModalOpen(false)} 
+              disabled={isPrinting}
+              className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+            >
+              取消
+            </button>
+            <button 
+              type="button" 
+              onClick={handlePrint}
+              disabled={isPrinting}
+              className="w-full inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+            >
+              {isPrinting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                  处理中...
+                </>
+              ) : (
+                <>
+                  <Printer className="w-4 h-4 mr-2" />
+                  确认打印
+                </>
+              )}
+            </button>
+          </>
+        }
+      >
+        <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 mb-4">
+          <Printer className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+        </div>
+        <div className="text-center">
+          <div className="mt-2">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              即将为您调用系统打印机，批量打印以下 {printingSet?.documentIds.length} 份文件：
+            </p>
+            <div className="mt-4 text-left bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 max-h-60 overflow-y-auto border border-slate-100 dark:border-slate-700">
+              <ul className="space-y-2">
+                {printingSet?.documentIds.map(id => {
+                  const doc = documents.find(d => d.id === id);
+                  if (!doc) return null;
+                  const settings = printingSet.printSettings?.[id] || { duplex: false, color: false, copies: 1 };
+                  return (
+                    <li key={id} className="flex flex-col sm:flex-row sm:items-center justify-between text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700 gap-2">
+                      <div className="flex items-center overflow-hidden">
+                        <Check className="w-4 h-4 mr-2 text-emerald-500 shrink-0" />
+                        <span className="truncate">{doc.name}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 shrink-0 text-xs">
+                        <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300">{settings.copies}份</span>
+                        <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300">{settings.color ? '彩色' : '黑白'}</span>
+                        <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300">{settings.duplex ? '双面' : '单面'}</span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
           </div>
         </div>
-      )}
+      </BaseModal>
 
       {/* Folder Modal */}
-      {isFolderModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div 
-              className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" 
-              aria-hidden="true"
-              onClick={() => setIsFolderModalOpen(false)}
-            ></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="relative z-10 inline-block align-bottom w-full bg-white dark:bg-slate-800 rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full animate-in zoom-in-95 duration-200">
-              <div className="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="flex justify-between items-center mb-5">
-                  <h3 className="text-lg leading-6 font-medium text-slate-900 dark:text-white" id="modal-title">
-                    {editingFolder ? '重命名文件夹' : '新建文件夹'}
-                  </h3>
-                  <button onClick={() => setIsFolderModalOpen(false)} className="text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 transition-colors">
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                
-                <form id="folder-form" onSubmit={handleSaveFolder} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">文件夹名称 <span className="text-red-500">*</span></label>
-                    <input 
-                      required 
-                      autoFocus
-                      name="name"
-                      type="text" 
-                      defaultValue={editingFolder?.name} 
-                      placeholder="如：人事文件"
-                      className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
-                    />
-                  </div>
-                </form>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-800/80 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200 dark:border-slate-700">
-                <button type="submit" form="folder-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button>
-                <button type="button" onClick={() => setIsFolderModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
-              </div>
-            </div>
+      <BaseModal
+        isOpen={isFolderModalOpen}
+        onClose={() => setIsFolderModalOpen(false)}
+        title={editingFolder ? '重命名文件夹' : '新建文件夹'}
+        size="md"
+        footer={
+          <>
+            <button type="button" onClick={() => setIsFolderModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
+            <button type="submit" form="folder-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+          </>
+        }
+      >
+        <form id="folder-form" onSubmit={handleSaveFolder} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">文件夹名称 <span className="text-red-500">*</span></label>
+            <input 
+              required 
+              autoFocus
+              name="name"
+              type="text" 
+              defaultValue={editingFolder?.name} 
+              placeholder="如：人事文件"
+              className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+            />
           </div>
-        </div>
-      )}
+        </form>
+      </BaseModal>
 
       {/* Move File Modal */}
-      {isMoveModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div 
-              className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" 
-              aria-hidden="true"
-              onClick={() => setIsMoveModalOpen(false)}
-            ></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="relative z-10 inline-block align-bottom w-full bg-white dark:bg-slate-800 rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full animate-in zoom-in-95 duration-200">
-              <div className="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="flex justify-between items-center mb-5">
-                  <h3 className="text-lg leading-6 font-medium text-slate-900 dark:text-white" id="modal-title">
-                    移动文件
-                  </h3>
-                  <button onClick={() => setIsMoveModalOpen(false)} className="text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 transition-colors">
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">选择目标文件夹</label>
-                    <div className="max-h-60 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-md bg-slate-50 dark:bg-slate-800/50 p-2 space-y-1">
-                      <label className="flex items-center p-2 hover:bg-white dark:hover:bg-slate-700 rounded-md cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
-                        <input 
-                          type="radio" 
-                          name="targetFolder" 
-                          value="root"
-                          checked={targetFolderId === null}
-                          onChange={() => setTargetFolderId(null)}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300"
-                        />
-                        <FolderOpen className="w-4 h-4 ml-3 mr-2 text-slate-400 dark:text-slate-500" />
-                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">全部文件 (根目录)</span>
-                      </label>
-                      {folders.map(folder => (
-                        <label key={folder.id} className="flex items-center p-2 hover:bg-white dark:hover:bg-slate-700 rounded-md cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
-                          <input 
-                            type="radio" 
-                            name="targetFolder" 
-                            value={folder.id}
-                            checked={targetFolderId === folder.id}
-                            onChange={() => setTargetFolderId(folder.id)}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300"
-                          />
-                          <Folder className="w-4 h-4 ml-3 mr-2 text-slate-400 dark:text-slate-500" />
-                          <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{folder.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-800/80 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200 dark:border-slate-700">
-                <button onClick={handleMoveFile} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">确认移动</button>
-                <button type="button" onClick={() => setIsMoveModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
-              </div>
+      <BaseModal
+        isOpen={isMoveModalOpen}
+        onClose={() => setIsMoveModalOpen(false)}
+        title="移动文件"
+        size="md"
+        footer={
+          <>
+            <button type="button" onClick={() => setIsMoveModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
+            <button onClick={handleMoveFile} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">确认移动</button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">选择目标文件夹</label>
+            <div className="max-h-60 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-md bg-slate-50 dark:bg-slate-800/50 p-2 space-y-1">
+              <label className="flex items-center p-2 hover:bg-white dark:hover:bg-slate-700 rounded-md cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
+                <input 
+                  type="radio" 
+                  name="targetFolder" 
+                  value="root"
+                  checked={targetFolderId === null}
+                  onChange={() => setTargetFolderId(null)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300"
+                />
+                <FolderOpen className="w-4 h-4 ml-3 mr-2 text-slate-400 dark:text-slate-500" />
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">全部文件 (根目录)</span>
+              </label>
+              {folders.map(folder => (
+                <label key={folder.id} className="flex items-center p-2 hover:bg-white dark:hover:bg-slate-700 rounded-md cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
+                  <input 
+                    type="radio" 
+                    name="targetFolder" 
+                    value={folder.id}
+                    checked={targetFolderId === folder.id}
+                    onChange={() => setTargetFolderId(folder.id)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300"
+                  />
+                  <Folder className="w-4 h-4 ml-3 mr-2 text-slate-400 dark:text-slate-500" />
+                  <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{folder.name}</span>
+                </label>
+              ))}
             </div>
           </div>
         </div>
-      )}
+      </BaseModal>
     </div>
   );
 }
