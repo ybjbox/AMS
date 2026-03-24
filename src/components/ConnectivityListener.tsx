@@ -6,6 +6,17 @@ export default function ConnectivityListener() {
   const [isDisconnected, setIsDisconnected] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
 
+  useEffect(() => {
+    if (isDisconnected) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isDisconnected]);
+
   const checkConnection = useCallback(async () => {
     setIsChecking(true);
     try {

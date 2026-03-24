@@ -1053,18 +1053,6 @@ export default function Users() {
     }
   }, [isExportModalOpen]);
 
-  // 防止弹窗打开时底层页面滚动
-  useEffect(() => {
-    if (isModalOpen || isExportModalOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isModalOpen, isExportModalOpen]);
-
   const [selectedDeptName, setSelectedDeptName] = useState<string>('');
   const [selectedRoleName, setSelectedRoleName] = useState<string>('');
   const { departments, roles } = useDepartments();

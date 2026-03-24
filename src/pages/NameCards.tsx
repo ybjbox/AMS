@@ -48,9 +48,9 @@ export default function NameCards() {
 
   const [printSettings, setPrintSettings] = useState<PrintSettings>({
     paperSize: 'A4',
-    paperOrientation: 'portrait',
-    paperWidth: 210,
-    paperHeight: 297,
+    paperOrientation: 'landscape',
+    paperWidth: 297,
+    paperHeight: 210,
     cardWidth: 195,
     cardHeight: 86,
     copiesPerName: 1,
@@ -86,6 +86,17 @@ export default function NameCards() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isUploadMenuOpen]);
+
+  useEffect(() => {
+    if (isManualInputOpen || isParticipantModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isManualInputOpen, isParticipantModalOpen]);
 
   useEffect(() => {
     if (!uploadedUsers) {
@@ -369,23 +380,23 @@ export default function NameCards() {
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col bg-slate-50 print:bg-white print:h-auto overflow-hidden rounded-xl shadow-sm border border-slate-200">
+    <div className="flex-1 min-h-0 flex flex-col bg-slate-50 dark:bg-slate-900 print:bg-white print:h-auto overflow-hidden rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0 print:hidden">
+      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between shrink-0 print:hidden">
         <div className="flex items-center space-x-3">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <IdCard className="h-6 w-6 text-blue-600" />
+          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+            <IdCard className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-800">会议台卡制作</h1>
-            <p className="text-sm text-slate-500">自定义台卡尺寸、样式并打印</p>
+            <h1 className="text-xl font-bold text-slate-800 dark:text-white">会议台卡制作</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400">自定义台卡尺寸、样式并打印</p>
           </div>
         </div>
         <div className="flex items-center space-x-3">
           {uploadedUsers && (
             <button
               onClick={() => setUploadedUsers(null)}
-              className="flex items-center px-4 py-2 bg-white border border-slate-300 rounded-lg text-amber-600 hover:bg-amber-50 transition-colors"
+              className="flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-amber-600 dark:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
               title="清除上传的名单，恢复系统人员"
             >
               <X className="h-4 w-4 mr-2" />
@@ -395,20 +406,20 @@ export default function NameCards() {
           <div className="relative upload-dropdown">
             <button
               onClick={() => setIsUploadMenuOpen(!isUploadMenuOpen)}
-              className="flex items-center px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors"
+              className="flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
             >
               <Upload className="h-4 w-4 mr-2" />
               导入名单
               <ChevronDown className="h-4 w-4 ml-1" />
             </button>
             {isUploadMenuOpen && (
-              <div className="absolute right-0 mt-1 w-36 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
+              <div className="absolute right-0 mt-1 w-36 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50">
                 <button
                   onClick={() => {
                     handleDownloadTemplate();
                     setIsUploadMenuOpen(false);
                   }}
-                  className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center"
+                  className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center"
                 >
                   <FileDown className="w-4 h-4 mr-2" />
                   下载模板
@@ -418,12 +429,12 @@ export default function NameCards() {
                     setIsManualInputOpen(true);
                     setIsUploadMenuOpen(false);
                   }}
-                  className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center"
+                  className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center"
                 >
                   <FileText className="w-4 h-4 mr-2" />
                   手动输入
                 </button>
-                <label className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center cursor-pointer mb-0">
+                <label className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center cursor-pointer mb-0">
                   <Upload className="w-4 h-4 mr-2" />
                   上传文件
                   <input 
@@ -441,7 +452,7 @@ export default function NameCards() {
           </div>
           <button
             onClick={() => setIsParticipantModalOpen(true)}
-            className="flex items-center px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors"
+            className="flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
           >
             <Users className="h-4 w-4 mr-2" />
             选择人员 ({selectedUserIds.size})
@@ -459,20 +470,20 @@ export default function NameCards() {
 
       <div className="flex-1 overflow-hidden flex print:hidden">
         {/* Settings Sidebar */}
-        <div className="w-80 bg-white border-r border-slate-200 overflow-y-auto p-6 space-y-6">
+        <div className="w-80 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 overflow-y-auto p-6 space-y-6">
           <div>
-            <h3 className="text-sm font-semibold text-slate-800 mb-4 flex items-center">
+            <h3 className="text-sm font-semibold text-slate-800 dark:text-white mb-4 flex items-center">
               <Settings2 className="h-4 w-4 mr-2" />
               打印设置
             </h3>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">纸张尺寸</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">纸张尺寸</label>
                 <select 
                   value={printSettings.paperSize}
                   onChange={(e) => handlePaperSizeChange(e.target.value as any)}
-                  className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                 >
                   <option value="A4">A4 (210x297mm)</option>
                   <option value="A5">A5 (148x210mm)</option>
@@ -481,11 +492,11 @@ export default function NameCards() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">纸张方向</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">纸张方向</label>
                 <select 
                   value={printSettings.paperOrientation}
                   onChange={(e) => handlePaperOrientationChange(e.target.value as any)}
-                  className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                 >
                   <option value="portrait">纵向</option>
                   <option value="landscape">横向</option>
@@ -495,46 +506,46 @@ export default function NameCards() {
               {printSettings.paperSize === 'custom' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1">纸张宽 (cm)</label>
+                    <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">纸张宽 (cm)</label>
                     <input 
                       type="number" 
                       step="0.1"
                       value={printSettings.paperWidth / 10}
                       onChange={(e) => setPrintSettings(prev => ({ ...prev, paperWidth: Math.round(parseFloat(e.target.value) * 10) || 210 }))}
-                      className="block w-full border border-slate-300 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                      className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white" 
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1">纸张高 (cm)</label>
+                    <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">纸张高 (cm)</label>
                     <input 
                       type="number" 
                       step="0.1"
                       value={printSettings.paperHeight / 10}
                       onChange={(e) => setPrintSettings(prev => ({ ...prev, paperHeight: Math.round(parseFloat(e.target.value) * 10) || 297 }))}
-                      className="block w-full border border-slate-300 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                      className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white" 
                     />
                   </div>
                 </div>
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">台卡宽 (cm)</label>
+                  <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">台卡宽 (cm)</label>
                   <input 
                     type="number" 
                     step="0.1"
                     value={printSettings.cardWidth / 10}
                     onChange={(e) => setPrintSettings(prev => ({ ...prev, cardWidth: Math.round(parseFloat(e.target.value) * 10) || 90 }))}
-                    className="block w-full border border-slate-300 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                    className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white" 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">台卡高 (cm)</label>
+                  <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">台卡高 (cm)</label>
                   <input 
                     type="number" 
                     step="0.1"
                     value={printSettings.cardHeight / 10}
                     onChange={(e) => setPrintSettings(prev => ({ ...prev, cardHeight: Math.round(parseFloat(e.target.value) * 10) || 54 }))}
-                    className="block w-full border border-slate-300 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                    className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white" 
                   />
                 </div>
               </div>
@@ -545,18 +556,18 @@ export default function NameCards() {
                     type="checkbox" 
                     checked={printSettings.isDoubleSided}
                     onChange={(e) => setPrintSettings(prev => ({ ...prev, isDoubleSided: e.target.checked }))}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-white dark:bg-slate-700"
                   />
-                  <span className="text-sm text-slate-700">双面帐篷式折叠 (高度翻倍)</span>
+                  <span className="text-sm text-slate-700 dark:text-slate-300">双面帐篷式折叠 (高度翻倍)</span>
                 </label>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">每人打印份数</label>
-                <div className="flex items-center border border-slate-300 rounded-md overflow-hidden">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">每人打印份数</label>
+                <div className="flex items-center border border-slate-300 dark:border-slate-600 rounded-md overflow-hidden">
                   <button 
                     onClick={() => setPrintSettings(prev => ({ ...prev, copiesPerName: Math.max(1, prev.copiesPerName - 1) }))}
-                    className="px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 transition-colors"
+                    className="px-3 py-2 bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 transition-colors"
                   >
                     <Minus className="h-4 w-4" />
                   </button>
@@ -564,11 +575,11 @@ export default function NameCards() {
                     type="number" 
                     value={printSettings.copiesPerName}
                     onChange={(e) => setPrintSettings(prev => ({ ...prev, copiesPerName: Math.max(1, parseInt(e.target.value) || 1) }))}
-                    className="flex-1 w-full text-center border-none py-2 focus:ring-0 sm:text-sm" 
+                    className="flex-1 w-full text-center border-none py-2 focus:ring-0 sm:text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white" 
                   />
                   <button 
                     onClick={() => setPrintSettings(prev => ({ ...prev, copiesPerName: prev.copiesPerName + 1 }))}
-                    className="px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 transition-colors"
+                    className="px-3 py-2 bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 transition-colors"
                   >
                     <Plus className="h-4 w-4" />
                   </button>
@@ -577,16 +588,16 @@ export default function NameCards() {
             </div>
           </div>
 
-          <div className="pt-6 border-t border-slate-200">
-            <h3 className="text-sm font-semibold text-slate-800 mb-4">样式设置</h3>
+          <div className="pt-6 border-t border-slate-200 dark:border-slate-700">
+            <h3 className="text-sm font-semibold text-slate-800 dark:text-white mb-4">样式设置</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">字体</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">字体</label>
                 <div className="flex items-center space-x-2">
                   <select 
                     value={printSettings.fontFamily}
                     onChange={(e) => setPrintSettings(prev => ({ ...prev, fontFamily: e.target.value }))}
-                    className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                   >
                     <option value='"Microsoft YaHei", "SimHei", sans-serif'>微软雅黑 / 黑体</option>
                     <option value='"Noto Serif SC", "SimSun", serif'>思源宋体 / 宋体</option>
@@ -598,30 +609,30 @@ export default function NameCards() {
                       type="checkbox" 
                       checked={printSettings.isBold}
                       onChange={(e) => setPrintSettings(prev => ({ ...prev, isBold: e.target.checked }))}
-                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-white dark:bg-slate-700"
                     />
-                    <span className="text-sm text-slate-700">加粗</span>
+                    <span className="text-sm text-slate-700 dark:text-slate-300">加粗</span>
                   </label>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">排版方向</label>
+                  <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">排版方向</label>
                   <select 
                     value={printSettings.layout}
                     onChange={(e) => setPrintSettings(prev => ({ ...prev, layout: e.target.value as any }))}
-                    className="block w-full border border-slate-300 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                   >
                     <option value="horizontal">横排</option>
                     <option value="vertical">竖排</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">对齐方式</label>
+                  <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">对齐方式</label>
                   <select 
                     value={printSettings.textAlign}
                     onChange={(e) => setPrintSettings(prev => ({ ...prev, textAlign: e.target.value as any }))}
-                    className="block w-full border border-slate-300 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                   >
                     <option value="left">居左/靠上</option>
                     <option value="center">居中</option>
@@ -631,22 +642,22 @@ export default function NameCards() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">姓名大小 (px)</label>
+                  <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">姓名大小 (px)</label>
                   <input 
                     type="number" 
                     value={printSettings.fontSize}
                     onChange={(e) => setPrintSettings(prev => ({ ...prev, fontSize: parseInt(e.target.value) || 32 }))}
-                    className="block w-full border border-slate-300 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                    className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white" 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">字体颜色</label>
+                  <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">字体颜色</label>
                   <div className="flex items-center space-x-2">
                     <input 
                       type="color" 
                       value={printSettings.fontColor}
                       onChange={(e) => setPrintSettings(prev => ({ ...prev, fontColor: e.target.value }))}
-                      className="h-8 w-12 rounded border border-slate-300 cursor-pointer p-0.5" 
+                      className="h-8 w-12 rounded border border-slate-300 dark:border-slate-600 cursor-pointer p-0.5 bg-white dark:bg-slate-700" 
                     />
                     <span className="text-xs text-slate-500 uppercase">{printSettings.fontColor}</span>
                   </div>
@@ -654,37 +665,37 @@ export default function NameCards() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">背景颜色</label>
+                  <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">背景颜色</label>
                   <div className="flex items-center space-x-2">
                     <input 
                       type="color" 
                       value={printSettings.backgroundColor}
                       onChange={(e) => setPrintSettings(prev => ({ ...prev, backgroundColor: e.target.value }))}
-                      className="h-8 w-12 rounded border border-slate-300 cursor-pointer p-0.5" 
+                      className="h-8 w-12 rounded border border-slate-300 dark:border-slate-600 cursor-pointer p-0.5 bg-white dark:bg-slate-700" 
                     />
-                    <span className="text-xs text-slate-500 uppercase">{printSettings.backgroundColor}</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 uppercase">{printSettings.backgroundColor}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-2 pt-2 border-t border-slate-100">
+              <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700">
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input 
                     type="checkbox" 
                     checked={printSettings.showDepartment}
                     onChange={(e) => setPrintSettings(prev => ({ ...prev, showDepartment: e.target.checked }))}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-white dark:bg-slate-700"
                   />
-                  <span className="text-sm text-slate-700">显示部门</span>
+                  <span className="text-sm text-slate-700 dark:text-slate-300">显示部门</span>
                 </label>
                 {printSettings.showDepartment && (
                   <div className="pl-6">
-                    <label className="block text-xs font-medium text-slate-500 mb-1">部门字号 (px)</label>
+                    <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">部门字号 (px)</label>
                     <input 
                       type="number" 
                       value={printSettings.departmentFontSize}
                       onChange={(e) => setPrintSettings(prev => ({ ...prev, departmentFontSize: parseInt(e.target.value) || 14 }))}
-                      className="block w-full border border-slate-300 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                      className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white" 
                     />
                   </div>
                 )}
@@ -694,18 +705,18 @@ export default function NameCards() {
                     type="checkbox" 
                     checked={printSettings.showRole}
                     onChange={(e) => setPrintSettings(prev => ({ ...prev, showRole: e.target.checked }))}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-white dark:bg-slate-700"
                   />
-                  <span className="text-sm text-slate-700">显示职位</span>
+                  <span className="text-sm text-slate-700 dark:text-slate-300">显示职位</span>
                 </label>
                 {printSettings.showRole && (
                   <div className="pl-6">
-                    <label className="block text-xs font-medium text-slate-500 mb-1">职位字号 (px)</label>
+                    <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">职位字号 (px)</label>
                     <input 
                       type="number" 
                       value={printSettings.roleFontSize}
                       onChange={(e) => setPrintSettings(prev => ({ ...prev, roleFontSize: parseInt(e.target.value) || 14 }))}
-                      className="block w-full border border-slate-300 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                      className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white" 
                     />
                   </div>
                 )}
@@ -715,28 +726,28 @@ export default function NameCards() {
                     type="checkbox" 
                     checked={printSettings.showCompanyName}
                     onChange={(e) => setPrintSettings(prev => ({ ...prev, showCompanyName: e.target.checked }))}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-white dark:bg-slate-700"
                   />
-                  <span className="text-sm text-slate-700">显示公司名称</span>
+                  <span className="text-sm text-slate-700 dark:text-slate-300">显示公司名称</span>
                 </label>
                 {printSettings.showCompanyName && (
                   <div className="pl-6 space-y-2">
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1">公司名称</label>
+                      <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">公司名称</label>
                       <input 
                         type="text" 
                         value={printSettings.companyName}
                         onChange={(e) => setPrintSettings(prev => ({ ...prev, companyName: e.target.value }))}
-                        className="block w-full border border-slate-300 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                        className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white" 
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1">公司名称字号 (px)</label>
+                      <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">公司名称字号 (px)</label>
                       <input 
                         type="number" 
                         value={printSettings.companyNameFontSize}
                         onChange={(e) => setPrintSettings(prev => ({ ...prev, companyNameFontSize: parseInt(e.target.value) || 16 }))}
-                        className="block w-full border border-slate-300 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                        className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white" 
                       />
                     </div>
                   </div>
@@ -747,18 +758,18 @@ export default function NameCards() {
         </div>
 
         {/* Preview Area */}
-        <div className="flex-1 bg-slate-100 overflow-auto p-8 flex flex-col items-center space-y-8 min-h-0 relative">
-          <div className="sticky top-0 self-start text-xs font-medium text-slate-500 uppercase tracking-wider z-10 bg-white/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-8 -ml-8 mb-4">打印预览 ({pages.length}页)</div>
+        <div className="flex-1 bg-slate-100 dark:bg-slate-900 overflow-auto p-8 flex flex-col items-center space-y-8 min-h-0 relative">
+          <div className="sticky top-0 self-start text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-8 -ml-8 mb-4">打印预览 ({pages.length}页)</div>
           
           {pages.length === 0 ? (
-            <div className="w-full h-full flex items-center justify-center text-slate-400">
+            <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-500">
               请选择人员以预览台卡
             </div>
           ) : (
             <div className="flex flex-col gap-8 items-center w-full pt-2">
               {pages.map((pageCards, pageIdx) => (
                 <div key={`page-${pageIdx}`} className="flex flex-col items-center">
-                  <div className="text-sm text-slate-500 mb-2">
+                  <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">
                     预览纸张: {printSettings.paperSize} ({printSettings.paperWidth}x{printSettings.paperHeight}mm) - 第 {pageIdx + 1} 页
                   </div>
                   <div 
@@ -769,7 +780,7 @@ export default function NameCards() {
                     className="flex-shrink-0 relative"
                   >
                     <div 
-                      className="absolute top-0 left-0 bg-white shadow-lg origin-top-left transition-all duration-300"
+                      className="absolute top-0 left-0 bg-white dark:bg-slate-800 shadow-lg origin-top-left transition-all duration-300"
                       style={{ 
                         width: `${printSettings.paperWidth}mm`, 
                         height: `${printSettings.paperHeight}mm`,
@@ -794,7 +805,7 @@ export default function NameCards() {
                         {pageCards.map((user, idx) => (
                           <div 
                             key={`${user.id}-${idx}`}
-                            className="border border-slate-200 border-dashed flex flex-col justify-center overflow-hidden relative print:border-none"
+                            className="border border-slate-200 dark:border-slate-700 border-dashed flex flex-col justify-center overflow-hidden relative print:border-none"
                             style={{ 
                               backgroundColor: printSettings.backgroundColor,
                               color: printSettings.fontColor,
@@ -804,7 +815,7 @@ export default function NameCards() {
                           >
                             {printSettings.isDoubleSided ? (
                               <>
-                                <div className="flex-1 border-b border-slate-200 border-dashed flex items-center justify-center">
+                                <div className="flex-1 border-b border-slate-200 dark:border-slate-700 border-dashed flex items-center justify-center">
                                   {renderCardContent(user, true)}
                                 </div>
                                 <div className="flex-1 flex items-center justify-center">
@@ -832,19 +843,19 @@ export default function NameCards() {
           <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onClick={() => setIsParticipantModalOpen(false)}></div>
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="relative z-10 inline-block align-bottom w-full bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full animate-in zoom-in-95 duration-200">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div className="relative z-10 inline-block align-bottom w-full bg-white dark:bg-slate-800 rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full animate-in zoom-in-95 duration-200">
+              <div className="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="flex justify-between items-center mb-5">
                   <div className="flex items-center space-x-4">
-                    <h3 className="text-lg leading-6 font-medium text-slate-900" id="modal-title">选择参与人员</h3>
+                    <h3 className="text-lg leading-6 font-medium text-slate-900 dark:text-white" id="modal-title">选择参与人员</h3>
                     <button 
                       onClick={toggleAllDeptsExpand}
-                      className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
                     >
                       {expandedDepts.size === Object.keys(groupedUsers).length ? '全部收起' : '全部展开'}
                     </button>
                   </div>
-                  <button onClick={() => setIsParticipantModalOpen(false)} className="text-slate-400 hover:text-slate-500 transition-colors">
+                  <button onClick={() => setIsParticipantModalOpen(false)} className="text-slate-400 dark:text-slate-500 hover:text-slate-500 dark:hover:text-slate-400 transition-colors">
                     <X className="h-5 w-5" />
                   </button>
                 </div>
@@ -854,42 +865,42 @@ export default function NameCards() {
                     const someSelected = deptUsers.some(u => selectedUserIds.has(u.id)) && !allSelected;
                     const isExpanded = expandedDepts.has(dept);
                     return (
-                      <div key={dept} className="border border-slate-200 rounded-lg overflow-hidden">
+                      <div key={dept} className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
                         <div 
-                          className="bg-slate-50 px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors"
+                          className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
                           onClick={() => toggleDepartmentSelection(dept, !allSelected)}
                         >
                           <div className="flex items-center">
                             {allSelected ? (
-                              <CheckSquare className="w-5 h-5 text-blue-600 mr-3" />
+                              <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-500 mr-3" />
                             ) : someSelected ? (
-                              <div className="w-5 h-5 bg-blue-600 rounded flex items-center justify-center mr-3">
+                              <div className="w-5 h-5 bg-blue-600 dark:bg-blue-500 rounded flex items-center justify-center mr-3">
                                 <div className="w-3 h-0.5 bg-white"></div>
                               </div>
                             ) : (
-                              <Square className="w-5 h-5 text-slate-400 mr-3" />
+                              <Square className="w-5 h-5 text-slate-400 dark:text-slate-500 mr-3" />
                             )}
-                            <span className="font-medium text-slate-800">{dept}</span>
-                            <span className="ml-2 text-xs text-slate-500">({deptUsers.filter(u => selectedUserIds.has(u.id)).length}/{deptUsers.length})</span>
+                            <span className="font-medium text-slate-800 dark:text-slate-200">{dept}</span>
+                            <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">({deptUsers.filter(u => selectedUserIds.has(u.id)).length}/{deptUsers.length})</span>
                           </div>
                           <button 
                             onClick={(e) => toggleDeptExpand(dept, e)}
-                            className="p-1 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-200 transition-colors"
+                            className="p-1 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                           >
                             <ChevronRight className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                           </button>
                         </div>
                         {isExpanded && (
-                          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-white border-t border-slate-200">
+                          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
                             {deptUsers.map(u => (
                               <label key={u.id} className="flex items-center space-x-2 cursor-pointer group">
                                 <input 
                                   type="checkbox" 
                                   checked={selectedUserIds.has(u.id)}
                                   onChange={() => toggleUserSelection(u.id)}
-                                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                  className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-white dark:bg-slate-700"
                                 />
-                                <span className="text-sm text-slate-700 group-hover:text-slate-900">{u.name}</span>
+                                <span className="text-sm text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white">{u.name}</span>
                               </label>
                             ))}
                           </div>
@@ -899,7 +910,7 @@ export default function NameCards() {
                   })}
                 </div>
               </div>
-              <div className="bg-slate-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200">
+              <div className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200 dark:border-slate-700">
                 <button type="button" onClick={() => setIsParticipantModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">完成</button>
               </div>
             </div>
@@ -913,24 +924,24 @@ export default function NameCards() {
           <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" aria-hidden="true" onClick={() => setIsManualInputOpen(false)}></div>
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="relative z-10 inline-block align-bottom w-full bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full animate-in zoom-in-95 duration-200">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div className="relative z-10 inline-block align-bottom w-full bg-white dark:bg-slate-800 rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full animate-in zoom-in-95 duration-200">
+              <div className="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="sm:flex sm:items-start">
-                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
-                    <FileText className="h-6 w-6 text-blue-600" aria-hidden="true" />
+                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 sm:mx-0 sm:h-10 sm:w-10">
+                    <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" aria-hidden="true" />
                   </div>
                   <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                    <h3 className="text-lg leading-6 font-medium text-slate-900" id="modal-title">
+                    <h3 className="text-lg leading-6 font-medium text-slate-900 dark:text-white" id="modal-title">
                       手动输入名单
                     </h3>
                     <div className="mt-2">
-                      <p className="text-sm text-slate-500 mb-4">
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
                         请输入人员名单，每行一个。支持使用空格或逗号分隔姓名、部门和职务。例如：<br/>
-                        <span className="font-mono bg-slate-100 px-1 rounded">张三 技术部 工程师</span>
+                        <span className="font-mono bg-slate-100 dark:bg-slate-700 px-1 rounded">张三 技术部 工程师</span>
                       </p>
                       <textarea
                         rows={10}
-                        className="w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm font-mono"
+                        className="w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm font-mono bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                         placeholder="张三 技术部 工程师&#10;李四 市场部 总监"
                         value={manualInputText}
                         onChange={(e) => setManualInputText(e.target.value)}
@@ -939,7 +950,7 @@ export default function NameCards() {
                   </div>
                 </div>
               </div>
-              <div className="bg-slate-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200">
+              <div className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200 dark:border-slate-700">
                 <button 
                   type="button" 
                   onClick={handleManualInputSubmit} 
@@ -950,7 +961,7 @@ export default function NameCards() {
                 <button 
                   type="button" 
                   onClick={() => setIsManualInputOpen(false)} 
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                 >
                   取消
                 </button>

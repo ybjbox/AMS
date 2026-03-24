@@ -56,7 +56,7 @@ export default function Contracts() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isPreviewOpen) {
+    if (isPreviewOpen || isTemplateEditorOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -64,7 +64,7 @@ export default function Contracts() {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isPreviewOpen]);
+  }, [isPreviewOpen, isTemplateEditorOpen]);
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = 

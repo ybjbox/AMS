@@ -28,6 +28,17 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
   const location = useLocation();
   const notificationRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (sidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [sidebarOpen]);
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
   // 自动检查合同到期和试用期转正

@@ -58,7 +58,7 @@ export default function Seating() {
   }, [activeUsers, uploadedUsers]);
 
   useEffect(() => {
-    if (isParticipantModalOpen || isPrintModalOpen) {
+    if (isParticipantModalOpen || isPrintModalOpen || isPrintWarningOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -66,7 +66,7 @@ export default function Seating() {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isParticipantModalOpen, isPrintModalOpen]);
+  }, [isParticipantModalOpen, isPrintModalOpen, isPrintWarningOpen]);
 
   const handleDownloadTemplate = () => {
     alert('请求后端下载模板 (Mock)');
@@ -328,12 +328,12 @@ export default function Seating() {
                     handleDownloadTemplate();
                     setIsUploadMenuOpen(false);
                   }}
-                  className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center"
+                  className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center"
                 >
                   <FileDown className="w-4 h-4 mr-2" />
                   下载模板
                 </button>
-                <label className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center cursor-pointer mb-0">
+                <label className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center cursor-pointer mb-0">
                   <Upload className="w-4 h-4 mr-2" />
                   上传文件
                   <input 
@@ -387,15 +387,15 @@ export default function Seating() {
         <div className="flex flex-col md:flex-row md:items-start gap-6">
           <div className="flex-1">
             <div className="flex items-center justify-between mb-3">
-              <label className="block text-sm font-medium text-slate-700">各桌人数设置</label>
-              <button onClick={addTableCapacity} className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">各桌人数设置</label>
+              <button onClick={addTableCapacity} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium flex items-center">
                 + 添加一桌
               </button>
             </div>
             <div className="flex flex-wrap gap-3">
               {tableCapacities.map((tc) => (
-                <div key={tc.id} className="flex items-center bg-slate-50 border border-slate-200 rounded-lg p-1.5 shadow-sm">
-                  <span className="text-xs text-slate-500 px-2 font-medium whitespace-nowrap">{tc.tableNumber}号桌</span>
+                <div key={tc.id} className="flex items-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-1.5 shadow-sm">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 px-2 font-medium whitespace-nowrap">{tc.tableNumber}号桌</span>
                   <input
                     type="number"
                     min="1"
@@ -405,7 +405,7 @@ export default function Seating() {
                     className="w-14 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded shadow-sm py-1 px-1 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-center text-slate-900 dark:text-white"
                   />
                   {tableCapacities.length > 1 && (
-                    <button onClick={() => removeTableCapacity(tc.id)} className="ml-1 p-1 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 transition-colors">
+                    <button onClick={() => removeTableCapacity(tc.id)} className="ml-1 p-1 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                       <X className="w-4 h-4" />
                     </button>
                   )}
@@ -413,25 +413,25 @@ export default function Seating() {
               ))}
             </div>
             <div className="mt-4 flex items-center space-x-3">
-              <label className="text-sm font-medium text-slate-700 whitespace-nowrap">跳过桌号：</label>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">跳过桌号：</label>
               <input
                 type="text"
                 value={skippedNumbers}
                 onChange={(e) => setSkippedNumbers(e.target.value)}
                 placeholder="例如：4, 14, 24"
-                className="flex-1 max-w-xs border border-slate-300 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="flex-1 max-w-xs border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
               />
-              <span className="text-xs text-slate-500">（用逗号分隔，如：4, 14）</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">（用逗号分隔，如：4, 14）</span>
             </div>
           </div>
-          <div className="flex items-center space-x-8 md:px-6 md:border-l border-slate-100 mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0">
+          <div className="flex items-center space-x-8 md:px-6 md:border-l border-slate-100 dark:border-slate-700 mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0">
             <div className="text-center">
-              <div className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">参与人数</div>
-              <div className="text-xl font-bold text-slate-900">{selectedUserIds.size}</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">参与人数</div>
+              <div className="text-xl font-bold text-slate-900 dark:text-white">{selectedUserIds.size}</div>
             </div>
             <div className="text-center">
-              <div className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">总座位数</div>
-              <div className="text-xl font-bold text-slate-900">{tableCapacities.reduce((a, b) => a + b.capacity, 0)}</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">总座位数</div>
+              <div className="text-xl font-bold text-slate-900 dark:text-white">{tableCapacities.reduce((a, b) => a + b.capacity, 0)}</div>
             </div>
           </div>
         </div>
@@ -442,12 +442,12 @@ export default function Seating() {
         <div className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
           {tables.map((table) => (
             <div key={table.number} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
-              <div className="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <div className="px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                  <div className="w-8 h-8 bg-blue-600 dark:bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
                     {table.number}
                   </div>
-                  <h3 className="font-semibold text-slate-900">{table.number}号桌</h3>
+                  <h3 className="font-semibold text-slate-900 dark:text-white">{table.number}号桌</h3>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-700 px-2 py-1 rounded-full border border-slate-200 dark:border-slate-600">
@@ -455,7 +455,7 @@ export default function Seating() {
                   </span>
                   <button
                     onClick={() => setTables(tables.filter(t => t.number !== table.number))}
-                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                    className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
                     title="删除此桌"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -466,24 +466,24 @@ export default function Seating() {
                 {viewMode === 'grid' ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {table.members.map((m) => (
-                      <div key={m.id} className="p-2 bg-slate-50 rounded-lg border border-slate-100">
-                        <div className="text-sm font-bold text-slate-900 truncate">{m.name}</div>
-                        <div className="text-[10px] text-slate-500 truncate mt-0.5">{m.department} · {m.role}</div>
+                      <div key={m.id} className="p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700">
+                        <div className="text-sm font-bold text-slate-900 dark:text-white truncate">{m.name}</div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{m.department} · {m.role}</div>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <div className="space-y-2">
                     {table.members.map((m, idx) => (
-                      <div key={m.id} className="flex items-center justify-between p-2 hover:bg-slate-50 rounded-lg transition-colors group">
+                      <div key={m.id} className="flex items-center justify-between p-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-lg transition-colors group">
                         <div className="flex items-center space-x-3">
-                          <span className="text-xs text-slate-400 w-4">{idx + 1}.</span>
+                          <span className="text-xs text-slate-400 dark:text-slate-500 w-4">{idx + 1}.</span>
                           <div>
-                            <div className="text-sm font-bold text-slate-900">{m.name}</div>
-                            <div className="text-[10px] text-slate-500">{m.department} · {m.role}</div>
+                            <div className="text-sm font-bold text-slate-900 dark:text-white">{m.name}</div>
+                            <div className="text-[10px] text-slate-500 dark:text-slate-400">{m.department} · {m.role}</div>
                           </div>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                     ))}
                   </div>

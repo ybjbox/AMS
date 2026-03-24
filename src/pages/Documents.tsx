@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FileText, Folder, Plus, Trash2, Printer, Upload, File, Image as ImageIcon, FileArchive, MoreVertical, X, Edit2, Check, Download, FolderPlus, ChevronRight, ChevronDown, FolderOpen, CornerDownRight, Search } from 'lucide-react';
 import { useDocumentStore, Document, DocumentSet, Folder as FolderType } from '../store/documents';
 
@@ -29,6 +29,17 @@ export default function Documents() {
   const [printSettings, setPrintSettings] = useState<Record<string, { duplex: boolean, color: boolean, copies: number }>>({});
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isFolderModalOpen || isMoveModalOpen || isSetModalOpen || isPrintModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isFolderModalOpen, isMoveModalOpen, isSetModalOpen, isPrintModalOpen]);
 
   const toggleAllModalFolders = () => {
     const foldersWithDocs = folders.filter(f => documents.some(d => d.folderId === f.id));
