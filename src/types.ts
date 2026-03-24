@@ -41,8 +41,77 @@ export const RolePermissions: Record<SystemRole, Permission[]> = {
 export interface User {
   id: string;
   name: string;
+  idCard: string;
+  gender: string;
+  age: number | string;
+  phone: string;
+  department: string;
+  role: string;
+  status: string;
+  joinDate: string;
+  yearsOfService: string;
+  employmentType: string;
+  hasSocialSecurity: string;
+  contractYears: number;
+  contractSignDate: string;
+  contractExpiry: string;
+  daysToExpiry: number | string;
+  changeStatus: string;
+  registeredAddress: string;
+  currentAddress: string;
+  isVeteran: string;
+  formerUnit: string;
+  militaryDates: string;
+  remarks: string;
   systemRole: SystemRole;
-  // ... other fields
+}
+
+export interface DepartmentNode {
+  id: string;
+  name: string;
+  priority?: number;
+  children?: DepartmentNode[];
+}
+
+export interface RoleNode {
+  id: string;
+  name: string;
+  departmentId: string;
+  priority?: number;
+}
+
+export interface Folder {
+  id: string;
+  name: string;
+  parentId: string | null;
+}
+
+export interface Document {
+  id: string;
+  name: string;
+  type: string;
+  url: string;
+  size: number;
+  uploadedAt: string;
+  folderId: string | null;
+}
+
+export interface PrintSettings {
+  duplex: boolean;
+  color: boolean;
+  copies: number;
+}
+
+export interface DocumentSet {
+  id: string;
+  name: string;
+  description: string;
+  documentIds: string[];
+  printSettings?: Record<string, PrintSettings>;
+}
+
+export interface ContractTemplate {
+  template: string;
 }
 
 export interface Todo {

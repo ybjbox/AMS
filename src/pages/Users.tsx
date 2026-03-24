@@ -3,7 +3,7 @@ import { Search, Plus, MoreHorizontal, Edit, Trash2, ChevronLeft, ChevronRight, 
 import { useDepartments, flattenDepartments, DepartmentNode, RoleNode } from '../store/departments';
 import { useAuth } from '../store/auth';
 import { useUserStore } from '../store/users';
-import { Permission, SystemRole } from '../types';
+import { Permission, SystemRole, User } from '../types';
 import {
   DndContext,
   closestCenter,
@@ -21,10 +21,32 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { BaseModal } from '../components/ui/BaseModal';
 
 // Sortable Item Component
+export interface ExportColumn {
+  key: keyof User | string;
+  label: string;
+  selected: boolean;
+}
+
+export interface ExportTheme {
+  id: string;
+  name: string;
+  titleFill: string;
+  headerFill: string;
+  headerFontColor: string;
+  zebraFill: string;
+}
+
+export interface ExportScript {
+  id: string;
+  name: string;
+  code: string;
+}
+
 interface SortableColumnProps {
-  col: any;
+  col: ExportColumn;
   onToggle: () => void;
 }
 
@@ -648,13 +670,13 @@ export default function Users() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [editingUser, setEditingUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isAddressBookModalOpen, setIsAddressBookModalOpen] = useState(false);
-  const [themes, setThemes] = useState<any>({});
-  const [scripts, setScripts] = useState<any[]>([]);
+  const [themes, setThemes] = useState<Record<string, ExportTheme>>({});
+  const [scripts, setScripts] = useState<ExportScript[]>([]);
   const [exportConfig, setExportConfig] = useState(() => {
     const savedTitle = localStorage.getItem('rosterExportTitle');
     return {
@@ -740,11 +762,11 @@ export default function Users() {
     return processed;
   }, [users, addressBookConfig.includeResigned, addressBookConfig.mergeDepartments]);
 
-  const calculateRowSpans = (usersList: any[], config: any) => {
+  const calculateRowSpans = (usersList: User[], config: typeof addressBookConfig) => {
     if (!config.mergeDepartments) return usersList.map(u => ({ ...u, _deptSpan: 1 }));
     
-    const result = [];
-    let currentDept = null;
+    const result: (User & { _deptSpan?: number, _deptCount?: number })[] = [];
+    let currentDept: string | null = null;
     let currentSpanIndex = -1;
     let deptCount = 0;
     
@@ -796,13 +818,13 @@ export default function Users() {
     }
   }, [processedAddressBookUsers, addressBookConfig.isTwoColumn, addressBookConfig.mergeDepartments]);
 
-  const renderTableContent = (usersData: any[], config: any) => {
-    const selectedCols = config.columns.filter((c: any) => c.selected);
+  const renderTableContent = (usersData: (User & { _deptSpan?: number, _deptCount?: number })[], config: typeof addressBookConfig) => {
+    const selectedCols = config.columns.filter((c: ExportColumn) => c.selected);
     return (
       <table className="w-full border-collapse text-sm" style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
-            {selectedCols.map((col: any) => (
+            {selectedCols.map((col: ExportColumn) => (
               <th key={col.key} className="border border-slate-300 px-3 py-2 bg-slate-50 text-center font-semibold text-slate-700">
                 {col.label}
               </th>
@@ -812,19 +834,19 @@ export default function Users() {
         <tbody>
           {usersData.map((user, idx) => (
             <tr key={user.id || idx}>
-              {selectedCols.map((col: any) => {
+              {selectedCols.map((col: ExportColumn) => {
                 if (col.key === 'department' && config.mergeDepartments) {
                   if (user._deptSpan === 0) return null;
                   return (
                     <td key={col.key} rowSpan={user._deptSpan} className="border border-slate-300 px-3 py-2 text-slate-600 text-center align-middle font-medium bg-slate-50/50" style={{ verticalAlign: 'middle', textAlign: 'center' }}>
-                      {user[col.key] || '-'}
+                      {(user as Record<string, any>)[col.key] || '-'}
                       <div className="text-xs text-slate-400 mt-0.5" style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>({user._deptCount}人)</div>
                     </td>
                   );
                 }
                 return (
                   <td key={col.key} className="border border-slate-300 px-3 py-2 text-slate-600 text-center" style={{ textAlign: 'center' }}>
-                    {user[col.key] || '-'}
+                    {(user as Record<string, any>)[col.key] || '-'}
                   </td>
                 );
               })}
@@ -1100,7 +1122,7 @@ export default function Users() {
     setIsModalOpen(true);
   };
 
-  const handleEdit = (user: any) => {
+  const handleEdit = (user: User) => {
     setEditingUser(user);
     setSelectedDeptName(user.department || '');
     setSelectedRoleName(user.role || '');
@@ -1585,7 +1607,7 @@ export default function Users() {
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">选择表格主题</label>
                       <div className="grid grid-cols-4 gap-3">
-                        {Object.values(themes).map((theme: any) => (
+                        {Object.values(themes).map((theme: ExportTheme) => (
                           <button
                             key={theme.id}
                             onClick={() => setExportConfig(prev => ({ ...prev, themeId: theme.id }))}
@@ -1663,9 +1685,8 @@ export default function Users() {
                       >
                         <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                           {exportConfig.columns.map((col, idx) => {
-                            const SortableColumnAny = SortableColumn as any;
                             return (
-                              <SortableColumnAny 
+                              <SortableColumn 
                                 key={col.key} 
                                 col={col} 
                                 onToggle={() => {
@@ -1706,7 +1727,7 @@ export default function Users() {
                             <tr key={user.id}>
                               {exportConfig.columns.filter(c => c.selected).map(col => (
                                 <td key={col.key} className="border border-slate-300 dark:border-slate-600 px-3 py-2 text-slate-600 dark:text-slate-300">
-                                  {(user as any)[col.key] || '-'}
+                                  {(user as Record<string, any>)[col.key] || '-'}
                                 </td>
                               ))}
                             </tr>
@@ -1900,9 +1921,8 @@ export default function Users() {
                       >
                         <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                           {addressBookConfig.columns.map((col, idx) => {
-                            const SortableColumnAny = SortableColumn as any;
                             return (
-                              <SortableColumnAny 
+                              <SortableColumn 
                                 key={col.key} 
                                 col={col} 
                                 onToggle={() => {
@@ -1983,7 +2003,7 @@ export default function Users() {
                 .map(user => (
                   <tr key={user.id}>
                     {exportConfig.columns.filter(c => c.selected).map(col => (
-                      <td key={col.key}>{(user as any)[col.key] || '-'}</td>
+                      <td key={col.key}>{(user as Record<string, any>)[col.key] || '-'}</td>
                     ))}
                   </tr>
                 ))}
@@ -2010,404 +2030,366 @@ export default function Users() {
       </div>
 
       {/* Employee Detail Modal */}
-      {isDetailModalOpen && selectedUser && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="detail-modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div 
-              className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" 
-              aria-hidden="true"
-              onClick={() => setIsDetailModalOpen(false)}
-            ></div>
-
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-            <div className="relative z-10 inline-block align-bottom w-full bg-white dark:bg-slate-800 rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-200 dark:border-slate-700">
-              <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
-                <h3 className="text-xl font-semibold text-slate-900 dark:text-white flex items-center" id="detail-modal-title">
-                  <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg mr-4">
-                    {selectedUser.name.charAt(0)}
+      <BaseModal
+        isOpen={isDetailModalOpen && !!selectedUser}
+        onClose={() => setIsDetailModalOpen(false)}
+        title={
+          <div className="flex items-center">
+            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg mr-4">
+              {selectedUser?.name.charAt(0)}
+            </div>
+            员工详细信息
+          </div>
+        }
+        size="2xl"
+        footer={
+          <div className="flex justify-end space-x-3 w-full">
+            <button
+              type="button"
+              onClick={() => {
+                if (!selectedUser) return;
+                const printWindow = window.open('', '', 'height=400,width=800');
+                if (printWindow) {
+                  printWindow.document.write('<html><head><title>打印档案标签</title>');
+                  printWindow.document.write('<style>');
+                  printWindow.document.write('@page { size: 17cm 4cm; margin: 0; }');
+                  printWindow.document.write('body { margin: 0; padding: 0; width: 17cm; height: 4cm; display: flex; align-items: center; justify-content: center; font-family: "SimSun", "STSong", serif; }');
+                  printWindow.document.write('.label-container { width: 16.6cm; height: 3.6cm; box-sizing: border-box; padding: 0.3cm 0.5cm; display: flex; flex-direction: column; justify-content: flex-start; border: 1px solid #000; }');
+                  printWindow.document.write('.row { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-bottom: 0.3cm; }');
+                  printWindow.document.write('.text-item { font-size: 32px; letter-spacing: 1px; }');
+                  printWindow.document.write('.dept { flex: 1; text-align: left; }');
+                  printWindow.document.write('.name { flex: 1; text-align: center; }');
+                  printWindow.document.write('.role { flex: 1; text-align: right; }');
+                  printWindow.document.write('.phone { font-size: 32px; letter-spacing: 1px; text-align: left; }');
+                  printWindow.document.write('</style>');
+                  printWindow.document.write('</head><body>');
+                  printWindow.document.write('<div class="label-container">');
+                  printWindow.document.write('<div class="row">');
+                  printWindow.document.write(`<div class="text-item dept">${selectedUser.department}</div>`);
+                  printWindow.document.write(`<div class="text-item name">${selectedUser.name}</div>`);
+                  printWindow.document.write(`<div class="text-item role">${selectedUser.role}</div>`);
+                  printWindow.document.write('</div>');
+                  printWindow.document.write('<div class="row">');
+                  printWindow.document.write(`<div class="phone">${selectedUser.phone}</div>`);
+                  printWindow.document.write('</div>');
+                  printWindow.document.write('</div>');
+                  printWindow.document.write('</body></html>');
+                  printWindow.document.close();
+                  printWindow.focus();
+                  setTimeout(() => {
+                    printWindow.print();
+                    printWindow.close();
+                  }, 250);
+                }
+              }}
+              className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center"
+            >
+              <Printer className="w-4 h-4 mr-2" />
+              打印档案标签
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!selectedUser) return;
+                const printContent = document.getElementById('printable-contact-card');
+                if (printContent) {
+                  const originalContents = document.body.innerHTML;
+                  const printWindow = window.open('', '', 'height=600,width=800');
+                  if (printWindow) {
+                    printWindow.document.write('<html><head><title>打印联系卡</title>');
+                    printWindow.document.write('<style>');
+                    printWindow.document.write('body { font-family: sans-serif; padding: 20px; }');
+                    printWindow.document.write('.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }');
+                    printWindow.document.write('.bg-slate-50 { background-color: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; }');
+                    printWindow.document.write('.flex { display: flex; justify-content: space-between; margin-bottom: 8px; }');
+                    printWindow.document.write('.text-sm { font-size: 14px; }');
+                    printWindow.document.write('.text-slate-500 { color: #64748b; }');
+                    printWindow.document.write('.font-medium { font-weight: 500; }');
+                    printWindow.document.write('h4 { margin-top: 0; margin-bottom: 10px; color: #475569; }');
+                    printWindow.document.write('@media print { .md\\:col-span-2 { grid-column: span 2; } }');
+                    printWindow.document.write('</style>');
+                    printWindow.document.write('</head><body>');
+                    printWindow.document.write(`<h2>${selectedUser.name} - 联系卡</h2>`);
+                    printWindow.document.write(printContent.innerHTML);
+                    printWindow.document.write('</body></html>');
+                    printWindow.document.close();
+                    printWindow.focus();
+                    setTimeout(() => {
+                      printWindow.print();
+                      printWindow.close();
+                    }, 250);
+                  }
+                }
+              }}
+              className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center"
+            >
+              <Printer className="w-4 h-4 mr-2" />
+              打印联系卡
+            </button>
+            {hasPermission(Permission.MANAGE_USERS) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDetailModalOpen(false);
+                  if (selectedUser) handleEdit(selectedUser);
+                }}
+                className="px-4 py-2 bg-blue-600 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                编辑信息
+              </button>
+            )}
+          </div>
+        }
+      >
+        {selectedUser && (
+          <div id="printable-contact-card">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">基本信息</h4>
+                <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">姓名</span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.name}</span>
                   </div>
-                  员工详细信息
-                </h3>
-                <button
-                  onClick={() => setIsDetailModalOpen(false)}
-                  className="text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 transition-colors p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              <div className="px-6 py-6" id="printable-contact-card">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">基本信息</h4>
-                    <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-slate-500 dark:text-slate-400">姓名</span>
-                        <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.name}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-slate-500 dark:text-slate-400">工号</span>
-                        <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.id}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-slate-500 dark:text-slate-400">性别</span>
-                        <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.gender}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-slate-500 dark:text-slate-400">年龄</span>
-                        <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.age}岁</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-slate-500 dark:text-slate-400">联系电话</span>
-                        <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.phone}</span>
-                      </div>
-                    </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">工号</span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.id}</span>
                   </div>
-
-                  <div>
-                    <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">工作信息</h4>
-                    <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-slate-500 dark:text-slate-400">部门</span>
-                        <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.department}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-slate-500 dark:text-slate-400">职位</span>
-                        <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.role}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-slate-500 dark:text-slate-400">状态</span>
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                          selectedUser.status === '在职' || selectedUser.status === 'active' ? 'bg-emerald-100 text-emerald-800' 
-                          : selectedUser.status === '试用期' ? 'bg-amber-100 text-amber-800'
-                          : selectedUser.status === '离职' || selectedUser.status === 'inactive' ? 'bg-slate-200 text-slate-800'
-                          : 'bg-blue-100 text-blue-800'
-                        }`}>
-                          {selectedUser.status === 'active' ? '在职' : selectedUser.status === 'inactive' ? '离职' : selectedUser.status}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-slate-500 dark:text-slate-400">入职时间</span>
-                        <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.joinDate}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-slate-500 dark:text-slate-400">工龄</span>
-                        <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.yearsOfService}</span>
-                      </div>
-                    </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">性别</span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.gender}</span>
                   </div>
-
-                  <div className="md:col-span-2">
-                    <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">合同与权限</h4>
-                    <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-slate-500 dark:text-slate-400">用工形式</span>
-                        <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.employmentType}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-slate-500 dark:text-slate-400">合同到期</span>
-                        <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.contractExpiry}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-slate-500 dark:text-slate-400">系统角色</span>
-                        <span className="text-sm font-medium text-slate-900 dark:text-white">
-                          {selectedUser.systemRole === SystemRole.SUPER_ADMIN ? '超级管理员' : 
-                           selectedUser.systemRole === SystemRole.ADMIN ? '管理员' : 
-                           selectedUser.systemRole === SystemRole.HR ? '人事主管' : '普通员工'}
-                        </span>
-                      </div>
-                    </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">年龄</span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.age}岁</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">联系电话</span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.phone}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const printWindow = window.open('', '', 'height=400,width=800');
-                    if (printWindow) {
-                      printWindow.document.write('<html><head><title>打印档案标签</title>');
-                      printWindow.document.write('<style>');
-                      printWindow.document.write('@page { size: 17cm 4cm; margin: 0; }');
-                      printWindow.document.write('body { margin: 0; padding: 0; width: 17cm; height: 4cm; display: flex; align-items: center; justify-content: center; font-family: "SimSun", "STSong", serif; }');
-                      printWindow.document.write('.label-container { width: 16.6cm; height: 3.6cm; box-sizing: border-box; padding: 0.3cm 0.5cm; display: flex; flex-direction: column; justify-content: flex-start; border: 1px solid #000; }');
-                      printWindow.document.write('.row { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-bottom: 0.3cm; }');
-                      printWindow.document.write('.text-item { font-size: 32px; letter-spacing: 1px; }');
-                      printWindow.document.write('.dept { flex: 1; text-align: left; }');
-                      printWindow.document.write('.name { flex: 1; text-align: center; }');
-                      printWindow.document.write('.role { flex: 1; text-align: right; }');
-                      printWindow.document.write('.phone { font-size: 32px; letter-spacing: 1px; text-align: left; }');
-                      printWindow.document.write('</style>');
-                      printWindow.document.write('</head><body>');
-                      printWindow.document.write('<div class="label-container">');
-                      printWindow.document.write('<div class="row">');
-                      printWindow.document.write(`<div class="text-item dept">${selectedUser.department}</div>`);
-                      printWindow.document.write(`<div class="text-item name">${selectedUser.name}</div>`);
-                      printWindow.document.write(`<div class="text-item role">${selectedUser.role}</div>`);
-                      printWindow.document.write('</div>');
-                      printWindow.document.write('<div class="row">');
-                      printWindow.document.write(`<div class="phone">${selectedUser.phone}</div>`);
-                      printWindow.document.write('</div>');
-                      printWindow.document.write('</div>');
-                      printWindow.document.write('</body></html>');
-                      printWindow.document.close();
-                      printWindow.focus();
-                      setTimeout(() => {
-                        printWindow.print();
-                        printWindow.close();
-                      }, 250);
-                    }
-                  }}
-                  className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center"
-                >
-                  <Printer className="w-4 h-4 mr-2" />
-                  打印档案标签
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const printContent = document.getElementById('printable-contact-card');
-                    if (printContent) {
-                      const originalContents = document.body.innerHTML;
-                      const printWindow = window.open('', '', 'height=600,width=800');
-                      if (printWindow) {
-                        printWindow.document.write('<html><head><title>打印联系卡</title>');
-                        printWindow.document.write('<style>');
-                        printWindow.document.write('body { font-family: sans-serif; padding: 20px; }');
-                        printWindow.document.write('.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }');
-                        printWindow.document.write('.bg-slate-50 { background-color: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; }');
-                        printWindow.document.write('.flex { display: flex; justify-content: space-between; margin-bottom: 8px; }');
-                        printWindow.document.write('.text-sm { font-size: 14px; }');
-                        printWindow.document.write('.text-slate-500 { color: #64748b; }');
-                        printWindow.document.write('.font-medium { font-weight: 500; }');
-                        printWindow.document.write('h4 { margin-top: 0; margin-bottom: 10px; color: #475569; }');
-                        printWindow.document.write('@media print { .md\\:col-span-2 { grid-column: span 2; } }');
-                        printWindow.document.write('</style>');
-                        printWindow.document.write('</head><body>');
-                        printWindow.document.write(`<h2>${selectedUser.name} - 联系卡</h2>`);
-                        printWindow.document.write(printContent.innerHTML);
-                        printWindow.document.write('</body></html>');
-                        printWindow.document.close();
-                        printWindow.focus();
-                        setTimeout(() => {
-                          printWindow.print();
-                          printWindow.close();
-                        }, 250);
-                      }
-                    }
-                  }}
-                  className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center"
-                >
-                  <Printer className="w-4 h-4 mr-2" />
-                  打印联系卡
-                </button>
-                {hasPermission(Permission.MANAGE_USERS) && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsDetailModalOpen(false);
-                      handleEdit(selectedUser);
-                    }}
-                    className="px-4 py-2 bg-blue-600 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    编辑信息
-                  </button>
-                )}
+              <div>
+                <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">工作信息</h4>
+                <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">部门</span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.department}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">职位</span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.role}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">状态</span>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                      selectedUser.status === '在职' || selectedUser.status === 'active' ? 'bg-emerald-100 text-emerald-800' 
+                      : selectedUser.status === '试用期' ? 'bg-amber-100 text-amber-800'
+                      : selectedUser.status === '离职' || selectedUser.status === 'inactive' ? 'bg-slate-200 text-slate-800'
+                      : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {selectedUser.status === 'active' ? '在职' : selectedUser.status === 'inactive' ? '离职' : selectedUser.status}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">入职时间</span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.joinDate}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">工龄</span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.yearsOfService}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">合同与权限</h4>
+                <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">用工形式</span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.employmentType}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">合同到期</span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.contractExpiry}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">系统角色</span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">
+                      {selectedUser.systemRole === SystemRole.SUPER_ADMIN ? '超级管理员' : 
+                       selectedUser.systemRole === SystemRole.ADMIN ? '管理员' : 
+                       selectedUser.systemRole === SystemRole.HR ? '人事主管' : '普通员工'}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </BaseModal>
 
       {/* Modal Form */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            {/* Background overlay */}
-            <div 
-              className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" 
-              aria-hidden="true"
-              onClick={() => setIsModalOpen(false)}
-            ></div>
-
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-            {/* Modal panel */}
-            <div className="relative z-10 inline-block align-bottom w-full bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full animate-in zoom-in-95 duration-200">
-              <div className="flex flex-col max-h-[85vh]">
-                {/* Header */}
-                <div className="flex justify-between items-center px-4 py-4 sm:px-6 border-b border-slate-100 bg-white shrink-0">
-                  <h3 className="text-lg leading-6 font-medium text-slate-900" id="modal-title">
-                    {editingUser ? '编辑员工信息' : '新增员工'}
-                  </h3>
-                  <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-500 transition-colors">
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                
-                {/* Body */}
-                <div className="bg-white px-4 py-5 sm:p-6 overflow-y-auto flex-1">
-                  <form id="employee-form" className="space-y-6" onSubmit={(e) => { e.preventDefault(); setIsModalOpen(false); }}>
-                  {/* 基本信息 */}
-                  <div>
-                    <h4 className="text-sm font-medium text-slate-900 mb-3 border-l-2 border-blue-500 pl-2">基本信息</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700">姓名 <span className="text-red-500">*</span></label>
-                        <input required type="text" defaultValue={editingUser?.name || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700">身份证号码 <span className="text-red-500">*</span></label>
-                        <input required type="text" defaultValue={editingUser?.idCard || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700">联系电话 <span className="text-red-500">*</span></label>
-                        <input required type="text" defaultValue={editingUser?.phone || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label className="block text-xs font-medium text-slate-700">户口地址 <span className="text-red-500">*</span></label>
-                        <input required type="text" defaultValue={editingUser?.registeredAddress || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label className="block text-xs font-medium text-slate-700">现住址 <span className="text-red-500">*</span></label>
-                        <input required type="text" defaultValue={editingUser?.currentAddress || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 工作信息 */}
-                  <div>
-                    <h4 className="text-sm font-medium text-slate-900 mb-3 border-l-2 border-blue-500 pl-2">工作信息</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700">部门 <span className="text-red-500">*</span></label>
-                        <DepartmentTreeSelect 
-                          required 
-                          value={selectedDeptName}
-                          onChange={setSelectedDeptName}
-                          departments={departments}
-                          placeholder="请选择部门"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700">职位 <span className="text-red-500">*</span></label>
-                        <RoleTreeSelect 
-                          required 
-                          value={selectedRoleName}
-                          onChange={setSelectedRoleName}
-                          onDeptChange={setSelectedDeptName}
-                          departments={departments}
-                          roles={roles}
-                          placeholder="请选择职位"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700">状态 <span className="text-red-500">*</span></label>
-                        <CustomCombobox 
-                          required 
-                          options={['在职', '离职', '试用期']}
-                          defaultValue={editingUser?.status === 'active' ? '在职' : editingUser?.status === 'inactive' ? '离职' : (editingUser?.status || '在职')} 
-                          placeholder="选择或输入状态"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700">入职时间 <span className="text-red-500">*</span></label>
-                        <input required type="date" defaultValue={editingUser?.joinDate || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700">用工形式 <span className="text-red-500">*</span></label>
-                        <CustomCombobox 
-                          required 
-                          options={['全职', '兼职', '实习', '外包', '退休返聘']}
-                          defaultValue={editingUser?.employmentType || '全职'} 
-                          placeholder="选择或输入用工形式"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700">变动情况 <span className="text-red-500">*</span></label>
-                        <input required type="text" defaultValue={editingUser?.changeStatus || '无'} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700">系统角色 <span className="text-red-500">*</span></label>
-                        <CustomCombobox 
-                          required 
-                          options={['超级管理员', '管理员', '人事主管', '普通员工']}
-                          defaultValue={
-                            editingUser?.systemRole === SystemRole.SUPER_ADMIN ? '超级管理员' : 
-                            editingUser?.systemRole === SystemRole.ADMIN ? '管理员' : 
-                            editingUser?.systemRole === SystemRole.HR ? '人事主管' : '普通员工'
-                          } 
-                          placeholder="选择系统角色"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 合同与社保 */}
-                  <div>
-                    <h4 className="text-sm font-medium text-slate-900 mb-3 border-l-2 border-blue-500 pl-2">合同与社保</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700">是否购买社保</label>
-                        <CustomCombobox 
-                          defaultValue={editingUser?.hasSocialSecurity || '是'}
-                          options={['是', '否']}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700">合同年限(年)</label>
-                        <input type="number" defaultValue={editingUser?.contractYears || 3} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700">最新签订时间</label>
-                        <input type="date" defaultValue={editingUser?.contractSignDate || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 退役军人信息 */}
-                  <div>
-                    <h4 className="text-sm font-medium text-slate-900 mb-3 border-l-2 border-blue-500 pl-2">退役军人信息</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700">是否退役军人</label>
-                        <CustomCombobox 
-                          defaultValue={editingUser?.isVeteran || '否'}
-                          options={['是', '否']}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700">原服役单位</label>
-                        <input type="text" defaultValue={editingUser?.formerUnit || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700">入伍及退役时间</label>
-                        <input type="text" defaultValue={editingUser?.militaryDates || ''} placeholder="如: 2015-09 至 2017-09" className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 备注 */}
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700">备注</label>
-                    <textarea rows={2} defaultValue={editingUser?.remarks || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
-                  </div>
-                </form>
+      <BaseModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingUser ? '编辑员工信息' : '新增员工'}
+        size="4xl"
+        footer={
+          <>
+            <button type="submit" form="employee-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+            <button type="button" onClick={() => setIsModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
+          </>
+        }
+      >
+        <form id="employee-form" className="space-y-6" onSubmit={(e) => { e.preventDefault(); setIsModalOpen(false); }}>
+          {/* 基本信息 */}
+          <div>
+            <h4 className="text-sm font-medium text-slate-900 mb-3 border-l-2 border-blue-500 pl-2">基本信息</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-700">姓名 <span className="text-red-500">*</span></label>
+                <input required type="text" defaultValue={editingUser?.name || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
               </div>
-              
-              {/* Footer */}
-              <div className="bg-slate-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200 shrink-0">
-                <button type="submit" form="employee-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button>
-                <button type="button" onClick={() => setIsModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
+              <div>
+                <label className="block text-xs font-medium text-slate-700">身份证号码 <span className="text-red-500">*</span></label>
+                <input required type="text" defaultValue={editingUser?.idCard || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700">联系电话 <span className="text-red-500">*</span></label>
+                <input required type="text" defaultValue={editingUser?.phone || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-medium text-slate-700">户口地址 <span className="text-red-500">*</span></label>
+                <input required type="text" defaultValue={editingUser?.registeredAddress || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-medium text-slate-700">现住址 <span className="text-red-500">*</span></label>
+                <input required type="text" defaultValue={editingUser?.currentAddress || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    )}
+
+          {/* 工作信息 */}
+          <div>
+            <h4 className="text-sm font-medium text-slate-900 mb-3 border-l-2 border-blue-500 pl-2">工作信息</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-700">部门 <span className="text-red-500">*</span></label>
+                <DepartmentTreeSelect 
+                  required 
+                  value={selectedDeptName}
+                  onChange={setSelectedDeptName}
+                  departments={departments}
+                  placeholder="请选择部门"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700">职位 <span className="text-red-500">*</span></label>
+                <RoleTreeSelect 
+                  required 
+                  value={selectedRoleName}
+                  onChange={setSelectedRoleName}
+                  onDeptChange={setSelectedDeptName}
+                  departments={departments}
+                  roles={roles}
+                  placeholder="请选择职位"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700">状态 <span className="text-red-500">*</span></label>
+                <CustomCombobox 
+                  required 
+                  options={['在职', '离职', '试用期']}
+                  defaultValue={editingUser?.status === 'active' ? '在职' : editingUser?.status === 'inactive' ? '离职' : (editingUser?.status || '在职')} 
+                  placeholder="选择或输入状态"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700">入职时间 <span className="text-red-500">*</span></label>
+                <input required type="date" defaultValue={editingUser?.joinDate || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700">用工形式 <span className="text-red-500">*</span></label>
+                <CustomCombobox 
+                  required 
+                  options={['全职', '兼职', '实习', '外包', '退休返聘']}
+                  defaultValue={editingUser?.employmentType || '全职'} 
+                  placeholder="选择或输入用工形式"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700">变动情况 <span className="text-red-500">*</span></label>
+                <input required type="text" defaultValue={editingUser?.changeStatus || '无'} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700">系统角色 <span className="text-red-500">*</span></label>
+                <CustomCombobox 
+                  required 
+                  options={['超级管理员', '管理员', '人事主管', '普通员工']}
+                  defaultValue={
+                    editingUser?.systemRole === SystemRole.SUPER_ADMIN ? '超级管理员' : 
+                    editingUser?.systemRole === SystemRole.ADMIN ? '管理员' : 
+                    editingUser?.systemRole === SystemRole.HR ? '人事主管' : '普通员工'
+                  } 
+                  placeholder="选择系统角色"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 合同与社保 */}
+          <div>
+            <h4 className="text-sm font-medium text-slate-900 mb-3 border-l-2 border-blue-500 pl-2">合同与社保</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-700">是否购买社保</label>
+                <CustomCombobox 
+                  defaultValue={editingUser?.hasSocialSecurity || '是'}
+                  options={['是', '否']}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700">合同年限(年)</label>
+                <input type="number" defaultValue={editingUser?.contractYears || 3} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700">最新签订时间</label>
+                <input type="date" defaultValue={editingUser?.contractSignDate || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+              </div>
+            </div>
+          </div>
+
+          {/* 退役军人信息 */}
+          <div>
+            <h4 className="text-sm font-medium text-slate-900 mb-3 border-l-2 border-blue-500 pl-2">退役军人信息</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-700">是否退役军人</label>
+                <CustomCombobox 
+                  defaultValue={editingUser?.isVeteran || '否'}
+                  options={['是', '否']}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700">原服役单位</label>
+                <input type="text" defaultValue={editingUser?.formerUnit || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700">入伍及退役时间</label>
+                <input type="text" defaultValue={editingUser?.militaryDates || ''} placeholder="如: 2015-09 至 2017-09" className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+              </div>
+            </div>
+          </div>
+
+          {/* 备注 */}
+          <div>
+            <label className="block text-xs font-medium text-slate-700">备注</label>
+            <textarea rows={2} defaultValue={editingUser?.remarks || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+          </div>
+        </form>
+      </BaseModal>
     </div>
   );
 }

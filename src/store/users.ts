@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { SystemRole } from '../types';
+import { SystemRole, User } from '../types';
 
 // 辅助函数
 const generateIdCard = () => {
@@ -47,43 +47,15 @@ const calculateDaysToExpiry = (expiryDate: string) => {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 };
 
-export interface UserData {
-  id: string;
-  name: string;
-  idCard: string;
-  gender: string;
-  age: number | string;
-  phone: string;
-  department: string;
-  role: string;
-  status: string;
-  joinDate: string;
-  yearsOfService: string;
-  employmentType: string;
-  hasSocialSecurity: string;
-  contractYears: number;
-  contractSignDate: string;
-  contractExpiry: string;
-  daysToExpiry: number | string;
-  changeStatus: string;
-  registeredAddress: string;
-  currentAddress: string;
-  isVeteran: string;
-  formerUnit: string;
-  militaryDates: string;
-  remarks: string;
-  systemRole: SystemRole;
-}
-
 interface UserStore {
-  users: UserData[];
-  setUsers: (users: UserData[]) => void;
-  addUser: (user: UserData) => void;
-  updateUser: (user: UserData) => void;
+  users: User[];
+  setUsers: (users: User[]) => void;
+  addUser: (user: User) => void;
+  updateUser: (user: User) => void;
   deleteUser: (id: string) => void;
 }
 
-const initialUsers: UserData[] = Array.from({ length: 45 }).map((_, i) => {
+const initialUsers: User[] = Array.from({ length: 45 }).map((_, i) => {
   const idCard = generateIdCard();
   const joinDate = new Date(Date.now() - Math.random() * 100000000000).toISOString().split('T')[0];
   const contractSignDate = new Date(Date.now() - Math.random() * 31536000000).toISOString().split('T')[0];
