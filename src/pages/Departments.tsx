@@ -1,0 +1,523 @@
+import React, { useState, useEffect } from 'react';
+import { ChevronRight, ChevronDown, Folder, FolderOpen, Plus, Edit2, Trash2, Building2, X, Briefcase } from 'lucide-react';
+import { useDepartments, DepartmentNode, RoleNode, flattenDepartments } from '../store/departments';
+
+type ModalState = {
+  isOpen: boolean;
+  mode: 'add' | 'edit';
+  targetId: string | null;
+  parentId: string | null;
+  defaultName: string;
+  defaultPriority: number;
+};
+
+type RoleModalState = {
+  isOpen: boolean;
+  mode: 'add' | 'edit';
+  targetId: string | null;
+  departmentId: string | null;
+  defaultName: string;
+  defaultPriority: number;
+};
+
+export default function Departments() {
+  const { departments, setDepartments, roles, setRoles } = useDepartments();
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [expandedRoleDepts, setExpandedRoleDepts] = useState<Set<string>>(new Set());
+  
+  const [modal, setModal] = useState<ModalState>({
+    isOpen: false,
+    mode: 'add',
+    targetId: null,
+    parentId: null,
+    defaultName: '',
+    defaultPriority: 0
+  });
+
+  const [roleModal, setRoleModal] = useState<RoleModalState>({
+    isOpen: false,
+    mode: 'add',
+    targetId: null,
+    departmentId: null,
+    defaultName: '',
+    defaultPriority: 0
+  });
+
+  // 防止弹窗打开时底层页面滚动
+  useEffect(() => {
+    if (modal.isOpen || roleModal.isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [modal.isOpen, roleModal.isOpen]);
+
+  const toggleExpand = (id: string) => {
+    const newExpanded = new Set(expandedIds);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedIds(newExpanded);
+  };
+
+  const handleAddChild = (parentId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setModal({ isOpen: true, mode: 'add', targetId: null, parentId, defaultName: '', defaultPriority: 0 });
+  };
+
+  const handleAddRoot = () => {
+    setModal({ isOpen: true, mode: 'add', targetId: null, parentId: null, defaultName: '', defaultPriority: 0 });
+  };
+
+  const handleEdit = (node: DepartmentNode, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setModal({ isOpen: true, mode: 'edit', targetId: node.id, parentId: null, defaultName: node.name, defaultPriority: node.priority || 0 });
+  };
+
+  const handleDelete = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm('确定要删除该部门吗？如果包含子部门也将一并删除。')) {
+      const deleteNode = (nodes: DepartmentNode[]): DepartmentNode[] => {
+        return nodes.filter(n => n.id !== id).map(n => ({
+          ...n,
+          children: n.children ? deleteNode(n.children) : undefined
+        }));
+      };
+      setDepartments(deleteNode(departments));
+    }
+  };
+
+  const handleModalSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
+    const priority = parseInt(formData.get('priority') as string) || 0;
+    
+    if (modal.mode === 'add') {
+      const newNode: DepartmentNode = { id: Date.now().toString(), name, priority };
+      if (modal.parentId) {
+        const addNode = (nodes: DepartmentNode[]): DepartmentNode[] => {
+          return nodes.map(n => {
+            if (n.id === modal.parentId) {
+              return { ...n, children: [...(n.children || []), newNode] };
+            }
+            return { ...n, children: n.children ? addNode(n.children) : undefined };
+          });
+        };
+        setDepartments(addNode(departments));
+        setExpandedIds(prev => new Set(prev).add(modal.parentId!));
+      } else {
+        setDepartments([...departments, newNode]);
+      }
+    } else if (modal.mode === 'edit' && modal.targetId) {
+      const editNode = (nodes: DepartmentNode[]): DepartmentNode[] => {
+        return nodes.map(n => {
+          if (n.id === modal.targetId) {
+            return { ...n, name, priority };
+          }
+          return { ...n, children: n.children ? editNode(n.children) : undefined };
+        });
+      };
+      setDepartments(editNode(departments));
+    }
+    
+    setModal(prev => ({ ...prev, isOpen: false }));
+  };
+
+  // --- Role Handlers ---
+  const toggleRoleDept = (id: string) => {
+    const newExpanded = new Set(expandedRoleDepts);
+    if (newExpanded.has(id)) newExpanded.delete(id);
+    else newExpanded.add(id);
+    setExpandedRoleDepts(newExpanded);
+  };
+
+  const handleAddRole = (departmentId: string) => {
+    setRoleModal({ isOpen: true, mode: 'add', targetId: null, departmentId, defaultName: '', defaultPriority: 0 });
+  };
+
+  const handleEditRole = (role: RoleNode) => {
+    setRoleModal({ isOpen: true, mode: 'edit', targetId: role.id, departmentId: role.departmentId, defaultName: role.name, defaultPriority: role.priority || 0 });
+  };
+
+  const handleDeleteRole = (id: string) => {
+    if (confirm('确定要删除该职位吗？')) {
+      setRoles(roles.filter(r => r.id !== id));
+    }
+  };
+
+  const handleRoleModalSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
+    const priority = parseInt(formData.get('priority') as string) || 0;
+    
+    if (roleModal.mode === 'add' && roleModal.departmentId) {
+      setRoles([...roles, { id: Date.now().toString(), name, departmentId: roleModal.departmentId, priority }]);
+    } else if (roleModal.mode === 'edit' && roleModal.targetId) {
+      setRoles(roles.map(r => r.id === roleModal.targetId ? { ...r, name, priority } : r));
+    }
+    setRoleModal(prev => ({ ...prev, isOpen: false }));
+  };
+
+  const renderTree = (nodes: DepartmentNode[], level = 0) => {
+    return (
+      <ul className={`space-y-1 ${level > 0 ? 'ml-6 border-l border-slate-200 pl-2 mt-1' : ''}`}>
+        {nodes.map(node => {
+          const isExpanded = expandedIds.has(node.id);
+          const hasChildren = node.children && node.children.length > 0;
+          
+          return (
+            <li key={node.id} className="relative">
+              <div 
+                className={`flex items-center justify-between py-2 px-3 rounded-lg cursor-pointer transition-colors hover:bg-slate-100 group ${level === 0 ? 'bg-slate-50 border border-slate-200 mb-2' : ''}`}
+                onClick={() => hasChildren && toggleExpand(node.id)}
+              >
+                <div className="flex items-center space-x-2">
+                  <span className="w-5 h-5 flex items-center justify-center text-slate-400 shrink-0">
+                    {hasChildren ? (
+                      isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
+                    ) : (
+                      <span className="w-4 h-4" /> // Placeholder for alignment
+                    )}
+                  </span>
+                  
+                  {level === 0 ? (
+                    <Building2 className="w-5 h-5 text-blue-600 shrink-0" />
+                  ) : (
+                    isExpanded && hasChildren ? (
+                      <FolderOpen className="w-4 h-4 text-blue-500 shrink-0" />
+                    ) : (
+                      <Folder className="w-4 h-4 text-blue-500 shrink-0" />
+                    )
+                  )}
+                  
+                  <span className={`text-sm ${level === 0 ? 'font-semibold text-slate-800' : 'font-medium text-slate-700'}`}>
+                    {node.name}
+                  </span>
+                  
+                  {hasChildren && (
+                    <span className="ml-2 px-2 py-0.5 text-[10px] font-medium bg-slate-200 text-slate-600 rounded-full">
+                      {node.children!.length}
+                    </span>
+                  )}
+                </div>
+                
+                <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={(e) => handleAddChild(node.id, e)}
+                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                    title="添加子部门"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={(e) => handleEdit(node, e)}
+                    className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
+                    title="编辑"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={(e) => handleDelete(node.id, e)}
+                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                    title="删除"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              
+              {isExpanded && hasChildren && (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                  {renderTree(node.children!, level + 1)}
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    );
+  };
+
+  const flatDepts = flattenDepartments(departments);
+
+  const expandAllRoleDepts = () => {
+    setExpandedRoleDepts(new Set(flatDepts.map(d => d.id)));
+  };
+
+  const collapseAllRoleDepts = () => {
+    setExpandedRoleDepts(new Set());
+  };
+
+  const isAllRoleDeptsExpanded = flatDepts.length > 0 && expandedRoleDepts.size === flatDepts.length;
+
+  const renderRoleTree = (nodes: DepartmentNode[], level = 0) => {
+    return (
+      <ul className={`space-y-2 ${level > 0 ? 'ml-4 border-l border-slate-200 dark:border-slate-700 pl-2 mt-2' : ''}`}>
+        {nodes.map(node => {
+          const isExpanded = expandedRoleDepts.has(node.id);
+          const hasChildren = node.children && node.children.length > 0;
+          const deptRoles = roles.filter(r => r.departmentId === node.id);
+          
+          return (
+            <li key={node.id} className="relative">
+              <div className={`border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden ${level === 0 ? 'bg-white dark:bg-slate-800' : 'bg-slate-50/50 dark:bg-slate-800/30'}`}>
+                <div 
+                  className={`px-3 py-2 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ${level === 0 ? 'bg-slate-50 dark:bg-slate-800/50 font-medium' : ''}`}
+                  onClick={() => toggleRoleDept(node.id)}
+                >
+                  <div className="flex items-center space-x-2">
+                    {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" /> : <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />}
+                    <span className="text-sm text-slate-700 dark:text-slate-300">{node.name}</span>
+                    <span className="text-xs text-slate-400">({deptRoles.length})</span>
+                  </div>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleAddRole(node.id); }}
+                    className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors shrink-0"
+                    title="新增职位"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+                
+                {isExpanded && (
+                  <div className="p-2 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700">
+                    {deptRoles.length > 0 ? (
+                      <ul className="space-y-1">
+                        {deptRoles.map(role => (
+                          <li key={role.id} className="flex items-center justify-between p-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700/50 group">
+                            <span className="text-sm text-slate-600 dark:text-slate-300">{role.name}</span>
+                            <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button 
+                                onClick={() => handleEditRole(role)}
+                                className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-md transition-colors"
+                                title="编辑"
+                              >
+                                <Edit2 className="w-3 h-3" />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteRole(role.id)}
+                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
+                                title="删除"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="text-xs text-slate-400 text-center py-2">暂无职位</div>
+                    )}
+                    
+                    {hasChildren && (
+                      <div className="mt-2">
+                        {renderRoleTree(node.children!, level + 1)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 部门架构 */}
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col">
+          <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50 rounded-t-xl">
+            <div className="flex items-center space-x-2">
+              <Building2 className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+              <h2 className="text-base font-medium text-slate-800 dark:text-slate-200">部门架构 ({flatDepts.length})</h2>
+            </div>
+            <button 
+              onClick={handleAddRoot}
+              className="inline-flex items-center justify-center px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              新增一级部门
+            </button>
+          </div>
+          <div className="p-6 flex-1">
+            {departments.length > 0 ? (
+              renderTree(departments)
+            ) : (
+              <div className="text-center py-12">
+                <Building2 className="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600" />
+                <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-200">暂无部门数据</h3>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">开始添加您的第一个公司部门吧。</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 职位设置 */}
+        <div className="lg:col-span-1 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col">
+          <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50 rounded-t-xl">
+            <div className="flex items-center space-x-2">
+              <Briefcase className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+              <h2 className="text-base font-medium text-slate-800 dark:text-slate-200">职位设置 ({roles.length})</h2>
+            </div>
+            {departments.length > 0 && (
+              <button
+                onClick={isAllRoleDeptsExpanded ? collapseAllRoleDepts : expandAllRoleDepts}
+                className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors"
+              >
+                {isAllRoleDeptsExpanded ? '一键收起' : '一键展开'}
+              </button>
+            )}
+          </div>
+          <div className="p-4 flex-1 overflow-y-auto space-y-3">
+            {departments.length > 0 ? (
+              renderRoleTree(departments)
+            ) : (
+              <div className="text-center py-12">
+                <Briefcase className="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600" />
+                <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-200">暂无部门数据</h3>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">请先在左侧添加部门</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Department Modal */}
+      {modal.isOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div 
+              className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" 
+              aria-hidden="true"
+              onClick={() => setModal(prev => ({ ...prev, isOpen: false }))}
+            ></div>
+
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div className="relative z-10 inline-block align-bottom w-full bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full animate-in zoom-in-95 duration-200">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="flex justify-between items-center mb-5">
+                  <h3 className="text-lg leading-6 font-medium text-slate-900" id="modal-title">
+                    {modal.mode === 'add' ? (modal.parentId ? '新增子部门' : '新增一级部门') : '编辑部门'}
+                  </h3>
+                  <button onClick={() => setModal(prev => ({ ...prev, isOpen: false }))} className="text-slate-400 hover:text-slate-500 transition-colors">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                
+                <form id="dept-form" onSubmit={handleModalSubmit} className="space-y-4">
+                  {modal.mode === 'add' && modal.parentId && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">上级部门</label>
+                      <input 
+                        type="text" 
+                        disabled 
+                        value={flatDepts.find(d => d.id === modal.parentId)?.name || ''} 
+                        className="block w-full border border-slate-200 bg-slate-50 rounded-md shadow-sm py-2 px-3 text-slate-500 sm:text-sm" 
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">部门名称 <span className="text-red-500">*</span></label>
+                    <input 
+                      required 
+                      autoFocus
+                      name="name"
+                      type="text" 
+                      defaultValue={modal.defaultName} 
+                      placeholder="请输入部门名称"
+                      className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">优先级</label>
+                    <input 
+                      name="priority"
+                      type="number" 
+                      defaultValue={modal.defaultPriority} 
+                      placeholder="数字越大越靠前"
+                      className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                    />
+                    <p className="mt-1 text-xs text-slate-500">数字越大，在列表中的排序越靠前</p>
+                  </div>
+                </form>
+              </div>
+              <div className="bg-slate-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200">
+                <button type="submit" form="dept-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+                <button type="button" onClick={() => setModal(prev => ({ ...prev, isOpen: false }))} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Role Modal */}
+      {roleModal.isOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div 
+              className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" 
+              aria-hidden="true"
+              onClick={() => setRoleModal(prev => ({ ...prev, isOpen: false }))}
+            ></div>
+
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div className="relative z-10 inline-block align-bottom w-full bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full animate-in zoom-in-95 duration-200">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="flex justify-between items-center mb-5">
+                  <h3 className="text-lg leading-6 font-medium text-slate-900" id="modal-title">
+                    {roleModal.mode === 'add' ? '新增职位' : '编辑职位'}
+                  </h3>
+                  <button onClick={() => setRoleModal(prev => ({ ...prev, isOpen: false }))} className="text-slate-400 hover:text-slate-500 transition-colors">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                
+                <form id="role-form" onSubmit={handleRoleModalSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">职位名称 <span className="text-red-500">*</span></label>
+                    <input 
+                      required 
+                      autoFocus
+                      name="name"
+                      type="text" 
+                      defaultValue={roleModal.defaultName} 
+                      placeholder="请输入职位名称"
+                      className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">优先级</label>
+                    <input 
+                      name="priority"
+                      type="number" 
+                      defaultValue={roleModal.defaultPriority} 
+                      placeholder="数字越大越靠前"
+                      className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                    />
+                    <p className="mt-1 text-xs text-slate-500">数字越大，在列表中的排序越靠前</p>
+                  </div>
+                </form>
+              </div>
+              <div className="bg-slate-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200">
+                <button type="submit" form="role-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+                <button type="button" onClick={() => setRoleModal(prev => ({ ...prev, isOpen: false }))} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
