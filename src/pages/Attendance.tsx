@@ -3,8 +3,11 @@ import { Upload, FileText, AlertTriangle, Clock, Users, Calendar, Download, Sear
 import { useAttendanceStore, PunchRecord, EmployeeSchedule, Shift } from '../store/attendance';
 import { useUserStore } from '../store/users';
 import { attendanceService } from '../services/attendance';
+import { useAuth } from '../store/auth';
+import { Permission } from '../types';
 
 export default function Attendance() {
+  const { hasPermission } = useAuth();
   const [activeTab, setActiveTab] = useState<'records' | 'schedules' | 'anomalies' | 'shifts'>('records');
   const { records, schedules, anomalies, setRecords, setSchedules, analyzeAnomalies, shifts, addShift, updateShift, deleteShift, fetchData, isLoading } = useAttendanceStore();
   const { users, fetchUsers } = useUserStore();
@@ -217,37 +220,39 @@ export default function Attendance() {
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden min-h-[500px]">
         {activeTab === 'records' && (
           <div className="p-6">
-            <div className="mb-6">
-              <div className="w-full max-w-2xl">
-                <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">上传 Excel 文件</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                  支持 .xls 和 .xlsx 格式。表头需包含：工号、姓名、日期、时间（或打卡时间）。
-                </p>
-                <div 
-                  className={`border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center transition-colors ${isUploading ? 'bg-slate-50 dark:bg-slate-800/50 cursor-wait' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer'}`}
-                  onClick={() => !isUploading && fileInputRef.current?.click()}
-                >
-                  <FileSpreadsheet className={`w-10 h-10 mx-auto mb-3 ${isUploading ? 'text-blue-400 animate-pulse' : 'text-slate-400'}`} />
-                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    {isUploading ? '正在上传并处理...' : '点击选择 Excel 文件'}
+            {hasPermission(Permission.MANAGE_ATTENDANCE) && (
+              <div className="mb-6">
+                <div className="w-full max-w-2xl">
+                  <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">上传 Excel 文件</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                    支持 .xls 和 .xlsx 格式。表头需包含：工号、姓名、日期、时间（或打卡时间）。
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">支持 .xls, .xlsx</p>
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    onChange={handleFileUpload} 
-                    accept=".xls,.xlsx" 
-                    className="hidden" 
-                    disabled={isUploading}
-                  />
+                  <div 
+                    className={`border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center transition-colors ${isUploading ? 'bg-slate-50 dark:bg-slate-800/50 cursor-wait' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer'}`}
+                    onClick={() => !isUploading && fileInputRef.current?.click()}
+                  >
+                    <FileSpreadsheet className={`w-10 h-10 mx-auto mb-3 ${isUploading ? 'text-blue-400 animate-pulse' : 'text-slate-400'}`} />
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {isUploading ? '正在上传并处理...' : '点击选择 Excel 文件'}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">支持 .xls, .xlsx</p>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handleFileUpload} 
+                      accept=".xls,.xlsx" 
+                      className="hidden" 
+                      disabled={isUploading}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="mt-8">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium text-slate-900 dark:text-white">已导入记录 ({records.length})</h3>
-                {records.length > 0 && (
+                {records.length > 0 && hasPermission(Permission.MANAGE_ATTENDANCE) && (
                   <button
                     onClick={() => setRecords([])}
                     className="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
@@ -298,101 +303,103 @@ export default function Attendance() {
 
         {activeTab === 'schedules' && (
           <div className="p-6">
-            <div className="mb-8 p-5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-              <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-4">手动分配班次</h3>
-              <div className="flex flex-col sm:flex-row gap-4 items-end">
-                <div className="flex-1 relative" ref={dropdownRef}>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">选择员工</label>
-                  <div 
-                    className="w-full p-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white cursor-pointer flex justify-between items-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    onClick={() => setIsEmployeeDropdownOpen(!isEmployeeDropdownOpen)}
-                    tabIndex={0}
-                  >
-                    <span className={selectedEmployeeId ? '' : 'text-slate-500'}>
-                      {selectedEmployeeId ? users.find(u => u.id === selectedEmployeeId)?.name + ' (' + selectedEmployeeId + ')' : '-- 请选择员工 --'}
-                    </span>
-                    <ChevronDown className="w-4 h-4 text-slate-400" />
-                  </div>
-                  
-                  {isEmployeeDropdownOpen && (
-                    <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg max-h-60 flex flex-col">
-                      <div className="p-2 border-b border-slate-200 dark:border-slate-700">
-                        <div className="relative">
-                          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-                          <input
-                            type="text"
-                            placeholder="搜索姓名或工号..."
-                            value={employeeSearchQuery}
-                            onChange={(e) => setEmployeeSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-md bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            onClick={(e) => e.stopPropagation()}
-                            autoFocus
-                          />
+            {hasPermission(Permission.MANAGE_ATTENDANCE) && (
+              <div className="mb-8 p-5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-4">手动分配班次</h3>
+                <div className="flex flex-col sm:flex-row gap-4 items-end">
+                  <div className="flex-1 relative" ref={dropdownRef}>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">选择员工</label>
+                    <div 
+                      className="w-full p-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white cursor-pointer flex justify-between items-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      onClick={() => setIsEmployeeDropdownOpen(!isEmployeeDropdownOpen)}
+                      tabIndex={0}
+                    >
+                      <span className={selectedEmployeeId ? '' : 'text-slate-500'}>
+                        {selectedEmployeeId ? users.find(u => u.id === selectedEmployeeId)?.name + ' (' + selectedEmployeeId + ')' : '-- 请选择员工 --'}
+                      </span>
+                      <ChevronDown className="w-4 h-4 text-slate-400" />
+                    </div>
+                    
+                    {isEmployeeDropdownOpen && (
+                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg max-h-60 flex flex-col">
+                        <div className="p-2 border-b border-slate-200 dark:border-slate-700">
+                          <div className="relative">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                            <input
+                              type="text"
+                              placeholder="搜索姓名或工号..."
+                              value={employeeSearchQuery}
+                              onChange={(e) => setEmployeeSearchQuery(e.target.value)}
+                              className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-md bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              onClick={(e) => e.stopPropagation()}
+                              autoFocus
+                            />
+                          </div>
                         </div>
-                      </div>
-                      <div className="overflow-y-auto flex-1">
-                        <div 
-                          className={`px-4 py-2 text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 ${!selectedEmployeeId ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'}`}
-                          onClick={() => {
-                            setSelectedEmployeeId('');
-                            setIsEmployeeDropdownOpen(false);
-                            setEmployeeSearchQuery('');
-                          }}
-                        >
-                          -- 请选择员工 --
-                        </div>
-                        {users.filter(u => 
-                          u.name.toLowerCase().includes(employeeSearchQuery.toLowerCase()) || 
-                          u.id.toLowerCase().includes(employeeSearchQuery.toLowerCase())
-                        ).map(u => (
-                          <div
-                            key={u.id}
-                            className={`px-4 py-2 text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 ${selectedEmployeeId === u.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'}`}
+                        <div className="overflow-y-auto flex-1">
+                          <div 
+                            className={`px-4 py-2 text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 ${!selectedEmployeeId ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'}`}
                             onClick={() => {
-                              setSelectedEmployeeId(u.id);
+                              setSelectedEmployeeId('');
                               setIsEmployeeDropdownOpen(false);
                               setEmployeeSearchQuery('');
                             }}
                           >
-                            {u.name} ({u.id})
+                            -- 请选择员工 --
                           </div>
-                        ))}
+                          {users.filter(u => 
+                            u.name.toLowerCase().includes(employeeSearchQuery.toLowerCase()) || 
+                            u.id.toLowerCase().includes(employeeSearchQuery.toLowerCase())
+                          ).map(u => (
+                            <div
+                              key={u.id}
+                              className={`px-4 py-2 text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 ${selectedEmployeeId === u.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'}`}
+                              onClick={() => {
+                                setSelectedEmployeeId(u.id);
+                                setIsEmployeeDropdownOpen(false);
+                                setEmployeeSearchQuery('');
+                              }}
+                            >
+                              {u.name} ({u.id})
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">选择班次 (可多选)</label>
-                  <div className="flex flex-wrap gap-3">
-                    {shifts.map(s => (
-                      <label key={s.id} className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedShiftIds.includes(s.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedShiftIds([...selectedShiftIds, s.id]);
-                            } else {
-                              setSelectedShiftIds(selectedShiftIds.filter(id => id !== s.id));
-                            }
-                          }}
-                          className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-slate-700 dark:text-slate-300">{s.name} ({s.startTime}-{s.endTime})</span>
-                      </label>
-                    ))}
+                    )}
                   </div>
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">选择班次 (可多选)</label>
+                    <div className="flex flex-wrap gap-3">
+                      {shifts.map(s => (
+                        <label key={s.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedShiftIds.includes(s.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedShiftIds([...selectedShiftIds, s.id]);
+                              } else {
+                                setSelectedShiftIds(selectedShiftIds.filter(id => id !== s.id));
+                              }
+                            }}
+                            className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-slate-700 dark:text-slate-300">{s.name} ({s.startTime}-{s.endTime})</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleAddManualSchedule}
+                    disabled={!selectedEmployeeId || selectedShiftIds.length === 0}
+                    className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-transform text-sm font-medium whitespace-nowrap flex items-center"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    添加排班
+                  </button>
                 </div>
-                <button
-                  onClick={handleAddManualSchedule}
-                  disabled={!selectedEmployeeId || selectedShiftIds.length === 0}
-                  className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium whitespace-nowrap flex items-center"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  添加排班
-                </button>
               </div>
-            </div>
+            )}
 
             <div className="mt-8">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
@@ -449,16 +456,18 @@ export default function Attendance() {
                           }) : (schedule as any).shiftId}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button
-                            onClick={() => {
-                              const newSchedules = [...schedules];
-                              newSchedules.splice(idx, 1);
-                              setSchedules(newSchedules);
-                            }}
-                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                          >
-                            删除
-                          </button>
+                          {hasPermission(Permission.MANAGE_ATTENDANCE) && (
+                            <button
+                              onClick={() => {
+                                const newSchedules = [...schedules];
+                                newSchedules.splice(idx, 1);
+                                setSchedules(newSchedules);
+                              }}
+                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            >
+                              删除
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -473,15 +482,17 @@ export default function Attendance() {
           <div className="p-6 flex flex-col h-full">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
               <div className="flex items-center">
-                <button
-                  onClick={handleAnalyze}
-                  className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium shadow-sm"
-                >
-                  <AlertTriangle className="w-4 h-4 mr-2" />
-                  一键分析异常
-                </button>
+                {hasPermission(Permission.MANAGE_ATTENDANCE) && (
+                  <button
+                    onClick={handleAnalyze}
+                    className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium shadow-sm"
+                  >
+                    <AlertTriangle className="w-4 h-4 mr-2" />
+                    一键分析异常
+                  </button>
+                )}
                 {anomalies.length > 0 && (
-                  <span className="ml-4 text-sm text-slate-500 dark:text-slate-400">
+                  <span className={`${hasPermission(Permission.MANAGE_ATTENDANCE) ? 'ml-4' : ''} text-sm text-slate-500 dark:text-slate-400`}>
                     共发现 <span className="font-bold text-red-500">{anomalies.length}</span> 条异常
                   </span>
                 )}
@@ -559,71 +570,73 @@ export default function Attendance() {
 
         {activeTab === 'shifts' && (
           <div className="p-6">
-            <div className="mb-6 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
-              <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-4">
-                {editingShift ? '编辑班次' : '添加新班次'}
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">班次名称</label>
-                  <input
-                    type="text"
-                    value={editingShift ? editingShift.name : ''}
-                    onChange={(e) => setEditingShift(prev => prev ? { ...prev, name: e.target.value } : { id: Math.random().toString(36).substr(2, 9), name: e.target.value, startTime: '09:00', endTime: '18:00' })}
-                    placeholder="如: 早班, 晚班"
-                    className="w-full p-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">上班时间</label>
-                  <input
-                    type="time"
-                    value={editingShift ? editingShift.startTime : '09:00'}
-                    onChange={(e) => setEditingShift(prev => prev ? { ...prev, startTime: e.target.value } : { id: Math.random().toString(36).substr(2, 9), name: '', startTime: e.target.value, endTime: '18:00' })}
-                    className="w-full p-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">下班时间</label>
-                  <input
-                    type="time"
-                    value={editingShift ? editingShift.endTime : '18:00'}
-                    onChange={(e) => setEditingShift(prev => prev ? { ...prev, endTime: e.target.value } : { id: Math.random().toString(36).substr(2, 9), name: '', startTime: '09:00', endTime: e.target.value })}
-                    className="w-full p-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => {
-                      if (!editingShift || !editingShift.name) return;
-                      const existing = shifts.find(s => s.id === editingShift.id);
-                      if (existing) {
-                        updateShift(editingShift.id, editingShift);
-                      } else {
-                        addShift(editingShift);
-                      }
-                      setEditingShift(null);
-                    }}
-                    disabled={!editingShift || !editingShift.name}
-                    className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium whitespace-nowrap flex items-center justify-center"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    保存
-                  </button>
-                  {editingShift && (
+            {hasPermission(Permission.MANAGE_ATTENDANCE) && (
+              <div className="mb-6 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+                <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-4">
+                  {editingShift ? '编辑班次' : '添加新班次'}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">班次名称</label>
+                    <input
+                      type="text"
+                      value={editingShift ? editingShift.name : ''}
+                      onChange={(e) => setEditingShift(prev => prev ? { ...prev, name: e.target.value } : { id: Math.random().toString(36).substr(2, 9), name: e.target.value, startTime: '09:00', endTime: '18:00' })}
+                      placeholder="如: 早班, 晚班"
+                      className="w-full p-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">上班时间</label>
+                    <input
+                      type="time"
+                      value={editingShift ? editingShift.startTime : '09:00'}
+                      onChange={(e) => setEditingShift(prev => prev ? { ...prev, startTime: e.target.value } : { id: Math.random().toString(36).substr(2, 9), name: '', startTime: e.target.value, endTime: '18:00' })}
+                      className="w-full p-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">下班时间</label>
+                    <input
+                      type="time"
+                      value={editingShift ? editingShift.endTime : '18:00'}
+                      onChange={(e) => setEditingShift(prev => prev ? { ...prev, endTime: e.target.value } : { id: Math.random().toString(36).substr(2, 9), name: '', startTime: '09:00', endTime: e.target.value })}
+                      className="w-full p-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="flex space-x-2">
                     <button
-                      onClick={() => setEditingShift(null)}
-                      className="px-4 py-2.5 bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors text-sm font-medium whitespace-nowrap"
+                      onClick={() => {
+                        if (!editingShift || !editingShift.name) return;
+                        const existing = shifts.find(s => s.id === editingShift.id);
+                        if (existing) {
+                          updateShift(editingShift.id, editingShift);
+                        } else {
+                          addShift(editingShift);
+                        }
+                        setEditingShift(null);
+                      }}
+                      disabled={!editingShift || !editingShift.name}
+                      className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-transform text-sm font-medium whitespace-nowrap flex items-center justify-center"
                     >
-                      取消
+                      <Plus className="w-4 h-4 mr-2" />
+                      保存
                     </button>
-                  )}
+                    {editingShift && (
+                      <button
+                        onClick={() => setEditingShift(null)}
+                        className="px-4 py-2.5 bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors text-sm font-medium whitespace-nowrap"
+                      >
+                        取消
+                      </button>
+                    )}
+                  </div>
                 </div>
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                  提示：如果下班时间早于上班时间，系统会自动识别为跨天夜班。
+                </p>
               </div>
-              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                提示：如果下班时间早于上班时间，系统会自动识别为跨天夜班。
-              </p>
-            </div>
+            )}
 
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
@@ -632,13 +645,15 @@ export default function Attendance() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">班次名称</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">上班时间</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">下班时间</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">操作</th>
+                    {hasPermission(Permission.MANAGE_ATTENDANCE) && (
+                      <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">操作</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
                   {isLoading ? (
                     <tr>
-                      <td colSpan={4} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                      <td colSpan={hasPermission(Permission.MANAGE_ATTENDANCE) ? 4 : 3} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                         <div className="flex flex-col items-center justify-center">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
                           <p>加载中...</p>
@@ -650,29 +665,31 @@ export default function Attendance() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-slate-200">{shift.name}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{shift.startTime}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{shift.endTime}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => setEditingShift(shift)}
-                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-4"
-                        >
-                          编辑
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (window.confirm('确定要删除这个班次吗？')) {
-                              deleteShift(shift.id);
-                            }
-                          }}
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                        >
-                          删除
-                        </button>
-                      </td>
+                      {hasPermission(Permission.MANAGE_ATTENDANCE) && (
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={() => setEditingShift(shift)}
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-4"
+                          >
+                            编辑
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (window.confirm('确定要删除这个班次吗？')) {
+                                deleteShift(shift.id);
+                              }
+                            }}
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                          >
+                            删除
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                   {shifts.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-6 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                      <td colSpan={hasPermission(Permission.MANAGE_ATTENDANCE) ? 4 : 3} className="px-6 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
                         暂无班次数据，请添加
                       </td>
                     </tr>

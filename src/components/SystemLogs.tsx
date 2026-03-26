@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLogStore, LogLevel } from '../store/logs';
 import { AlertCircle, AlertTriangle, Info, Trash2, Search, Filter, ChevronDown, ChevronRight } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
 export default function SystemLogs() {
   const { logs, clearLogs } = useLogStore();
@@ -76,16 +77,20 @@ export default function SystemLogs() {
           </div>
           <div className="flex items-center space-x-2">
             <Filter className="w-4 h-4 text-slate-400" />
-            <select
+            <Select
               value={filterLevel}
-              onChange={(e) => setFilterLevel(e.target.value as LogLevel | 'ALL')}
-              className="text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white py-2 pl-3 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              onValueChange={(value) => setFilterLevel(value as LogLevel | 'ALL')}
             >
-              <option value="ALL">所有等级</option>
-              <option value="INFO">INFO (信息)</option>
-              <option value="WARN">WARN (警告)</option>
-              <option value="ERROR">ERROR (错误)</option>
-            </select>
+              <SelectTrigger className="w-[180px] text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <SelectValue placeholder="所有等级" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">所有等级</SelectItem>
+                <SelectItem value="INFO">INFO (信息)</SelectItem>
+                <SelectItem value="WARN">WARN (警告)</SelectItem>
+                <SelectItem value="ERROR">ERROR (错误)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

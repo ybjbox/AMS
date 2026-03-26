@@ -1,6 +1,50 @@
-import { User, SystemRole } from '../types';
+import { User, SystemRole, DataScope, RoleDataScope } from '../types';
 import { Folder, Document, DocumentSet } from '../store/documents';
 import { Shift, EmployeeSchedule, PunchRecord, Anomaly } from '../store/attendance';
+import { authStore } from '../store/auth';
+import { departmentStore, flattenDepartments, DepartmentNode } from '../store/departments';
+
+// Helper to get all sub-departments
+const getSubDepartments = (deptName: string, nodes: DepartmentNode[]): string[] => {
+  let result: string[] = [];
+  
+  const findNode = (name: string, currentNodes: DepartmentNode[]): DepartmentNode | null => {
+    for (const node of currentNodes) {
+      if (node.name === name) return node;
+      if (node.children) {
+        const found = findNode(name, node.children);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const targetNode = findNode(deptName, nodes);
+  if (targetNode) {
+    result = flattenDepartments([targetNode]).map(d => d.name);
+  }
+  
+  return result;
+};
+
+const filterByDataScope = <T extends Partial<{ id: string; userId: string; employeeId: string; department: string }>>(data: T[], user: any, scope: DataScope): T[] => {
+  if (!user) return [];
+  
+  switch (scope) {
+    case DataScope.ALL:
+      return data;
+    case DataScope.SELF:
+      return data.filter(item => item.id === user.id || item.userId === user.id || item.employeeId === user.id);
+    case DataScope.DEPARTMENT:
+      return data.filter(item => item.department === user.department);
+    case DataScope.DEPARTMENT_AND_SUB:
+      if (!user.department) return [];
+      const subDepts = getSubDepartments(user.department, departmentStore.getDepartments());
+      return data.filter(item => item.department && subDepts.includes(item.department));
+    default:
+      return [];
+  }
+};
 
 // Helper functions for mock data generation
 const generateIdCard = () => {
@@ -120,7 +164,10 @@ export const api = {
   // Users
   fetchUsers: async (): Promise<User[]> => {
     await delay();
-    return [...mockUsers];
+    const auth = authStore.getAuth();
+    if (!auth.user) return [];
+    const scope = RoleDataScope[auth.user.systemRole];
+    return filterByDataScope(mockUsers, auth.user, scope);
   },
   createUser: async (user: User): Promise<User> => {
     await delay();
@@ -231,7 +278,10 @@ export const api = {
 
   fetchSchedules: async (): Promise<EmployeeSchedule[]> => {
     await delay();
-    return [...mockSchedules];
+    const auth = authStore.getAuth();
+    if (!auth.user) return [];
+    const scope = RoleDataScope[auth.user.systemRole];
+    return filterByDataScope(mockSchedules, auth.user, scope);
   },
   updateSchedules: async (schedules: EmployeeSchedule[]): Promise<EmployeeSchedule[]> => {
     await delay();
@@ -241,7 +291,10 @@ export const api = {
 
   fetchRecords: async (): Promise<PunchRecord[]> => {
     await delay();
-    return [...mockRecords];
+    const auth = authStore.getAuth();
+    if (!auth.user) return [];
+    const scope = RoleDataScope[auth.user.systemRole];
+    return filterByDataScope(mockRecords, auth.user, scope);
   },
   updateRecords: async (records: PunchRecord[]): Promise<PunchRecord[]> => {
     await delay();
@@ -251,7 +304,10 @@ export const api = {
 
   fetchAnomalies: async (): Promise<Anomaly[]> => {
     await delay();
-    return [...mockAnomalies];
+    const auth = authStore.getAuth();
+    if (!auth.user) return [];
+    const scope = RoleDataScope[auth.user.systemRole];
+    return filterByDataScope(mockAnomalies, auth.user, scope);
   },
   analyzeAnomalies: async (): Promise<Anomaly[]> => {
     await delay(1000); // Simulate longer processing time

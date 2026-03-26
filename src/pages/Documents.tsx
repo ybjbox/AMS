@@ -344,7 +344,7 @@ export default function Documents() {
               />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-transform text-sm font-medium shadow-sm"
               >
                 <Upload className="w-4 h-4 mr-2" />
                 上传文件
@@ -358,7 +358,7 @@ export default function Documents() {
                 setPrintSettings({});
                 setIsSetModalOpen(true); 
               }}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-transform text-sm font-medium shadow-sm"
             >
               <Plus className="w-4 h-4 mr-2" />
               新建套件
@@ -621,7 +621,7 @@ export default function Documents() {
         footer={
           <>
             <button type="button" onClick={() => setIsSetModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
-            <button type="submit" form="set-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+            <button type="submit" form="set-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存</button>
           </>
         }
       >
@@ -772,7 +772,7 @@ export default function Documents() {
               type="button" 
               onClick={handlePrint}
               disabled={isPrinting}
-              className="w-full inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+              className="w-full inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
             >
               {isPrinting ? (
                 <>
@@ -832,7 +832,7 @@ export default function Documents() {
         footer={
           <>
             <button type="button" onClick={() => setIsFolderModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
-            <button type="submit" form="folder-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+            <button type="submit" form="folder-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存</button>
           </>
         }
       >
@@ -861,7 +861,7 @@ export default function Documents() {
         footer={
           <>
             <button type="button" onClick={() => setIsMoveModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
-            <button onClick={handleMoveFile} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">确认移动</button>
+            <button onClick={handleMoveFile} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">确认移动</button>
           </>
         }
       >

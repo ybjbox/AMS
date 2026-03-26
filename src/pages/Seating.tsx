@@ -3,6 +3,7 @@ import { useUserStore } from '../store/users';
 import { useDepartments, flattenDepartments } from '../store/departments';
 import { Armchair, Users, ChevronRight, Printer, RefreshCw, Download, LayoutGrid, List, Trash2, Settings2, X, CheckSquare, Square, ExternalLink, Upload, FileDown, ChevronDown } from 'lucide-react';
 import { BaseModal } from '../components/ui/BaseModal';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
 interface Table {
   number: number;
@@ -380,7 +381,7 @@ export default function Seating() {
           </button>
           <button
             onClick={handleAutoArrange}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-transform text-sm font-medium shadow-sm"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             自动排座
@@ -529,7 +530,7 @@ export default function Seating() {
         size="2xl"
         bodyClassName="p-4 sm:p-6 max-h-[60vh] overflow-y-auto"
         footer={
-          <button type="button" onClick={() => setIsParticipantModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">完成</button>
+          <button type="button" onClick={() => setIsParticipantModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">完成</button>
         }
       >
         <div className="space-y-4 pr-2">
@@ -594,7 +595,7 @@ export default function Seating() {
         bodyClassName="p-0 flex flex-col overflow-hidden"
         footer={
           <>
-            <button type="button" onClick={() => setIsPrintModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">保存设置</button>
+            <button type="button" onClick={() => setIsPrintModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存设置</button>
             <button type="button" onClick={handlePrint} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">直接打印</button>
           </>
         }
@@ -605,22 +606,22 @@ export default function Seating() {
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">台卡样式</label>
-                <select 
-                  value={printSettings.cardStyle}
-                  onChange={(e) => {
-                    const newStyle = e.target.value;
-                    setPrintSettings(prev => ({ 
-                      ...prev, 
-                      cardStyle: newStyle,
-                      contentFontSize: 30,
-                      titleFontSize: newStyle === 'style2' ? 30 : 24
-                    }));
-                  }}
-                  className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                >
-                  <option value="style1">样式1 (经典双列)</option>
-                  <option value="style2">样式2 (极简单列)</option>
-                </select>
+                <Select value={printSettings.cardStyle} onValueChange={(val) => {
+                  setPrintSettings(prev => ({ 
+                    ...prev, 
+                    cardStyle: val,
+                    contentFontSize: 30,
+                    titleFontSize: val === 'style2' ? 30 : 24
+                  }));
+                }}>
+                  <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                    <SelectValue placeholder="选择样式" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="style1">样式1 (经典双列)</SelectItem>
+                    <SelectItem value="style2">样式2 (极简单列)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               {printSettings.cardStyle === 'style1' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -703,56 +704,60 @@ export default function Seating() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">标题字体</label>
-                <select 
-                  value={printSettings.titleFontFamily}
-                  onChange={(e) => setPrintSettings(prev => ({ ...prev, titleFontFamily: e.target.value }))}
-                  className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                >
-                  <option value='"Noto Serif SC", "SimSun", serif'>思源宋体 / 宋体</option>
-                  <option value='"Microsoft YaHei", "SimHei", sans-serif'>微软雅黑 / 黑体</option>
-                  <option value='"KaiTi", "STKaiti", serif'>楷体</option>
-                  <option value='"FangSong", "STFangsong", serif'>仿宋</option>
-                </select>
+                <Select value={printSettings.titleFontFamily} onValueChange={(val) => setPrintSettings(prev => ({ ...prev, titleFontFamily: val }))}>
+                  <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                    <SelectValue placeholder="选择字体" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='"Noto Serif SC", "SimSun", serif'>思源宋体 / 宋体</SelectItem>
+                    <SelectItem value='"Microsoft YaHei", "SimHei", sans-serif'>微软雅黑 / 黑体</SelectItem>
+                    <SelectItem value='"KaiTi", "STKaiti", serif'>楷体</SelectItem>
+                    <SelectItem value='"FangSong", "STFangsong", serif'>仿宋</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">桌号字体</label>
-                <select 
-                  value={printSettings.numberFontFamily}
-                  onChange={(e) => setPrintSettings(prev => ({ ...prev, numberFontFamily: e.target.value }))}
-                  className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                >
-                  <option value='"Microsoft YaHei", "SimHei", sans-serif'>微软雅黑 / 黑体</option>
-                  <option value='"Noto Serif SC", "SimSun", serif'>思源宋体 / 宋体</option>
-                  <option value='"KaiTi", "STKaiti", serif'>楷体</option>
-                  <option value='"FangSong", "STFangsong", serif'>仿宋</option>
-                </select>
+                <Select value={printSettings.numberFontFamily} onValueChange={(val) => setPrintSettings(prev => ({ ...prev, numberFontFamily: val }))}>
+                  <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                    <SelectValue placeholder="选择字体" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='"Microsoft YaHei", "SimHei", sans-serif'>微软雅黑 / 黑体</SelectItem>
+                    <SelectItem value='"Noto Serif SC", "SimSun", serif'>思源宋体 / 宋体</SelectItem>
+                    <SelectItem value='"KaiTi", "STKaiti", serif'>楷体</SelectItem>
+                    <SelectItem value='"FangSong", "STFangsong", serif'>仿宋</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">内容字体</label>
-                <select 
-                  value={printSettings.contentFontFamily}
-                  onChange={(e) => setPrintSettings(prev => ({ ...prev, contentFontFamily: e.target.value }))}
-                  className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                >
-                  <option value='"Microsoft YaHei", "SimHei", sans-serif'>微软雅黑 / 黑体</option>
-                  <option value='"Noto Serif SC", "SimSun", serif'>思源宋体 / 宋体</option>
-                  <option value='"KaiTi", "STKaiti", serif'>楷体</option>
-                  <option value='"FangSong", "STFangsong", serif'>仿宋</option>
-                </select>
+                <Select value={printSettings.contentFontFamily} onValueChange={(val) => setPrintSettings(prev => ({ ...prev, contentFontFamily: val }))}>
+                  <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                    <SelectValue placeholder="选择字体" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='"Microsoft YaHei", "SimHei", sans-serif'>微软雅黑 / 黑体</SelectItem>
+                    <SelectItem value='"Noto Serif SC", "SimSun", serif'>思源宋体 / 宋体</SelectItem>
+                    <SelectItem value='"KaiTi", "STKaiti", serif'>楷体</SelectItem>
+                    <SelectItem value='"FangSong", "STFangsong", serif'>仿宋</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               {printSettings.cardStyle === 'style1' && (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">底部字体</label>
-                  <select 
-                    value={printSettings.footerFontFamily}
-                    onChange={(e) => setPrintSettings(prev => ({ ...prev, footerFontFamily: e.target.value }))}
-                    className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  >
-                    <option value='"Microsoft YaHei", "SimHei", sans-serif'>微软雅黑 / 黑体</option>
-                    <option value='"Noto Serif SC", "SimSun", serif'>思源宋体 / 宋体</option>
-                    <option value='"KaiTi", "STKaiti", serif'>楷体</option>
-                    <option value='"FangSong", "STFangsong", serif'>仿宋</option>
-                  </select>
+                  <Select value={printSettings.footerFontFamily} onValueChange={(val) => setPrintSettings(prev => ({ ...prev, footerFontFamily: val }))}>
+                    <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                      <SelectValue placeholder="选择字体" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='"Microsoft YaHei", "SimHei", sans-serif'>微软雅黑 / 黑体</SelectItem>
+                      <SelectItem value='"Noto Serif SC", "SimSun", serif'>思源宋体 / 宋体</SelectItem>
+                      <SelectItem value='"KaiTi", "STKaiti", serif'>楷体</SelectItem>
+                      <SelectItem value='"FangSong", "STFangsong", serif'>仿宋</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </div>
@@ -809,15 +814,16 @@ export default function Seating() {
                         </div>
                         <div>
                           <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">内容对齐</label>
-                          <select 
-                            value={printSettings.textAlign}
-                            onChange={(e) => setPrintSettings(prev => ({ ...prev, textAlign: e.target.value }))}
-                            className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                          >
-                            <option value="left">居左</option>
-                            <option value="center">居中</option>
-                            <option value="right">居右</option>
-                          </select>
+                          <Select value={printSettings.textAlign} onValueChange={(val) => setPrintSettings(prev => ({ ...prev, textAlign: val }))}>
+                            <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                              <SelectValue placeholder="选择对齐方式" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="left">居左</SelectItem>
+                              <SelectItem value="center">居中</SelectItem>
+                              <SelectItem value="right">居右</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                     </div>
@@ -990,7 +996,7 @@ export default function Seating() {
             <button 
               type="button" 
               onClick={() => setIsPrintWarningOpen(false)} 
-              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm"
+              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm"
             >
               我知道了
             </button>

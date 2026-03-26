@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronDown, Folder, FolderOpen, Plus, Edit2, Trash2, Building2, X, Briefcase } from 'lucide-react';
 import { useDepartments, DepartmentNode, RoleNode, flattenDepartments } from '../store/departments';
+import { useAuth } from '../store/auth';
+import { Permission } from '../types';
 import { BaseModal } from '../components/ui/BaseModal';
 
 type ModalState = {
@@ -22,6 +24,7 @@ type RoleModalState = {
 };
 
 export default function Departments() {
+  const { hasPermission } = useAuth();
   const { departments, setDepartments, roles, setRoles } = useDepartments();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [expandedRoleDepts, setExpandedRoleDepts] = useState<Set<string>>(new Set());
@@ -210,27 +213,31 @@ export default function Departments() {
                 </div>
                 
                 <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
-                    onClick={(e) => handleAddChild(node.id, e)}
-                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                    title="添加子部门"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={(e) => handleEdit(node, e)}
-                    className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
-                    title="编辑"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={(e) => handleDelete(node.id, e)}
-                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                    title="删除"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {hasPermission(Permission.MANAGE_SETTINGS) && (
+                    <>
+                      <button 
+                        onClick={(e) => handleAddChild(node.id, e)}
+                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                        title="添加子部门"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={(e) => handleEdit(node, e)}
+                        className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
+                        title="编辑"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={(e) => handleDelete(node.id, e)}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                        title="删除"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
               
@@ -278,13 +285,15 @@ export default function Departments() {
                     <span className="text-sm text-slate-700 dark:text-slate-300">{node.name}</span>
                     <span className="text-xs text-slate-400">({deptRoles.length})</span>
                   </div>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); handleAddRole(node.id); }}
-                    className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors shrink-0"
-                    title="新增职位"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
+                  {hasPermission(Permission.MANAGE_SETTINGS) && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleAddRole(node.id); }}
+                      className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors shrink-0"
+                      title="新增职位"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
                 
                 {isExpanded && (
@@ -294,22 +303,24 @@ export default function Departments() {
                         {deptRoles.map(role => (
                           <li key={role.id} className="flex items-center justify-between p-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700/50 group">
                             <span className="text-sm text-slate-600 dark:text-slate-300">{role.name}</span>
-                            <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button 
-                                onClick={() => handleEditRole(role)}
-                                className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-md transition-colors"
-                                title="编辑"
-                              >
-                                <Edit2 className="w-3 h-3" />
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteRole(role.id)}
-                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
-                                title="删除"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
-                            </div>
+                            {hasPermission(Permission.MANAGE_SETTINGS) && (
+                              <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button 
+                                  onClick={() => handleEditRole(role)}
+                                  className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-md transition-colors"
+                                  title="编辑"
+                                >
+                                  <Edit2 className="w-3 h-3" />
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteRole(role.id)}
+                                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
+                                  title="删除"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            )}
                           </li>
                         ))}
                       </ul>
@@ -342,13 +353,15 @@ export default function Departments() {
               <Building2 className="w-5 h-5 text-slate-500 dark:text-slate-400" />
               <h2 className="text-base font-medium text-slate-800 dark:text-slate-200">部门架构 ({flatDepts.length})</h2>
             </div>
-            <button 
-              onClick={handleAddRoot}
-              className="inline-flex items-center justify-center px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              新增一级部门
-            </button>
+            {hasPermission(Permission.MANAGE_SETTINGS) && (
+              <button 
+                onClick={handleAddRoot}
+                className="inline-flex items-center justify-center px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:scale-95 transition-transform shadow-sm"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                新增一级部门
+              </button>
+            )}
           </div>
           <div className="p-6 flex-1">
             {departments.length > 0 ? (
@@ -402,7 +415,7 @@ export default function Departments() {
         footer={
           <>
             <button type="button" onClick={() => setModal(prev => ({ ...prev, isOpen: false }))} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
-            <button type="submit" form="dept-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+            <button type="submit" form="dept-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存</button>
           </>
         }
       >
@@ -453,7 +466,7 @@ export default function Departments() {
         footer={
           <>
             <button type="button" onClick={() => setRoleModal(prev => ({ ...prev, isOpen: false }))} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
-            <button type="submit" form="role-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+            <button type="submit" form="role-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存</button>
           </>
         }
       >

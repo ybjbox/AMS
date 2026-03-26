@@ -18,6 +18,7 @@ export default function Settings() {
         id: 'ADMIN001',
         name: '管理员',
         systemRole: role,
+        department: '集团总部',
       }
     });
   };
@@ -430,7 +431,7 @@ export default async function applyTemplate(worksheet, data, config) {
         {!editingScript && (
           <button
             onClick={handleAdd}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-transform text-sm font-medium shadow-sm"
           >
             <Plus className="w-4 h-4 mr-2" />
             创建脚本
@@ -610,7 +611,7 @@ function ExportThemeSettings() {
         </div>
         <button
           onClick={handleAddTheme}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
+          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-transform text-sm font-medium shadow-sm"
         >
           <Plus className="w-4 h-4 mr-2" />
           新增主题

@@ -4,6 +4,8 @@ import { useContractStore, defaultTemplate } from '../store/contracts';
 import { Search, Filter, FileSignature, Printer, Eye, X, FileEdit, Upload, Save } from 'lucide-react';
 import { BaseModal } from '../components/ui/BaseModal';
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+
 const ContractTemplate = ({ user }: { user: any }) => {
   const { template } = useContractStore();
   
@@ -181,16 +183,17 @@ export default function Contracts() {
           </div>
           <div className="flex items-center space-x-2">
             <Filter className="w-4 h-4 text-slate-400" />
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white py-2 pl-3 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="ALL">所有状态</option>
-              <option value="在职">在职</option>
-              <option value="试用期">试用期</option>
-              <option value="离职">离职</option>
-            </select>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-[180px] text-sm border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white">
+                <SelectValue placeholder="选择状态" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">所有状态</SelectItem>
+                <SelectItem value="在职">在职</SelectItem>
+                <SelectItem value="试用期">试用期</SelectItem>
+                <SelectItem value="离职">离职</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -302,7 +305,7 @@ export default function Contracts() {
               </button>
               <button
                 onClick={handlePrint}
-                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 active:scale-95 transition-transform"
               >
                 <Printer className="w-4 h-4 mr-2" />
                 打印合同
@@ -366,7 +369,7 @@ export default function Contracts() {
                   setTemplate(editingTemplate);
                   setIsTemplateEditorOpen(false);
                 }}
-                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 active:scale-95 transition-transform"
               >
                 <Save className="w-4 h-4 mr-2" />
                 保存

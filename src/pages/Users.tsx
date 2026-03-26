@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Search, Plus, MoreHorizontal, Edit, Trash2, ChevronLeft, ChevronRight, Filter, X, Check, Download, RefreshCw, GripVertical, FileCode, Printer, ChevronDown, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { useDepartments, flattenDepartments, DepartmentNode, RoleNode } from '../store/departments';
-import { useAuth } from '../store/auth';
+import { useAuth, getAllowedDepartments } from '../store/auth';
 import { useUserStore } from '../store/users';
 import { Permission, SystemRole, User } from '../types';
 import {
@@ -22,6 +22,12 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { BaseModal } from '../components/ui/BaseModal';
+import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../../components/ui/command';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Checkbox } from '../../components/ui/checkbox';
+import { Button } from '../../components/ui/button';
+import { cn } from '../../lib/utils';
 
 // Sortable Item Component
 export interface ExportColumn {
@@ -139,84 +145,6 @@ const calculateDaysToExpiry = (expiryDate: string) => {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 };
 
-function CustomCombobox({ 
-  options, 
-  defaultValue, 
-  value: propValue,
-  onChange: propOnChange,
-  placeholder, 
-  required 
-}: { 
-  options: string[], 
-  defaultValue?: string, 
-  value?: string,
-  onChange?: (val: string) => void,
-  placeholder?: string, 
-  required?: boolean 
-}) {
-  const [internalValue, setInternalValue] = useState(defaultValue || '');
-  const value = propValue !== undefined ? propValue : internalValue;
-  
-  const handleChange = (val: string) => {
-    if (propValue === undefined) {
-      setInternalValue(val);
-    }
-    if (propOnChange) {
-      propOnChange(val);
-    }
-  };
-
-  const [isOpen, setIsOpen] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  return (
-    <div className="relative mt-1" ref={wrapperRef}>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => handleChange(e.target.value)}
-        onFocus={() => setIsOpen(true)}
-        className="block w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 pr-8 focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
-        placeholder={placeholder}
-        required={required}
-      />
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="absolute inset-y-0 right-0 flex items-center px-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 focus:outline-none"
-      >
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-      </button>
-      
-      {isOpen && (
-        <div className="absolute z-10 mt-1 w-full bg-white dark:bg-slate-800 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 dark:ring-white/10 overflow-auto focus:outline-none sm:text-sm">
-          {options.map((option) => (
-            <div
-              key={option}
-              className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-blue-900 dark:hover:text-white text-slate-900 dark:text-slate-200"
-              onClick={() => {
-                handleChange(option);
-                setIsOpen(false);
-              }}
-            >
-              {option}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function DepartmentTreeSelect({ 
   departments, 
@@ -665,7 +593,7 @@ function DepartmentTreeFilter({
 // 模拟员工数据
 
 export default function Users() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
   const { users, fetchUsers, isLoading, addUser, updateUser, deleteUser } = useUserStore();
   
   useEffect(() => {
@@ -1083,7 +1011,8 @@ export default function Users() {
 
   const [selectedDeptName, setSelectedDeptName] = useState<string>('');
   const [selectedRoleName, setSelectedRoleName] = useState<string>('');
-  const { departments, roles } = useDepartments();
+  const { departments: allDepartments, roles } = useDepartments();
+  const departments = useMemo(() => getAllowedDepartments(allDepartments, user), [allDepartments, user]);
   const flatDepts = useMemo(() => flattenDepartments(departments), [departments]);
   
   // 筛选状态
@@ -1097,18 +1026,18 @@ export default function Users() {
 
   // 过滤数据逻辑
   const filteredUsers = useMemo(() => {
-    return users.filter(user => {
+    return users.filter(u => {
       // 1. 搜索词匹配
       const matchesSearch = 
-        (user.name || '').includes(searchTerm) || 
-        (user.id || '').includes(searchTerm) ||
-        (user.department || '').includes(searchTerm);
+        (u.name || '').includes(searchTerm) || 
+        (u.id || '').includes(searchTerm) ||
+        (u.department || '').includes(searchTerm);
       
       // 2. 部门筛选匹配
-      const matchesDept = filters.department.length > 0 ? filters.department.includes(user.department || '') : true;
+      const matchesDept = filters.department.length > 0 ? filters.department.includes(u.department || '') : true;
       
       // 3. 状态筛选匹配
-      const matchesStatus = filters.status.length > 0 ? filters.status.includes(user.status || '') : true;
+      const matchesStatus = filters.status.length > 0 ? filters.status.includes(u.status || '') : true;
 
       return matchesSearch && matchesDept && matchesStatus;
     });
@@ -1190,7 +1119,7 @@ export default function Users() {
           {hasPermission(Permission.MANAGE_USERS) && (
             <button 
               onClick={handleAdd}
-              className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+              className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:scale-95 transition-transform shadow-sm"
             >
               <Plus className="h-4 w-4 mr-2" />
               新增员工
@@ -1337,71 +1266,71 @@ export default function Users() {
                   </td>
                 </tr>
               ) : currentUsers.length > 0 ? (
-                currentUsers.map((user) => (
+                currentUsers.map((u) => (
                   <tr 
-                    key={user.id} 
+                    key={u.id} 
                     className="hover:bg-slate-50/50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
                     onClick={() => {
-                      setSelectedUser(user);
+                      setSelectedUser(u);
                       setIsDetailModalOpen(true);
                     }}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">{user.id}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">{u.id}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-medium text-xs mr-3">
-                          {user.name.charAt(0)}
+                          {u.name.charAt(0)}
                         </div>
-                        <div className="text-sm font-medium text-slate-900 dark:text-white">{user.name}</div>
+                        <div className="text-sm font-medium text-slate-900 dark:text-white">{u.name}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-slate-900 dark:text-white">{user.department}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">{user.role}</div>
+                      <div className="text-sm text-slate-900 dark:text-white">{u.department}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">{u.role}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        user.systemRole === SystemRole.SUPER_ADMIN ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400' :
-                        user.systemRole === SystemRole.ADMIN ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400' :
-                        user.systemRole === SystemRole.HR ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' :
+                        u.systemRole === SystemRole.SUPER_ADMIN ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400' :
+                        u.systemRole === SystemRole.ADMIN ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400' :
+                        u.systemRole === SystemRole.HR ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' :
                         'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-300'
                       }`}>
-                        {user.systemRole === SystemRole.SUPER_ADMIN ? '超级管理员' : 
-                         user.systemRole === SystemRole.ADMIN ? '管理员' : 
-                         user.systemRole === SystemRole.HR ? '人事主管' : '普通员工'}
+                        {u.systemRole === SystemRole.SUPER_ADMIN ? '超级管理员' : 
+                         u.systemRole === SystemRole.ADMIN ? '管理员' : 
+                         u.systemRole === SystemRole.HR ? '人事主管' : '普通员工'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                        user.status === '在职' || user.status === 'active' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' 
-                        : user.status === '试用期' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800'
-                        : user.status === '离职' || user.status === 'inactive' ? 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600'
+                        u.status === '在职' || u.status === 'active' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' 
+                        : u.status === '试用期' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800'
+                        : u.status === '离职' || u.status === 'inactive' ? 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600'
                         : 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800'
                       }`}>
-                        {user.status === 'active' ? '在职' : user.status === 'inactive' ? '离职' : user.status}
+                        {u.status === 'active' ? '在职' : u.status === 'inactive' ? '离职' : u.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{user.phone}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{user.gender} / {user.age}岁</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{u.phone}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{u.gender} / {u.age}岁</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-slate-900 dark:text-white">{user.joinDate}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">{user.yearsOfService}</div>
+                      <div className="text-sm text-slate-900 dark:text-white">{u.joinDate}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">{u.yearsOfService}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{user.employmentType}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{u.employmentType}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-slate-900 dark:text-white">{user.contractExpiry}</div>
-                      <div className={`text-xs font-medium ${user.daysToExpiry < 30 ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}`}>
-                        {user.daysToExpiry > 0 ? `剩 ${user.daysToExpiry} 天` : '已过期'}
+                      <div className="text-sm text-slate-900 dark:text-white">{u.contractExpiry}</div>
+                      <div className={`text-xs font-medium ${u.daysToExpiry < 30 ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                        {u.daysToExpiry > 0 ? `剩 ${u.daysToExpiry} 天` : '已过期'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
-                        {hasPermission(Permission.MANAGE_USERS) && (
+                        {hasPermission(Permission.MANAGE_USERS, u) && (
                           <>
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleEdit(user);
+                                handleEdit(u);
                               }} 
                               className="p-1 text-slate-400 hover:text-blue-600 transition-colors" 
                               title="编辑"
@@ -1530,7 +1459,7 @@ export default function Users() {
             <button 
               onClick={handleExport}
               disabled={isExporting || exportConfig.columns.filter(c => c.selected).length === 0}
-              className="inline-flex items-center justify-center px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-200 disabled:opacity-50"
+              className="inline-flex items-center justify-center px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:scale-95 transition-transform shadow-md shadow-blue-200 disabled:opacity-50"
             >
               {isExporting ? (
                 <>
@@ -1586,26 +1515,28 @@ export default function Users() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张大小</label>
-                  <select
-                    value={exportConfig.paperSize}
-                    onChange={(e) => setExportConfig(prev => ({ ...prev, paperSize: e.target.value }))}
-                    className="w-full px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                  >
-                    <option value="A4">A4</option>
-                    <option value="A3">A3</option>
-                    <option value="Letter">Letter</option>
-                  </select>
+                  <Select value={exportConfig.paperSize} onValueChange={(val) => setExportConfig(prev => ({ ...prev, paperSize: val }))}>
+                    <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                      <SelectValue placeholder="选择纸张大小" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="A4">A4</SelectItem>
+                      <SelectItem value="A3">A3</SelectItem>
+                      <SelectItem value="Letter">Letter</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张方向</label>
-                  <select
-                    value={exportConfig.orientation}
-                    onChange={(e) => setExportConfig(prev => ({ ...prev, orientation: e.target.value }))}
-                    className="w-full px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                  >
-                    <option value="portrait">纵向</option>
-                    <option value="landscape">横向</option>
-                  </select>
+                  <Select value={exportConfig.orientation} onValueChange={(val) => setExportConfig(prev => ({ ...prev, orientation: val }))}>
+                    <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                      <SelectValue placeholder="选择纸张方向" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="portrait">纵向</SelectItem>
+                      <SelectItem value="landscape">横向</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="flex items-center justify-between pt-2">
@@ -1766,11 +1697,11 @@ export default function Users() {
                   {users
                     .filter(u => exportConfig.includeResigned ? true : u.status !== '离职')
                     .slice(0, 10)
-                    .map(user => (
-                      <tr key={user.id}>
+                    .map(u => (
+                      <tr key={u.id}>
                         {exportConfig.columns.filter(c => c.selected).map(col => (
                           <td key={col.key} className="border border-slate-300 dark:border-slate-600 px-3 py-2 text-slate-600 dark:text-slate-300">
-                            {(user as Record<string, any>)[col.key] || '-'}
+                            {(u as Record<string, any>)[col.key] || '-'}
                           </td>
                         ))}
                       </tr>
@@ -1804,7 +1735,7 @@ export default function Users() {
             <button 
               onClick={handlePrintAddressBook}
               disabled={addressBookConfig.columns.filter(c => c.selected).length === 0}
-              className="inline-flex items-center justify-center px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-200 disabled:opacity-50"
+              className="inline-flex items-center justify-center px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:scale-95 transition-transform shadow-md shadow-blue-200 disabled:opacity-50"
             >
               <Printer className="h-4 w-4 mr-2" />
               打印通讯录
@@ -1851,26 +1782,28 @@ export default function Users() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张大小</label>
-                  <select
-                    value={addressBookConfig.paperSize}
-                    onChange={(e) => setAddressBookConfig(prev => ({ ...prev, paperSize: e.target.value }))}
-                    className="w-full px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                  >
-                    <option value="A4">A4</option>
-                    <option value="A3">A3</option>
-                    <option value="Letter">Letter</option>
-                  </select>
+                  <Select value={addressBookConfig.paperSize} onValueChange={(val) => setAddressBookConfig(prev => ({ ...prev, paperSize: val }))}>
+                    <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                      <SelectValue placeholder="选择纸张大小" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="A4">A4</SelectItem>
+                      <SelectItem value="A3">A3</SelectItem>
+                      <SelectItem value="Letter">Letter</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张方向</label>
-                  <select
-                    value={addressBookConfig.orientation}
-                    onChange={(e) => setAddressBookConfig(prev => ({ ...prev, orientation: e.target.value }))}
-                    className="w-full px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                  >
-                    <option value="portrait">纵向</option>
-                    <option value="landscape">横向</option>
-                  </select>
+                  <Select value={addressBookConfig.orientation} onValueChange={(val) => setAddressBookConfig(prev => ({ ...prev, orientation: val }))}>
+                    <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                      <SelectValue placeholder="选择纸张方向" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="portrait">纵向</SelectItem>
+                      <SelectItem value="landscape">横向</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="flex items-center justify-between pt-2">
@@ -1997,10 +1930,10 @@ export default function Users() {
             <tbody>
               {users
                 .filter(u => exportConfig.includeResigned ? true : u.status !== '离职')
-                .map(user => (
-                  <tr key={user.id}>
+                .map(u => (
+                  <tr key={u.id}>
                     {exportConfig.columns.filter(c => c.selected).map(col => (
-                      <td key={col.key}>{(user as Record<string, any>)[col.key] || '-'}</td>
+                      <td key={col.key}>{(u as Record<string, any>)[col.key] || '-'}</td>
                     ))}
                   </tr>
                 ))}
@@ -2123,14 +2056,14 @@ export default function Users() {
               <Printer className="w-4 h-4 mr-2" />
               打印联系卡
             </button>
-            {hasPermission(Permission.MANAGE_USERS) && (
+            {hasPermission(Permission.MANAGE_USERS, selectedUser) && (
               <button
                 type="button"
                 onClick={() => {
                   setIsDetailModalOpen(false);
                   if (selectedUser) handleEdit(selectedUser);
                 }}
-                className="px-4 py-2 bg-blue-600 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center"
+                className="px-4 py-2 bg-blue-600 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center"
               >
                 <Edit className="w-4 h-4 mr-2" />
                 编辑信息
@@ -2235,7 +2168,7 @@ export default function Users() {
         size="4xl"
         footer={
           <>
-            <button type="submit" form="employee-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+            <button type="submit" form="employee-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存</button>
             <button type="button" onClick={() => setIsModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
           </>
         }
@@ -2296,12 +2229,19 @@ export default function Users() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700">状态 <span className="text-red-500">*</span></label>
-                <CustomCombobox 
-                  required 
-                  options={['在职', '离职', '试用期']}
-                  defaultValue={editingUser?.status === 'active' ? '在职' : editingUser?.status === 'inactive' ? '离职' : (editingUser?.status || '在职')} 
-                  placeholder="选择或输入状态"
-                />
+                <Select
+                  required
+                  defaultValue={editingUser?.status === 'active' ? '在职' : editingUser?.status === 'inactive' ? '离职' : (editingUser?.status || '在职')}
+                >
+                  <SelectTrigger className="w-full mt-1 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                    <SelectValue placeholder="选择状态" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="在职">在职</SelectItem>
+                    <SelectItem value="离职">离职</SelectItem>
+                    <SelectItem value="试用期">试用期</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700">入职时间 <span className="text-red-500">*</span></label>
@@ -2309,12 +2249,21 @@ export default function Users() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700">用工形式 <span className="text-red-500">*</span></label>
-                <CustomCombobox 
-                  required 
-                  options={['全职', '兼职', '实习', '外包', '退休返聘']}
-                  defaultValue={editingUser?.employmentType || '全职'} 
-                  placeholder="选择或输入用工形式"
-                />
+                <Select
+                  required
+                  defaultValue={editingUser?.employmentType || '全职'}
+                >
+                  <SelectTrigger className="w-full mt-1 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                    <SelectValue placeholder="选择用工形式" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="全职">全职</SelectItem>
+                    <SelectItem value="兼职">兼职</SelectItem>
+                    <SelectItem value="实习">实习</SelectItem>
+                    <SelectItem value="外包">外包</SelectItem>
+                    <SelectItem value="退休返聘">退休返聘</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700">变动情况 <span className="text-red-500">*</span></label>
@@ -2322,16 +2271,24 @@ export default function Users() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700">系统角色 <span className="text-red-500">*</span></label>
-                <CustomCombobox 
-                  required 
-                  options={['超级管理员', '管理员', '人事主管', '普通员工']}
+                <Select
+                  required
                   defaultValue={
                     editingUser?.systemRole === SystemRole.SUPER_ADMIN ? '超级管理员' : 
                     editingUser?.systemRole === SystemRole.ADMIN ? '管理员' : 
                     editingUser?.systemRole === SystemRole.HR ? '人事主管' : '普通员工'
-                  } 
-                  placeholder="选择系统角色"
-                />
+                  }
+                >
+                  <SelectTrigger className="w-full mt-1 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                    <SelectValue placeholder="选择系统角色" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="超级管理员">超级管理员</SelectItem>
+                    <SelectItem value="管理员">管理员</SelectItem>
+                    <SelectItem value="人事主管">人事主管</SelectItem>
+                    <SelectItem value="普通员工">普通员工</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
@@ -2342,10 +2299,17 @@ export default function Users() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-700">是否购买社保</label>
-                <CustomCombobox 
+                <Select
                   defaultValue={editingUser?.hasSocialSecurity || '是'}
-                  options={['是', '否']}
-                />
+                >
+                  <SelectTrigger className="w-full mt-1 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                    <SelectValue placeholder="选择是否购买社保" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="是">是</SelectItem>
+                    <SelectItem value="否">否</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700">合同年限(年)</label>
@@ -2364,10 +2328,17 @@ export default function Users() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-700">是否退役军人</label>
-                <CustomCombobox 
+                <Select
                   defaultValue={editingUser?.isVeteran || '否'}
-                  options={['是', '否']}
-                />
+                >
+                  <SelectTrigger className="w-full mt-1 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                    <SelectValue placeholder="选择是否退役军人" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="是">是</SelectItem>
+                    <SelectItem value="否">否</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700">原服役单位</label>

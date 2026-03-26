@@ -3,6 +3,7 @@ import { useUserStore } from '../store/users';
 import { useDepartments } from '../store/departments';
 import { IdCard, Users, Printer, Settings2, X, CheckSquare, Square, Plus, Minus, ChevronRight, Upload, FileDown, ChevronDown, FileText } from 'lucide-react';
 import { BaseModal } from '../components/ui/BaseModal';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
 interface PrintSettings {
   paperSize: 'A4' | 'A5' | 'custom';
@@ -465,7 +466,7 @@ export default function NameCards() {
           <button
             onClick={handlePrint}
             disabled={selectedUserIds.size === 0}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Printer className="h-4 w-4 mr-2" />
             打印台卡
@@ -485,27 +486,29 @@ export default function NameCards() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">纸张尺寸</label>
-                <select 
-                  value={printSettings.paperSize}
-                  onChange={(e) => handlePaperSizeChange(e.target.value as any)}
-                  className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                >
-                  <option value="A4">A4 (210x297mm)</option>
-                  <option value="A5">A5 (148x210mm)</option>
-                  <option value="custom">自定义</option>
-                </select>
+                <Select value={printSettings.paperSize} onValueChange={(val) => handlePaperSizeChange(val as any)}>
+                  <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                    <SelectValue placeholder="选择尺寸" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="A4">A4 (210x297mm)</SelectItem>
+                    <SelectItem value="A5">A5 (148x210mm)</SelectItem>
+                    <SelectItem value="custom">自定义</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">纸张方向</label>
-                <select 
-                  value={printSettings.paperOrientation}
-                  onChange={(e) => handlePaperOrientationChange(e.target.value as any)}
-                  className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                >
-                  <option value="portrait">纵向</option>
-                  <option value="landscape">横向</option>
-                </select>
+                <Select value={printSettings.paperOrientation} onValueChange={(val) => handlePaperOrientationChange(val as any)}>
+                  <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                    <SelectValue placeholder="选择方向" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="portrait">纵向</SelectItem>
+                    <SelectItem value="landscape">横向</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {printSettings.paperSize === 'custom' && (
@@ -599,16 +602,17 @@ export default function NameCards() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">字体</label>
                 <div className="flex items-center space-x-2">
-                  <select 
-                    value={printSettings.fontFamily}
-                    onChange={(e) => setPrintSettings(prev => ({ ...prev, fontFamily: e.target.value }))}
-                    className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                  >
-                    <option value='"Microsoft YaHei", "SimHei", sans-serif'>微软雅黑 / 黑体</option>
-                    <option value='"Noto Serif SC", "SimSun", serif'>思源宋体 / 宋体</option>
-                    <option value='"KaiTi", "STKaiti", serif'>楷体</option>
-                    <option value='"FangSong", "STFangsong", serif'>仿宋</option>
-                  </select>
+                  <Select value={printSettings.fontFamily} onValueChange={(val) => setPrintSettings(prev => ({ ...prev, fontFamily: val }))}>
+                    <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                      <SelectValue placeholder="选择字体" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='"Microsoft YaHei", "SimHei", sans-serif'>微软雅黑 / 黑体</SelectItem>
+                      <SelectItem value='"Noto Serif SC", "SimSun", serif'>思源宋体 / 宋体</SelectItem>
+                      <SelectItem value='"KaiTi", "STKaiti", serif'>楷体</SelectItem>
+                      <SelectItem value='"FangSong", "STFangsong", serif'>仿宋</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <label className="flex items-center space-x-2 cursor-pointer whitespace-nowrap">
                     <input 
                       type="checkbox" 
@@ -623,26 +627,28 @@ export default function NameCards() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">排版方向</label>
-                  <select 
-                    value={printSettings.layout}
-                    onChange={(e) => setPrintSettings(prev => ({ ...prev, layout: e.target.value as any }))}
-                    className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                  >
-                    <option value="horizontal">横排</option>
-                    <option value="vertical">竖排</option>
-                  </select>
+                  <Select value={printSettings.layout} onValueChange={(val) => setPrintSettings(prev => ({ ...prev, layout: val as any }))}>
+                    <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                      <SelectValue placeholder="选择排版方向" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="horizontal">横排</SelectItem>
+                      <SelectItem value="vertical">竖排</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">对齐方式</label>
-                  <select 
-                    value={printSettings.textAlign}
-                    onChange={(e) => setPrintSettings(prev => ({ ...prev, textAlign: e.target.value as any }))}
-                    className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                  >
-                    <option value="left">居左/靠上</option>
-                    <option value="center">居中</option>
-                    <option value="right">居右/靠下</option>
-                  </select>
+                  <Select value={printSettings.textAlign} onValueChange={(val) => setPrintSettings(prev => ({ ...prev, textAlign: val as any }))}>
+                    <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                      <SelectValue placeholder="选择对齐方式" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="left">居左/靠上</SelectItem>
+                      <SelectItem value="center">居中</SelectItem>
+                      <SelectItem value="right">居右/靠下</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -860,7 +866,7 @@ export default function NameCards() {
         size="2xl"
         bodyClassName="p-4 sm:p-6 max-h-[60vh] overflow-y-auto"
         footer={
-          <button type="button" onClick={() => setIsParticipantModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm">完成</button>
+          <button type="button" onClick={() => setIsParticipantModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">完成</button>
         }
       >
         <div className="space-y-4 pr-2">
@@ -933,7 +939,7 @@ export default function NameCards() {
             <button 
               type="button" 
               onClick={handleManualInputSubmit} 
-              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm"
+              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm"
             >
               确认导入
             </button>
