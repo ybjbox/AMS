@@ -46,7 +46,7 @@ export default function Todos() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm"
+            className="bg-white dark:bg-slate-800 p-6 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl"
           >
             <form onSubmit={handleAdd} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -84,7 +84,7 @@ export default function Todos() {
                 <button
                   type="button"
                   onClick={() => setIsAdding(false)}
-                  className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                  className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg active:scale-95 transition-transform"
                 >
                   取消
                 </button>
@@ -100,14 +100,21 @@ export default function Todos() {
         )}
       </AnimatePresence>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl overflow-hidden">
         {sortedTodos.length === 0 ? (
           <div className="p-12 text-center">
             <div className="w-16 h-16 bg-slate-50 dark:bg-slate-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
               <ListTodo className="w-8 h-8 text-slate-300 dark:text-slate-500" />
             </div>
             <h3 className="text-slate-900 dark:text-white font-medium">暂无待办事项</h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">点击右上角按钮添加您的第一个任务</p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 mb-6">点击右上角按钮添加您的第一个任务</p>
+            <button
+              onClick={() => setIsAdding(true)}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-transform shadow-sm"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              立即创建
+            </button>
           </div>
         ) : (
           <div className="divide-y divide-slate-100 dark:divide-slate-700">

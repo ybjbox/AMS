@@ -169,7 +169,7 @@ export default function Contracts() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl overflow-hidden flex flex-col">
         <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -185,7 +185,9 @@ export default function Contracts() {
             <Filter className="w-4 h-4 text-slate-400" />
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger className="w-[180px] text-sm border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white">
-                <SelectValue placeholder="选择状态" />
+                <SelectValue placeholder="选择状态">
+                  {(val) => val === 'ALL' ? '所有状态' : val === '在职' ? '在职' : val === '试用期' ? '试用期' : val === '离职' ? '离职' : '选择状态'}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">所有状态</SelectItem>
@@ -299,7 +301,7 @@ export default function Contracts() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsPreviewOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700 active:scale-95 transition-transform"
               >
                 取消
               </button>
@@ -360,7 +362,7 @@ export default function Contracts() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsTemplateEditorOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700 active:scale-95 transition-transform"
               >
                 取消
               </button>

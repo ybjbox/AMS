@@ -20,7 +20,7 @@ export default function Dashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((item) => (
-          <div key={item.name} className="bg-white dark:bg-slate-800 overflow-hidden rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-all hover:shadow-md">
+          <div key={item.name} className="bg-white dark:bg-slate-800 overflow-hidden shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl transition-all hover:shadow-md">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
@@ -56,7 +56,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* System Notices */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 lg:col-span-2">
+        <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl p-6 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-medium text-slate-900 dark:text-white">系统公告</h2>
             <button className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium">查看全部</button>
@@ -87,7 +87,7 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl p-6">
           <h2 className="text-lg font-medium text-slate-900 dark:text-white mb-4">快捷操作</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[

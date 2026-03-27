@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { TableSkeleton } from '../components/ui/Skeleton';
 import { Upload, FileText, AlertTriangle, Clock, Users, Calendar, Download, Search, FileSpreadsheet, Plus, ChevronDown } from 'lucide-react';
 import { useAttendanceStore, PunchRecord, EmployeeSchedule, Shift } from '../store/attendance';
 import { useUserStore } from '../store/users';
@@ -217,7 +218,7 @@ export default function Attendance() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden min-h-[500px]">
+      <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl overflow-hidden min-h-[500px]">
         {activeTab === 'records' && (
           <div className="p-6">
             {hasPermission(Permission.MANAGE_ATTENDANCE) && (
@@ -273,14 +274,7 @@ export default function Attendance() {
                   </thead>
                   <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
                     {isLoading ? (
-                      <tr>
-                        <td colSpan={4} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                          <div className="flex flex-col items-center justify-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-                            <p>加载中...</p>
-                          </div>
-                        </td>
-                      </tr>
+                      <TableSkeleton columns={4} rows={5} />
                     ) : records.slice(0, 50).map((record) => (
                       <tr key={record.id}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-200">{record.employeeId}</td>
@@ -437,14 +431,7 @@ export default function Attendance() {
                   </thead>
                   <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
                     {isLoading ? (
-                      <tr>
-                        <td colSpan={4} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                          <div className="flex flex-col items-center justify-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-                            <p>加载中...</p>
-                          </div>
-                        </td>
-                      </tr>
+                      <TableSkeleton columns={4} rows={5} />
                     ) : filteredSchedules.slice(0, 50).map((schedule, idx) => (
                       <tr key={idx}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-200">{schedule.employeeId}</td>
@@ -532,14 +519,7 @@ export default function Attendance() {
                   </thead>
                   <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
                     {isLoading ? (
-                      <tr>
-                        <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                          <div className="flex flex-col items-center justify-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-                            <p>加载中...</p>
-                          </div>
-                        </td>
-                      </tr>
+                      <TableSkeleton columns={5} rows={5} />
                     ) : filteredAnomalies.map((anomaly) => (
                       <tr key={anomaly.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-200">{anomaly.date}</td>
@@ -625,7 +605,7 @@ export default function Attendance() {
                     {editingShift && (
                       <button
                         onClick={() => setEditingShift(null)}
-                        className="px-4 py-2.5 bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors text-sm font-medium whitespace-nowrap"
+                        className="px-4 py-2.5 bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 active:scale-95 transition-transform text-sm font-medium whitespace-nowrap"
                       >
                         取消
                       </button>
@@ -652,14 +632,7 @@ export default function Attendance() {
                 </thead>
                 <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
                   {isLoading ? (
-                    <tr>
-                      <td colSpan={hasPermission(Permission.MANAGE_ATTENDANCE) ? 4 : 3} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                        <div className="flex flex-col items-center justify-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-                          <p>加载中...</p>
-                        </div>
-                      </td>
-                    </tr>
+                    <TableSkeleton columns={hasPermission(Permission.MANAGE_ATTENDANCE) ? 4 : 3} rows={5} />
                   ) : shifts.map((shift) => (
                     <tr key={shift.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-slate-200">{shift.name}</td>

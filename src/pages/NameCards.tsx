@@ -488,7 +488,9 @@ export default function NameCards() {
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">纸张尺寸</label>
                 <Select value={printSettings.paperSize} onValueChange={(val) => handlePaperSizeChange(val as any)}>
                   <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
-                    <SelectValue placeholder="选择尺寸" />
+                    <SelectValue placeholder="选择尺寸">
+                      {(val) => val === 'A4' ? 'A4 (210x297mm)' : val === 'A5' ? 'A5 (148x210mm)' : val === 'custom' ? '自定义' : '选择尺寸'}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="A4">A4 (210x297mm)</SelectItem>
@@ -502,7 +504,9 @@ export default function NameCards() {
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">纸张方向</label>
                 <Select value={printSettings.paperOrientation} onValueChange={(val) => handlePaperOrientationChange(val as any)}>
                   <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
-                    <SelectValue placeholder="选择方向" />
+                    <SelectValue placeholder="选择方向">
+                      {(val) => val === 'portrait' ? '纵向' : val === 'landscape' ? '横向' : '选择方向'}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="portrait">纵向</SelectItem>
@@ -604,7 +608,15 @@ export default function NameCards() {
                 <div className="flex items-center space-x-2">
                   <Select value={printSettings.fontFamily} onValueChange={(val) => setPrintSettings(prev => ({ ...prev, fontFamily: val }))}>
                     <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
-                      <SelectValue placeholder="选择字体" />
+                      <SelectValue placeholder="选择字体">
+                        {(val) => {
+                          if (val === '"Microsoft YaHei", "SimHei", sans-serif') return '微软雅黑 / 黑体';
+                          if (val === '"Noto Serif SC", "SimSun", serif') return '思源宋体 / 宋体';
+                          if (val === '"KaiTi", "STKaiti", serif') return '楷体';
+                          if (val === '"FangSong", "STFangsong", serif') return '仿宋';
+                          return '选择字体';
+                        }}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value='"Microsoft YaHei", "SimHei", sans-serif'>微软雅黑 / 黑体</SelectItem>
@@ -629,7 +641,9 @@ export default function NameCards() {
                   <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">排版方向</label>
                   <Select value={printSettings.layout} onValueChange={(val) => setPrintSettings(prev => ({ ...prev, layout: val as any }))}>
                     <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
-                      <SelectValue placeholder="选择排版方向" />
+                      <SelectValue placeholder="选择排版方向">
+                        {(val) => val === 'horizontal' ? '横排' : val === 'vertical' ? '竖排' : '选择排版方向'}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="horizontal">横排</SelectItem>
@@ -641,7 +655,9 @@ export default function NameCards() {
                   <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">对齐方式</label>
                   <Select value={printSettings.textAlign} onValueChange={(val) => setPrintSettings(prev => ({ ...prev, textAlign: val as any }))}>
                     <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
-                      <SelectValue placeholder="选择对齐方式" />
+                      <SelectValue placeholder="选择对齐方式">
+                        {(val) => val === 'left' ? '居左/靠上' : val === 'center' ? '居中' : val === 'right' ? '居右/靠下' : '选择对齐方式'}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="left">居左/靠上</SelectItem>
@@ -932,7 +948,7 @@ export default function NameCards() {
             <button 
               type="button" 
               onClick={() => setIsManualInputOpen(false)} 
-              className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+              className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
             >
               取消
             </button>

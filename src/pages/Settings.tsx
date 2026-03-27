@@ -30,7 +30,7 @@ export default function Settings() {
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">管理系统偏好、组织架构及个人信息</p>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col md:flex-row min-h-[600px]">
+      <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl overflow-hidden flex flex-col md:flex-row min-h-[600px]">
         {/* Sidebar Tabs */}
         <div className="w-full md:w-64 bg-slate-50 dark:bg-slate-900/50 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 p-4 shrink-0">
           <nav className="space-y-1">
@@ -236,7 +236,7 @@ function AppearanceSettings() {
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">自定义系统主题、图标和登录页背景</p>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-8">
+      <div className="bg-white dark:bg-slate-800 p-6 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl space-y-8">
         {/* Theme Selection */}
         <div>
           <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4 flex items-center">
@@ -457,14 +457,14 @@ export default async function applyTemplate(worksheet, data, config) {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-xs font-medium"
+                className="flex items-center px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 active:scale-95 transition-transform text-xs font-medium"
               >
                 <Save className="w-3.5 h-3.5 mr-1.5" />
                 {saving ? '保存中...' : '保存脚本'}
               </button>
               <button
                 onClick={() => setEditingScript(null)}
-                className="flex items-center px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors text-xs font-medium"
+                className="flex items-center px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 active:scale-95 transition-transform text-xs font-medium"
               >
                 取消
               </button>
@@ -514,7 +514,14 @@ export default async function applyTemplate(worksheet, data, config) {
           {scripts.length === 0 && (
             <div className="col-span-full py-12 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
               <Code2 className="w-12 h-12 text-slate-300 mb-3" />
-              <p className="text-slate-500 text-sm">暂无脚本模板，点击右上角创建</p>
+              <p className="text-slate-500 text-sm mb-6">暂无脚本模板，点击右上角创建</p>
+              <button
+                onClick={handleAdd}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-transform shadow-sm"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                立即创建
+              </button>
             </div>
           )}
         </div>

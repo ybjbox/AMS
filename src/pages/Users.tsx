@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { TableSkeleton } from '../components/ui/Skeleton';
 import { Search, Plus, MoreHorizontal, Edit, Trash2, ChevronLeft, ChevronRight, Filter, X, Check, Download, RefreshCw, GripVertical, FileCode, Printer, ChevronDown, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { useDepartments, flattenDepartments, DepartmentNode, RoleNode } from '../store/departments';
 import { useAuth, getAllowedDepartments } from '../store/auth';
@@ -1128,7 +1129,7 @@ export default function Users() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+      <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl">
         {/* Toolbar */}
         <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/50 rounded-t-xl">
           <div className="relative w-full sm:w-72">
@@ -1257,14 +1258,7 @@ export default function Users() {
             </thead>
             <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
               {isLoading ? (
-                <tr>
-                  <td colSpan={11} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-                      <p>加载中...</p>
-                    </div>
-                  </td>
-                </tr>
+                <TableSkeleton columns={11} rows={10} />
               ) : currentUsers.length > 0 ? (
                 currentUsers.map((u) => (
                   <tr 
@@ -1530,7 +1524,9 @@ export default function Users() {
                   <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张方向</label>
                   <Select value={exportConfig.orientation} onValueChange={(val) => setExportConfig(prev => ({ ...prev, orientation: val }))}>
                     <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
-                      <SelectValue placeholder="选择纸张方向" />
+                      <SelectValue placeholder="选择纸张方向">
+                        {(val) => val === 'portrait' ? '纵向' : val === 'landscape' ? '横向' : '选择纸张方向'}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="portrait">纵向</SelectItem>
@@ -1679,7 +1675,7 @@ export default function Users() {
 
           <div className="w-full md:w-2/3 flex flex-col items-center bg-slate-100 dark:bg-slate-900 p-6 overflow-auto relative min-h-[400px] h-full custom-scrollbar">
             <div className="sticky top-0 self-start text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-6 -ml-6 mb-4">打印预览</div>
-            <div className="w-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 p-8">
+            <div className="w-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl p-8">
               <div className="text-center mb-6">
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{exportConfig.title}</h1>
               </div>
@@ -1797,7 +1793,9 @@ export default function Users() {
                   <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张方向</label>
                   <Select value={addressBookConfig.orientation} onValueChange={(val) => setAddressBookConfig(prev => ({ ...prev, orientation: val }))}>
                     <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
-                      <SelectValue placeholder="选择纸张方向" />
+                      <SelectValue placeholder="选择纸张方向">
+                        {(val) => val === 'portrait' ? '纵向' : val === 'landscape' ? '横向' : '选择纸张方向'}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="portrait">纵向</SelectItem>
@@ -1891,7 +1889,7 @@ export default function Users() {
 
           <div className="w-full md:w-2/3 flex flex-col items-center bg-slate-100 dark:bg-slate-900 p-6 overflow-auto relative min-h-[400px] h-full custom-scrollbar">
             <div className="sticky top-0 self-start text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-6 -ml-6 mb-4">打印预览</div>
-            <div className="w-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 p-8">
+            <div className="w-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl p-8">
               <div className="text-center mb-6">
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{addressBookConfig.title}</h1>
               </div>
@@ -2169,7 +2167,7 @@ export default function Users() {
         footer={
           <>
             <button type="submit" form="employee-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存</button>
-            <button type="button" onClick={() => setIsModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
+            <button type="button" onClick={() => setIsModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
           </>
         }
       >

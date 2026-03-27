@@ -63,7 +63,7 @@ export default function SystemLogs() {
         </button>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col flex-1">
+      <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl overflow-hidden flex flex-col flex-1">
         <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -82,7 +82,9 @@ export default function SystemLogs() {
               onValueChange={(value) => setFilterLevel(value as LogLevel | 'ALL')}
             >
               <SelectTrigger className="w-[180px] text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <SelectValue placeholder="所有等级" />
+                <SelectValue placeholder="所有等级">
+                  {(val) => val === 'ALL' ? '所有等级' : val === 'INFO' ? 'INFO (信息)' : val === 'WARN' ? 'WARN (警告)' : val === 'ERROR' ? 'ERROR (错误)' : '所有等级'}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">所有等级</SelectItem>
