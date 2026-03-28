@@ -45,69 +45,80 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  // TODO: 后期对接 Node.js 时，将此定时提醒逻辑移交至后端 Cron Job，前端直接调接口读取
   // 自动检查合同到期和试用期转正
+  const hasCheckedReminders = useRef(false);
+
   useEffect(() => {
-    if (!user) return;
+    // 确保只在用户初次加载完列表时执行一次，避免每次 users 变化都重新遍历
+    if (!user || users.length === 0 || hasCheckedReminders.current) return;
 
-    const today = new Date();
-    
-    users.forEach(emp => {
-      if (emp.status === '离职') return;
+    hasCheckedReminders.current = true;
 
-      // 检查合同到期
-      if (emp.contractExpiry) {
-        const expiryDate = new Date(emp.contractExpiry);
-        const diffDays = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-        
-        if (diffDays > 0 && diffDays <= settings.contractExpiryDays) {
-          const title = '合同到期提醒';
-          const message = `员工 ${emp.name} (${emp.id}) 的合同将于 ${emp.contractExpiry} 到期（剩余 ${diffDays} 天）`;
+    // 使用 setTimeout 将计算推迟，避免阻塞主线程的初次渲染
+    const timer = setTimeout(() => {
+      const today = new Date();
+      
+      users.forEach(emp => {
+        if (emp.status === '离职') return;
+
+        // 检查合同到期
+        if (emp.contractExpiry) {
+          const expiryDate = new Date(emp.contractExpiry);
+          const diffDays = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
           
-          // 只有当没有未完成的相同待办时才添加
-          addTodo({
-            title,
-            description: message,
-            dueDate: emp.contractExpiry,
-            type: 'contract',
-            targetId: emp.id
-          });
+          if (diffDays > 0 && diffDays <= settings.contractExpiryDays) {
+            const title = '合同到期提醒';
+            const message = `员工 ${emp.name} (${emp.id}) 的合同将于 ${emp.contractExpiry} 到期（剩余 ${diffDays} 天）`;
+            
+            // 只有当没有未完成的相同待办时才添加
+            addTodo({
+              title,
+              description: message,
+              dueDate: emp.contractExpiry,
+              type: 'contract',
+              targetId: emp.id
+            });
 
-          // 检查是否已经发送过该通知（简单检查）
-          const hasNotification = notifications.some(n => n.title === title && n.message === message);
-          if (!hasNotification) {
-            addNotification({ title, message, type: 'warning' });
+            // 检查是否已经发送过该通知（简单检查）
+            const hasNotification = notifications.some(n => n.title === title && n.message === message);
+            if (!hasNotification) {
+              addNotification({ title, message, type: 'warning' });
+            }
           }
         }
-      }
 
-      // 检查试用期转正
-      if (emp.status === '试用期' && emp.joinDate) {
-        const joinDate = new Date(emp.joinDate);
-        // 假设试用期为3个月
-        const conversionDate = new Date(joinDate.setMonth(joinDate.getMonth() + 3));
-        const diffDays = Math.ceil((conversionDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-        
-        if (diffDays > 0 && diffDays <= settings.probationConversionDays) {
-          const dateStr = conversionDate.toISOString().split('T')[0];
-          const title = '试用期转正提醒';
-          const message = `员工 ${emp.name} (${emp.id}) 的试用期将于 ${dateStr} 结束（剩余 ${diffDays} 天）`;
+        // 检查试用期转正
+        if (emp.status === '试用期' && emp.joinDate) {
+          const joinDate = new Date(emp.joinDate);
+          // 假设试用期为3个月
+          const conversionDate = new Date(joinDate.setMonth(joinDate.getMonth() + 3));
+          const diffDays = Math.ceil((conversionDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
           
-          addTodo({
-            title,
-            description: message,
-            dueDate: dateStr,
-            type: 'probation',
-            targetId: emp.id
-          });
+          if (diffDays > 0 && diffDays <= settings.probationConversionDays) {
+            const dateStr = conversionDate.toISOString().split('T')[0];
+            const title = '试用期转正提醒';
+            const message = `员工 ${emp.name} (${emp.id}) 的试用期将于 ${dateStr} 结束（剩余 ${diffDays} 天）`;
+            
+            addTodo({
+              title,
+              description: message,
+              dueDate: dateStr,
+              type: 'probation',
+              targetId: emp.id
+            });
 
-          const hasNotification = notifications.some(n => n.title === title && n.message === message);
-          if (!hasNotification) {
-            addNotification({ title, message, type: 'info' });
+            const hasNotification = notifications.some(n => n.title === title && n.message === message);
+            if (!hasNotification) {
+              addNotification({ title, message, type: 'info' });
+            }
           }
         }
-      }
-    });
-  }, [users, settings, addTodo, addNotification, notifications, user]);
+      });
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [users, settings.contractExpiryDays, settings.probationConversionDays, addTodo, addNotification, notifications, user]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
