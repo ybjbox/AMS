@@ -59,7 +59,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className={`relative z-10 inline-block align-bottom w-full bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-2xl sm:my-8 sm:align-middle ${sizeClasses[size]} ${size === 'full' ? 'flex flex-col' : ''} ${className}`}
+              className={`relative z-10 inline-block align-bottom w-full bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-2xl sm:my-8 sm:align-middle ${sizeClasses[size]} ${size === 'full' ? 'flex flex-col h-[calc(100vh-2rem)] sm:h-[calc(100vh-4rem)] max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-4rem)]' : ''} ${className}`}
             >
               {size === 'full' ? (
                 <>
@@ -77,7 +77,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
                   </div>
 
                   {/* Body */}
-                  <div className={`flex-1 overflow-hidden flex flex-col md:flex-row ${bodyClassName}`}>
+                  <div className={`flex-1 min-h-0 flex flex-col ${bodyClassName}`}>
                     {children}
                   </div>
 

@@ -592,7 +592,7 @@ export default function Seating() {
         onClose={() => setIsPrintModalOpen(false)}
         title="台卡打印设置"
         size="full"
-        bodyClassName="p-0 flex flex-col overflow-hidden"
+        bodyClassName="p-0 overflow-hidden"
         footer={
           <>
             <button type="button" onClick={() => setIsPrintModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存设置</button>
@@ -600,10 +600,10 @@ export default function Seating() {
           </>
         }
       >
-        <div className="flex flex-col md:flex-row gap-8 flex-1 overflow-hidden p-4 sm:p-6">
+        <div className="flex flex-col md:flex-row gap-8 flex-1 min-h-0 p-4 sm:p-6 w-full h-full">
           {/* Settings Panel */}
-          <div className="w-full md:w-5/12 space-y-3 overflow-y-auto pr-2 h-full">
-            <div className="space-y-3">
+          <div className="w-full md:w-5/12 overflow-y-auto pr-2 min-h-0 custom-scrollbar">
+            <div className="space-y-3 pb-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">台卡样式</label>
                 <Select value={printSettings.cardStyle} onValueChange={(val) => {
@@ -882,7 +882,7 @@ export default function Seating() {
           </div>
 
           {/* Preview Panel */}
-          <div className="w-full md:w-7/12 flex flex-col items-center bg-slate-100 dark:bg-slate-900 rounded-lg p-6 overflow-auto relative min-h-[400px] h-full">
+          <div className="w-full md:w-7/12 flex flex-col items-center bg-slate-100 dark:bg-slate-900 rounded-lg p-6 overflow-y-auto relative min-h-[300px] md:min-h-0">
             <div className="sticky top-0 self-start text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-6 -ml-6 mb-4">打印预览 ({tables.length}桌)</div>
             
             <div className="flex flex-col gap-8 items-center w-full pt-2">

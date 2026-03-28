@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { TableSkeleton } from '../components/ui/Skeleton';
+import { UserTable } from '../components/users/UserTable';
 import { Search, Plus, MoreHorizontal, Edit, Trash2, ChevronLeft, ChevronRight, Filter, X, Check, Download, RefreshCw, GripVertical, FileCode, Printer, ChevronDown, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { useDepartments, flattenDepartments, DepartmentNode, RoleNode } from '../store/departments';
 import { useAuth, getAllowedDepartments } from '../store/auth';
@@ -1237,136 +1238,20 @@ export default function Users() {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-            <thead className="bg-slate-50 dark:bg-slate-800/50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">工号</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">姓名</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">部门 / 职位</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">系统角色</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">状态</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">联系电话</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">性别/年龄</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">入职时间/工龄</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">用工形式</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">合同到期(天)</th>
-                <th scope="col" className="relative px-6 py-3 whitespace-nowrap">
-                  <span className="sr-only">操作</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-              {isLoading ? (
-                <TableSkeleton columns={11} rows={10} />
-              ) : currentUsers.length > 0 ? (
-                currentUsers.map((u) => (
-                  <tr 
-                    key={u.id} 
-                    className="hover:bg-slate-50/50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
-                    onClick={() => {
-                      setSelectedUser(u);
-                      setIsDetailModalOpen(true);
-                    }}
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">{u.id}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-medium text-xs mr-3">
-                          {u.name.charAt(0)}
-                        </div>
-                        <div className="text-sm font-medium text-slate-900 dark:text-white">{u.name}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-slate-900 dark:text-white">{u.department}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">{u.role}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        u.systemRole === SystemRole.SUPER_ADMIN ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400' :
-                        u.systemRole === SystemRole.ADMIN ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400' :
-                        u.systemRole === SystemRole.HR ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' :
-                        'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-300'
-                      }`}>
-                        {u.systemRole === SystemRole.SUPER_ADMIN ? '超级管理员' : 
-                         u.systemRole === SystemRole.ADMIN ? '管理员' : 
-                         u.systemRole === SystemRole.HR ? '人事主管' : '普通员工'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                        u.status === '在职' || u.status === 'active' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' 
-                        : u.status === '试用期' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800'
-                        : u.status === '离职' || u.status === 'inactive' ? 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600'
-                        : 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800'
-                      }`}>
-                        {u.status === 'active' ? '在职' : u.status === 'inactive' ? '离职' : u.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{u.phone}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{u.gender} / {u.age}岁</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-slate-900 dark:text-white">{u.joinDate}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">{u.yearsOfService}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{u.employmentType}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-slate-900 dark:text-white">{u.contractExpiry}</div>
-                      <div className={`text-xs font-medium ${u.daysToExpiry < 30 ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}`}>
-                        {u.daysToExpiry > 0 ? `剩 ${u.daysToExpiry} 天` : '已过期'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end space-x-2">
-                        {hasPermission(Permission.MANAGE_USERS, u) && (
-                          <>
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEdit(u);
-                              }} 
-                              className="p-1 text-slate-400 hover:text-blue-600 transition-colors" 
-                              title="编辑"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // Add delete logic here if needed
-                              }}
-                              className="p-1 text-slate-400 hover:text-red-600 transition-colors" 
-                              title="删除"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </>
-                        )}
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Add more logic here if needed
-                          }}
-                          className="p-1 text-slate-400 hover:text-slate-600 transition-colors" 
-                          title="更多"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500 text-sm">
-                    没有找到匹配的员工数据
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <UserTable 
+          data={currentUsers} 
+          isLoading={isLoading} 
+          onEdit={handleEdit} 
+          onDelete={(user) => {
+            if (window.confirm(`确定要删除员工 ${user.name} 吗？`)) {
+              deleteUser(user.id);
+            }
+          }} 
+          onRowClick={(user) => {
+            setSelectedUser(user);
+            setIsDetailModalOpen(true);
+          }}
+        />
 
         {/* Pagination */}
         <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50 rounded-b-xl">
