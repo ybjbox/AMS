@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { create } from 'zustand';
 import { SystemRole, Permission, RolePermissions, DataScope, RoleDataScope } from '../types';
 import { departmentStore, flattenDepartments, DepartmentNode } from './departments';
 
@@ -9,18 +9,9 @@ interface AuthState {
     systemRole: SystemRole;
     department?: string;
   } | null;
+  setAuth: (newAuth: { user: AuthState['user'] }) => void;
+  hasPermission: (permission: Permission, data?: any) => boolean;
 }
-
-let authState: AuthState = {
-  user: {
-    id: 'ADMIN001',
-    name: '管理员',
-    systemRole: SystemRole.SUPER_ADMIN,
-    department: '集团总部',
-  }
-};
-
-let listeners: (() => void)[] = [];
 
 // Helper to get all sub-departments
 const getSubDepartments = (deptName: string, nodes: DepartmentNode[]): string[] => {
@@ -95,44 +86,33 @@ export const getAllowedDepartments = (departments: DepartmentNode[], user: AuthS
   return [];
 };
 
-export const authStore = {
-  getAuth: () => authState,
-  setAuth: (newAuth: AuthState) => {
-    authState = newAuth;
-    listeners.forEach(l => l());
+export const useAuth = create<AuthState>((set, get) => ({
+  user: {
+    id: 'ADMIN001',
+    name: '管理员',
+    systemRole: SystemRole.SUPER_ADMIN,
+    department: '集团总部',
   },
+  setAuth: (newAuth) => set({ user: newAuth.user }),
   hasPermission: (permission: Permission, data?: any) => {
-    if (!authState.user) return false;
-    const permissions = RolePermissions[authState.user.systemRole] || [];
+    const { user } = get();
+    if (!user) return false;
+    const permissions = RolePermissions[user.systemRole] || [];
     if (!permissions.includes(permission)) return false;
 
     if (data) {
-      const dataScope = RoleDataScope[authState.user.systemRole];
-      return checkDataScope(authState.user, data, dataScope);
+      const dataScope = RoleDataScope[user.systemRole];
+      return checkDataScope(user, data, dataScope);
     }
 
     return true;
-  },
-  subscribe: (listener: () => void) => {
-    listeners.push(listener);
-    return () => {
-      listeners = listeners.filter(l => l !== listener);
-    };
   }
-};
+}));
 
-export function useAuth() {
-  const [auth, setAuth] = useState(authStore.getAuth());
-  
-  useEffect(() => {
-    return authStore.subscribe(() => {
-      setAuth(authStore.getAuth());
-    });
-  }, []);
-  
-  return {
-    ...auth,
-    hasPermission: authStore.hasPermission,
-    setAuth: authStore.setAuth
-  };
-}
+// Export authStore for backwards compatibility with non-react code if needed
+export const authStore = {
+  getAuth: () => ({ user: useAuth.getState().user }),
+  setAuth: (newAuth: { user: AuthState['user'] }) => useAuth.getState().setAuth(newAuth),
+  hasPermission: (permission: Permission, data?: any) => useAuth.getState().hasPermission(permission, data),
+  subscribe: (listener: () => void) => useAuth.subscribe(listener)
+};

@@ -9,8 +9,10 @@ import { SystemRole } from '../types';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('departments');
-  const { user, setAuth } = useAuth();
-  const { settings, updateSettings } = useTodoStore();
+  const user = useAuth(state => state.user);
+  const setAuth = useAuth(state => state.setAuth);
+  const settings = useTodoStore(state => state.settings);
+  const updateSettings = useTodoStore(state => state.updateSettings);
 
   const handleRoleChange = (role: SystemRole) => {
     setAuth({
@@ -210,7 +212,12 @@ export default function Settings() {
 }
 
 function AppearanceSettings() {
-  const { theme, setTheme, loginBackground, setLoginBackground, systemIcon, setSystemIcon } = useAppSettings();
+  const theme = useAppSettings(state => state.theme);
+  const setTheme = useAppSettings(state => state.setTheme);
+  const loginBackground = useAppSettings(state => state.loginBackground);
+  const setLoginBackground = useAppSettings(state => state.setLoginBackground);
+  const systemIcon = useAppSettings(state => state.systemIcon);
+  const setSystemIcon = useAppSettings(state => state.setSystemIcon);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'background' | 'icon') => {
     const file = e.target.files?.[0];

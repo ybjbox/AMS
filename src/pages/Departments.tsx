@@ -24,8 +24,11 @@ type RoleModalState = {
 };
 
 export default function Departments() {
-  const { hasPermission } = useAuth();
-  const { departments, setDepartments, roles, setRoles } = useDepartments();
+  const hasPermission = useAuth(state => state.hasPermission);
+  const departments = useDepartments(state => state.departments);
+  const setDepartments = useDepartments(state => state.setDepartments);
+  const roles = useDepartments(state => state.roles);
+  const setRoles = useDepartments(state => state.setRoles);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [expandedRoleDepts, setExpandedRoleDepts] = useState<Set<string>>(new Set());
   

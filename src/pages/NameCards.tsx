@@ -31,8 +31,9 @@ interface PrintSettings {
 }
 
 export default function NameCards() {
-  const { users, fetchUsers } = useUserStore();
-  const { departments } = useDepartments();
+  const users = useUserStore(state => state.users);
+  const fetchUsers = useUserStore(state => state.fetchUsers);
+  const departments = useDepartments(state => state.departments);
 
   useEffect(() => {
     fetchUsers();

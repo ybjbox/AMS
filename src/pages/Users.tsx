@@ -595,8 +595,14 @@ function DepartmentTreeFilter({
 // 模拟员工数据
 
 export default function Users() {
-  const { hasPermission, user } = useAuth();
-  const { users, fetchUsers, isLoading, addUser, updateUser, deleteUser } = useUserStore();
+  const hasPermission = useAuth(state => state.hasPermission);
+  const user = useAuth(state => state.user);
+  const users = useUserStore(state => state.users);
+  const fetchUsers = useUserStore(state => state.fetchUsers);
+  const isLoading = useUserStore(state => state.isLoading);
+  const addUser = useUserStore(state => state.addUser);
+  const updateUser = useUserStore(state => state.updateUser);
+  const deleteUser = useUserStore(state => state.deleteUser);
   
   useEffect(() => {
     fetchUsers();
@@ -1013,7 +1019,8 @@ export default function Users() {
 
   const [selectedDeptName, setSelectedDeptName] = useState<string>('');
   const [selectedRoleName, setSelectedRoleName] = useState<string>('');
-  const { departments: allDepartments, roles } = useDepartments();
+  const allDepartments = useDepartments(state => state.departments);
+  const roles = useDepartments(state => state.roles);
   const departments = useMemo(() => getAllowedDepartments(allDepartments, user), [allDepartments, user]);
   const flatDepts = useMemo(() => flattenDepartments(departments), [departments]);
   

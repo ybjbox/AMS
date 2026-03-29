@@ -8,7 +8,8 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { loginBackground, systemIcon } = useAppSettings();
+  const loginBackground = useAppSettings(state => state.loginBackground);
+  const systemIcon = useAppSettings(state => state.systemIcon);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();

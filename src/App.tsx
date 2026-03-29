@@ -5,7 +5,7 @@
 
 import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import Layout from './components/Layout';
+import Layout from './components/layout/Layout';
 import { useAuth } from './store/auth';
 import { useAppSettings } from './store/appSettings';
 import { Permission } from './types';
@@ -23,9 +23,10 @@ const Attendance = React.lazy(() => import('./pages/Attendance'));
 const Contracts = React.lazy(() => import('./pages/Contracts'));
 
 function ThemeApplier() {
-  const { theme, systemIcon } = useAppSettings();
+  const theme = useAppSettings(state => state.theme);
+  const systemIcon = useAppSettings(state => state.systemIcon);
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     const root = window.document.documentElement;
 
     const applyTheme = () => {
@@ -65,7 +66,8 @@ function ThemeApplier() {
 }
 
 function ProtectedRoute({ children, permission }: { children: React.ReactNode, permission: Permission }) {
-  const { user, hasPermission } = useAuth();
+  const user = useAuth(state => state.user);
+  const hasPermission = useAuth(state => state.hasPermission);
   
   if (!user) {
     return <Navigate to="/login" replace />;

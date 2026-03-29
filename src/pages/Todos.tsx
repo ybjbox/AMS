@@ -4,7 +4,10 @@ import { CheckCircle2, Circle, Clock, Plus, Trash2, Calendar, AlertCircle, ListT
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function Todos() {
-  const { todos, toggleTodo, deleteTodo, addTodo } = useTodoStore();
+  const todos = useTodoStore(state => state.todos);
+  const toggleTodo = useTodoStore(state => state.toggleTodo);
+  const deleteTodo = useTodoStore(state => state.deleteTodo);
+  const addTodo = useTodoStore(state => state.addTodo);
   const [isAdding, setIsAdding] = useState(false);
   const [newTodo, setNewTodo] = useState({ title: '', description: '', dueDate: '' });
 

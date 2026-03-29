@@ -4,7 +4,20 @@ import { useDocumentStore, Document, DocumentSet, Folder as FolderType } from '.
 import { BaseModal } from '../components/ui/BaseModal';
 
 export default function Documents() {
-  const { folders, documents, documentSets, fetchData, isLoading, addFolder, updateFolder, removeFolder, addDocument, updateDocument, removeDocument, addDocumentSet, updateDocumentSet, removeDocumentSet } = useDocumentStore();
+  const folders = useDocumentStore(state => state.folders);
+  const documents = useDocumentStore(state => state.documents);
+  const documentSets = useDocumentStore(state => state.documentSets);
+  const fetchData = useDocumentStore(state => state.fetchData);
+  const isLoading = useDocumentStore(state => state.isLoading);
+  const addFolder = useDocumentStore(state => state.addFolder);
+  const updateFolder = useDocumentStore(state => state.updateFolder);
+  const removeFolder = useDocumentStore(state => state.removeFolder);
+  const addDocument = useDocumentStore(state => state.addDocument);
+  const updateDocument = useDocumentStore(state => state.updateDocument);
+  const removeDocument = useDocumentStore(state => state.removeDocument);
+  const addDocumentSet = useDocumentStore(state => state.addDocumentSet);
+  const updateDocumentSet = useDocumentStore(state => state.updateDocumentSet);
+  const removeDocumentSet = useDocumentStore(state => state.removeDocumentSet);
   const [activeTab, setActiveTab] = useState<'files' | 'sets'>('sets');
   
   useEffect(() => {

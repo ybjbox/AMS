@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { create } from 'zustand';
 
 export type DepartmentNode = {
   id: string;
@@ -14,7 +14,14 @@ export type RoleNode = {
   priority?: number;
 };
 
-let departments: DepartmentNode[] = [
+interface DepartmentState {
+  departments: DepartmentNode[];
+  roles: RoleNode[];
+  setDepartments: (newDepts: DepartmentNode[]) => void;
+  setRoles: (newRoles: RoleNode[]) => void;
+}
+
+const initialDepartments: DepartmentNode[] = [
   {
     id: '1',
     name: '集团总部',
@@ -50,7 +57,7 @@ let departments: DepartmentNode[] = [
   }
 ];
 
-let roles: RoleNode[] = [
+const initialRoles: RoleNode[] = [
   { id: '1', name: '前端工程师', departmentId: '8', priority: 10 },
   { id: '2', name: '后端工程师', departmentId: '8', priority: 20 },
   { id: '3', name: '产品经理', departmentId: '9', priority: 10 },
@@ -59,8 +66,6 @@ let roles: RoleNode[] = [
   { id: '6', name: '财务经理', departmentId: '3', priority: 10 },
   { id: '7', name: '销售总监', departmentId: '13', priority: 10 },
 ];
-
-let listeners: (() => void)[] = [];
 
 const sortDepartments = (nodes: DepartmentNode[]): DepartmentNode[] => {
   return [...nodes]
@@ -75,43 +80,21 @@ const sortRoles = (rolesList: RoleNode[]): RoleNode[] => {
   return [...rolesList].sort((a, b) => (b.priority || 0) - (a.priority || 0));
 };
 
-export const departmentStore = {
-  getDepartments: () => sortDepartments(departments),
-  setDepartments: (newDepts: DepartmentNode[]) => {
-    departments = newDepts;
-    listeners.forEach(l => l());
-  },
-  getRoles: () => sortRoles(roles),
-  setRoles: (newRoles: RoleNode[]) => {
-    roles = newRoles;
-    listeners.forEach(l => l());
-  },
-  subscribe: (listener: () => void) => {
-    listeners.push(listener);
-    return () => {
-      listeners = listeners.filter(l => l !== listener);
-    };
-  }
-};
+export const useDepartments = create<DepartmentState>((set) => ({
+  departments: sortDepartments(initialDepartments),
+  roles: sortRoles(initialRoles),
+  setDepartments: (newDepts) => set({ departments: sortDepartments(newDepts) }),
+  setRoles: (newRoles) => set({ roles: sortRoles(newRoles) })
+}));
 
-export function useDepartments() {
-  const [depts, setDepts] = useState(departmentStore.getDepartments());
-  const [rls, setRls] = useState(departmentStore.getRoles());
-  
-  useEffect(() => {
-    return departmentStore.subscribe(() => {
-      setDepts(departmentStore.getDepartments());
-      setRls(departmentStore.getRoles());
-    });
-  }, []);
-  
-  return { 
-    departments: depts, 
-    setDepartments: departmentStore.setDepartments,
-    roles: rls,
-    setRoles: departmentStore.setRoles
-  };
-}
+// Export departmentStore for backwards compatibility with non-react code if needed
+export const departmentStore = {
+  getDepartments: () => useDepartments.getState().departments,
+  setDepartments: (newDepts: DepartmentNode[]) => useDepartments.getState().setDepartments(newDepts),
+  getRoles: () => useDepartments.getState().roles,
+  setRoles: (newRoles: RoleNode[]) => useDepartments.getState().setRoles(newRoles),
+  subscribe: (listener: () => void) => useDepartments.subscribe(listener)
+};
 
 export function flattenDepartments(nodes: DepartmentNode[]): { id: string, name: string }[] {
   let result: { id: string, name: string }[] = [];

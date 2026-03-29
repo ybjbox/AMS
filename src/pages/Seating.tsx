@@ -11,8 +11,10 @@ interface Table {
 }
 
 export default function Seating() {
-  const { users, fetchUsers } = useUserStore();
-  const { departments, roles } = useDepartments();
+  const users = useUserStore(state => state.users);
+  const fetchUsers = useUserStore(state => state.fetchUsers);
+  const departments = useDepartments(state => state.departments);
+  const roles = useDepartments(state => state.roles);
 
   useEffect(() => {
     fetchUsers();

@@ -7,7 +7,7 @@ import { BaseModal } from '../components/ui/BaseModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
 const ContractTemplate = ({ user }: { user: any }) => {
-  const { template } = useContractStore();
+  const template = useContractStore(state => state.template);
   
   if (!user) return null;
 
@@ -44,8 +44,10 @@ const ContractTemplate = ({ user }: { user: any }) => {
 };
 
 export default function Contracts() {
-  const { users, fetchUsers } = useUserStore();
-  const { template, setTemplate } = useContractStore();
+  const users = useUserStore(state => state.users);
+  const fetchUsers = useUserStore(state => state.fetchUsers);
+  const template = useContractStore(state => state.template);
+  const setTemplate = useContractStore(state => state.setTemplate);
   
   useEffect(() => {
     fetchUsers();

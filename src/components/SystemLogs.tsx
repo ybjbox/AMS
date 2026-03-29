@@ -4,7 +4,8 @@ import { AlertCircle, AlertTriangle, Info, Trash2, Search, Filter, ChevronDown, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
 export default function SystemLogs() {
-  const { logs, clearLogs } = useLogStore();
+  const logs = useLogStore(state => state.logs);
+  const clearLogs = useLogStore(state => state.clearLogs);
   const [filterLevel, setFilterLevel] = useState<LogLevel | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());

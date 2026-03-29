@@ -22,7 +22,7 @@ interface UserTableProps {
 }
 
 export function UserTable({ data, isLoading, onEdit, onDelete, onRowClick }: UserTableProps) {
-  const { hasPermission } = useAuth();
+  const hasPermission = useAuth(state => state.hasPermission);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnResizeMode] = useState<ColumnResizeMode>('onChange');
 

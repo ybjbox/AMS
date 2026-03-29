@@ -8,10 +8,22 @@ import { useAuth } from '../store/auth';
 import { Permission } from '../types';
 
 export default function Attendance() {
-  const { hasPermission } = useAuth();
+  const hasPermission = useAuth(state => state.hasPermission);
   const [activeTab, setActiveTab] = useState<'records' | 'schedules' | 'anomalies' | 'shifts'>('records');
-  const { records, schedules, anomalies, setRecords, setSchedules, analyzeAnomalies, shifts, addShift, updateShift, deleteShift, fetchData, isLoading } = useAttendanceStore();
-  const { users, fetchUsers } = useUserStore();
+  const records = useAttendanceStore(state => state.records);
+  const schedules = useAttendanceStore(state => state.schedules);
+  const anomalies = useAttendanceStore(state => state.anomalies);
+  const setRecords = useAttendanceStore(state => state.setRecords);
+  const setSchedules = useAttendanceStore(state => state.setSchedules);
+  const analyzeAnomalies = useAttendanceStore(state => state.analyzeAnomalies);
+  const shifts = useAttendanceStore(state => state.shifts);
+  const addShift = useAttendanceStore(state => state.addShift);
+  const updateShift = useAttendanceStore(state => state.updateShift);
+  const deleteShift = useAttendanceStore(state => state.deleteShift);
+  const fetchData = useAttendanceStore(state => state.fetchData);
+  const isLoading = useAttendanceStore(state => state.isLoading);
+  const users = useUserStore(state => state.users);
+  const fetchUsers = useUserStore(state => state.fetchUsers);
   
   useEffect(() => {
     fetchData();
