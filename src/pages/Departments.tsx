@@ -344,10 +344,10 @@ export default function Departments() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="h-full flex flex-col">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
         {/* 部门架构 */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl flex flex-col">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl flex flex-col min-h-0">
           <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50 rounded-t-xl">
             <div className="flex items-center space-x-2">
               <Building2 className="w-5 h-5 text-slate-500 dark:text-slate-400" />
@@ -363,7 +363,7 @@ export default function Departments() {
               </button>
             )}
           </div>
-          <div className="p-6 flex-1">
+          <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
             {departments.length > 0 ? (
               renderTree(departments)
             ) : (
@@ -384,7 +384,7 @@ export default function Departments() {
         </div>
 
         {/* 职位设置 */}
-        <div className="lg:col-span-1 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl flex flex-col">
+        <div className="lg:col-span-1 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl flex flex-col min-h-0">
           <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50 rounded-t-xl">
             <div className="flex items-center space-x-2">
               <Briefcase className="w-5 h-5 text-slate-500 dark:text-slate-400" />
@@ -399,7 +399,7 @@ export default function Departments() {
               </button>
             )}
           </div>
-          <div className="p-4 flex-1 overflow-y-auto space-y-3">
+          <div className="p-4 flex-1 overflow-y-auto space-y-3 custom-scrollbar">
             {departments.length > 0 ? (
               renderRoleTree(departments)
             ) : (

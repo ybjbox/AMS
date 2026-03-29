@@ -143,7 +143,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
   ].filter(item => hasPermission(item.permission));
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300 flex">
+    <div className="h-screen overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors duration-300 flex">
       {/* Sidebar */}
       <aside 
         className={`fixed inset-y-0 left-0 z-50 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 transform transition-all duration-300 ease-in-out flex flex-col print:hidden ${

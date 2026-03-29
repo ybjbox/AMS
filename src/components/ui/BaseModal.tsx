@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -32,92 +32,77 @@ export const BaseModal: React.FC<BaseModalProps> = ({
     '3xl': 'sm:max-w-3xl',
     '4xl': 'sm:max-w-4xl',
     '5xl': 'sm:max-w-5xl',
-    full: 'sm:max-w-[1600px] sm:w-[95vw] h-[95vh] sm:h-[90vh]',
+    full: 'sm:max-w-[1600px] sm:w-[95vw]',
   };
+
+  const headerRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const [footerHeight, setFooterHeight] = useState(0);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Small delay to ensure DOM is rendered
+      setTimeout(() => {
+        if (headerRef.current) setHeaderHeight(headerRef.current.offsetHeight);
+        if (footerRef.current) setFooterHeight(footerRef.current.offsetHeight);
+      }, 0);
+    }
+  }, [isOpen, title, footer]);
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
-              aria-hidden="true"
-              onClick={onClose}
-            />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
+            aria-hidden="true"
+            onClick={onClose}
+          />
 
-            {/* This element is to trick the browser into centering the modal contents. */}
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+          {/* Modal Panel (外层容器) */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className={`relative z-10 w-full bg-white dark:bg-slate-800 rounded-2xl text-left shadow-2xl flex flex-col max-h-full ${sizeClasses[size]} ${size === 'full' ? 'h-full' : ''} ${className}`}
+          >
+            {/* Header */}
+            <div ref={headerRef} className="px-4 py-4 sm:px-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between shrink-0 bg-white dark:bg-slate-800 rounded-t-2xl">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white" id="modal-title">
+                {title}
+              </h3>
+              <button
+                onClick={onClose}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
 
-            {/* Modal Panel */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className={`relative z-10 inline-block align-bottom w-full bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-2xl sm:my-8 sm:align-middle ${sizeClasses[size]} ${size === 'full' ? 'flex flex-col h-[calc(100vh-2rem)] sm:h-[calc(100vh-4rem)] max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-4rem)]' : ''} ${className}`}
+            {/* Body (内容区域) */}
+            <div 
+              className={`flex-[1_1_auto] overflow-y-auto custom-scrollbar ${bodyClassName}`}
+              style={{ 
+                maxHeight: '80vh',
+                height: headerHeight || footerHeight ? `calc(100% - ${headerHeight}px - ${footerHeight}px)` : 'auto'
+              }}
             >
-              {size === 'full' ? (
-                <>
-                  {/* Header */}
-                  <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between shrink-0">
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white" id="modal-title">
-                      {title}
-                    </h3>
-                    <button
-                      onClick={onClose}
-                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
+              {children}
+            </div>
 
-                  {/* Body */}
-                  <div className={`flex-1 min-h-0 flex flex-col ${bodyClassName}`}>
-                    {children}
-                  </div>
-
-                  {/* Footer */}
-                  {footer && (
-                    <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 shrink-0 flex justify-end gap-3">
-                      {footer}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="flex flex-col max-h-[85vh]">
-                  {/* Header */}
-                  <div className="flex justify-between items-center px-4 py-4 sm:px-6 border-b border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0">
-                    <h3 className="text-lg leading-6 font-medium text-slate-900 dark:text-white" id="modal-title">
-                      {title}
-                    </h3>
-                    <button
-                      onClick={onClose}
-                      className="text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 transition-colors p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
-
-                  {/* Body */}
-                  <div className={`overflow-y-auto custom-scrollbar ${bodyClassName}`}>
-                    {children}
-                  </div>
-
-                  {/* Footer */}
-                  {footer && (
-                    <div className="px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 shrink-0 gap-3">
-                      {footer}
-                    </div>
-                  )}
-                </div>
-              )}
-            </motion.div>
-          </div>
+            {/* Footer */}
+            {footer && (
+              <div ref={footerRef} className="px-4 py-3 sm:px-6 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 shrink-0 flex justify-end gap-3 rounded-b-2xl">
+                {footer}
+              </div>
+            )}
+          </motion.div>
         </div>
       )}
     </AnimatePresence>

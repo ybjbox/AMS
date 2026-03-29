@@ -24,15 +24,15 @@ export default function Settings() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-6xl mx-auto">
-      <div>
+    <div className="flex-1 flex flex-col space-y-6 animate-in fade-in duration-500 max-w-6xl mx-auto w-full min-h-0">
+      <div className="shrink-0">
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">系统设置</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">管理系统偏好、组织架构及个人信息</p>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl overflow-hidden flex flex-col md:flex-row min-h-[600px]">
+      <div className="flex-1 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl overflow-hidden flex flex-col md:flex-row min-h-0">
         {/* Sidebar Tabs */}
-        <div className="w-full md:w-64 bg-slate-50 dark:bg-slate-900/50 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 p-4 shrink-0">
+        <div className="w-full md:w-64 bg-slate-50 dark:bg-slate-900/50 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 p-4 shrink-0 overflow-y-auto custom-scrollbar">
           <nav className="space-y-1">
             <button
               onClick={() => setActiveTab('departments')}
@@ -126,14 +126,16 @@ export default function Settings() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 p-6 overflow-y-auto bg-slate-50/30 dark:bg-slate-900/30">
+        <div className="flex-1 p-6 overflow-y-auto bg-slate-50/30 dark:bg-slate-900/30 min-h-0 custom-scrollbar">
           {activeTab === 'departments' && (
-            <div className="animate-in fade-in duration-300 h-full">
-              <div className="mb-6">
+            <div className="animate-in fade-in duration-300 h-full flex flex-col">
+              <div className="mb-6 shrink-0">
                 <h2 className="text-lg font-medium text-slate-900">部门与职位架构</h2>
                 <p className="text-sm text-slate-500 mt-1">管理公司的组织架构、部门层级及职位名称</p>
               </div>
-              <Departments />
+              <div className="flex-1 min-h-0">
+                <Departments />
+              </div>
             </div>
           )}
           
