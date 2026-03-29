@@ -1,4 +1,4 @@
-import api from './api';
+import { api } from './mockApi';
 import { User } from '../types';
 
 /**
@@ -6,7 +6,7 @@ import { User } from '../types';
  * @returns 员工列表
  */
 export const fetchUsers = async (): Promise<User[]> => {
-  return api.get('/users');
+  return api.fetchUsers();
 };
 
 /**
@@ -15,7 +15,10 @@ export const fetchUsers = async (): Promise<User[]> => {
  * @returns 员工详情
  */
 export const getUserById = async (id: string): Promise<User> => {
-  return api.get(`/users/${id}`);
+  const users = await api.fetchUsers();
+  const user = users.find(u => u.id === id);
+  if (!user) throw new Error('User not found');
+  return user;
 };
 
 /**
@@ -24,7 +27,7 @@ export const getUserById = async (id: string): Promise<User> => {
  * @returns 创建后的员工信息
  */
 export const createUser = async (user: Omit<User, 'id'>): Promise<User> => {
-  return api.post('/users', user);
+  return api.createUser(user as User);
 };
 
 /**
@@ -34,7 +37,7 @@ export const createUser = async (user: Omit<User, 'id'>): Promise<User> => {
  * @returns 更新后的员工信息
  */
 export const updateUser = async (id: string, user: Partial<User>): Promise<User> => {
-  return api.put(`/users/${id}`, user);
+  return api.updateUser({ id, ...user } as User);
 };
 
 /**
@@ -42,5 +45,5 @@ export const updateUser = async (id: string, user: Partial<User>): Promise<User>
  * @param id 员工 ID
  */
 export const deleteUser = async (id: string): Promise<void> => {
-  return api.delete(`/users/${id}`);
+  return api.deleteUser(id);
 };

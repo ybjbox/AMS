@@ -199,6 +199,11 @@ async function startServer() {
     }
   });
 
+  // Catch-all for unhandled API routes to prevent Vite from returning index.html
+  app.use("/api", (req, res) => {
+    res.status(404).json({ error: "API route not found" });
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
