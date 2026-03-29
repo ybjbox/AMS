@@ -1,13 +1,13 @@
 import { create } from 'zustand';
 import { User } from '../types';
-import { api } from '../services/mockApi';
+import * as userApi from '../services/userApi';
 
 interface UserStore {
   users: User[];
   isLoading: boolean;
   error: string | null;
   fetchUsers: () => Promise<void>;
-  addUser: (user: User) => Promise<void>;
+  addUser: (user: Omit<User, 'id'>) => Promise<void>;
   updateUser: (user: User) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
 }
@@ -20,7 +20,7 @@ export const useUserStore = create<UserStore>()((set) => ({
   fetchUsers: async () => {
     set({ isLoading: true, error: null });
     try {
-      const users = await api.fetchUsers();
+      const users = await userApi.fetchUsers();
       set({ users, isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
@@ -30,7 +30,7 @@ export const useUserStore = create<UserStore>()((set) => ({
   addUser: async (user) => {
     set({ isLoading: true, error: null });
     try {
-      const newUser = await api.createUser(user);
+      const newUser = await userApi.createUser(user);
       set((state) => ({ users: [newUser, ...state.users], isLoading: false }));
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
@@ -40,7 +40,8 @@ export const useUserStore = create<UserStore>()((set) => ({
   updateUser: async (user) => {
     set({ isLoading: true, error: null });
     try {
-      const updatedUser = await api.updateUser(user);
+      const { id, ...rest } = user;
+      const updatedUser = await userApi.updateUser(id, rest);
       set((state) => ({
         users: state.users.map((u) => u.id === updatedUser.id ? updatedUser : u),
         isLoading: false
@@ -53,7 +54,7 @@ export const useUserStore = create<UserStore>()((set) => ({
   deleteUser: async (id) => {
     set({ isLoading: true, error: null });
     try {
-      await api.deleteUser(id);
+      await userApi.deleteUser(id);
       set((state) => ({
         users: state.users.filter((u) => u.id !== id),
         isLoading: false

@@ -78,10 +78,20 @@ function ProtectedRoute({ children, permission }: { children: React.ReactNode, p
   return <>{children}</>;
 }
 
-function LoadingFallback() {
+function GlobalLoadingFallback() {
   return (
-    <div className="flex items-center justify-center h-full w-full min-h-[50vh]">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900">
+      <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-blue-600 dark:border-slate-700 dark:border-t-blue-500"></div>
+      <p className="mt-4 text-sm font-medium text-slate-500 dark:text-slate-400">系统加载中...</p>
+    </div>
+  );
+}
+
+function PageLoadingFallback() {
+  return (
+    <div className="flex flex-col items-center justify-center h-full w-full min-h-[50vh]">
+      <div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-blue-600 dark:border-slate-700 dark:border-t-blue-500"></div>
+      <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">加载页面中...</p>
     </div>
   );
 }
@@ -107,12 +117,12 @@ export default function App() {
       <ThemeApplier />
       <ConnectivityListener />
       <AuthExpiredListener />
-      <Suspense fallback={<LoadingFallback />}>
+      <Suspense fallback={<GlobalLoadingFallback />}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/*" element={
             <Layout>
-              <Suspense fallback={<LoadingFallback />}>
+              <Suspense fallback={<PageLoadingFallback />}>
                 <Routes>
                   <Route path="/" element={<ProtectedRoute permission={Permission.VIEW_DASHBOARD}><Dashboard /></ProtectedRoute>} />
                   <Route path="/users" element={<ProtectedRoute permission={Permission.VIEW_USERS}><Users /></ProtectedRoute>} />
