@@ -31,27 +31,37 @@ api.interceptors.response.use(
     return response.data;
   },
   (error) => {
-    if (error.response) {
-      // Handle 401 Unauthorized globally
-      if (error.response.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        
-        // 抛出自定义事件，交由顶层组件处理通知
-        window.dispatchEvent(new CustomEvent('api:error', {
-          detail: {
-            title: '身份验证失败',
-            message: '登录已过期，请重新登录',
-            type: 'warning'
-          }
-        }));
-
-        // 抛出自定义事件，交由 React Router 或顶层组件处理跳转
-        window.dispatchEvent(new CustomEvent('auth-expired'));
-      }
-      return Promise.reject(error.response.data);
+    if (!error.response) {
+      // Handle network errors or server downtime
+      window.dispatchEvent(new CustomEvent('api:error', {
+        detail: {
+          title: '网络请求失败',
+          message: '请检查网络或联系管理员',
+          type: 'error'
+        }
+      }));
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
+
+    // Handle 401 Unauthorized globally
+    if (error.response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      
+      // 抛出自定义事件，交由顶层组件处理通知
+      window.dispatchEvent(new CustomEvent('api:error', {
+        detail: {
+          title: '身份验证失败',
+          message: '登录已过期，请重新登录',
+          type: 'warning'
+        }
+      }));
+
+      // 抛出自定义事件，交由 React Router 或顶层组件处理跳转
+      window.dispatchEvent(new CustomEvent('auth-expired'));
+    }
+    
+    return Promise.reject(error.response.data || error.response || error);
   }
 );
 

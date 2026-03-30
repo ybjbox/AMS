@@ -11,7 +11,7 @@ interface HeaderProps {
 
 export default function Header({ setSidebarOpen, isCollapsed, setIsCollapsed }: HeaderProps) {
   return (
-    <header className="h-16 bg-white/95 dark:bg-slate-800/90 backdrop-blur-sm shadow-sm border-b border-slate-200 dark:border-slate-700 transition-colors duration-300 flex items-center justify-between px-4 sm:px-6 lg:px-8 print:hidden shrink-0">
+    <header className="relative z-10 h-16 bg-white/95 dark:bg-slate-800/90 backdrop-blur-sm shadow-sm border-b border-slate-200 dark:border-slate-700 transition-colors duration-300 flex items-center justify-between px-4 sm:px-6 lg:px-8 print:hidden shrink-0">
       <div className="flex items-center">
         {/* Mobile menu button */}
         <button 

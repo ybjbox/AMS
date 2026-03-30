@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import ErrorBoundary from './ErrorBoundary';
 
 export default function Layout({ children }: { children?: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const location = useLocation();
 
   return (
     <div className="h-screen overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors duration-300 flex">
@@ -23,7 +26,20 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
         />
 
         <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 print:p-0 print:overflow-visible relative flex flex-col">
-          {children || <Outlet />}
+          <ErrorBoundary>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="flex-1 flex flex-col min-h-full"
+              >
+                {children || <Outlet />}
+              </motion.div>
+            </AnimatePresence>
+          </ErrorBoundary>
         </main>
       </div>
 
