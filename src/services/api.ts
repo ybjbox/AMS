@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { useTodoStore } from '../store/todos';
 
 // Create an Axios instance with default configuration
 const api = axios.create({
@@ -38,12 +37,14 @@ api.interceptors.response.use(
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         
-        // 使用现有的通知系统提示用户
-        useTodoStore.getState().addNotification({
-          title: '身份验证失败',
-          message: '登录已过期，请重新登录',
-          type: 'warning'
-        });
+        // 抛出自定义事件，交由顶层组件处理通知
+        window.dispatchEvent(new CustomEvent('api:error', {
+          detail: {
+            title: '身份验证失败',
+            message: '登录已过期，请重新登录',
+            type: 'warning'
+          }
+        }));
 
         // 抛出自定义事件，交由 React Router 或顶层组件处理跳转
         window.dispatchEvent(new CustomEvent('auth-expired'));

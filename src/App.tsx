@@ -10,6 +10,8 @@ import { useAuth } from './store/auth';
 import { useAppSettings } from './store/appSettings';
 import { Permission } from './types';
 import ConnectivityListener from './components/ConnectivityListener';
+import { useInitData } from './hooks/useInitData';
+import { useTodoStore } from './store/todos';
 
 const Login = React.lazy(() => import('./pages/Login'));
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
@@ -21,6 +23,11 @@ const NameCards = React.lazy(() => import('./pages/NameCards'));
 const Documents = React.lazy(() => import('./pages/Documents'));
 const Attendance = React.lazy(() => import('./pages/Attendance'));
 const Contracts = React.lazy(() => import('./pages/Contracts'));
+
+function DataInitializer() {
+  useInitData();
+  return null;
+}
 
 function ThemeApplier() {
   const theme = useAppSettings(state => state.theme);
@@ -113,12 +120,31 @@ function AuthExpiredListener() {
   return null;
 }
 
+function ApiErrorListener() {
+  const addNotification = useTodoStore(state => state.addNotification);
+
+  React.useEffect(() => {
+    const handleApiError = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail) {
+        addNotification(customEvent.detail);
+      }
+    };
+    window.addEventListener('api:error', handleApiError);
+    return () => window.removeEventListener('api:error', handleApiError);
+  }, [addNotification]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <ThemeApplier />
       <ConnectivityListener />
       <AuthExpiredListener />
+      <ApiErrorListener />
+      <DataInitializer />
       <Suspense fallback={<GlobalLoadingFallback />}>
         <Routes>
           <Route path="/login" element={<Login />} />
