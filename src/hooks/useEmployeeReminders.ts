@@ -7,9 +7,6 @@ export function useEmployeeReminders() {
   const user = useAuth(state => state.user);
   const users = useUserStore(state => state.users);
   
-  const contractExpiryDays = useTodoStore(state => state.settings.contractExpiryDays);
-  const probationConversionDays = useTodoStore(state => state.settings.probationConversionDays);
-  
   const hasCheckedReminders = useRef(false);
 
   useEffect(() => {
@@ -20,7 +17,8 @@ export function useEmployeeReminders() {
     const timer = setTimeout(() => {
       const today = new Date();
       
-      const { notifications, addTodo, addNotification } = useTodoStore.getState();
+      const { settings, notifications, addTodo, addNotification } = useTodoStore.getState();
+      const { contractExpiryDays, probationConversionDays } = settings;
       
       users.forEach(emp => {
         if (emp.status === '离职') return;
@@ -76,5 +74,5 @@ export function useEmployeeReminders() {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [users, contractExpiryDays, probationConversionDays, user]);
+  }, [users, user]);
 }

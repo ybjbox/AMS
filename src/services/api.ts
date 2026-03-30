@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
 
 // Create an Axios instance with default configuration
 const api = axios.create({
@@ -65,4 +65,9 @@ api.interceptors.response.use(
   }
 );
 
-export default api;
+export const http = {
+  get: <T>(url: string, config?: AxiosRequestConfig): Promise<T> => api.get(url, config),
+  post: <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => api.post(url, data, config),
+  put: <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => api.put(url, data, config),
+  delete: <T>(url: string, config?: AxiosRequestConfig): Promise<T> => api.delete(url, config),
+};

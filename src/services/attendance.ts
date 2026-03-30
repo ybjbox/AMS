@@ -1,4 +1,4 @@
-import api from './api';
+import { http } from './api';
 import { AttendanceRecord } from '../types';
 
 export const attendanceService = {
@@ -11,7 +11,7 @@ export const attendanceService = {
     status?: string;
   }): Promise<AttendanceRecord[]> => {
     // In a real app, this would call the Python backend:
-    // return api.get('/attendance', { params });
+    // return http.get<AttendanceRecord[]>('/attendance', { params });
     
     // For now, we return mock data as requested
     return new Promise((resolve) => {
@@ -51,7 +51,7 @@ export const attendanceService = {
     formData.append('type', type);
 
     // This would send the file to the Python backend for processing
-    // return api.post('/attendance/upload', formData, {
+    // return http.post<{ success: boolean; message: string }>('/attendance/upload', formData, {
     //   headers: {
     //     'Content-Type': 'multipart/form-data',
     //   },
@@ -67,7 +67,7 @@ export const attendanceService = {
   
   // Trigger automatic analysis rule calculation on the backend
   triggerAnalysis: async (dateRange: { startDate: string; endDate: string }): Promise<{ success: boolean; message: string }> => {
-    // return api.post('/attendance/analyze', dateRange);
+    // return http.post<{ success: boolean; message: string }>('/attendance/analyze', dateRange);
     
     return new Promise((resolve) => {
       setTimeout(() => {
