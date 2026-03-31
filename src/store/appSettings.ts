@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { STORAGE_KEYS } from '../config/constants';
 
 interface AppSettingsState {
   loginBackground: string | null;
@@ -21,7 +22,7 @@ export const useAppSettings = create<AppSettingsState>()(
       setTheme: (theme) => set({ theme }),
     }),
     {
-      name: 'app-settings-storage',
+      name: STORAGE_KEYS.THEME,
     }
   )
 );

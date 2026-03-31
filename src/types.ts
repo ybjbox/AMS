@@ -168,3 +168,9 @@ export interface AttendanceRecord {
   status: 'normal' | 'late' | 'early' | 'absent' | 'leave';
   workHours: number;
 }
+
+export interface ApiErrorResponse {
+  code?: number;
+  message: string;
+  details?: any;
+}

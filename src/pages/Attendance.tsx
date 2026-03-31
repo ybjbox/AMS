@@ -602,9 +602,9 @@ export default function Attendance() {
                         if (!editingShift || !editingShift.name) return;
                         const existing = shifts.find(s => s.id === editingShift.id);
                         if (existing) {
-                          updateShift(editingShift.id, editingShift);
+                          updateShift(editingShift.id!, editingShift);
                         } else {
-                          addShift(editingShift);
+                          addShift(editingShift as Shift);
                         }
                         setEditingShift(null);
                       }}

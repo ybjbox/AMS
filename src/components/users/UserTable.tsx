@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -8,6 +8,7 @@ import {
   ColumnDef,
   ColumnResizeMode,
 } from '@tanstack/react-table';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { User, Permission } from '../../types';
 import { useAuth } from '../../store/auth';
 import { Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react';
@@ -292,6 +293,22 @@ export function UserTable({ data, isLoading, onEdit, onDelete, onRowClick }: Use
     columnResizeMode,
   });
 
+  const parentRef = useRef<HTMLDivElement>(null);
+  const { rows } = table.getRowModel();
+
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 65,
+    overscan: 5,
+  });
+
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  const paddingTop = virtualItems.length > 0 ? virtualItems[0]?.start || 0 : 0;
+  const paddingBottom = virtualItems.length > 0
+    ? rowVirtualizer.getTotalSize() - (virtualItems[virtualItems.length - 1]?.end || 0)
+    : 0;
+
   if (isLoading) {
     return (
       <div className="w-full overflow-x-auto">
@@ -333,7 +350,7 @@ export function UserTable({ data, isLoading, onEdit, onDelete, onRowClick }: Use
   }
 
   return (
-    <div className="w-full overflow-x-auto relative">
+    <div ref={parentRef} className="w-full overflow-auto relative max-h-[600px]">
       <table
         className="w-full text-left border-collapse"
         style={{ width: table.getTotalSize() }}
@@ -347,10 +364,10 @@ export function UserTable({ data, isLoading, onEdit, onDelete, onRowClick }: Use
                 return (
                   <th
                     key={header.id}
-                    className={`group px-6 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 relative ${
-                      isFirst ? 'sticky left-0 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]' : ''
+                    className={`group px-6 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-20 ${
+                      isFirst ? 'left-0 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]' : ''
                     } ${
-                      isLast ? 'sticky right-0 z-20 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.5)]' : ''
+                      isLast ? 'right-0 z-30 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.5)]' : ''
                     }`}
                     style={{
                       width: header.getSize(),
@@ -378,33 +395,48 @@ export function UserTable({ data, isLoading, onEdit, onDelete, onRowClick }: Use
           ))}
         </thead>
         <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-          {table.getRowModel().rows.map((row) => (
-            <tr
-              key={row.id}
-              className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group/row ${onRowClick ? 'cursor-pointer' : ''}`}
-              onClick={() => onRowClick && onRowClick(row.original)}
-            >
-              {row.getVisibleCells().map((cell, index) => {
-                const isFirst = index === 0;
-                const isLast = index === row.getVisibleCells().length - 1;
-                return (
-                  <td
-                    key={cell.id}
-                    className={`px-6 py-4 whitespace-nowrap text-sm bg-white dark:bg-slate-800 group-hover/row:bg-slate-50 dark:group-hover/row:bg-slate-700/50 transition-colors ${
-                      isFirst ? 'sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]' : ''
-                    } ${
-                      isLast ? 'sticky right-0 z-10 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.5)] text-right' : ''
-                    }`}
-                    style={{
-                      width: cell.column.getSize(),
-                    }}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                );
-              })}
+          {paddingTop > 0 && (
+            <tr>
+              <td style={{ height: `${paddingTop}px` }} colSpan={columns.length} />
             </tr>
-          ))}
+          )}
+          {virtualItems.map((virtualRow) => {
+            const row = rows[virtualRow.index];
+            return (
+              <tr
+                key={row.id}
+                data-index={virtualRow.index}
+                ref={rowVirtualizer.measureElement}
+                className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group/row ${onRowClick ? 'cursor-pointer' : ''}`}
+                onClick={() => onRowClick && onRowClick(row.original)}
+              >
+                {row.getVisibleCells().map((cell, index) => {
+                  const isFirst = index === 0;
+                  const isLast = index === row.getVisibleCells().length - 1;
+                  return (
+                    <td
+                      key={cell.id}
+                      className={`px-6 py-4 whitespace-nowrap text-sm bg-white dark:bg-slate-800 group-hover/row:bg-slate-50 dark:group-hover/row:bg-slate-700/50 transition-colors ${
+                        isFirst ? 'sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]' : ''
+                      } ${
+                        isLast ? 'sticky right-0 z-10 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.5)] text-right' : ''
+                      }`}
+                      style={{
+                        width: cell.column.getSize(),
+                      }}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
+          {paddingBottom > 0 && (
+            <tr>
+              <td style={{ height: `${paddingBottom}px` }} colSpan={columns.length} />
+            </tr>
+          )}
         </tbody>
       </table>
     </div>

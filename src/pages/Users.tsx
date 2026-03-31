@@ -1006,8 +1006,8 @@ export default function Users() {
 
       setTimeout(() => {
         const mockScripts = [
-          { name: 'default_template', code: '// 默认导出模板' },
-          { name: 'custom_template', code: '// 自定义导出模板' }
+          { id: '1', name: 'default_template', code: '// 默认导出模板' },
+          { id: '2', name: 'custom_template', code: '// 自定义导出模板' }
         ];
         setScripts(mockScripts);
         if (mockScripts.length > 0 && !exportConfig.templateName) {

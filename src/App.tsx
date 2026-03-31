@@ -12,6 +12,7 @@ import { Permission } from './types';
 import ConnectivityListener from './components/ConnectivityListener';
 import { useInitData } from './hooks/useInitData';
 import { useTodoStore } from './store/todos';
+import { EVENT_KEYS } from './config/constants';
 
 const Login = React.lazy(() => import('./pages/Login'));
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
@@ -113,8 +114,8 @@ function AuthExpiredListener() {
       navigate('/login', { replace: true });
     };
     
-    window.addEventListener('auth-expired', handleAuthExpired);
-    return () => window.removeEventListener('auth-expired', handleAuthExpired);
+    window.addEventListener(EVENT_KEYS.AUTH_EXPIRED, handleAuthExpired);
+    return () => window.removeEventListener(EVENT_KEYS.AUTH_EXPIRED, handleAuthExpired);
   }, [navigate]);
   
   return null;
@@ -130,8 +131,8 @@ function ApiErrorListener() {
         addNotification(customEvent.detail);
       }
     };
-    window.addEventListener('api:error', handleApiError);
-    return () => window.removeEventListener('api:error', handleApiError);
+    window.addEventListener(EVENT_KEYS.API_ERROR, handleApiError);
+    return () => window.removeEventListener(EVENT_KEYS.API_ERROR, handleApiError);
   }, [addNotification]);
 
   return null;
