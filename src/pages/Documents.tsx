@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { FileText, Folder, Plus, Trash2, Printer, Upload, File, Image as ImageIcon, FileArchive, MoreVertical, X, Edit2, Check, Download, FolderPlus, ChevronRight, ChevronDown, FolderOpen, CornerDownRight, Search } from 'lucide-react';
 import { useDocumentStore, Document, DocumentSet, Folder as FolderType } from '../store/documents';
 import { BaseModal } from '../components/ui/BaseModal';
@@ -59,51 +59,55 @@ export default function Documents() {
     };
   }, [isFolderModalOpen, isMoveModalOpen, isSetModalOpen, isPrintModalOpen]);
 
-  const toggleAllModalFolders = () => {
+  const toggleAllModalFolders = useCallback(() => {
     const foldersWithDocs = folders.filter(f => documents.some(d => d.folderId === f.id));
     if (expandedModalFolders.size === foldersWithDocs.length) {
       setExpandedModalFolders(new Set());
     } else {
       setExpandedModalFolders(new Set(foldersWithDocs.map(f => f.id)));
     }
-  };
+  }, [folders, documents, expandedModalFolders.size]);
 
-  const toggleModalFolder = (id: string) => {
-    const newExpanded = new Set(expandedModalFolders);
-    if (newExpanded.has(id)) newExpanded.delete(id);
-    else newExpanded.add(id);
-    setExpandedModalFolders(newExpanded);
-  };
+  const toggleModalFolder = useCallback((id: string) => {
+    setExpandedModalFolders(prev => {
+      const newExpanded = new Set(prev);
+      if (newExpanded.has(id)) newExpanded.delete(id);
+      else newExpanded.add(id);
+      return newExpanded;
+    });
+  }, []);
 
-  const handleDocToggle = (docId: string, checked: boolean) => {
+  const handleDocToggle = useCallback((docId: string, checked: boolean) => {
     if (checked) {
       setSelectedDocIds(prev => [...prev, docId]);
       setPrintSettings(prev => ({ ...prev, [docId]: { duplex: false, color: false, copies: 1 } }));
     } else {
       setSelectedDocIds(prev => prev.filter(id => id !== docId));
-      const newSettings = { ...printSettings };
-      delete newSettings[docId];
-      setPrintSettings(newSettings);
+      setPrintSettings(prev => {
+        const newSettings = { ...prev };
+        delete newSettings[docId];
+        return newSettings;
+      });
     }
-  };
+  }, []);
 
-  const formatFileSize = (bytes: number) => {
+  const formatFileSize = useCallback((bytes: number) => {
     if (bytes === 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+  }, []);
 
-  const getFileIcon = (type: string) => {
+  const getFileIcon = useCallback((type: string) => {
     if (!type) return <File className="w-8 h-8 text-slate-500" />;
     if (type.includes('pdf')) return <FileText className="w-8 h-8 text-red-500" />;
-    if (type.includes('image')) return <ImageIcon className="w-8 h-8 text-blue-500" />;
+    if (type.includes('image')) return <ImageIcon className="w-8 h-8 text-blue-600" />;
     if (type.includes('zip') || type.includes('rar')) return <FileArchive className="w-8 h-8 text-amber-500" />;
     return <File className="w-8 h-8 text-slate-500" />;
-  };
+  }, []);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
@@ -127,9 +131,65 @@ export default function Documents() {
         fileInputRef.current.value = '';
       }
     }, 500);
-  };
+  }, [addDocument, currentFolderId]);
 
-  const handleSaveSet = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreateSetClick = useCallback(() => {
+    setEditingSet(null); 
+    setSelectedDocIds([]);
+    setPrintSettings({});
+    setIsSetModalOpen(true);
+  }, []);
+
+  const handleCreateRootFolderClick = useCallback(() => {
+    setEditingFolder(null); 
+    setFolderParentId(null); 
+    setIsFolderModalOpen(true);
+  }, []);
+
+  const handleMoveDocClick = useCallback((docId: string, folderId: string | null) => {
+    setMovingDocId(docId);
+    setTargetFolderId(folderId);
+    setIsMoveModalOpen(true);
+  }, []);
+
+  const handleDownloadDocClick = useCallback((url: string, name: string) => {
+    if (url !== '#') {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } else {
+      alert('Mock文件无法下载');
+    }
+  }, []);
+
+  const handleDeleteDocClick = useCallback((docId: string) => {
+    if (confirm('确定要删除该文件吗？删除后包含该文件的套件也将受影响。')) {
+      removeDocument(docId);
+    }
+  }, [removeDocument]);
+
+  const handleEditSetClick = useCallback((set: DocumentSet) => {
+    setEditingSet(set); 
+    setSelectedDocIds(set.documentIds);
+    setPrintSettings(set.printSettings || {});
+    setIsSetModalOpen(true);
+  }, []);
+
+  const handleDeleteSetClick = useCallback((setId: string) => {
+    if (confirm('确定要删除该套件吗？')) {
+      removeDocumentSet(setId);
+    }
+  }, [removeDocumentSet]);
+
+  const handlePrintSetClick = useCallback((set: DocumentSet) => {
+    setPrintingSet(set); 
+    setIsPrintModalOpen(true);
+  }, []);
+
+  const handleSaveSet = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
@@ -148,9 +208,9 @@ export default function Documents() {
     }
     setIsSetModalOpen(false);
     setEditingSet(null);
-  };
+  }, [editingSet, selectedDocIds, printSettings, updateDocumentSet, addDocumentSet]);
 
-  const handleSaveFolder = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveFolder = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
@@ -168,23 +228,69 @@ export default function Documents() {
       }
     }
     setIsFolderModalOpen(false);
-  };
+  }, [editingFolder, folderParentId, updateFolder, addFolder]);
 
-  const handleMoveFile = () => {
+  const handleMoveFile = useCallback(() => {
     if (movingDocId) {
       updateDocument(movingDocId, { folderId: targetFolderId });
     }
     setIsMoveModalOpen(false);
-  };
+  }, [movingDocId, targetFolderId, updateDocument]);
 
-  const toggleFolder = (id: string) => {
-    const newExpanded = new Set(expandedFolders);
-    if (newExpanded.has(id)) newExpanded.delete(id);
-    else newExpanded.add(id);
-    setExpandedFolders(newExpanded);
-  };
+  const toggleFolder = useCallback((id: string) => {
+    setExpandedFolders(prev => {
+      const newExpanded = new Set(prev);
+      if (newExpanded.has(id)) newExpanded.delete(id);
+      else newExpanded.add(id);
+      return newExpanded;
+    });
+  }, []);
 
-  const renderFolderTree = (parentId: string | null, level: number = 0) => {
+  const onSetCurrentFolderClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const folderId = e.currentTarget.dataset.folderid;
+    if (folderId) {
+      setCurrentFolderId(folderId);
+    }
+  }, []);
+
+  const onToggleModalFolderClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const folderId = e.currentTarget.dataset.folderid;
+    if (folderId) {
+      toggleModalFolder(folderId);
+    }
+  }, [toggleModalFolder]);
+
+  const onAddSubFolderClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    const folderId = e.currentTarget.dataset.folderid;
+    if (folderId) {
+      setEditingFolder(null);
+      setFolderParentId(folderId);
+      setIsFolderModalOpen(true);
+    }
+  }, []);
+
+  const onEditFolderClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    const folderId = e.currentTarget.dataset.folderid;
+    if (folderId) {
+      const folder = folders.find(f => f.id === folderId);
+      if (folder) {
+        setEditingFolder(folder);
+        setIsFolderModalOpen(true);
+      }
+    }
+  }, [folders]);
+
+  const onDeleteFolderClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    const folderId = e.currentTarget.dataset.folderid;
+    if (folderId && confirm('确定要删除该文件夹吗？其包含的子文件夹和文件也将被删除。')) {
+      removeFolder(folderId);
+    }
+  }, [removeFolder]);
+
+  const renderFolderTree = useCallback((parentId: string | null, level: number = 0) => {
     const childFolders = folders.filter(f => f.parentId === parentId);
     if (childFolders.length === 0) return null;
 
@@ -199,7 +305,8 @@ export default function Documents() {
             <li key={folder.id}>
               <div
                 className={`flex items-center justify-between py-1.5 px-2 rounded-md cursor-pointer transition-colors group ${isSelected ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
-                onClick={() => setCurrentFolderId(folder.id)}
+                data-folderid={folder.id}
+                onClick={onSetCurrentFolderClick}
               >
                 <div className="flex items-center space-x-1.5 overflow-hidden">
                   <button
@@ -208,13 +315,13 @@ export default function Documents() {
                   >
                     {hasChildren ? (isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />) : <span className="w-3.5 h-3.5 inline-block" />}
                   </button>
-                  <Folder className={`w-4 h-4 shrink-0 ${isSelected ? 'text-blue-500' : 'text-slate-400'}`} />
+                  <Folder className={`w-4 h-4 shrink-0 ${isSelected ? 'text-blue-600' : 'text-slate-400'}`} />
                   <span className="text-sm truncate">{folder.name}</span>
                 </div>
                 <div className="hidden group-hover:flex items-center space-x-1 shrink-0">
-                  <button onClick={(e) => { e.stopPropagation(); setEditingFolder(null); setFolderParentId(folder.id); setIsFolderModalOpen(true); }} className="p-1 text-slate-400 hover:text-blue-600"><Plus className="w-3 h-3"/></button>
-                  <button onClick={(e) => { e.stopPropagation(); setEditingFolder(folder); setIsFolderModalOpen(true); }} className="p-1 text-slate-400 hover:text-emerald-600"><Edit2 className="w-3 h-3"/></button>
-                  <button onClick={(e) => { e.stopPropagation(); if(confirm('确定要删除该文件夹吗？其包含的子文件夹和文件也将被删除。')) removeFolder(folder.id); }} className="p-1 text-slate-400 hover:text-red-600"><Trash2 className="w-3 h-3"/></button>
+                  <button data-folderid={folder.id} onClick={onAddSubFolderClick} className="p-1 text-slate-400 hover:text-blue-600"><Plus className="w-3 h-3"/></button>
+                  <button data-folderid={folder.id} onClick={onEditFolderClick} className="p-1 text-slate-400 hover:text-emerald-600"><Edit2 className="w-3 h-3"/></button>
+                  <button data-folderid={folder.id} onClick={onDeleteFolderClick} className="p-1 text-slate-400 hover:text-red-600"><Trash2 className="w-3 h-3"/></button>
                 </div>
               </div>
               {isExpanded && renderFolderTree(folder.id, level + 1)}
@@ -223,11 +330,11 @@ export default function Documents() {
         })}
       </ul>
     );
-  };
+  }, [folders, expandedFolders, currentFolderId, toggleFolder, removeFolder]);
 
   const [searchQuery, setSearchQuery] = useState('');
 
-  const getBreadcrumbs = () => {
+  const getBreadcrumbs = useCallback(() => {
     const crumbs = [];
     let current = folders.find(f => f.id === currentFolderId);
     while (current) {
@@ -235,17 +342,19 @@ export default function Documents() {
       current = folders.find(f => f.id === current!.parentId);
     }
     return crumbs;
-  };
+  }, [folders, currentFolderId]);
 
-  const currentDocs = documents.filter(d => {
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      return (d.name || '').toLowerCase().includes(query) || (d.type || '').toLowerCase().includes(query);
-    }
-    return d.folderId === currentFolderId;
-  });
+  const currentDocs = useMemo(() => {
+    return documents.filter(d => {
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        return (d.name || '').toLowerCase().includes(query) || (d.type || '').toLowerCase().includes(query);
+      }
+      return d.folderId === currentFolderId;
+    });
+  }, [documents, searchQuery, currentFolderId]);
 
-  const handlePrint = () => {
+  const handlePrint = useCallback(() => {
     setIsPrinting(true);
     // Simulate printing process
     setTimeout(() => {
@@ -314,7 +423,104 @@ export default function Documents() {
         printDoc.close();
       }
     }, 1500);
-  };
+  }, [printingSet, documents, formatFileSize]);
+
+  const onMoveDocClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const id = e.currentTarget.dataset.id;
+    const folderId = e.currentTarget.dataset.folderid || null;
+    if (id) {
+      handleMoveDocClick(id, folderId);
+    }
+  }, [handleMoveDocClick]);
+
+  const onDownloadDocClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const url = e.currentTarget.dataset.url;
+    const name = e.currentTarget.dataset.name;
+    if (url && name) {
+      handleDownloadDocClick(url, name);
+    }
+  }, [handleDownloadDocClick]);
+
+  const onDeleteDocClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const id = e.currentTarget.dataset.id;
+    if (id) {
+      handleDeleteDocClick(id);
+    }
+  }, [handleDeleteDocClick]);
+
+  const onEditSetClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const id = e.currentTarget.dataset.id;
+    const set = documentSets.find(s => s.id === id);
+    if (set) {
+      handleEditSetClick(set);
+    }
+  }, [documentSets, handleEditSetClick]);
+
+  const onDeleteSetClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const id = e.currentTarget.dataset.id;
+    if (id) {
+      handleDeleteSetClick(id);
+    }
+  }, [handleDeleteSetClick]);
+
+  const onPrintSetClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const id = e.currentTarget.dataset.id;
+    const set = documentSets.find(s => s.id === id);
+    if (set) {
+      handlePrintSetClick(set);
+    }
+  }, [documentSets, handlePrintSetClick]);
+
+  const onSetColorClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const id = e.currentTarget.dataset.id;
+    const color = e.currentTarget.dataset.color === 'true';
+    if (id) {
+      setPrintSettings(prev => ({...prev, [id]: {...(prev[id] || { duplex: false, copies: 1 }), color}}));
+    }
+  }, []);
+
+  const onSetDuplexClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const id = e.currentTarget.dataset.id;
+    const duplex = e.currentTarget.dataset.duplex === 'true';
+    if (id) {
+      setPrintSettings(prev => ({...prev, [id]: {...(prev[id] || { color: false, copies: 1 }), duplex}}));
+    }
+  }, []);
+
+  const onSetCopiesClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const id = e.currentTarget.dataset.id;
+    const action = e.currentTarget.dataset.action;
+    if (id && action) {
+      setPrintSettings(prev => {
+        const currentSettings = prev[id] || { duplex: false, color: false, copies: 1 };
+        const newCopies = action === 'inc' ? currentSettings.copies + 1 : Math.max(1, currentSettings.copies - 1);
+        return {...prev, [id]: {...currentSettings, copies: newCopies}};
+      });
+    }
+  }, []);
+
+  const onTargetFolderChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const folderId = e.currentTarget.dataset.folderid;
+    if (folderId !== undefined) {
+      setTargetFolderId(folderId === 'null' ? null : folderId);
+    }
+  }, []);
+
+  const onDocToggleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const docId = e.currentTarget.dataset.docid;
+    if (docId) {
+      handleDocToggle(docId, e.target.checked);
+    }
+  }, [handleDocToggle]);
+
+  const onBreadcrumbClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const folderId = e.currentTarget.dataset.folderid;
+    if (folderId === 'null') {
+      setCurrentFolderId(null);
+    } else if (folderId) {
+      setCurrentFolderId(folderId);
+    }
+  }, []);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto">
@@ -357,7 +563,7 @@ export default function Documents() {
               />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-transform text-sm font-medium shadow-sm"
+                className="flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform text-sm font-medium shadow-sm"
               >
                 <Upload className="w-4 h-4 mr-2" />
                 上传文件
@@ -365,13 +571,8 @@ export default function Documents() {
             </>
           ) : (
             <button
-              onClick={() => { 
-                setEditingSet(null); 
-                setSelectedDocIds([]);
-                setPrintSettings({});
-                setIsSetModalOpen(true); 
-              }}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-transform text-sm font-medium shadow-sm"
+              onClick={handleCreateSetClick}
+              className="flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform text-sm font-medium shadow-sm"
             >
               <Plus className="w-4 h-4 mr-2" />
               新建套件
@@ -390,7 +591,7 @@ export default function Documents() {
                 文件夹
               </span>
               <button 
-                onClick={() => { setEditingFolder(null); setFolderParentId(null); setIsFolderModalOpen(true); }} 
+                onClick={handleCreateRootFolderClick} 
                 className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-700 rounded-md transition-colors"
                 title="新建根目录文件夹"
               >
@@ -403,7 +604,7 @@ export default function Documents() {
                 onClick={() => setCurrentFolderId(null)}
               >
                 <div className="w-3.5 h-3.5 mr-1.5" />
-                <FolderOpen className={`w-4 h-4 mr-1.5 shrink-0 ${currentFolderId === null ? 'text-blue-500' : 'text-slate-400'}`} />
+                <FolderOpen className={`w-4 h-4 mr-1.5 shrink-0 ${currentFolderId === null ? 'text-blue-600' : 'text-slate-400'}`} />
                 <span className="text-sm font-medium">全部文件 (根目录)</span>
               </div>
               <div className="pt-1">
@@ -416,11 +617,11 @@ export default function Documents() {
           <div className="flex-1 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl flex flex-col overflow-hidden">
             <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-slate-50/50 dark:bg-slate-800/50 gap-4">
               <div className="flex items-center text-sm text-slate-500 dark:text-slate-400">
-                <button onClick={() => setCurrentFolderId(null)} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">根目录</button>
+                <button data-folderid="null" onClick={onBreadcrumbClick} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">根目录</button>
                 {getBreadcrumbs().map(crumb => (
                   <React.Fragment key={crumb.id}>
                     <ChevronRight className="w-4 h-4 mx-1" />
-                    <button onClick={() => setCurrentFolderId(crumb.id)} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate max-w-[100px] sm:max-w-[200px]">{crumb.name}</button>
+                    <button data-folderid={crumb.id} onClick={onBreadcrumbClick} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate max-w-[100px] sm:max-w-[200px]">{crumb.name}</button>
                   </React.Fragment>
                 ))}
               </div>
@@ -431,7 +632,7 @@ export default function Documents() {
                   placeholder="搜索文件名称或类型..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 pr-4 py-1.5 text-sm border border-slate-200 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64 transition-all"
+                  className="pl-9 pr-4 py-1.5 text-sm border border-slate-200 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200 w-full sm:w-64 transition-all"
                 />
               </div>
             </div>
@@ -495,32 +696,24 @@ export default function Documents() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <button 
-                              onClick={() => { setMovingDocId(doc.id); setTargetFolderId(doc.folderId); setIsMoveModalOpen(true); }}
+                              data-id={doc.id}
+                              data-folderid={doc.folderId || ''}
+                              onClick={onMoveDocClick}
                               className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 mr-4"
                             >
                               移动
                             </button>
                             <button 
-                              onClick={() => {
-                                if (doc.url !== '#') {
-                                  const a = document.createElement('a');
-                                  a.href = doc.url;
-                                  a.download = doc.name;
-                                  a.click();
-                                } else {
-                                  alert('演示文件，无法下载');
-                                }
-                              }}
+                              data-url={doc.url}
+                              data-name={doc.name}
+                              onClick={onDownloadDocClick}
                               className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-4"
                             >
                               下载
                             </button>
                             <button 
-                              onClick={() => {
-                                if (confirm('确定要删除该文件吗？删除后包含该文件的套件也将受影响。')) {
-                                  removeDocument(doc.id);
-                                }
-                              }}
+                              data-id={doc.id}
+                              onClick={onDeleteDocClick}
                               className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
                             >
                               删除
@@ -552,11 +745,8 @@ export default function Documents() {
               <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-200">暂无文件套件</h3>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 mb-6">点击右上角新建套件，将常用文件组合在一起</p>
               <button
-                onClick={() => {
-                  setEditingSet(null);
-                  setIsSetModalOpen(true);
-                }}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-transform shadow-sm"
+                onClick={handleCreateSetClick}
+                className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-sm"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 立即创建
@@ -570,23 +760,16 @@ export default function Documents() {
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{set.name}</h3>
                     <div className="flex space-x-1">
                       <button 
-                        onClick={() => { 
-                          setEditingSet(set); 
-                          setSelectedDocIds(set.documentIds);
-                          setPrintSettings(set.printSettings || {});
-                          setIsSetModalOpen(true); 
-                        }}
+                        data-id={set.id}
+                        onClick={onEditSetClick}
                         className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors"
                         title="编辑套件"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={() => {
-                          if (confirm('确定要删除该套件吗？')) {
-                            removeDocumentSet(set.id);
-                          }
-                        }}
+                        data-id={set.id}
+                        onClick={onDeleteSetClick}
                         className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
                         title="删除套件"
                       >
@@ -621,7 +804,8 @@ export default function Documents() {
                 </div>
                 <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800">
                   <button
-                    onClick={() => { setPrintingSet(set); setIsPrintModalOpen(true); }}
+                    data-id={set.id}
+                    onClick={onPrintSetClick}
                     disabled={set.documentIds.length === 0}
                     className="w-full flex items-center justify-center px-4 py-2.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -643,8 +827,8 @@ export default function Documents() {
         size="lg"
         footer={
           <>
-            <button type="button" onClick={() => setIsSetModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
-            <button type="submit" form="set-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+            <button type="button" onClick={() => setIsSetModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
+            <button type="submit" form="set-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存</button>
           </>
         }
       >
@@ -658,7 +842,7 @@ export default function Documents() {
               type="text" 
               defaultValue={editingSet?.name} 
               placeholder="如：入职文件套件"
-              className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+              className="block w-full border border-zinc-200/80 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" 
             />
           </div>
           <div>
@@ -668,7 +852,7 @@ export default function Documents() {
               rows={2}
               defaultValue={editingSet?.description} 
               placeholder="简要说明该套件的用途"
-              className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 sm:text-sm resize-none" 
+              className="block w-full border border-zinc-200/80 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm resize-none" 
             />
           </div>
           <div>
@@ -692,9 +876,10 @@ export default function Documents() {
                     <label key={doc.id} className="flex items-center p-2 hover:bg-white dark:hover:bg-slate-700 rounded-md cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
                       <input 
                         type="checkbox" 
+                        data-docid={doc.id}
                         checked={selectedDocIds.includes(doc.id)}
-                        onChange={(e) => handleDocToggle(doc.id, e.target.checked)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded"
+                        onChange={onDocToggleChange}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-600 border-zinc-200/80 rounded"
                       />
                       <FileText className="w-4 h-4 ml-3 mr-2 text-slate-400 dark:text-slate-500" />
                       <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{doc.name}</span>
@@ -710,7 +895,8 @@ export default function Documents() {
                       <div key={folder.id} className="pt-2">
                         <div 
                           className="flex items-center px-2 py-1 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
-                          onClick={() => toggleModalFolder(folder.id)}
+                          data-folderid={folder.id}
+                          onClick={onToggleModalFolderClick}
                         >
                           {isExpanded ? <ChevronDown className="w-3 h-3 mr-1" /> : <ChevronRight className="w-3 h-3 mr-1" />}
                           <Folder className="w-3 h-3 mr-1.5" />
@@ -722,9 +908,10 @@ export default function Documents() {
                               <label key={doc.id} className="flex items-center p-2 hover:bg-white dark:hover:bg-slate-700 rounded-md cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
                                 <input 
                                   type="checkbox" 
+                                  data-docid={doc.id}
                                   checked={selectedDocIds.includes(doc.id)}
-                                  onChange={(e) => handleDocToggle(doc.id, e.target.checked)}
-                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded"
+                                  onChange={onDocToggleChange}
+                                  className="h-4 w-4 text-blue-600 focus:ring-blue-600 border-zinc-200/80 rounded"
                                 />
                                 <FileText className="w-4 h-4 ml-3 mr-2 text-slate-400 dark:text-slate-500" />
                                 <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{doc.name}</span>
@@ -753,17 +940,17 @@ export default function Documents() {
                       <span className="text-sm text-slate-700 dark:text-slate-300 truncate flex-1" title={doc.name}>{doc.name}</span>
                       <div className="flex items-center space-x-3 shrink-0">
                         <div className="flex items-center space-x-1 bg-white dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 p-0.5">
-                          <button type="button" onClick={() => setPrintSettings(prev => ({...prev, [id]: {...settings, color: false}}))} className={`px-2 py-1 text-xs rounded ${!settings.color ? 'bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>黑白</button>
-                          <button type="button" onClick={() => setPrintSettings(prev => ({...prev, [id]: {...settings, color: true}}))} className={`px-2 py-1 text-xs rounded ${settings.color ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'}`}>彩色</button>
+                          <button type="button" data-id={id} data-color="false" onClick={onSetColorClick} className={`px-2 py-1 text-xs rounded ${!settings.color ? 'bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>黑白</button>
+                          <button type="button" data-id={id} data-color="true" onClick={onSetColorClick} className={`px-2 py-1 text-xs rounded ${settings.color ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'}`}>彩色</button>
                         </div>
                         <div className="flex items-center space-x-1 bg-white dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600 p-0.5">
-                          <button type="button" onClick={() => setPrintSettings(prev => ({...prev, [id]: {...settings, duplex: false}}))} className={`px-2 py-1 text-xs rounded ${!settings.duplex ? 'bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>单面</button>
-                          <button type="button" onClick={() => setPrintSettings(prev => ({...prev, [id]: {...settings, duplex: true}}))} className={`px-2 py-1 text-xs rounded ${settings.duplex ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'}`}>双面</button>
+                          <button type="button" data-id={id} data-duplex="false" onClick={onSetDuplexClick} className={`px-2 py-1 text-xs rounded ${!settings.duplex ? 'bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>单面</button>
+                          <button type="button" data-id={id} data-duplex="true" onClick={onSetDuplexClick} className={`px-2 py-1 text-xs rounded ${settings.duplex ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'}`}>双面</button>
                         </div>
                         <div className="flex items-center bg-white dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600">
-                          <button type="button" onClick={() => setPrintSettings(prev => ({...prev, [id]: {...settings, copies: Math.max(1, settings.copies - 1)}}))} className="px-2 py-1 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">-</button>
+                          <button type="button" data-id={id} data-action="dec" onClick={onSetCopiesClick} className="px-2 py-1 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">-</button>
                           <span className="text-xs w-6 text-center text-slate-700 dark:text-slate-300">{settings.copies}</span>
-                          <button type="button" onClick={() => setPrintSettings(prev => ({...prev, [id]: {...settings, copies: settings.copies + 1}}))} className="px-2 py-1 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">+</button>
+                          <button type="button" data-id={id} data-action="inc" onClick={onSetCopiesClick} className="px-2 py-1 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">+</button>
                         </div>
                       </div>
                     </div>
@@ -787,7 +974,7 @@ export default function Documents() {
               type="button" 
               onClick={() => setIsPrintModalOpen(false)} 
               disabled={isPrinting}
-              className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+              className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
             >
               取消
             </button>
@@ -795,7 +982,7 @@ export default function Documents() {
               type="button" 
               onClick={handlePrint}
               disabled={isPrinting}
-              className="w-full inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+              className="w-full inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
             >
               {isPrinting ? (
                 <>
@@ -854,8 +1041,8 @@ export default function Documents() {
         size="md"
         footer={
           <>
-            <button type="button" onClick={() => setIsFolderModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
-            <button type="submit" form="folder-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+            <button type="button" onClick={() => setIsFolderModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
+            <button type="submit" form="folder-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存</button>
           </>
         }
       >
@@ -869,7 +1056,7 @@ export default function Documents() {
               type="text" 
               defaultValue={editingFolder?.name} 
               placeholder="如：人事文件"
-              className="block w-full border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+              className="block w-full border border-zinc-200/80 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" 
             />
           </div>
         </form>
@@ -883,8 +1070,8 @@ export default function Documents() {
         size="md"
         footer={
           <>
-            <button type="button" onClick={() => setIsMoveModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
-            <button onClick={handleMoveFile} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">确认移动</button>
+            <button type="button" onClick={() => setIsMoveModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
+            <button onClick={handleMoveFile} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">确认移动</button>
           </>
         }
       >
@@ -896,10 +1083,10 @@ export default function Documents() {
                 <input 
                   type="radio" 
                   name="targetFolder" 
-                  value="root"
+                  data-folderid="null"
                   checked={targetFolderId === null}
-                  onChange={() => setTargetFolderId(null)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300"
+                  onChange={onTargetFolderChange}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-600 border-zinc-200/80"
                 />
                 <FolderOpen className="w-4 h-4 ml-3 mr-2 text-slate-400 dark:text-slate-500" />
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">全部文件 (根目录)</span>
@@ -909,10 +1096,10 @@ export default function Documents() {
                   <input 
                     type="radio" 
                     name="targetFolder" 
-                    value={folder.id}
+                    data-folderid={folder.id}
                     checked={targetFolderId === folder.id}
-                    onChange={() => setTargetFolderId(folder.id)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300"
+                    onChange={onTargetFolderChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-600 border-zinc-200/80"
                   />
                   <Folder className="w-4 h-4 ml-3 mr-2 text-slate-400 dark:text-slate-500" />
                   <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{folder.name}</span>

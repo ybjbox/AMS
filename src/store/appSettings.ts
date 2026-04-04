@@ -6,9 +6,11 @@ interface AppSettingsState {
   loginBackground: string | null;
   systemIcon: string | null;
   theme: 'light' | 'dark' | 'system';
+  enableStrictPermission: boolean;
   setLoginBackground: (url: string | null) => void;
   setSystemIcon: (url: string | null) => void;
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
+  setEnableStrictPermission: (enable: boolean) => void;
 }
 
 export const useAppSettings = create<AppSettingsState>()(
@@ -17,9 +19,11 @@ export const useAppSettings = create<AppSettingsState>()(
       loginBackground: null,
       systemIcon: null,
       theme: 'system',
+      enableStrictPermission: false,
       setLoginBackground: (url) => set({ loginBackground: url }),
       setSystemIcon: (url) => set({ systemIcon: url }),
       setTheme: (theme) => set({ theme }),
+      setEnableStrictPermission: (enable) => set({ enableStrictPermission: enable }),
     }),
     {
       name: STORAGE_KEYS.THEME,

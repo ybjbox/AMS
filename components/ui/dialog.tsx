@@ -7,23 +7,23 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
-function Dialog({ ...props }: DialogPrimitive.Root.Props) {
+const Dialog = React.memo(function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
-}
+})
 
-function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
+const DialogTrigger = React.memo(function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
   return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
-}
+})
 
-function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
+const DialogPortal = React.memo(function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
-}
+})
 
-function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
+const DialogClose = React.memo(function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
-}
+})
 
-function DialogOverlay({
+const DialogOverlay = React.memo(function DialogOverlay({
   className,
   ...props
 }: DialogPrimitive.Backdrop.Props) {
@@ -37,9 +37,9 @@ function DialogOverlay({
       {...props}
     />
   )
-}
+})
 
-function DialogContent({
+const DialogContent = React.memo(function DialogContent({
   className,
   children,
   showCloseButton = true,
@@ -78,9 +78,9 @@ function DialogContent({
       </DialogPrimitive.Popup>
     </DialogPortal>
   )
-}
+})
 
-function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+const DialogHeader = React.memo(function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
@@ -88,9 +88,9 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
       {...props}
     />
   )
-}
+})
 
-function DialogFooter({
+const DialogFooter = React.memo(function DialogFooter({
   className,
   showCloseButton = false,
   children,
@@ -115,9 +115,9 @@ function DialogFooter({
       )}
     </div>
   )
-}
+})
 
-function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
+const DialogTitle = React.memo(function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
@@ -128,9 +128,9 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
       {...props}
     />
   )
-}
+})
 
-function DialogDescription({
+const DialogDescription = React.memo(function DialogDescription({
   className,
   ...props
 }: DialogPrimitive.Description.Props) {
@@ -144,7 +144,7 @@ function DialogDescription({
       {...props}
     />
   )
-}
+})
 
 export {
   Dialog,

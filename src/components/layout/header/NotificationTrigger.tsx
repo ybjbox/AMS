@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Bell } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
 import { useTodoStore } from '../../../store/todos';
@@ -20,10 +20,18 @@ export default function NotificationTrigger() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleClose = useCallback(() => {
+    setIsOpen(false);
+  }, []);
+
+  const toggleOpen = useCallback(() => {
+    setIsOpen(prev => !prev);
+  }, []);
+
   return (
     <div className="relative" ref={panelRef}>
       <button 
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggleOpen}
         className="p-2 text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-200 relative"
       >
         <Bell className="h-5 w-5" />
@@ -36,7 +44,7 @@ export default function NotificationTrigger() {
 
       <AnimatePresence>
         {isOpen && (
-          <NotificationPanel onClose={() => setIsOpen(false)} />
+          <NotificationPanel onClose={handleClose} />
         )}
       </AnimatePresence>
     </div>

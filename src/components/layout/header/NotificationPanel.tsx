@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Check, Trash2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTodoStore } from '../../../store/todos';
@@ -7,12 +7,16 @@ interface NotificationPanelProps {
   onClose: () => void;
 }
 
-export default function NotificationPanel({ onClose }: NotificationPanelProps) {
+const NotificationPanel = React.memo(function NotificationPanel({ onClose }: NotificationPanelProps) {
   const notifications = useTodoStore(state => state.notifications);
   const unreadCount = useTodoStore(state => state.unreadCount);
   const markNotificationAsRead = useTodoStore(state => state.markNotificationAsRead);
   const markAllNotificationsAsRead = useTodoStore(state => state.markAllNotificationsAsRead);
   const clearNotifications = useTodoStore(state => state.clearNotifications);
+
+  const handleMarkAsRead = useCallback((id: string) => {
+    markNotificationAsRead(id);
+  }, [markNotificationAsRead]);
 
   return (
     <motion.div 
@@ -57,7 +61,7 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
               <div 
                 key={notification.id} 
                 className={`p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer ${!notification.read ? 'bg-blue-50/50 dark:bg-blue-900/20' : ''}`}
-                onClick={() => markNotificationAsRead(notification.id)}
+                onClick={() => handleMarkAsRead(notification.id)}
               >
                 <div className="flex justify-between items-start mb-1">
                   <h4 className={`text-sm font-medium ${!notification.read ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
@@ -85,4 +89,6 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
       )}
     </motion.div>
   );
-}
+})
+
+export default NotificationPanel;

@@ -1,10 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useUserStore } from '../store/users';
 import { useContractStore, defaultTemplate } from '../store/contracts';
 import { Search, Filter, FileSignature, Printer, Eye, X, FileEdit, Upload, Save } from 'lucide-react';
 import { BaseModal } from '../components/ui/BaseModal';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+
+const CONTRACT_STYLE: React.CSSProperties = { fontFamily: 'SimSun, "Songti SC", serif' };
 
 const ContractTemplate = ({ user }: { user: any }) => {
   const template = useContractStore(state => state.template);
@@ -37,7 +39,7 @@ const ContractTemplate = ({ user }: { user: any }) => {
   return (
     <div 
       className="bg-white max-w-3xl mx-auto p-12 shadow-sm border border-slate-200 min-h-[1056px] text-black"
-      style={{ fontFamily: 'SimSun, "Songti SC", serif' }}
+      style={CONTRACT_STYLE}
       dangerouslySetInnerHTML={{ __html: processed }}
     />
   );
@@ -75,23 +77,25 @@ export default function Contracts() {
     };
   }, [isPreviewOpen, isTemplateEditorOpen]);
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = 
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.department.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = filterStatus === 'ALL' || user.status === filterStatus;
-    
-    return matchesSearch && matchesStatus;
-  });
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => {
+      const matchesSearch = 
+        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.department.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesStatus = filterStatus === 'ALL' || user.status === filterStatus;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [users, searchQuery, filterStatus]);
 
-  const handlePreview = (user: any) => {
+  const handlePreview = useCallback((user: any) => {
     setSelectedUser(user);
     setIsPreviewOpen(true);
-  };
+  }, []);
 
-  const handlePrint = () => {
+  const handlePrint = useCallback(() => {
     if (!printRef.current) return;
     
     const printContent = printRef.current.innerHTML;
@@ -127,16 +131,32 @@ export default function Contracts() {
     window.print();
     document.body.innerHTML = originalContent;
     window.location.reload(); // Reload to restore React bindings
-  };
+  }, [isDoubleSided]);
 
-  const handleDirectPrint = (user: any) => {
+  const handleDirectPrint = useCallback((user: any) => {
     setSelectedUser(user);
     setTimeout(() => {
       handlePrint();
     }, 100);
-  };
+  }, [handlePrint]);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onPreviewClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const userId = e.currentTarget.dataset.userid;
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      handlePreview(user);
+    }
+  }, [users, handlePreview]);
+
+  const onDirectPrintClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const userId = e.currentTarget.dataset.userid;
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      handleDirectPrint(user);
+    }
+  }, [users, handleDirectPrint]);
+
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
@@ -148,7 +168,7 @@ export default function Contracts() {
         fileInputRef.current.value = '';
       }
     }, 500);
-  };
+  }, []);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto">
@@ -163,7 +183,7 @@ export default function Contracts() {
               setEditingTemplate(template);
               setIsTemplateEditorOpen(true);
             }}
-            className="flex items-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-700 transition-colors"
+            className="flex items-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-zinc-200/80 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-700 transition-colors"
           >
             <FileEdit className="w-4 h-4 mr-2" />
             模板设置
@@ -180,13 +200,13 @@ export default function Contracts() {
               placeholder="搜索员工姓名、工号或部门..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-9 pr-4 py-2 text-sm border border-zinc-200/80 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200"
             />
           </div>
           <div className="flex items-center space-x-2">
             <Filter className="w-4 h-4 text-slate-400" />
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-[180px] text-sm border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white">
+              <SelectTrigger className="w-[180px] text-sm border-zinc-200/80 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white">
                 <SelectValue placeholder="选择状态">
                   {(val) => val === 'ALL' ? '所有状态' : val === '在职' ? '在职' : val === '试用期' ? '试用期' : val === '离职' ? '离职' : '选择状态'}
                 </SelectValue>
@@ -242,14 +262,16 @@ export default function Contracts() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-3">
                         <button
-                          onClick={() => handlePreview(user)}
+                          data-userid={user.id}
+                          onClick={onPreviewClick}
                           className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 flex items-center"
                         >
                           <Eye className="w-4 h-4 mr-1" />
                           预览
                         </button>
                         <button
-                          onClick={() => handleDirectPrint(user)}
+                          data-userid={user.id}
+                          onClick={onDirectPrintClick}
                           className="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300 flex items-center"
                         >
                           <Printer className="w-4 h-4 mr-1" />
@@ -303,13 +325,13 @@ export default function Contracts() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsPreviewOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700 active:scale-95 transition-transform"
+                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-zinc-200/80 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700 active:scale-95 transition-transform"
               >
                 取消
               </button>
               <button
                 onClick={handlePrint}
-                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 active:scale-95 transition-transform"
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform"
               >
                 <Printer className="w-4 h-4 mr-2" />
                 打印合同
@@ -364,7 +386,7 @@ export default function Contracts() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsTemplateEditorOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700 active:scale-95 transition-transform"
+                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-zinc-200/80 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700 active:scale-95 transition-transform"
               >
                 取消
               </button>
@@ -373,7 +395,7 @@ export default function Contracts() {
                   setTemplate(editingTemplate);
                   setIsTemplateEditorOpen(false);
                 }}
-                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 active:scale-95 transition-transform"
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform"
               >
                 <Save className="w-4 h-4 mr-2" />
                 保存
@@ -396,7 +418,7 @@ export default function Contracts() {
              <textarea
                value={editingTemplate}
                onChange={(e) => setEditingTemplate(e.target.value)}
-               className="flex-1 w-full p-4 font-mono text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+               className="flex-1 w-full p-4 font-mono text-sm border border-zinc-200/80 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-300 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 resize-none"
                spellCheck={false}
              />
           </div>

@@ -6,19 +6,19 @@ import { Menu as MenuPrimitive } from "@base-ui/react/menu"
 import { cn } from "@/lib/utils"
 import { ChevronRightIcon, CheckIcon } from "lucide-react"
 
-function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
+const DropdownMenu = React.memo(function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
   return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />
-}
+})
 
-function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
+const DropdownMenuPortal = React.memo(function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
   return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />
-}
+})
 
-function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
+const DropdownMenuTrigger = React.memo(function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
   return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />
-}
+})
 
-function DropdownMenuContent({
+const DropdownMenuContent = React.memo(function DropdownMenuContent({
   align = "start",
   alignOffset = 0,
   side = "bottom",
@@ -47,13 +47,13 @@ function DropdownMenuContent({
       </MenuPrimitive.Positioner>
     </MenuPrimitive.Portal>
   )
-}
+})
 
-function DropdownMenuGroup({ ...props }: MenuPrimitive.Group.Props) {
+const DropdownMenuGroup = React.memo(function DropdownMenuGroup({ ...props }: MenuPrimitive.Group.Props) {
   return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
-}
+})
 
-function DropdownMenuLabel({
+const DropdownMenuLabel = React.memo(function DropdownMenuLabel({
   className,
   inset,
   ...props
@@ -71,9 +71,9 @@ function DropdownMenuLabel({
       {...props}
     />
   )
-}
+})
 
-function DropdownMenuItem({
+const DropdownMenuItem = React.memo(function DropdownMenuItem({
   className,
   inset,
   variant = "default",
@@ -94,13 +94,13 @@ function DropdownMenuItem({
       {...props}
     />
   )
-}
+})
 
-function DropdownMenuSub({ ...props }: MenuPrimitive.SubmenuRoot.Props) {
+const DropdownMenuSub = React.memo(function DropdownMenuSub({ ...props }: MenuPrimitive.SubmenuRoot.Props) {
   return <MenuPrimitive.SubmenuRoot data-slot="dropdown-menu-sub" {...props} />
-}
+})
 
-function DropdownMenuSubTrigger({
+const DropdownMenuSubTrigger = React.memo(function DropdownMenuSubTrigger({
   className,
   inset,
   children,
@@ -122,9 +122,9 @@ function DropdownMenuSubTrigger({
       <ChevronRightIcon className="ml-auto" />
     </MenuPrimitive.SubmenuTrigger>
   )
-}
+})
 
-function DropdownMenuSubContent({
+const DropdownMenuSubContent = React.memo(function DropdownMenuSubContent({
   align = "start",
   alignOffset = -3,
   side = "right",
@@ -143,9 +143,9 @@ function DropdownMenuSubContent({
       {...props}
     />
   )
-}
+})
 
-function DropdownMenuCheckboxItem({
+const DropdownMenuCheckboxItem = React.memo(function DropdownMenuCheckboxItem({
   className,
   children,
   checked,
@@ -177,18 +177,18 @@ function DropdownMenuCheckboxItem({
       {children}
     </MenuPrimitive.CheckboxItem>
   )
-}
+})
 
-function DropdownMenuRadioGroup({ ...props }: MenuPrimitive.RadioGroup.Props) {
+const DropdownMenuRadioGroup = React.memo(function DropdownMenuRadioGroup({ ...props }: MenuPrimitive.RadioGroup.Props) {
   return (
     <MenuPrimitive.RadioGroup
       data-slot="dropdown-menu-radio-group"
       {...props}
     />
   )
-}
+})
 
-function DropdownMenuRadioItem({
+const DropdownMenuRadioItem = React.memo(function DropdownMenuRadioItem({
   className,
   children,
   inset,
@@ -218,9 +218,9 @@ function DropdownMenuRadioItem({
       {children}
     </MenuPrimitive.RadioItem>
   )
-}
+})
 
-function DropdownMenuSeparator({
+const DropdownMenuSeparator = React.memo(function DropdownMenuSeparator({
   className,
   ...props
 }: MenuPrimitive.Separator.Props) {
@@ -231,9 +231,9 @@ function DropdownMenuSeparator({
       {...props}
     />
   )
-}
+})
 
-function DropdownMenuShortcut({
+const DropdownMenuShortcut = React.memo(function DropdownMenuShortcut({
   className,
   ...props
 }: React.ComponentProps<"span">) {
@@ -247,7 +247,7 @@ function DropdownMenuShortcut({
       {...props}
     />
   )
-}
+})
 
 export {
   DropdownMenu,

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { TableSkeleton } from '../components/ui/Skeleton';
 import { UserTable } from '../components/users/UserTable';
 import { Search, Plus, MoreHorizontal, Edit, Trash2, ChevronLeft, ChevronRight, Filter, X, Check, Download, RefreshCw, GripVertical, FileCode, Printer, ChevronDown, ChevronRight as ChevronRightIcon } from 'lucide-react';
@@ -59,7 +59,7 @@ interface SortableColumnProps {
   onToggle: () => void;
 }
 
-function SortableColumn({ col, onToggle }: SortableColumnProps) {
+const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: SortableColumnProps) {
   const {
     attributes,
     listeners,
@@ -99,7 +99,7 @@ function SortableColumn({ col, onToggle }: SortableColumnProps) {
         className="flex-1 flex items-center text-left"
       >
         <div className={`w-4 h-4 rounded border mr-3 flex items-center justify-center transition-colors ${
-          col.selected ? 'bg-blue-600 border-blue-600' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600'
+          col.selected ? 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner border-blue-600' : 'bg-white dark:bg-slate-800 border-zinc-200/80 dark:border-slate-600'
         }`}>
           {col.selected && <Check className="h-3 w-3 text-white" />}
         </div>
@@ -107,7 +107,7 @@ function SortableColumn({ col, onToggle }: SortableColumnProps) {
       </button>
     </div>
   );
-}
+})
 
 // 辅助函数
 const calculateAge = (idCard: string) => {
@@ -175,18 +175,20 @@ function DepartmentTreeSelect({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const toggleNode = (e: React.MouseEvent, id: string) => {
+  const toggleNode = useCallback((e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    const newExpanded = new Set(expandedNodes);
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id);
-    } else {
-      newExpanded.add(id);
-    }
-    setExpandedNodes(newExpanded);
-  };
+    setExpandedNodes(prev => {
+      const newExpanded = new Set(prev);
+      if (newExpanded.has(id)) {
+        newExpanded.delete(id);
+      } else {
+        newExpanded.add(id);
+      }
+      return newExpanded;
+    });
+  }, []);
 
-  const expandAll = (e: React.MouseEvent) => {
+  const expandAll = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     const allIds = new Set<string>();
     const traverse = (nodes: DepartmentNode[]) => {
@@ -199,14 +201,14 @@ function DepartmentTreeSelect({
     };
     traverse(departments);
     setExpandedNodes(allIds);
-  };
+  }, [departments]);
 
-  const collapseAll = (e: React.MouseEvent) => {
+  const collapseAll = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     setExpandedNodes(new Set());
-  };
+  }, []);
 
-  const isAllExpanded = () => {
+  const isAllExpanded = useCallback(() => {
     let totalNodes = 0;
     const traverse = (nodes: DepartmentNode[]) => {
       nodes.forEach(node => {
@@ -218,9 +220,33 @@ function DepartmentTreeSelect({
     };
     traverse(departments);
     return expandedNodes.size === totalNodes && totalNodes > 0;
-  };
+  }, [departments, expandedNodes.size]);
 
-  const renderTree = (nodes: DepartmentNode[], depth = 0) => {
+  const onNodeClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const name = e.currentTarget.dataset.name;
+    if (name) {
+      onChange(name);
+      setIsOpen(false);
+    }
+  }, [onChange]);
+
+  const onToggleNodeClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    const id = e.currentTarget.dataset.id;
+    if (id) {
+      setExpandedNodes(prev => {
+        const newExpanded = new Set(prev);
+        if (newExpanded.has(id)) {
+          newExpanded.delete(id);
+        } else {
+          newExpanded.add(id);
+        }
+        return newExpanded;
+      });
+    }
+  }, []);
+
+  const renderTree = useCallback((nodes: DepartmentNode[], depth = 0): React.ReactNode[] => {
     return nodes.map(node => {
       const hasChildren = node.children && node.children.length > 0;
       const isExpanded = expandedNodes.has(node.id);
@@ -230,14 +256,13 @@ function DepartmentTreeSelect({
           <div 
             className="flex items-center py-2 px-3 hover:bg-blue-50 dark:hover:bg-slate-700 cursor-pointer text-sm text-slate-700 dark:text-slate-200"
             style={{ paddingLeft: `${depth * 1.5 + 0.75}rem` }}
-            onClick={() => {
-              onChange(node.name);
-              setIsOpen(false);
-            }}
+            data-name={node.name}
+            onClick={onNodeClick}
           >
             <div 
               className="w-5 h-5 flex items-center justify-center mr-1"
-              onClick={(e) => hasChildren ? toggleNode(e, node.id) : undefined}
+              data-id={node.id}
+              onClick={hasChildren ? onToggleNodeClick : undefined}
             >
               {hasChildren ? (
                 isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" /> : <ChevronRightIcon className="w-4 h-4 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" />
@@ -253,7 +278,7 @@ function DepartmentTreeSelect({
         </div>
       );
     });
-  };
+  }, [expandedNodes, onChange, value, toggleNode]);
 
   return (
     <div className="relative mt-1" ref={wrapperRef}>
@@ -265,7 +290,7 @@ function DepartmentTreeSelect({
           type="text"
           value={value}
           readOnly
-          className="block w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 pr-8 focus:ring-blue-500 focus:border-blue-500 sm:text-sm cursor-pointer text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+          className="block w-full bg-white dark:bg-slate-800 border border-zinc-200/80 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 pr-8 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm cursor-pointer text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
           placeholder={placeholder}
           required={required}
         />
@@ -331,18 +356,20 @@ function RoleTreeSelect({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const toggleNode = (e: React.MouseEvent, id: string) => {
+  const toggleNode = useCallback((e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    const newExpanded = new Set(expandedNodes);
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id);
-    } else {
-      newExpanded.add(id);
-    }
-    setExpandedNodes(newExpanded);
-  };
+    setExpandedNodes(prev => {
+      const newExpanded = new Set(prev);
+      if (newExpanded.has(id)) {
+        newExpanded.delete(id);
+      } else {
+        newExpanded.add(id);
+      }
+      return newExpanded;
+    });
+  }, []);
 
-  const expandAll = (e: React.MouseEvent) => {
+  const expandAll = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     const allIds = new Set<string>();
     const traverse = (nodes: DepartmentNode[]) => {
@@ -355,14 +382,14 @@ function RoleTreeSelect({
     };
     traverse(departments);
     setExpandedNodes(allIds);
-  };
+  }, [departments]);
 
-  const collapseAll = (e: React.MouseEvent) => {
+  const collapseAll = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     setExpandedNodes(new Set());
-  };
+  }, []);
 
-  const isAllExpanded = () => {
+  const isAllExpanded = useCallback(() => {
     let totalNodes = 0;
     const traverse = (nodes: DepartmentNode[]) => {
       nodes.forEach(node => {
@@ -374,9 +401,38 @@ function RoleTreeSelect({
     };
     traverse(departments);
     return expandedNodes.size === totalNodes && totalNodes > 0;
-  };
+  }, [departments, expandedNodes.size]);
 
-  const renderTree = (nodes: DepartmentNode[], depth = 0) => {
+  const onNodeClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const id = e.currentTarget.dataset.id;
+    const hasChildren = e.currentTarget.dataset.haschildren === 'true';
+    const hasRoles = e.currentTarget.dataset.hasroles === 'true';
+    if (id && (hasChildren || hasRoles)) {
+      setExpandedNodes(prev => {
+        const newExpanded = new Set(prev);
+        if (newExpanded.has(id)) {
+          newExpanded.delete(id);
+        } else {
+          newExpanded.add(id);
+        }
+        return newExpanded;
+      });
+    }
+  }, []);
+
+  const onRoleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const roleName = e.currentTarget.dataset.rolename;
+    const deptName = e.currentTarget.dataset.deptname;
+    if (roleName) {
+      onChange(roleName);
+      if (onDeptChange && deptName) {
+        onDeptChange(deptName);
+      }
+      setIsOpen(false);
+    }
+  }, [onChange, onDeptChange]);
+
+  const renderTree = useCallback((nodes: DepartmentNode[], depth = 0): React.ReactNode[] => {
     return nodes.map(node => {
       const hasChildren = node.children && node.children.length > 0;
       const deptRoles = roles.filter(r => r.departmentId === node.id);
@@ -388,11 +444,10 @@ function RoleTreeSelect({
           <div 
             className="flex items-center py-2 px-3 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-sm text-slate-700 dark:text-slate-200"
             style={{ paddingLeft: `${depth * 1.5 + 0.75}rem` }}
-            onClick={(e) => {
-              if (hasChildren || hasRoles) {
-                toggleNode(e, node.id);
-              }
-            }}
+            data-id={node.id}
+            data-haschildren={hasChildren}
+            data-hasroles={hasRoles}
+            onClick={onNodeClick}
           >
             <div 
               className="w-5 h-5 flex items-center justify-center mr-1"
@@ -412,13 +467,9 @@ function RoleTreeSelect({
                   key={`role-${role.id}`}
                   className="flex items-center py-2 px-3 hover:bg-blue-50 dark:hover:bg-slate-700 cursor-pointer text-sm text-slate-600 dark:text-slate-300"
                   style={{ paddingLeft: `${(depth + 1) * 1.5 + 0.75}rem` }}
-                  onClick={() => {
-                    onChange(role.name);
-                    if (onDeptChange) {
-                      onDeptChange(node.name);
-                    }
-                    setIsOpen(false);
-                  }}
+                  data-rolename={role.name}
+                  data-deptname={node.name}
+                  onClick={onRoleClick}
                 >
                   <div className="w-5 h-5 flex items-center justify-center mr-1">
                     <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-500" />
@@ -434,7 +485,7 @@ function RoleTreeSelect({
         </div>
       );
     });
-  };
+  }, [expandedNodes, onChange, onDeptChange, roles, value, toggleNode]);
 
   return (
     <div className="relative mt-1" ref={wrapperRef}>
@@ -446,7 +497,7 @@ function RoleTreeSelect({
           type="text"
           value={value}
           readOnly
-          className="block w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 pr-8 focus:ring-blue-500 focus:border-blue-500 sm:text-sm cursor-pointer text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+          className="block w-full bg-white dark:bg-slate-800 border border-zinc-200/80 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 pr-8 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm cursor-pointer text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
           placeholder={placeholder}
           required={required}
         />
@@ -492,18 +543,20 @@ function DepartmentTreeFilter({
 }) {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
-  const toggleNode = (e: React.MouseEvent, id: string) => {
+  const toggleNode = useCallback((e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    const newExpanded = new Set(expandedNodes);
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id);
-    } else {
-      newExpanded.add(id);
-    }
-    setExpandedNodes(newExpanded);
-  };
+    setExpandedNodes(prev => {
+      const newExpanded = new Set(prev);
+      if (newExpanded.has(id)) {
+        newExpanded.delete(id);
+      } else {
+        newExpanded.add(id);
+      }
+      return newExpanded;
+    });
+  }, []);
 
-  const expandAll = () => {
+  const expandAll = useCallback(() => {
     const allIds = new Set<string>();
     const traverse = (nodes: DepartmentNode[]) => {
       nodes.forEach(node => {
@@ -515,13 +568,13 @@ function DepartmentTreeFilter({
     };
     traverse(departments);
     setExpandedNodes(allIds);
-  };
+  }, [departments]);
 
-  const collapseAll = () => {
+  const collapseAll = useCallback(() => {
     setExpandedNodes(new Set());
-  };
+  }, []);
 
-  const isAllExpanded = () => {
+  const isAllExpanded = useCallback(() => {
     let totalNodes = 0;
     const traverse = (nodes: DepartmentNode[]) => {
       nodes.forEach(node => {
@@ -533,9 +586,32 @@ function DepartmentTreeFilter({
     };
     traverse(departments);
     return expandedNodes.size === totalNodes && totalNodes > 0;
-  };
+  }, [departments, expandedNodes.size]);
 
-  const renderTree = (nodes: DepartmentNode[], depth = 0) => {
+  const onNodeClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const name = e.currentTarget.dataset.name;
+    if (name) {
+      onToggle(name);
+    }
+  }, [onToggle]);
+
+  const onToggleNodeClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    const id = e.currentTarget.dataset.id;
+    if (id) {
+      setExpandedNodes(prev => {
+        const newExpanded = new Set(prev);
+        if (newExpanded.has(id)) {
+          newExpanded.delete(id);
+        } else {
+          newExpanded.add(id);
+        }
+        return newExpanded;
+      });
+    }
+  }, []);
+
+  const renderTree = useCallback((nodes: DepartmentNode[], depth = 0): React.ReactNode[] => {
     return nodes.map(node => {
       const hasChildren = node.children && node.children.length > 0;
       const isExpanded = expandedNodes.has(node.id);
@@ -546,18 +622,20 @@ function DepartmentTreeFilter({
           <div 
             className="flex items-center py-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-sm"
             style={{ paddingLeft: `${depth * 1.2}rem` }}
-            onClick={() => onToggle(node.name)}
+            data-name={node.name}
+            onClick={onNodeClick}
           >
             <div 
               className="w-5 h-5 flex items-center justify-center mr-1"
-              onClick={(e) => hasChildren ? toggleNode(e, node.id) : undefined}
+              data-id={node.id}
+              onClick={hasChildren ? onToggleNodeClick : undefined}
             >
               {hasChildren ? (
                 isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" /> : <ChevronRightIcon className="w-4 h-4 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" />
               ) : <div className="w-4 h-4" />}
             </div>
             <div className={`flex items-center space-x-2 ${isSelected ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-slate-700 dark:text-slate-200'}`}>
-              <div className={`w-4 h-4 rounded border flex items-center justify-center ${isSelected ? 'bg-blue-600 border-blue-600' : 'border-slate-300 dark:border-slate-600'}`}>
+              <div className={`w-4 h-4 rounded border flex items-center justify-center ${isSelected ? 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner border-blue-600' : 'border-zinc-200/80 dark:border-slate-600'}`}>
                 {isSelected && <Check className="w-3 h-3 text-white" />}
               </div>
               <span>{node.name}</span>
@@ -571,7 +649,7 @@ function DepartmentTreeFilter({
         </div>
       );
     });
-  };
+  }, [expandedNodes, onToggle, selectedDepartments, toggleNode]);
 
   return (
     <div className="border border-slate-200 dark:border-slate-700 rounded-md">
@@ -593,6 +671,11 @@ function DepartmentTreeFilter({
 }
 
 // 模拟员工数据
+
+const TABLE_STYLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse' };
+const TD_DEPT_STYLE: React.CSSProperties = { verticalAlign: 'middle', textAlign: 'center' };
+const DEPT_COUNT_STYLE: React.CSSProperties = { fontSize: '0.75rem', color: '#64748b', marginTop: '2px' };
+const TD_CENTER_STYLE: React.CSSProperties = { textAlign: 'center' };
 
 export default function Users() {
   const hasPermission = useAuth(state => state.hasPermission);
@@ -704,7 +787,7 @@ export default function Users() {
     return processed;
   }, [users, addressBookConfig.includeResigned, addressBookConfig.mergeDepartments]);
 
-  const calculateRowSpans = (usersList: User[], config: typeof addressBookConfig) => {
+  const calculateRowSpans = useCallback((usersList: User[], config: typeof addressBookConfig) => {
     if (!config.mergeDepartments) return usersList.map(u => ({ ...u, _deptSpan: 1 }));
     
     const result: (User & { _deptSpan?: number, _deptCount?: number })[] = [];
@@ -727,7 +810,7 @@ export default function Users() {
       }
     }
     return result;
-  };
+  }, []);
 
   const { leftUsers, rightUsers } = useMemo(() => {
     if (addressBookConfig.isTwoColumn) {
@@ -760,14 +843,14 @@ export default function Users() {
     }
   }, [processedAddressBookUsers, addressBookConfig.isTwoColumn, addressBookConfig.mergeDepartments]);
 
-  const renderTableContent = (usersData: (User & { _deptSpan?: number, _deptCount?: number })[], config: typeof addressBookConfig) => {
+  const renderTableContent = useCallback((usersData: (User & { _deptSpan?: number, _deptCount?: number })[], config: typeof addressBookConfig) => {
     const selectedCols = config.columns.filter((c: ExportColumn) => c.selected);
     return (
-      <table className="w-full border-collapse text-sm" style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <table className="w-full border-collapse text-sm" style={TABLE_STYLE}>
         <thead>
           <tr>
             {selectedCols.map((col: ExportColumn) => (
-              <th key={col.key} className="border border-slate-300 px-3 py-2 bg-slate-50 text-center font-semibold text-slate-700">
+              <th key={col.key} className="border border-zinc-200/80 px-3 py-2 bg-slate-50 text-center font-semibold text-slate-700">
                 {col.label}
               </th>
             ))}
@@ -780,14 +863,14 @@ export default function Users() {
                 if (col.key === 'department' && config.mergeDepartments) {
                   if (user._deptSpan === 0) return null;
                   return (
-                    <td key={col.key} rowSpan={user._deptSpan} className="border border-slate-300 px-3 py-2 text-slate-600 text-center align-middle font-medium bg-slate-50/50" style={{ verticalAlign: 'middle', textAlign: 'center' }}>
+                    <td key={col.key} rowSpan={user._deptSpan} className="border border-zinc-200/80 px-3 py-2 text-slate-600 text-center align-middle font-medium bg-slate-50/50" style={TD_DEPT_STYLE}>
                       {(user as Record<string, any>)[col.key] || '-'}
-                      <div className="text-xs text-slate-400 mt-0.5" style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>({user._deptCount}人)</div>
+                      <div className="text-xs text-slate-400 mt-0.5" style={DEPT_COUNT_STYLE}>({user._deptCount}人)</div>
                     </td>
                   );
                 }
                 return (
-                  <td key={col.key} className="border border-slate-300 px-3 py-2 text-slate-600 text-center" style={{ textAlign: 'center' }}>
+                  <td key={col.key} className="border border-zinc-200/80 px-3 py-2 text-slate-600 text-center" style={TD_CENTER_STYLE}>
                     {(user as Record<string, any>)[col.key] || '-'}
                   </td>
                 );
@@ -797,9 +880,9 @@ export default function Users() {
         </tbody>
       </table>
     );
-  };
+  }, []);
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
@@ -813,9 +896,9 @@ export default function Users() {
         };
       });
     }
-  };
+  }, []);
 
-  const handleAddressBookDragEnd = (event: DragEndEvent) => {
+  const handleAddressBookDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
@@ -829,9 +912,9 @@ export default function Users() {
         };
       });
     }
-  };
+  }, []);
 
-  const handlePrintRoster = () => {
+  const handlePrintRoster = useCallback(() => {
     if (!rosterPrintRef.current) return;
     
     const printContent = rosterPrintRef.current.innerHTML;
@@ -907,9 +990,9 @@ export default function Users() {
         }, 1000);
       }, 250);
     }
-  };
+  }, [exportConfig]);
 
-  const handlePrintAddressBook = () => {
+  const handlePrintAddressBook = useCallback(() => {
     if (!addressBookPrintRef.current) return;
     
     const printContent = addressBookPrintRef.current.innerHTML;
@@ -985,7 +1068,7 @@ export default function Users() {
         }, 1000);
       }, 250);
     }
-  };
+  }, [addressBookConfig]);
 
   // Fetch themes and scripts when export modal opens
   useEffect(() => {
@@ -1059,21 +1142,21 @@ export default function Users() {
     currentPage * itemsPerPage
   );
 
-  const handleAdd = () => {
+  const handleAdd = useCallback(() => {
     setEditingUser(null);
     setSelectedDeptName('');
     setSelectedRoleName('');
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const handleEdit = (user: User) => {
+  const handleEdit = useCallback((user: User) => {
     setEditingUser(user);
     setSelectedDeptName(user.department || '');
     setSelectedRoleName(user.role || '');
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const handleFilterChange = (key: keyof typeof filters, value: string) => {
+  const handleFilterChange = useCallback((key: keyof typeof filters, value: string) => {
     setFilters(prev => {
       const currentValues = prev[key] || [];
       const newValues = currentValues.includes(value)
@@ -1082,14 +1165,14 @@ export default function Users() {
       return { ...prev, [key]: newValues };
     });
     setCurrentPage(1); // 重置页码
-  };
+  }, []);
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setFilters({ department: [], status: [] });
     setCurrentPage(1);
-  };
+  }, []);
 
-  const handleExport = async () => {
+  const handleExport = useCallback(async () => {
     setIsExporting(true);
     try {
       // Mock backend processing
@@ -1102,9 +1185,23 @@ export default function Users() {
     } finally {
       setIsExporting(false);
     }
-  };
+  }, [filteredUsers.length]);
 
   const activeFilterCount = filters.department.length + filters.status.length;
+
+  const onThemeSelect = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const themeId = e.currentTarget.dataset.id;
+    if (themeId) {
+      setExportConfig(prev => ({ ...prev, themeId }));
+    }
+  }, []);
+
+  const onScriptSelect = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const templateName = e.currentTarget.dataset.name;
+    if (templateName) {
+      setExportConfig(prev => ({ ...prev, templateName }));
+    }
+  }, []);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -1128,7 +1225,7 @@ export default function Users() {
           {hasPermission(Permission.MANAGE_USERS) && (
             <button 
               onClick={handleAdd}
-              className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:scale-95 transition-transform shadow-sm"
+              className="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white text-sm font-medium rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-sm"
             >
               <Plus className="h-4 w-4 mr-2" />
               新增员工
@@ -1137,12 +1234,12 @@ export default function Users() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl">
+      <div className="bg-white dark:bg-zinc-800 shadow-sm rounded-3xl">
         {/* Toolbar */}
-        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/50 rounded-t-xl">
+        <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="relative w-full sm:w-72">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-zinc-400" />
             </div>
             <input
               type="text"
@@ -1152,19 +1249,19 @@ export default function Users() {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1); // 重置页码
               }}
-              className="block w-full pl-9 pr-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+              className="block w-full pl-10 pr-3 py-2.5 border-none rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200 outline-none transition-all bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white placeholder-zinc-400"
             />
           </div>
           <div className="flex items-center space-x-2 relative">
             <button 
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className={`inline-flex items-center px-3 py-2 border rounded-lg text-sm font-medium transition-colors ${
+              className={`inline-flex items-center px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
                 activeFilterCount > 0 || isFilterOpen
-                  ? 'border-blue-500 dark:border-blue-400 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' 
-                  : 'border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600'
+                  ? 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 shadow-sm' 
+                  : 'text-zinc-700 dark:text-zinc-200 bg-zinc-100/50 dark:bg-zinc-800 hover:bg-zinc-200/50 dark:hover:bg-zinc-700'
               }`}
             >
-              <Filter className={`h-4 w-4 mr-2 ${activeFilterCount > 0 || isFilterOpen ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`} />
+              <Filter className={`h-4 w-4 mr-2 ${activeFilterCount > 0 || isFilterOpen ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-400'}`} />
               筛选 {activeFilterCount > 0 && `(${activeFilterCount})`}
             </button>
 
@@ -1228,7 +1325,7 @@ export default function Users() {
                           onClick={() => handleFilterChange('status', '离职')}
                           className={`flex-1 flex items-center justify-center px-2 py-2 rounded-md text-xs font-medium transition-colors border whitespace-nowrap ${
                             (filters.status || []).includes('离职')
-                              ? 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300'
+                              ? 'bg-slate-100 dark:bg-slate-800 border-zinc-200/80 dark:border-slate-600 text-slate-700 dark:text-slate-300'
                               : 'bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600'
                           }`}
                         >
@@ -1274,21 +1371,21 @@ export default function Users() {
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="sr-only">上一页</span>
                   <ChevronLeft className="h-4 w-4" />
                 </button>
                 
                 {/* 简化的页码显示 */}
-                <span className="relative inline-flex items-center px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300">
+                <span className="relative inline-flex items-center px-4 py-2 border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300">
                   {currentPage} / {totalPages || 1}
                 </span>
 
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages || totalPages === 0}
-                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-zinc-200/80 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="sr-only">下一页</span>
                   <ChevronRight className="h-4 w-4" />
@@ -1302,7 +1399,7 @@ export default function Users() {
             <button
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="relative inline-flex items-center px-4 py-2 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-md text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50"
+              className="relative inline-flex items-center px-4 py-2 border border-zinc-200/80 dark:border-slate-600 text-sm font-medium rounded-md text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50"
             >
               上一页
             </button>
@@ -1312,7 +1409,7 @@ export default function Users() {
             <button
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages || totalPages === 0}
-              className="relative inline-flex items-center px-4 py-2 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-md text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50"
+              className="relative inline-flex items-center px-4 py-2 border border-zinc-200/80 dark:border-slate-600 text-sm font-medium rounded-md text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50"
             >
               下一页
             </button>
@@ -1337,7 +1434,7 @@ export default function Users() {
             <button 
               onClick={handlePrintRoster}
               disabled={exportConfig.columns.filter(c => c.selected).length === 0}
-              className="inline-flex items-center justify-center px-6 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-all shadow-sm disabled:opacity-50"
+              className="inline-flex items-center justify-center px-6 py-2 bg-white dark:bg-slate-700 border border-zinc-200/80 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-all shadow-sm disabled:opacity-50"
             >
               <Printer className="h-4 w-4 mr-2" />
               打印
@@ -1345,7 +1442,7 @@ export default function Users() {
             <button 
               onClick={handleExport}
               disabled={isExporting || exportConfig.columns.filter(c => c.selected).length === 0}
-              className="inline-flex items-center justify-center px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:scale-95 transition-transform shadow-md shadow-blue-200 disabled:opacity-50"
+              className="inline-flex items-center justify-center px-6 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white text-sm font-medium rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-md shadow-blue-200 disabled:opacity-50"
             >
               {isExporting ? (
                 <>
@@ -1371,7 +1468,7 @@ export default function Users() {
                 type="text" 
                 value={exportConfig.title}
                 onChange={(e) => setExportConfig(prev => ({ ...prev, title: e.target.value }))}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+                className="w-full px-3 py-2 border border-zinc-200/80 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
                 placeholder="请输入表格标题"
               />
             </div>
@@ -1387,7 +1484,7 @@ export default function Users() {
                       checked={exportConfig.includeResigned}
                       onChange={(e) => setExportConfig(prev => ({ ...prev, includeResigned: e.target.checked }))}
                     />
-                    <div className={`block w-10 h-6 rounded-full transition-colors ${exportConfig.includeResigned ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
+                    <div className={`block w-10 h-6 rounded-full transition-colors ${exportConfig.includeResigned ? 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
                     <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${exportConfig.includeResigned ? 'translate-x-4' : ''}`}></div>
                   </div>
                   <span className="ml-3 text-sm font-medium text-slate-700 dark:text-slate-300">包含离职人员</span>
@@ -1402,7 +1499,7 @@ export default function Users() {
                 <div>
                   <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张大小</label>
                   <Select value={exportConfig.paperSize} onValueChange={(val) => setExportConfig(prev => ({ ...prev, paperSize: val }))}>
-                    <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                    <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
                       <SelectValue placeholder="选择纸张大小" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1415,7 +1512,7 @@ export default function Users() {
                 <div>
                   <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张方向</label>
                   <Select value={exportConfig.orientation} onValueChange={(val) => setExportConfig(prev => ({ ...prev, orientation: val }))}>
-                    <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                    <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
                       <SelectValue placeholder="选择纸张方向">
                         {(val) => val === 'portrait' ? '纵向' : val === 'landscape' ? '横向' : '选择纸张方向'}
                       </SelectValue>
@@ -1436,7 +1533,7 @@ export default function Users() {
                       checked={exportConfig.isDoubleSided}
                       onChange={(e) => setExportConfig(prev => ({ ...prev, isDoubleSided: e.target.checked }))}
                     />
-                    <div className={`block w-8 h-5 rounded-full transition-colors ${exportConfig.isDoubleSided ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
+                    <div className={`block w-8 h-5 rounded-full transition-colors ${exportConfig.isDoubleSided ? 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
                     <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${exportConfig.isDoubleSided ? 'translate-x-3' : ''}`}></div>
                   </div>
                   <span className="ml-2 text-sm text-slate-600 dark:text-slate-400">双面打印 (预留装订边距)</span>
@@ -1472,11 +1569,12 @@ export default function Users() {
                   {Object.values(themes).map((theme: ExportTheme) => (
                     <button
                       key={theme.id}
-                      onClick={() => setExportConfig(prev => ({ ...prev, themeId: theme.id }))}
+                      data-id={theme.id}
+                      onClick={onThemeSelect}
                       className={`flex flex-col items-center p-2 rounded-xl border transition-all ${
                         exportConfig.themeId === theme.id 
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500/20' 
-                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
+                          ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-600/20' 
+                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-zinc-200/80 dark:hover:border-slate-600'
                       }`}
                     >
                       <div 
@@ -1497,11 +1595,12 @@ export default function Users() {
                   {scripts.map((script) => (
                     <button
                       key={script.name}
-                      onClick={() => setExportConfig(prev => ({ ...prev, templateName: script.name }))}
+                      data-name={script.name}
+                      onClick={onScriptSelect}
                       className={`w-full flex items-center p-3 rounded-xl border transition-all ${
                         exportConfig.templateName === script.name 
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500/20' 
-                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
+                          ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-600/20' 
+                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-zinc-200/80 dark:hover:border-slate-600'
                       }`}
                     >
                       <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3">
@@ -1516,7 +1615,7 @@ export default function Users() {
                         </div>
                       </div>
                       {exportConfig.templateName === script.name && (
-                        <div className="ml-auto w-2 h-2 bg-blue-600 rounded-full"></div>
+                        <div className="ml-auto w-2 h-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner rounded-full"></div>
                       )}
                     </button>
                   ))}
@@ -1575,7 +1674,7 @@ export default function Users() {
                 <thead>
                   <tr>
                     {exportConfig.columns.filter(c => c.selected).map(col => (
-                      <th key={col.key} className="border border-slate-300 dark:border-slate-600 px-3 py-2 bg-slate-50 dark:bg-slate-700 text-left font-semibold text-slate-700 dark:text-slate-200">
+                      <th key={col.key} className="border border-zinc-200/80 dark:border-slate-600 px-3 py-2 bg-slate-50 dark:bg-slate-700 text-left font-semibold text-slate-700 dark:text-slate-200">
                         {col.label}
                       </th>
                     ))}
@@ -1588,7 +1687,7 @@ export default function Users() {
                     .map(u => (
                       <tr key={u.id}>
                         {exportConfig.columns.filter(c => c.selected).map(col => (
-                          <td key={col.key} className="border border-slate-300 dark:border-slate-600 px-3 py-2 text-slate-600 dark:text-slate-300">
+                          <td key={col.key} className="border border-zinc-200/80 dark:border-slate-600 px-3 py-2 text-slate-600 dark:text-slate-300">
                             {(u as Record<string, any>)[col.key] || '-'}
                           </td>
                         ))}
@@ -1623,7 +1722,7 @@ export default function Users() {
             <button 
               onClick={handlePrintAddressBook}
               disabled={addressBookConfig.columns.filter(c => c.selected).length === 0}
-              className="inline-flex items-center justify-center px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:scale-95 transition-transform shadow-md shadow-blue-200 disabled:opacity-50"
+              className="inline-flex items-center justify-center px-6 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white text-sm font-medium rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-md shadow-blue-200 disabled:opacity-50"
             >
               <Printer className="h-4 w-4 mr-2" />
               打印通讯录
@@ -1640,7 +1739,7 @@ export default function Users() {
                 type="text" 
                 value={addressBookConfig.title}
                 onChange={(e) => setAddressBookConfig(prev => ({ ...prev, title: e.target.value }))}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+                className="w-full px-3 py-2 border border-zinc-200/80 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
                 placeholder="请输入通讯录标题"
               />
             </div>
@@ -1656,7 +1755,7 @@ export default function Users() {
                       checked={addressBookConfig.includeResigned}
                       onChange={(e) => setAddressBookConfig(prev => ({ ...prev, includeResigned: e.target.checked }))}
                     />
-                    <div className={`block w-10 h-6 rounded-full transition-colors ${addressBookConfig.includeResigned ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
+                    <div className={`block w-10 h-6 rounded-full transition-colors ${addressBookConfig.includeResigned ? 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
                     <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${addressBookConfig.includeResigned ? 'translate-x-4' : ''}`}></div>
                   </div>
                   <span className="ml-3 text-sm font-medium text-slate-700 dark:text-slate-300">包含离职人员</span>
@@ -1671,7 +1770,7 @@ export default function Users() {
                 <div>
                   <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张大小</label>
                   <Select value={addressBookConfig.paperSize} onValueChange={(val) => setAddressBookConfig(prev => ({ ...prev, paperSize: val }))}>
-                    <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                    <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
                       <SelectValue placeholder="选择纸张大小" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1684,7 +1783,7 @@ export default function Users() {
                 <div>
                   <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张方向</label>
                   <Select value={addressBookConfig.orientation} onValueChange={(val) => setAddressBookConfig(prev => ({ ...prev, orientation: val }))}>
-                    <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                    <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
                       <SelectValue placeholder="选择纸张方向">
                         {(val) => val === 'portrait' ? '纵向' : val === 'landscape' ? '横向' : '选择纸张方向'}
                       </SelectValue>
@@ -1705,7 +1804,7 @@ export default function Users() {
                       checked={addressBookConfig.isDoubleSided}
                       onChange={(e) => setAddressBookConfig(prev => ({ ...prev, isDoubleSided: e.target.checked }))}
                     />
-                    <div className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.isDoubleSided ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
+                    <div className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.isDoubleSided ? 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
                     <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${addressBookConfig.isDoubleSided ? 'translate-x-3' : ''}`}></div>
                   </div>
                   <span className="ml-2 text-sm text-slate-600 dark:text-slate-400">双面打印 (预留装订边距)</span>
@@ -1720,7 +1819,7 @@ export default function Users() {
                       checked={addressBookConfig.isTwoColumn}
                       onChange={(e) => setAddressBookConfig(prev => ({ ...prev, isTwoColumn: e.target.checked }))}
                     />
-                    <div className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.isTwoColumn ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
+                    <div className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.isTwoColumn ? 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
                     <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${addressBookConfig.isTwoColumn ? 'translate-x-3' : ''}`}></div>
                   </div>
                   <span className="ml-2 text-sm text-slate-600 dark:text-slate-400">双栏排版 (适合字段较少)</span>
@@ -1735,7 +1834,7 @@ export default function Users() {
                       checked={addressBookConfig.mergeDepartments}
                       onChange={(e) => setAddressBookConfig(prev => ({ ...prev, mergeDepartments: e.target.checked }))}
                     />
-                    <div className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.mergeDepartments ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
+                    <div className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.mergeDepartments ? 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
                     <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${addressBookConfig.mergeDepartments ? 'translate-x-3' : ''}`}></div>
                   </div>
                   <span className="ml-2 text-sm text-slate-600 dark:text-slate-400">按部门合并并统计人数</span>
@@ -1836,12 +1935,12 @@ export default function Users() {
       <div className="hidden">
         <div ref={addressBookPrintRef}>
           <h1>{addressBookConfig.title}</h1>
-          <div style={{ display: addressBookConfig.isTwoColumn ? 'flex' : 'block', gap: '20px', alignItems: 'flex-start' }}>
-            <div style={{ flex: 1 }}>
+          <div className={addressBookConfig.isTwoColumn ? 'flex gap-5 items-start' : 'block'}>
+            <div className="flex-1">
               {renderTableContent(leftUsers, addressBookConfig)}
             </div>
             {addressBookConfig.isTwoColumn && (
-              <div style={{ flex: 1 }}>
+              <div className="flex-1">
                 {renderTableContent(rightUsers, addressBookConfig)}
               </div>
             )}
@@ -1902,7 +2001,7 @@ export default function Users() {
                   }, 250);
                 }
               }}
-              className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center"
+              className="px-4 py-2 bg-white dark:bg-slate-700 border border-zinc-200/80 dark:border-slate-600 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 flex items-center"
             >
               <Printer className="w-4 h-4 mr-2" />
               打印档案标签
@@ -1941,7 +2040,7 @@ export default function Users() {
                   }
                 }
               }}
-              className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center"
+              className="px-4 py-2 bg-white dark:bg-slate-700 border border-zinc-200/80 dark:border-slate-600 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 flex items-center"
             >
               <Printer className="w-4 h-4 mr-2" />
               打印联系卡
@@ -1953,7 +2052,7 @@ export default function Users() {
                   setIsDetailModalOpen(false);
                   if (selectedUser) handleEdit(selectedUser);
                 }}
-                className="px-4 py-2 bg-blue-600 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center"
+                className="px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 flex items-center"
               >
                 <Edit className="w-4 h-4 mr-2" />
                 编辑信息
@@ -2058,42 +2157,42 @@ export default function Users() {
         size="4xl"
         footer={
           <>
-            <button type="submit" form="employee-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存</button>
-            <button type="button" onClick={() => setIsModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
+            <button type="submit" form="employee-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+            <button type="button" onClick={() => setIsModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
           </>
         }
       >
         <form id="employee-form" className="space-y-6" onSubmit={(e) => { e.preventDefault(); setIsModalOpen(false); }}>
           {/* 基本信息 */}
           <div>
-            <h4 className="text-sm font-medium text-slate-900 mb-3 border-l-2 border-blue-500 pl-2">基本信息</h4>
+            <h4 className="text-sm font-medium text-slate-900 mb-3 border-l-2 border-blue-600 pl-2">基本信息</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-700">姓名 <span className="text-red-500">*</span></label>
-                <input required type="text" defaultValue={editingUser?.name || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                <input required type="text" defaultValue={editingUser?.name || ''} className="mt-1 block w-full border border-zinc-200/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700">身份证号码 <span className="text-red-500">*</span></label>
-                <input required type="text" defaultValue={editingUser?.idCard || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                <input required type="text" defaultValue={editingUser?.idCard || ''} className="mt-1 block w-full border border-zinc-200/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700">联系电话 <span className="text-red-500">*</span></label>
-                <input required type="text" defaultValue={editingUser?.phone || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                <input required type="text" defaultValue={editingUser?.phone || ''} className="mt-1 block w-full border border-zinc-200/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" />
               </div>
               <div className="sm:col-span-2">
                 <label className="block text-xs font-medium text-slate-700">户口地址 <span className="text-red-500">*</span></label>
-                <input required type="text" defaultValue={editingUser?.registeredAddress || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                <input required type="text" defaultValue={editingUser?.registeredAddress || ''} className="mt-1 block w-full border border-zinc-200/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" />
               </div>
               <div className="sm:col-span-2">
                 <label className="block text-xs font-medium text-slate-700">现住址 <span className="text-red-500">*</span></label>
-                <input required type="text" defaultValue={editingUser?.currentAddress || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                <input required type="text" defaultValue={editingUser?.currentAddress || ''} className="mt-1 block w-full border border-zinc-200/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" />
               </div>
             </div>
           </div>
 
           {/* 工作信息 */}
           <div>
-            <h4 className="text-sm font-medium text-slate-900 mb-3 border-l-2 border-blue-500 pl-2">工作信息</h4>
+            <h4 className="text-sm font-medium text-slate-900 mb-3 border-l-2 border-blue-600 pl-2">工作信息</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-700">部门 <span className="text-red-500">*</span></label>
@@ -2123,7 +2222,7 @@ export default function Users() {
                   required
                   defaultValue={editingUser?.status === 'active' ? '在职' : editingUser?.status === 'inactive' ? '离职' : (editingUser?.status || '在职')}
                 >
-                  <SelectTrigger className="w-full mt-1 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                  <SelectTrigger className="w-full mt-1 bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
                     <SelectValue placeholder="选择状态" />
                   </SelectTrigger>
                   <SelectContent>
@@ -2135,7 +2234,7 @@ export default function Users() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700">入职时间 <span className="text-red-500">*</span></label>
-                <input required type="date" defaultValue={editingUser?.joinDate || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                <input required type="date" defaultValue={editingUser?.joinDate || ''} className="mt-1 block w-full border border-zinc-200/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700">用工形式 <span className="text-red-500">*</span></label>
@@ -2143,7 +2242,7 @@ export default function Users() {
                   required
                   defaultValue={editingUser?.employmentType || '全职'}
                 >
-                  <SelectTrigger className="w-full mt-1 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                  <SelectTrigger className="w-full mt-1 bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
                     <SelectValue placeholder="选择用工形式" />
                   </SelectTrigger>
                   <SelectContent>
@@ -2157,7 +2256,7 @@ export default function Users() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700">变动情况 <span className="text-red-500">*</span></label>
-                <input required type="text" defaultValue={editingUser?.changeStatus || '无'} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                <input required type="text" defaultValue={editingUser?.changeStatus || '无'} className="mt-1 block w-full border border-zinc-200/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700">系统角色 <span className="text-red-500">*</span></label>
@@ -2169,7 +2268,7 @@ export default function Users() {
                     editingUser?.systemRole === SystemRole.HR ? '人事主管' : '普通员工'
                   }
                 >
-                  <SelectTrigger className="w-full mt-1 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                  <SelectTrigger className="w-full mt-1 bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
                     <SelectValue placeholder="选择系统角色" />
                   </SelectTrigger>
                   <SelectContent>
@@ -2185,14 +2284,14 @@ export default function Users() {
 
           {/* 合同与社保 */}
           <div>
-            <h4 className="text-sm font-medium text-slate-900 mb-3 border-l-2 border-blue-500 pl-2">合同与社保</h4>
+            <h4 className="text-sm font-medium text-slate-900 mb-3 border-l-2 border-blue-600 pl-2">合同与社保</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-700">是否购买社保</label>
                 <Select
                   defaultValue={editingUser?.hasSocialSecurity || '是'}
                 >
-                  <SelectTrigger className="w-full mt-1 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                  <SelectTrigger className="w-full mt-1 bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
                     <SelectValue placeholder="选择是否购买社保" />
                   </SelectTrigger>
                   <SelectContent>
@@ -2203,25 +2302,25 @@ export default function Users() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700">合同年限(年)</label>
-                <input type="number" defaultValue={editingUser?.contractYears || 3} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                <input type="number" defaultValue={editingUser?.contractYears || 3} className="mt-1 block w-full border border-zinc-200/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700">最新签订时间</label>
-                <input type="date" defaultValue={editingUser?.contractSignDate || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                <input type="date" defaultValue={editingUser?.contractSignDate || ''} className="mt-1 block w-full border border-zinc-200/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" />
               </div>
             </div>
           </div>
 
           {/* 退役军人信息 */}
           <div>
-            <h4 className="text-sm font-medium text-slate-900 mb-3 border-l-2 border-blue-500 pl-2">退役军人信息</h4>
+            <h4 className="text-sm font-medium text-slate-900 mb-3 border-l-2 border-blue-600 pl-2">退役军人信息</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-700">是否退役军人</label>
                 <Select
                   defaultValue={editingUser?.isVeteran || '否'}
                 >
-                  <SelectTrigger className="w-full mt-1 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                  <SelectTrigger className="w-full mt-1 bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
                     <SelectValue placeholder="选择是否退役军人" />
                   </SelectTrigger>
                   <SelectContent>
@@ -2232,11 +2331,11 @@ export default function Users() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700">原服役单位</label>
-                <input type="text" defaultValue={editingUser?.formerUnit || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                <input type="text" defaultValue={editingUser?.formerUnit || ''} className="mt-1 block w-full border border-zinc-200/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700">入伍及退役时间</label>
-                <input type="text" defaultValue={editingUser?.militaryDates || ''} placeholder="如: 2015-09 至 2017-09" className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                <input type="text" defaultValue={editingUser?.militaryDates || ''} placeholder="如: 2015-09 至 2017-09" className="mt-1 block w-full border border-zinc-200/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" />
               </div>
             </div>
           </div>
@@ -2244,7 +2343,7 @@ export default function Users() {
           {/* 备注 */}
           <div>
             <label className="block text-xs font-medium text-slate-700">备注</label>
-            <textarea rows={2} defaultValue={editingUser?.remarks || ''} className="mt-1 block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+            <textarea rows={2} defaultValue={editingUser?.remarks || ''} className="mt-1 block w-full border border-zinc-200/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"></textarea>
           </div>
         </form>
       </BaseModal>

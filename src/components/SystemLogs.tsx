@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useLogStore, LogLevel } from '../store/logs';
 import { AlertCircle, AlertTriangle, Info, Trash2, Search, Filter, ChevronDown, ChevronRight } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
@@ -10,7 +10,7 @@ export default function SystemLogs() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
 
-  const toggleExpand = (id: string) => {
+  const toggleExpand = useCallback((id: string) => {
     setExpandedLogs(prev => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -20,33 +20,35 @@ export default function SystemLogs() {
       }
       return next;
     });
-  };
+  }, []);
 
-  const filteredLogs = logs.filter(log => {
-    const matchesLevel = filterLevel === 'ALL' || log.level === filterLevel;
-    const matchesSearch = 
-      log.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (log.source && log.source.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (log.details && log.details.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    return matchesLevel && matchesSearch;
-  });
+  const filteredLogs = useMemo(() => {
+    return logs.filter(log => {
+      const matchesLevel = filterLevel === 'ALL' || log.level === filterLevel;
+      const matchesSearch = 
+        log.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (log.source && log.source.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (log.details && log.details.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      return matchesLevel && matchesSearch;
+    });
+  }, [logs, filterLevel, searchQuery]);
 
-  const getLevelIcon = (level: LogLevel) => {
+  const getLevelIcon = useCallback((level: LogLevel) => {
     switch (level) {
       case 'ERROR': return <AlertCircle className="w-4 h-4 text-red-500" />;
       case 'WARN': return <AlertTriangle className="w-4 h-4 text-amber-500" />;
-      case 'INFO': return <Info className="w-4 h-4 text-blue-500" />;
+      case 'INFO': return <Info className="w-4 h-4 text-blue-600" />;
     }
-  };
+  }, []);
 
-  const getLevelBadge = (level: LogLevel) => {
+  const getLevelBadge = useCallback((level: LogLevel) => {
     switch (level) {
       case 'ERROR': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800';
       case 'WARN': return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800';
       case 'INFO': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800';
     }
-  };
+  }, []);
 
   return (
     <div className="animate-in fade-in duration-300 h-full flex flex-col">
@@ -73,7 +75,7 @@ export default function SystemLogs() {
               placeholder="搜索日志内容、来源或详情..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-9 pr-4 py-2 text-sm border border-zinc-200/80 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200"
             />
           </div>
           <div className="flex items-center space-x-2">
@@ -82,7 +84,7 @@ export default function SystemLogs() {
               value={filterLevel}
               onValueChange={(value) => setFilterLevel(value as LogLevel | 'ALL')}
             >
-              <SelectTrigger className="w-[180px] text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <SelectTrigger className="w-[180px] text-sm border border-zinc-200/80 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200">
                 <SelectValue placeholder="所有等级">
                   {(val) => val === 'ALL' ? '所有等级' : val === 'INFO' ? 'INFO (信息)' : val === 'WARN' ? 'WARN (警告)' : val === 'ERROR' ? 'ERROR (错误)' : '所有等级'}
                 </SelectValue>

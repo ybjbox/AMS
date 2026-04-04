@@ -3,15 +3,15 @@ import { Popover as PopoverPrimitive } from "@base-ui/react/popover"
 
 import { cn } from "@/lib/utils"
 
-function Popover({ ...props }: PopoverPrimitive.Root.Props) {
+const Popover = React.memo(function Popover({ ...props }: PopoverPrimitive.Root.Props) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />
-}
+})
 
-function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props) {
+const PopoverTrigger = React.memo(function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props) {
   return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />
-}
+})
 
-function PopoverContent({
+const PopoverContent = React.memo(function PopoverContent({
   className,
   align = "center",
   alignOffset = 0,
@@ -43,9 +43,9 @@ function PopoverContent({
       </PopoverPrimitive.Positioner>
     </PopoverPrimitive.Portal>
   )
-}
+})
 
-function PopoverHeader({ className, ...props }: React.ComponentProps<"div">) {
+const PopoverHeader = React.memo(function PopoverHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="popover-header"
@@ -53,9 +53,9 @@ function PopoverHeader({ className, ...props }: React.ComponentProps<"div">) {
       {...props}
     />
   )
-}
+})
 
-function PopoverTitle({ className, ...props }: PopoverPrimitive.Title.Props) {
+const PopoverTitle = React.memo(function PopoverTitle({ className, ...props }: PopoverPrimitive.Title.Props) {
   return (
     <PopoverPrimitive.Title
       data-slot="popover-title"
@@ -63,9 +63,9 @@ function PopoverTitle({ className, ...props }: PopoverPrimitive.Title.Props) {
       {...props}
     />
   )
-}
+})
 
-function PopoverDescription({
+const PopoverDescription = React.memo(function PopoverDescription({
   className,
   ...props
 }: PopoverPrimitive.Description.Props) {
@@ -76,7 +76,7 @@ function PopoverDescription({
       {...props}
     />
   )
-}
+})
 
 export {
   Popover,

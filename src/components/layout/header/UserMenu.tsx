@@ -1,12 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../../../store/auth';
+import { useUserStore } from '../../../store/useUserStore';
 import ThemeToggle from './ThemeToggle';
 
 export default function UserMenu() {
   const user = useAuth(state => state.user);
+  const { userInfo, logout } = useUserStore();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -20,17 +23,32 @@ export default function UserMenu() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleLogout = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsOpen(false);
+    logout();
+    navigate('/login');
+  }, [logout, navigate]);
+
+  const toggleMenu = useCallback(() => {
+    setIsOpen(prev => !prev);
+  }, []);
+
+  const closeMenu = useCallback(() => {
+    setIsOpen(false);
+  }, []);
+
   return (
     <div className="relative" ref={menuRef}>
       <div 
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggleMenu}
         className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-200"
       >
         <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-400">
           <User className="h-5 w-5" />
         </div>
         <div className="hidden sm:flex flex-col">
-          <span className="text-sm font-medium text-slate-700 dark:text-slate-200 leading-none">{user?.name || '未登录'}</span>
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-200 leading-none">{userInfo?.username || user?.name || '未登录'}</span>
           <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-none">
             {user?.systemRole === 'SUPER_ADMIN' ? '超级管理员' : 
              user?.systemRole === 'ADMIN' ? '管理员' : 
@@ -51,8 +69,8 @@ export default function UserMenu() {
           >
             <div className="py-1">
               <ThemeToggle />
-              <Link to="/settings" onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100/70 dark:hover:bg-slate-700/50 transition-colors duration-200">个人设置</Link>
-              <Link to="/login" onClick={() => setIsOpen(false)} className="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-t border-slate-100 dark:border-slate-700 transition-colors duration-200">退出登录</Link>
+              <Link to="/settings" onClick={closeMenu} className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100/70 dark:hover:bg-slate-700/50 transition-colors duration-200">个人设置</Link>
+              <button onClick={handleLogout} className="w-full text-left block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-t border-slate-100 dark:border-slate-700 transition-colors duration-200">退出登录</button>
             </div>
           </motion.div>
         )}

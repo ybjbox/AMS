@@ -1,16 +1,16 @@
 import { useEffect, useRef } from 'react';
-import { useAuth } from '../store/auth';
-import { useUserStore } from '../store/users';
+import { useUserStore as useUsersStore } from '../store/users';
+import { useUserStore } from '../store/useUserStore';
 import { useTodoStore } from '../store/todos';
 
 export function useEmployeeReminders() {
-  const user = useAuth(state => state.user);
-  const users = useUserStore(state => state.users);
+  const userInfo = useUserStore(state => state.userInfo);
+  const users = useUsersStore(state => state.users);
   
   const hasCheckedReminders = useRef(false);
 
   useEffect(() => {
-    if (!user || users.length === 0 || hasCheckedReminders.current) return;
+    if (!userInfo || users.length === 0 || hasCheckedReminders.current) return;
 
     hasCheckedReminders.current = true;
 
@@ -74,5 +74,5 @@ export function useEmployeeReminders() {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [users, user]);
+  }, [users, userInfo]);
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useTodoStore } from '../store/todos';
 import { CheckCircle2, Circle, Clock, Plus, Trash2, Calendar, AlertCircle, ListTodo } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -11,7 +11,7 @@ export default function Todos() {
   const [isAdding, setIsAdding] = useState(false);
   const [newTodo, setNewTodo] = useState({ title: '', description: '', dueDate: '' });
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (!newTodo.title) return;
     addTodo({
@@ -20,12 +20,28 @@ export default function Todos() {
     });
     setNewTodo({ title: '', description: '', dueDate: '' });
     setIsAdding(false);
-  };
+  }, [newTodo, addTodo]);
 
-  const sortedTodos = [...todos].sort((a, b) => {
-    if (a.completed !== b.completed) return a.completed ? 1 : -1;
-    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-  });
+  const sortedTodos = useMemo(() => {
+    return [...todos].sort((a, b) => {
+      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    });
+  }, [todos]);
+
+  const onToggleTodoClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const todoId = e.currentTarget.dataset.todoid;
+    if (todoId) {
+      toggleTodo(todoId);
+    }
+  }, [toggleTodo]);
+
+  const onDeleteTodoClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const todoId = e.currentTarget.dataset.todoid;
+    if (todoId) {
+      deleteTodo(todoId);
+    }
+  }, [deleteTodo]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl mx-auto">
@@ -36,7 +52,7 @@ export default function Todos() {
         </div>
         <button
           onClick={() => setIsAdding(true)}
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-transform shadow-sm"
+          className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-sm"
         >
           <Plus className="w-4 h-4 mr-2" />
           新建待办
@@ -60,7 +76,7 @@ export default function Todos() {
                     required
                     value={newTodo.title}
                     onChange={(e) => setNewTodo({ ...newTodo, title: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-zinc-200/80 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 outline-none transition-all bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                     placeholder="要做什么？"
                   />
                 </div>
@@ -70,7 +86,7 @@ export default function Todos() {
                     type="date"
                     value={newTodo.dueDate}
                     onChange={(e) => setNewTodo({ ...newTodo, dueDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-zinc-200/80 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 outline-none transition-all bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                   />
                 </div>
               </div>
@@ -79,7 +95,7 @@ export default function Todos() {
                 <textarea
                   value={newTodo.description}
                   onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all h-20 resize-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-zinc-200/80 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 outline-none transition-all h-20 resize-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                   placeholder="添加更多细节..."
                 />
               </div>
@@ -93,7 +109,7 @@ export default function Todos() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-transform"
+                  className="px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform"
                 >
                   保存待办
                 </button>
@@ -113,7 +129,7 @@ export default function Todos() {
             <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 mb-6">点击右上角按钮添加您的第一个任务</p>
             <button
               onClick={() => setIsAdding(true)}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-transform shadow-sm"
+              className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-sm"
             >
               <Plus className="w-4 h-4 mr-2" />
               立即创建
@@ -135,9 +151,10 @@ export default function Todos() {
                   }`}
                 >
                   <button
-                    onClick={() => toggleTodo(todo.id)}
+                    data-todoid={todo.id}
+                    onClick={onToggleTodoClick}
                     className={`mt-1 transition-colors ${
-                      todo.completed ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-500 hover:text-blue-500 dark:hover:text-blue-400'
+                      todo.completed ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400'
                     }`}
                   >
                     {todo.completed ? (
@@ -182,7 +199,8 @@ export default function Todos() {
                     </div>
                   </div>
                   <button
-                    onClick={() => deleteTodo(todo.id)}
+                    data-todoid={todo.id}
+                    onClick={onDeleteTodoClick}
                     className="p-2 text-slate-300 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
                   >
                     <Trash2 className="w-4 h-4" />

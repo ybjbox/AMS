@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { memo } from 'react';
 
-export function Skeleton({
+export const Skeleton = memo(function Skeleton({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
@@ -10,9 +10,9 @@ export function Skeleton({
       {...props}
     />
   );
-}
+});
 
-export function TableSkeleton({ columns, rows = 5 }: { columns: number, rows?: number }) {
+export const TableSkeleton = memo(function TableSkeleton({ columns, rows = 5 }: { columns: number, rows?: number }) {
   return (
     <>
       {Array.from({ length: rows }).map((_, rowIndex) => (
@@ -31,4 +31,4 @@ export function TableSkeleton({ columns, rows = 5 }: { columns: number, rows?: n
       ))}
     </>
   );
-}
+});

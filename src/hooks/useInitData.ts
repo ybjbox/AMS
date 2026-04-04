@@ -1,17 +1,17 @@
 import { useEffect } from 'react';
-import { useUserStore } from '../store/users';
-import { useAuth } from '../store/auth';
+import { useUserStore as useUsersStore } from '../store/users';
+import { useUserStore } from '../store/useUserStore';
 import { useEmployeeReminders } from './useEmployeeReminders';
 
 export function useInitData() {
-  const user = useAuth(state => state.user);
-  const fetchUsers = useUserStore(state => state.fetchUsers);
+  const userInfo = useUserStore(state => state.userInfo);
+  const fetchUsers = useUsersStore(state => state.fetchUsers);
 
   useEffect(() => {
-    if (user) {
+    if (userInfo) {
       fetchUsers();
     }
-  }, [user, fetchUsers]);
+  }, [userInfo, fetchUsers]);
 
   // Handle employee reminders
   useEmployeeReminders();

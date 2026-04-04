@@ -1,26 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building2, User, Lock, ArrowRight } from 'lucide-react';
 import { useAppSettings } from '../store/appSettings';
+import { useAppStore } from '../store/useAppStore';
+import { useUserStore } from '../store/useUserStore';
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { globalLoading: loading, setLoading } = useAppStore();
+  const setUser = useUserStore(state => state.setUser);
   const navigate = useNavigate();
   const loginBackground = useAppSettings(state => state.loginBackground);
   const systemIcon = useAppSettings(state => state.systemIcon);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
     // 模拟登录请求延迟
     setTimeout(() => {
       setLoading(false);
+      // 临时调试：为模拟用户赋予 admin 角色，以获得所有权限
+      setUser({ id: 'ADMIN001', username: username || 'admin', email: 'admin@example.com', role: 'admin' }, 'mock_token_123');
       navigate('/');
     }, 1000);
-  };
+  }, [username, setLoading, setUser, navigate]);
 
   return (
     <div 
@@ -45,7 +50,7 @@ export default function Login() {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md animate-in fade-in slide-in-from-bottom-4 duration-700">
         <div className="flex justify-center">
-          <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 overflow-hidden">
+          <div className="w-14 h-14 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 overflow-hidden">
             {systemIcon ? (
               <img src={systemIcon} alt="Logo" className="w-full h-full object-contain bg-white" />
             ) : (
@@ -79,7 +84,7 @@ export default function Login() {
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="block w-full pl-10 py-2.5 sm:text-sm border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                  className="block w-full pl-10 py-2.5 sm:text-sm border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg border focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 transition-all outline-none"
                   placeholder="请输入用户名 (admin)"
                 />
               </div>
@@ -100,7 +105,7 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 py-2.5 sm:text-sm border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                  className="block w-full pl-10 py-2.5 sm:text-sm border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg border focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 transition-all outline-none"
                   placeholder="请输入密码 (123456)"
                 />
               </div>
@@ -112,7 +117,7 @@ export default function Login() {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600 rounded cursor-pointer"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-600 border-zinc-200/80 dark:border-slate-600 rounded cursor-pointer"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
                   记住我
@@ -120,7 +125,7 @@ export default function Login() {
               </div>
 
               <div className="text-sm">
-                <a href="#" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
+                <a href="#" className="font-medium text-blue-600 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
                   忘记密码？
                 </a>
               </div>
@@ -130,7 +135,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:scale-95 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 disabled:cursor-not-allowed group"
+                className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 disabled:opacity-70 disabled:cursor-not-allowed group"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

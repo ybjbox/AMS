@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Building2, User, Sliders, ShieldCheck, BellRing, Palette, Plus, Trash2, Save, RotateCcw, Code2, FileCode, Monitor, Image as ImageIcon, Upload, TerminalSquare } from 'lucide-react';
 import Departments from './Departments';
 import SystemLogs from '../components/SystemLogs';
@@ -13,8 +13,10 @@ export default function Settings() {
   const setAuth = useAuth(state => state.setAuth);
   const settings = useTodoStore(state => state.settings);
   const updateSettings = useTodoStore(state => state.updateSettings);
+  const enableStrictPermission = useAppSettings(state => state.enableStrictPermission);
+  const setEnableStrictPermission = useAppSettings(state => state.setEnableStrictPermission);
 
-  const handleRoleChange = (role: SystemRole) => {
+  const handleRoleChange = useCallback((role: SystemRole) => {
     setAuth({
       user: {
         id: 'ADMIN001',
@@ -23,7 +25,14 @@ export default function Settings() {
         department: '集团总部',
       }
     });
-  };
+  }, [setAuth]);
+
+  const onRoleChangeClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const role = e.currentTarget.dataset.role as SystemRole;
+    if (role) {
+      handleRoleChange(role);
+    }
+  }, [handleRoleChange]);
 
   return (
     <div className="flex-1 flex flex-col space-y-6 animate-in fade-in duration-500 max-w-6xl mx-auto w-full min-h-0">
@@ -153,17 +162,47 @@ export default function Settings() {
           )}
 
           {activeTab === 'preferences' && (
-            <div className="animate-in fade-in duration-300">
-              <h2 className="text-lg font-medium text-slate-900 mb-4">系统偏好</h2>
+            <div className="animate-in fade-in duration-300 space-y-6">
+              <h2 className="text-lg font-medium text-slate-900 dark:text-white mb-4">系统偏好</h2>
               
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              {/* 严格权限拦截开关 */}
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-rose-50 dark:bg-rose-900/20 rounded-lg">
+                      <ShieldCheck className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900 dark:text-white">严格的权限拦截</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">开启后，系统将严格校验用户的页面访问和按钮操作权限。关闭则默认放行所有权限。</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setEnableStrictPermission(!enableStrictPermission)}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
+                      enableStrictPermission ? 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner' : 'bg-slate-200 dark:bg-slate-700'
+                    }`}
+                    role="switch"
+                    aria-checked={enableStrictPermission}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        enableStrictPermission ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                 <div className="flex items-center space-x-3 mb-6">
-                  <div className="p-2 bg-blue-50 rounded-lg">
-                    <ShieldCheck className="w-5 h-5 text-blue-600" />
+                  <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <ShieldCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-900">权限测试 (演示用)</h3>
-                    <p className="text-xs text-slate-500">切换当前登录用户的系统角色，测试不同的权限视图</p>
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">权限测试 (演示用)</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">切换当前登录用户的系统角色，测试不同的权限视图</p>
                   </div>
                 </div>
 
@@ -176,11 +215,12 @@ export default function Settings() {
                   ].map((item) => (
                     <button
                       key={item.role}
-                      onClick={() => handleRoleChange(item.role)}
+                      data-role={item.role}
+                      onClick={onRoleChangeClick}
                       className={`flex flex-col p-4 rounded-xl border text-left transition-all ${
                         user?.systemRole === item.role
-                          ? 'border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20'
-                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                          ? 'border-blue-600 bg-blue-50/50 ring-2 ring-blue-600/20'
+                          : 'border-slate-200 hover:border-zinc-200/80 hover:bg-slate-50'
                       }`}
                     >
                       <span className={`text-sm font-bold ${user?.systemRole === item.role ? 'text-blue-700' : 'text-slate-900'}`}>
@@ -218,6 +258,13 @@ function AppearanceSettings() {
   const setLoginBackground = useAppSettings(state => state.setLoginBackground);
   const systemIcon = useAppSettings(state => state.systemIcon);
   const setSystemIcon = useAppSettings(state => state.setSystemIcon);
+
+  const onThemeClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const themeId = e.currentTarget.dataset.themeid as 'light' | 'dark' | 'system';
+    if (themeId) {
+      setTheme(themeId);
+    }
+  }, [setTheme]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'background' | 'icon') => {
     const file = e.target.files?.[0];
@@ -260,11 +307,12 @@ function AppearanceSettings() {
             ].map((t) => (
               <button
                 key={t.id}
-                onClick={() => setTheme(t.id as any)}
+                data-themeid={t.id}
+                onClick={onThemeClick}
                 className={`flex flex-col items-center p-4 rounded-xl border transition-all ${
                   theme === t.id
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500/20'
-                    : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-600/20'
+                    : 'border-slate-200 dark:border-slate-700 hover:border-zinc-200/80 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50'
                 }`}
               >
                 <span className="text-2xl mb-2">{t.icon}</span>
@@ -283,7 +331,7 @@ function AppearanceSettings() {
             系统图标
           </h3>
           <div className="flex items-start space-x-6">
-            <div className="w-24 h-24 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 overflow-hidden shrink-0">
+            <div className="w-24 h-24 rounded-xl border-2 border-dashed border-zinc-200/80 dark:border-slate-600 flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 overflow-hidden shrink-0">
               {systemIcon ? (
                 <img src={systemIcon} alt="System Icon" className="w-full h-full object-contain" />
               ) : (
@@ -295,7 +343,7 @@ function AppearanceSettings() {
                 上传自定义系统图标，将显示在左上角和浏览器标签页中。建议使用正方形的 PNG 或 SVG 图片。
               </p>
               <div className="flex items-center space-x-3">
-                <label className="flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer text-sm font-medium">
+                <label className="flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-zinc-200/80 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer text-sm font-medium">
                   <Upload className="w-4 h-4 mr-2" />
                   上传图标
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'icon')} />
@@ -320,7 +368,7 @@ function AppearanceSettings() {
             登录页背景
           </h3>
           <div className="flex items-start space-x-6">
-            <div className="w-48 h-32 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 overflow-hidden shrink-0">
+            <div className="w-48 h-32 rounded-xl border-2 border-dashed border-zinc-200/80 dark:border-slate-600 flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 overflow-hidden shrink-0">
               {loginBackground ? (
                 <img src={loginBackground} alt="Login Background" className="w-full h-full object-cover" />
               ) : (
@@ -332,7 +380,7 @@ function AppearanceSettings() {
                 上传自定义登录页背景图片。建议使用 1920x1080 分辨率的高清图片，以获得最佳显示效果。
               </p>
               <div className="flex items-center space-x-3">
-                <label className="flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer text-sm font-medium">
+                <label className="flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-zinc-200/80 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer text-sm font-medium">
                   <Upload className="w-4 h-4 mr-2" />
                   上传背景
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'background')} />
@@ -440,7 +488,7 @@ export default async function applyTemplate(worksheet, data, config) {
         {!editingScript && (
           <button
             onClick={handleAdd}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-transform text-sm font-medium shadow-sm"
+            className="flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform text-sm font-medium shadow-sm"
           >
             <Plus className="w-4 h-4 mr-2" />
             创建脚本
@@ -526,7 +574,7 @@ export default async function applyTemplate(worksheet, data, config) {
               <p className="text-slate-500 text-sm mb-6">暂无脚本模板，点击右上角创建</p>
               <button
                 onClick={handleAdd}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-transform shadow-sm"
+                className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-sm"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 立即创建
@@ -627,7 +675,7 @@ function ExportThemeSettings() {
         </div>
         <button
           onClick={handleAddTheme}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-transform text-sm font-medium shadow-sm"
+          className="flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform text-sm font-medium shadow-sm"
         >
           <Plus className="w-4 h-4 mr-2" />
           新增主题
@@ -639,7 +687,7 @@ function ExportThemeSettings() {
           <div 
             key={theme.id} 
             className={`bg-white rounded-xl border transition-all overflow-hidden ${
-              editingId === theme.id ? 'border-blue-400 ring-4 ring-blue-500/5' : 'border-slate-200 shadow-sm'
+              editingId === theme.id ? 'border-blue-400 ring-4 ring-blue-600/5' : 'border-slate-200 shadow-sm'
             }`}
           >
             <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
@@ -650,7 +698,7 @@ function ExportThemeSettings() {
                     type="text"
                     value={theme.name}
                     onChange={(e) => handleUpdateTheme(theme.id, 'name', e.target.value)}
-                    className="px-2 py-1 border border-blue-300 rounded text-sm font-semibold outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-2 py-1 border border-blue-300 rounded text-sm font-semibold outline-none focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200"
                   />
                 ) : (
                   <h3 className="font-semibold text-slate-900">{theme.name}</h3>

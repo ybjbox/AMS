@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronRight, ChevronDown, Folder, FolderOpen, Plus, Edit2, Trash2, Building2, X, Briefcase } from 'lucide-react';
 import { useDepartments, DepartmentNode, RoleNode, flattenDepartments } from '../store/departments';
 import { useAuth } from '../store/auth';
@@ -62,31 +62,33 @@ export default function Departments() {
     };
   }, [modal.isOpen, roleModal.isOpen]);
 
-  const toggleExpand = (id: string) => {
-    const newExpanded = new Set(expandedIds);
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id);
-    } else {
-      newExpanded.add(id);
-    }
-    setExpandedIds(newExpanded);
-  };
+  const toggleExpand = useCallback((id: string) => {
+    setExpandedIds(prev => {
+      const newExpanded = new Set(prev);
+      if (newExpanded.has(id)) {
+        newExpanded.delete(id);
+      } else {
+        newExpanded.add(id);
+      }
+      return newExpanded;
+    });
+  }, []);
 
-  const handleAddChild = (parentId: string, e: React.MouseEvent) => {
+  const handleAddChild = useCallback((parentId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setModal({ isOpen: true, mode: 'add', targetId: null, parentId, defaultName: '', defaultPriority: 0 });
-  };
+  }, []);
 
-  const handleAddRoot = () => {
+  const handleAddRoot = useCallback(() => {
     setModal({ isOpen: true, mode: 'add', targetId: null, parentId: null, defaultName: '', defaultPriority: 0 });
-  };
+  }, []);
 
-  const handleEdit = (node: DepartmentNode, e: React.MouseEvent) => {
+  const handleEdit = useCallback((node: DepartmentNode, e: React.MouseEvent) => {
     e.stopPropagation();
     setModal({ isOpen: true, mode: 'edit', targetId: node.id, parentId: null, defaultName: node.name, defaultPriority: node.priority || 0 });
-  };
+  }, []);
 
-  const handleDelete = (id: string, e: React.MouseEvent) => {
+  const handleDelete = useCallback((id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('确定要删除该部门吗？如果包含子部门也将一并删除。')) {
       const deleteNode = (nodes: DepartmentNode[]): DepartmentNode[] => {
@@ -97,9 +99,9 @@ export default function Departments() {
       };
       setDepartments(deleteNode(departments));
     }
-  };
+  }, [departments, setDepartments]);
 
-  const handleModalSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleModalSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
@@ -134,31 +136,33 @@ export default function Departments() {
     }
     
     setModal(prev => ({ ...prev, isOpen: false }));
-  };
+  }, [modal, departments, setDepartments]);
 
   // --- Role Handlers ---
-  const toggleRoleDept = (id: string) => {
-    const newExpanded = new Set(expandedRoleDepts);
-    if (newExpanded.has(id)) newExpanded.delete(id);
-    else newExpanded.add(id);
-    setExpandedRoleDepts(newExpanded);
-  };
+  const toggleRoleDept = useCallback((id: string) => {
+    setExpandedRoleDepts(prev => {
+      const newExpanded = new Set(prev);
+      if (newExpanded.has(id)) newExpanded.delete(id);
+      else newExpanded.add(id);
+      return newExpanded;
+    });
+  }, []);
 
-  const handleAddRole = (departmentId: string) => {
+  const handleAddRole = useCallback((departmentId: string) => {
     setRoleModal({ isOpen: true, mode: 'add', targetId: null, departmentId, defaultName: '', defaultPriority: 0 });
-  };
+  }, []);
 
-  const handleEditRole = (role: RoleNode) => {
+  const handleEditRole = useCallback((role: RoleNode) => {
     setRoleModal({ isOpen: true, mode: 'edit', targetId: role.id, departmentId: role.departmentId, defaultName: role.name, defaultPriority: role.priority || 0 });
-  };
+  }, []);
 
-  const handleDeleteRole = (id: string) => {
+  const handleDeleteRole = useCallback((id: string) => {
     if (confirm('确定要删除该职位吗？')) {
       setRoles(roles.filter(r => r.id !== id));
     }
-  };
+  }, [roles, setRoles]);
 
-  const handleRoleModalSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleRoleModalSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
@@ -170,9 +174,52 @@ export default function Departments() {
       setRoles(roles.map(r => r.id === roleModal.targetId ? { ...r, name, priority } : r));
     }
     setRoleModal(prev => ({ ...prev, isOpen: false }));
-  };
+  }, [roleModal, roles, setRoles]);
 
-  const renderTree = (nodes: DepartmentNode[], level = 0) => {
+  const onToggleExpandClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const id = e.currentTarget.dataset.id;
+    const hasChildren = e.currentTarget.dataset.haschildren === 'true';
+    if (id && hasChildren) {
+      toggleExpand(id);
+    }
+  }, [toggleExpand]);
+
+  const onAddChildClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    const id = e.currentTarget.dataset.id;
+    if (id) {
+      handleAddChild(id, e);
+    }
+  }, [handleAddChild]);
+
+  const onEditClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    const id = e.currentTarget.dataset.id;
+    const findNode = (nodes: DepartmentNode[]): DepartmentNode | undefined => {
+      for (const node of nodes) {
+        if (node.id === id) return node;
+        if (node.children) {
+          const found = findNode(node.children);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    };
+    const node = findNode(departments);
+    if (node) {
+      handleEdit(node, e);
+    }
+  }, [departments, handleEdit]);
+
+  const onDeleteClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    const id = e.currentTarget.dataset.id;
+    if (id) {
+      handleDelete(id, e);
+    }
+  }, [handleDelete]);
+
+  const renderTree = useCallback((nodes: DepartmentNode[], level = 0) => {
     return (
       <ul className={`space-y-1 ${level > 0 ? 'ml-6 border-l border-slate-200 pl-2 mt-1' : ''}`}>
         {nodes.map(node => {
@@ -183,7 +230,9 @@ export default function Departments() {
             <li key={node.id} className="relative">
               <div 
                 className={`flex items-center justify-between py-2 px-3 rounded-lg cursor-pointer transition-colors hover:bg-slate-100 group ${level === 0 ? 'bg-slate-50 border border-slate-200 mb-2' : ''}`}
-                onClick={() => hasChildren && toggleExpand(node.id)}
+                data-id={node.id}
+                data-haschildren={hasChildren}
+                onClick={onToggleExpandClick}
               >
                 <div className="flex items-center space-x-2">
                   <span className="w-5 h-5 flex items-center justify-center text-slate-400 shrink-0">
@@ -198,9 +247,9 @@ export default function Departments() {
                     <Building2 className="w-5 h-5 text-blue-600 shrink-0" />
                   ) : (
                     isExpanded && hasChildren ? (
-                      <FolderOpen className="w-4 h-4 text-blue-500 shrink-0" />
+                      <FolderOpen className="w-4 h-4 text-blue-600 shrink-0" />
                     ) : (
-                      <Folder className="w-4 h-4 text-blue-500 shrink-0" />
+                      <Folder className="w-4 h-4 text-blue-600 shrink-0" />
                     )
                   )}
                   
@@ -219,21 +268,24 @@ export default function Departments() {
                   {hasPermission(Permission.MANAGE_SETTINGS) && (
                     <>
                       <button 
-                        onClick={(e) => handleAddChild(node.id, e)}
+                        data-id={node.id}
+                        onClick={onAddChildClick}
                         className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                         title="添加子部门"
                       >
                         <Plus className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={(e) => handleEdit(node, e)}
+                        data-id={node.id}
+                        onClick={onEditClick}
                         className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
                         title="编辑"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={(e) => handleDelete(node.id, e)}
+                        data-id={node.id}
+                        onClick={onDeleteClick}
                         className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                         title="删除"
                       >
@@ -254,21 +306,53 @@ export default function Departments() {
         })}
       </ul>
     );
-  };
+  }, [expandedIds, hasPermission, toggleExpand, handleAddChild, handleEdit, handleDelete]);
 
   const flatDepts = flattenDepartments(departments);
 
-  const expandAllRoleDepts = () => {
+  const expandAllRoleDepts = useCallback(() => {
     setExpandedRoleDepts(new Set(flatDepts.map(d => d.id)));
-  };
+  }, [flatDepts]);
 
-  const collapseAllRoleDepts = () => {
+  const collapseAllRoleDepts = useCallback(() => {
     setExpandedRoleDepts(new Set());
-  };
+  }, []);
 
   const isAllRoleDeptsExpanded = flatDepts.length > 0 && expandedRoleDepts.size === flatDepts.length;
 
-  const renderRoleTree = (nodes: DepartmentNode[], level = 0) => {
+  const onToggleRoleDeptClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const id = e.currentTarget.dataset.id;
+    if (id) {
+      toggleRoleDept(id);
+    }
+  }, [toggleRoleDept]);
+
+  const onAddRoleClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    const id = e.currentTarget.dataset.id;
+    if (id) {
+      handleAddRole(id);
+    }
+  }, [handleAddRole]);
+
+  const onEditRoleClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    const id = e.currentTarget.dataset.id;
+    const role = roles.find(r => r.id === id);
+    if (role) {
+      handleEditRole(role);
+    }
+  }, [roles, handleEditRole]);
+
+  const onDeleteRoleClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    const id = e.currentTarget.dataset.id;
+    if (id) {
+      handleDeleteRole(id);
+    }
+  }, [handleDeleteRole]);
+
+  const renderRoleTree = useCallback((nodes: DepartmentNode[], level = 0) => {
     return (
       <ul className={`space-y-2 ${level > 0 ? 'ml-4 border-l border-slate-200 dark:border-slate-700 pl-2 mt-2' : ''}`}>
         {nodes.map(node => {
@@ -281,7 +365,8 @@ export default function Departments() {
               <div className={`border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden ${level === 0 ? 'bg-white dark:bg-slate-800' : 'bg-slate-50/50 dark:bg-slate-800/30'}`}>
                 <div 
                   className={`px-3 py-2 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ${level === 0 ? 'bg-slate-50 dark:bg-slate-800/50 font-medium' : ''}`}
-                  onClick={() => toggleRoleDept(node.id)}
+                  data-id={node.id}
+                  onClick={onToggleRoleDeptClick}
                 >
                   <div className="flex items-center space-x-2">
                     {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" /> : <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />}
@@ -290,7 +375,8 @@ export default function Departments() {
                   </div>
                   {hasPermission(Permission.MANAGE_SETTINGS) && (
                     <button 
-                      onClick={(e) => { e.stopPropagation(); handleAddRole(node.id); }}
+                      data-id={node.id}
+                      onClick={onAddRoleClick}
                       className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors shrink-0"
                       title="新增职位"
                     >
@@ -309,14 +395,16 @@ export default function Departments() {
                             {hasPermission(Permission.MANAGE_SETTINGS) && (
                               <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button 
-                                  onClick={() => handleEditRole(role)}
+                                  data-id={role.id}
+                                  onClick={onEditRoleClick}
                                   className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-md transition-colors"
                                   title="编辑"
                                 >
                                   <Edit2 className="w-3 h-3" />
                                 </button>
                                 <button 
-                                  onClick={() => handleDeleteRole(role.id)}
+                                  data-id={role.id}
+                                  onClick={onDeleteRoleClick}
                                   className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
                                   title="删除"
                                 >
@@ -344,7 +432,7 @@ export default function Departments() {
         })}
       </ul>
     );
-  };
+  }, [expandedRoleDepts, roles, hasPermission, onToggleRoleDeptClick, onAddRoleClick, onEditRoleClick, onDeleteRoleClick]);
 
   return (
     <div className="h-full flex flex-col">
@@ -359,7 +447,7 @@ export default function Departments() {
             {hasPermission(Permission.MANAGE_SETTINGS) && (
               <button 
                 onClick={handleAddRoot}
-                className="inline-flex items-center justify-center px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 active:scale-95 transition-transform shadow-sm"
+                className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white text-sm font-medium rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-sm"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 新增一级部门
@@ -376,7 +464,7 @@ export default function Departments() {
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 mb-6">开始添加您的第一个公司部门吧。</p>
                 <button
                   onClick={handleAddRoot}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-transform shadow-sm"
+                  className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-sm"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   立即创建
@@ -424,8 +512,8 @@ export default function Departments() {
         size="md"
         footer={
           <>
-            <button type="button" onClick={() => setModal(prev => ({ ...prev, isOpen: false }))} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
-            <button type="submit" form="dept-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+            <button type="button" onClick={() => setModal(prev => ({ ...prev, isOpen: false }))} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
+            <button type="submit" form="dept-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存</button>
           </>
         }
       >
@@ -450,7 +538,7 @@ export default function Departments() {
               type="text" 
               defaultValue={modal.defaultName} 
               placeholder="请输入部门名称"
-              className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+              className="block w-full border border-zinc-200/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" 
             />
           </div>
           <div>
@@ -460,7 +548,7 @@ export default function Departments() {
               type="number" 
               defaultValue={modal.defaultPriority} 
               placeholder="数字越大越靠前"
-              className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+              className="block w-full border border-zinc-200/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" 
             />
             <p className="mt-1 text-xs text-slate-500">数字越大，在列表中的排序越靠前</p>
           </div>
@@ -475,8 +563,8 @@ export default function Departments() {
         size="md"
         footer={
           <>
-            <button type="button" onClick={() => setRoleModal(prev => ({ ...prev, isOpen: false }))} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
-            <button type="submit" form="role-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+            <button type="button" onClick={() => setRoleModal(prev => ({ ...prev, isOpen: false }))} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
+            <button type="submit" form="role-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存</button>
           </>
         }
       >
@@ -490,7 +578,7 @@ export default function Departments() {
               type="text" 
               defaultValue={roleModal.defaultName} 
               placeholder="请输入职位名称"
-              className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+              className="block w-full border border-zinc-200/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" 
             />
           </div>
           <div>
@@ -500,7 +588,7 @@ export default function Departments() {
               type="number" 
               defaultValue={roleModal.defaultPriority} 
               placeholder="数字越大越靠前"
-              className="block w-full border border-slate-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+              className="block w-full border border-zinc-200/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" 
             />
             <p className="mt-1 text-xs text-slate-500">数字越大，在列表中的排序越靠前</p>
           </div>

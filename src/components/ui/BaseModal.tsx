@@ -13,7 +13,7 @@ interface BaseModalProps {
   bodyClassName?: string;
 }
 
-export const BaseModal: React.FC<BaseModalProps> = ({
+export const BaseModal: React.FC<BaseModalProps> = React.memo(({
   isOpen,
   onClose,
   title,
@@ -59,7 +59,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
+            className="fixed inset-0 bg-zinc-900/40 backdrop-blur-sm"
             aria-hidden="true"
             onClick={onClose}
           />
@@ -70,10 +70,10 @@ export const BaseModal: React.FC<BaseModalProps> = ({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className={`relative z-10 w-full bg-white dark:bg-slate-800 rounded-2xl text-left shadow-2xl flex flex-col max-h-full ${sizeClasses[size]} ${size === 'full' ? 'h-full' : ''} ${className}`}
+            className={`relative z-10 w-full bg-white dark:bg-slate-800 rounded-3xl text-left shadow-2xl shadow-black/10 flex flex-col max-h-full ${sizeClasses[size]} ${size === 'full' ? 'h-full' : ''} ${className}`}
           >
             {/* Header */}
-            <div ref={headerRef} className="px-4 py-4 sm:px-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between shrink-0 bg-white dark:bg-slate-800 rounded-t-2xl">
+            <div ref={headerRef} className="px-4 py-4 sm:px-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between shrink-0 bg-white dark:bg-slate-800 rounded-t-3xl">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white" id="modal-title">
                 {title}
               </h3>
@@ -98,7 +98,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
 
             {/* Footer */}
             {footer && (
-              <div ref={footerRef} className="px-4 py-3 sm:px-6 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 shrink-0 flex justify-end gap-3 rounded-b-2xl">
+              <div ref={footerRef} className="px-4 py-3 sm:px-6 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 shrink-0 flex justify-end gap-3 rounded-b-3xl">
                 {footer}
               </div>
             )}
@@ -107,4 +107,4 @@ export const BaseModal: React.FC<BaseModalProps> = ({
       )}
     </AnimatePresence>
   );
-};
+});

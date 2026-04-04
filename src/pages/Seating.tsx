@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useUserStore } from '../store/users';
 import { useDepartments, flattenDepartments } from '../store/departments';
 import { Armchair, Users, ChevronRight, Printer, RefreshCw, Download, LayoutGrid, List, Trash2, Settings2, X, CheckSquare, Square, ExternalLink, Upload, FileDown, ChevronDown } from 'lucide-react';
@@ -77,11 +77,11 @@ export default function Seating() {
     };
   }, [isParticipantModalOpen, isPrintModalOpen, isPrintWarningOpen]);
 
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = useCallback(() => {
     alert('请求后端下载模板 (Mock)');
-  };
+  }, []);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -98,7 +98,7 @@ export default function Seating() {
     
     // Reset file input
     e.target.value = '';
-  };
+  }, []);
 
   const groupedUsers = useMemo(() => {
     const groups: Record<string, any[]> = {};
@@ -109,12 +109,12 @@ export default function Seating() {
     return groups;
   }, [activeUsers]);
 
-  const getTableDepartments = (members: any[]) => {
+  const getTableDepartments = useCallback((members: any[]) => {
     const depts = new Set(members.map(m => m.department).filter(Boolean));
     return Array.from(depts).join('、');
-  };
+  }, []);
 
-  const renderJustifiedName = (name: string, fontSize: number) => {
+  const renderJustifiedName = useCallback((name: string, fontSize: number) => {
     if (name.length <= 4) {
       return (
         <div 
@@ -128,61 +128,73 @@ export default function Seating() {
       );
     }
     return <div className="text-center">{name}</div>;
-  };
+  }, []);
 
-  const toggleUserSelection = (id: string) => {
-    const newSet = new Set(selectedUserIds);
-    if (newSet.has(id)) newSet.delete(id);
-    else newSet.add(id);
-    setSelectedUserIds(newSet);
-  };
-
-  const toggleDepartmentSelection = (dept: string, isSelected: boolean) => {
-    const newSet = new Set(selectedUserIds);
-    groupedUsers[dept].forEach(u => {
-      if (isSelected) newSet.add(u.id);
-      else newSet.delete(u.id);
+  const toggleUserSelection = useCallback((id: string) => {
+    setSelectedUserIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) newSet.delete(id);
+      else newSet.add(id);
+      return newSet;
     });
-    setSelectedUserIds(newSet);
-  };
+  }, []);
 
-  const addTableCapacity = () => {
-    const lastCapacity = tableCapacities[tableCapacities.length - 1]?.capacity || 10;
-    const maxNumber = tableCapacities.reduce((max, tc) => Math.max(max, tc.tableNumber), 0);
-    let nextNum = maxNumber + 1;
-    const skipped = new Set(skippedNumbers.split(/[,，]/).map(s => parseInt(s.trim())).filter(n => !isNaN(n)));
-    while (skipped.has(nextNum)) {
-      nextNum++;
-    }
-    setTableCapacities([...tableCapacities, { id: Math.random().toString(36), tableNumber: nextNum, capacity: lastCapacity }]);
-  };
+  const toggleDepartmentSelection = useCallback((dept: string, isSelected: boolean) => {
+    setSelectedUserIds(prev => {
+      const newSet = new Set(prev);
+      groupedUsers[dept].forEach(u => {
+        if (isSelected) newSet.add(u.id);
+        else newSet.delete(u.id);
+      });
+      return newSet;
+    });
+  }, [groupedUsers]);
 
-  const updateTableCapacity = (id: string, value: number) => {
-    setTableCapacities(tableCapacities.map(tc => tc.id === id ? { ...tc, capacity: Math.max(1, value) } : tc));
-  };
+  const addTableCapacity = useCallback(() => {
+    setTableCapacities(prev => {
+      const lastCapacity = prev[prev.length - 1]?.capacity || 10;
+      const maxNumber = prev.reduce((max, tc) => Math.max(max, tc.tableNumber), 0);
+      let nextNum = maxNumber + 1;
+      const skipped = new Set(skippedNumbers.split(/[,，]/).map(s => parseInt(s.trim())).filter(n => !isNaN(n)));
+      while (skipped.has(nextNum)) {
+        nextNum++;
+      }
+      return [...prev, { id: Math.random().toString(36), tableNumber: nextNum, capacity: lastCapacity }];
+    });
+  }, [skippedNumbers]);
 
-  const removeTableCapacity = (id: string) => {
-    if (tableCapacities.length <= 1) return;
-    setTableCapacities(tableCapacities.filter(tc => tc.id !== id));
-  };
+  const updateTableCapacity = useCallback((id: string, value: number) => {
+    setTableCapacities(prev => prev.map(tc => tc.id === id ? { ...tc, capacity: Math.max(1, value) } : tc));
+  }, []);
 
-  const toggleDeptExpand = (dept: string, e: React.MouseEvent) => {
+  const removeTableCapacity = useCallback((id: string) => {
+    setTableCapacities(prev => {
+      if (prev.length <= 1) return prev;
+      return prev.filter(tc => tc.id !== id);
+    });
+  }, []);
+
+  const toggleDeptExpand = useCallback((dept: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const newSet = new Set(expandedDepts);
-    if (newSet.has(dept)) newSet.delete(dept);
-    else newSet.add(dept);
-    setExpandedDepts(newSet);
-  };
+    setExpandedDepts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(dept)) newSet.delete(dept);
+      else newSet.add(dept);
+      return newSet;
+    });
+  }, []);
 
-  const toggleAllDeptsExpand = () => {
-    if (expandedDepts.size === Object.keys(groupedUsers).length) {
-      setExpandedDepts(new Set());
-    } else {
-      setExpandedDepts(new Set(Object.keys(groupedUsers)));
-    }
-  };
+  const toggleAllDeptsExpand = useCallback(() => {
+    setExpandedDepts(prev => {
+      if (prev.size === Object.keys(groupedUsers).length) {
+        return new Set();
+      } else {
+        return new Set(Object.keys(groupedUsers));
+      }
+    });
+  }, [groupedUsers]);
 
-  const handleAutoArrange = () => {
+  const handleAutoArrange = useCallback(() => {
     // 1. 获取部门和职位的优先级映射
     const deptPriorityMap: Record<string, number> = {};
     const rolePriorityMap: Record<string, number> = {};
@@ -258,13 +270,13 @@ export default function Seating() {
     
     setTableCapacities(newCapacities);
     setTables(newTables);
-  };
+  }, [activeUsers, departments, roles, selectedUserIds, skippedNumbers, tableCapacities]);
 
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     setTables([]);
-  };
+  }, []);
 
-  const handlePrint = () => {
+  const handlePrint = useCallback(() => {
     try {
       if (window.self !== window.top) {
         setIsPrintWarningOpen(true);
@@ -274,8 +286,54 @@ export default function Seating() {
     } catch (e) {
       setIsPrintWarningOpen(true);
     }
-  };
+  }, []);
 
+  const onRemoveTableCapacityClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const tcId = e.currentTarget.dataset.tcid;
+    if (tcId) {
+      removeTableCapacity(tcId);
+    }
+  }, [removeTableCapacity]);
+
+  const onRemoveTableClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const tableNumberStr = e.currentTarget.dataset.tablenumber;
+    if (tableNumberStr) {
+      const tableNumber = parseInt(tableNumberStr, 10);
+      setTables(prev => prev.filter(t => t.number !== tableNumber));
+    }
+  }, []);
+
+  const onToggleDepartmentSelectionClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const dept = e.currentTarget.dataset.dept;
+    const allSelectedStr = e.currentTarget.dataset.allselected;
+    if (dept && allSelectedStr !== undefined) {
+      const allSelected = allSelectedStr === 'true';
+      toggleDepartmentSelection(dept, !allSelected);
+    }
+  }, [toggleDepartmentSelection]);
+
+  const onToggleUserSelectionChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const id = e.currentTarget.dataset.id;
+    if (id) {
+      toggleUserSelection(id);
+    }
+  }, [toggleUserSelection]);
+
+  const onToggleDeptExpandClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    const dept = e.currentTarget.dataset.dept;
+    if (dept) {
+      setExpandedDepts(prev => {
+        const next = new Set(prev);
+        if (next.has(dept)) {
+          next.delete(dept);
+        } else {
+          next.add(dept);
+        }
+        return next;
+      });
+    }
+  }, []);
 
   return (
     <>
@@ -383,7 +441,7 @@ export default function Seating() {
           </button>
           <button
             onClick={handleAutoArrange}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-transform text-sm font-medium shadow-sm"
+            className="flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform text-sm font-medium shadow-sm"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             自动排座
@@ -411,10 +469,10 @@ export default function Seating() {
                     max="50"
                     value={tc.capacity}
                     onChange={(e) => updateTableCapacity(tc.id, parseInt(e.target.value) || 1)}
-                    className="w-14 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded shadow-sm py-1 px-1 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-center text-slate-900 dark:text-white"
+                    className="w-14 border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 rounded shadow-sm py-1 px-1 text-sm focus:ring-1 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 text-center text-slate-900 dark:text-white"
                   />
                   {tableCapacities.length > 1 && (
-                    <button onClick={() => removeTableCapacity(tc.id)} className="ml-1 p-1 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                    <button data-tcid={tc.id} onClick={onRemoveTableCapacityClick} className="ml-1 p-1 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                       <X className="w-4 h-4" />
                     </button>
                   )}
@@ -428,7 +486,7 @@ export default function Seating() {
                 value={skippedNumbers}
                 onChange={(e) => setSkippedNumbers(e.target.value)}
                 placeholder="例如：4, 14, 24"
-                className="flex-1 max-w-xs border border-slate-300 dark:border-slate-600 rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                className="flex-1 max-w-xs border border-zinc-200/80 dark:border-slate-600 rounded-md shadow-sm py-1.5 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
               />
               <span className="text-xs text-slate-500 dark:text-slate-400">（用逗号分隔，如：4, 14）</span>
             </div>
@@ -453,7 +511,7 @@ export default function Seating() {
             <div key={table.number} className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl overflow-hidden flex flex-col">
               <div className="px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-blue-600 dark:bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                  <div className="w-8 h-8 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner dark:bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
                     {table.number}
                   </div>
                   <h3 className="font-semibold text-slate-900 dark:text-white">{table.number}号桌</h3>
@@ -463,7 +521,8 @@ export default function Seating() {
                     {table.members.length} 人
                   </span>
                   <button
-                    onClick={() => setTables(tables.filter(t => t.number !== table.number))}
+                    data-tablenumber={table.number}
+                    onClick={onRemoveTableClick}
                     className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
                     title="删除此桌"
                   >
@@ -504,7 +563,7 @@ export default function Seating() {
       ) : (
         <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700">
           <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-full mb-4">
-            <Armchair className="w-12 h-12 text-blue-400 dark:text-blue-500" />
+            <Armchair className="w-12 h-12 text-blue-400 dark:text-blue-600" />
           </div>
           <h3 className="text-lg font-medium text-slate-900 dark:text-white">准备好开始排座了吗？</h3>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 max-w-sm text-center">
@@ -532,7 +591,7 @@ export default function Seating() {
         size="2xl"
         bodyClassName="p-4 sm:p-6 max-h-[60vh] overflow-y-auto"
         footer={
-          <button type="button" onClick={() => setIsParticipantModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">完成</button>
+          <button type="button" onClick={() => setIsParticipantModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">完成</button>
         }
       >
         <div className="space-y-4 pr-2">
@@ -544,13 +603,15 @@ export default function Seating() {
               <div key={dept} className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
                 <div 
                   className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                  onClick={() => toggleDepartmentSelection(dept, !allSelected)}
+                  data-dept={dept}
+                  data-allselected={String(allSelected)}
+                  onClick={onToggleDepartmentSelectionClick}
                 >
                   <div className="flex items-center">
                     {allSelected ? (
-                      <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-500 mr-3" />
+                      <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-600 mr-3" />
                     ) : someSelected ? (
-                      <div className="w-5 h-5 bg-blue-600 dark:bg-blue-500 rounded flex items-center justify-center mr-3">
+                      <div className="w-5 h-5 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner dark:bg-blue-600 rounded flex items-center justify-center mr-3">
                         <div className="w-3 h-0.5 bg-white"></div>
                       </div>
                     ) : (
@@ -560,7 +621,8 @@ export default function Seating() {
                     <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">({deptUsers.filter(u => selectedUserIds.has(u.id)).length}/{deptUsers.length})</span>
                   </div>
                   <button 
-                    onClick={(e) => toggleDeptExpand(dept, e)}
+                    data-dept={dept}
+                    onClick={onToggleDeptExpandClick}
                     className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                   >
                     <ChevronRight className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
@@ -572,9 +634,10 @@ export default function Seating() {
                       <label key={u.id} className="flex items-center space-x-2 cursor-pointer group">
                         <input 
                           type="checkbox" 
+                          data-id={u.id}
                           checked={selectedUserIds.has(u.id)}
-                          onChange={() => toggleUserSelection(u.id)}
-                          className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-white dark:bg-slate-900"
+                          onChange={onToggleUserSelectionChange}
+                          className="rounded border-zinc-200/80 dark:border-slate-600 text-blue-600 focus:ring-blue-600 bg-white dark:bg-slate-900"
                         />
                         <span className="text-sm text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{u.name}</span>
                         <span className="text-xs text-slate-400 dark:text-slate-500">({u.role})</span>
@@ -597,8 +660,8 @@ export default function Seating() {
         bodyClassName="p-0 overflow-hidden"
         footer={
           <>
-            <button type="button" onClick={() => setIsPrintModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存设置</button>
-            <button type="button" onClick={handlePrint} className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">直接打印</button>
+            <button type="button" onClick={() => setIsPrintModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存设置</button>
+            <button type="button" onClick={handlePrint} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">直接打印</button>
           </>
         }
       >
@@ -616,7 +679,7 @@ export default function Seating() {
                     titleFontSize: val === 'style2' ? 30 : 24
                   }));
                 }}>
-                  <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                  <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
                     <SelectValue placeholder="选择样式">
                       {(val) => val === 'style1' ? '样式1 (经典双列)' : val === 'style2' ? '样式2 (极简单列)' : '选择样式'}
                     </SelectValue>
@@ -635,7 +698,7 @@ export default function Seating() {
                       type="text" 
                       value={printSettings.cardTitle}
                       onChange={(e) => setPrintSettings(prev => ({ ...prev, cardTitle: e.target.value }))}
-                      className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                      className="block w-full border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" 
                     />
                   </div>
                   <div>
@@ -644,7 +707,7 @@ export default function Seating() {
                       type="text" 
                       value={printSettings.footerText}
                       onChange={(e) => setPrintSettings(prev => ({ ...prev, footerText: e.target.value }))}
-                      className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                      className="block w-full border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" 
                     />
                   </div>
                 </div>
@@ -656,7 +719,7 @@ export default function Seating() {
                     type="color" 
                     value={printSettings.themeColor}
                     onChange={(e) => setPrintSettings(prev => ({ ...prev, themeColor: e.target.value }))}
-                    className="h-9 w-14 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 cursor-pointer p-0.5" 
+                    className="h-9 w-14 rounded border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 cursor-pointer p-0.5" 
                   />
                   <span className="text-sm text-slate-500 dark:text-slate-400 uppercase">{printSettings.themeColor}</span>
                 </div>
@@ -670,7 +733,7 @@ export default function Seating() {
                   step="0.1"
                   value={printSettings.cardWidth / 10}
                   onChange={(e) => setPrintSettings(prev => ({ ...prev, cardWidth: Math.round(parseFloat(e.target.value) * 10) || 210 }))}
-                  className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                  className="block w-full border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" 
                 />
               </div>
               <div>
@@ -680,11 +743,11 @@ export default function Seating() {
                   step="0.1"
                   value={printSettings.cardHeight / 10}
                   onChange={(e) => setPrintSettings(prev => ({ ...prev, cardHeight: Math.round(parseFloat(e.target.value) * 10) || 297 }))}
-                  className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                  className="block w-full border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" 
                 />
               </div>
             </div>
-            <div className="text-xs text-blue-500 mt-1">默认使用A4纸的尺寸</div>
+            <div className="text-xs text-blue-600 mt-1">默认使用A4纸的尺寸</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">标题字号 (px)</label>
@@ -692,7 +755,7 @@ export default function Seating() {
                   type="number" 
                   value={printSettings.titleFontSize}
                   onChange={(e) => setPrintSettings(prev => ({ ...prev, titleFontSize: parseInt(e.target.value) || (prev.cardStyle === 'style2' ? 30 : 24) }))}
-                  className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                  className="block w-full border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" 
                 />
               </div>
               <div>
@@ -701,7 +764,7 @@ export default function Seating() {
                   type="number" 
                   value={printSettings.numberFontSize}
                   onChange={(e) => setPrintSettings(prev => ({ ...prev, numberFontSize: parseInt(e.target.value) || 48 }))}
-                  className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                  className="block w-full border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" 
                 />
               </div>
             </div>
@@ -709,7 +772,7 @@ export default function Seating() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">标题字体</label>
                 <Select value={printSettings.titleFontFamily} onValueChange={(val) => setPrintSettings(prev => ({ ...prev, titleFontFamily: val }))}>
-                  <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                  <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
                     <SelectValue placeholder="选择字体">
                       {(val) => {
                         if (val === '"Noto Serif SC", "SimSun", serif') return '思源宋体 / 宋体';
@@ -731,7 +794,7 @@ export default function Seating() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">桌号字体</label>
                 <Select value={printSettings.numberFontFamily} onValueChange={(val) => setPrintSettings(prev => ({ ...prev, numberFontFamily: val }))}>
-                  <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                  <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
                     <SelectValue placeholder="选择字体">
                       {(val) => {
                         if (val === '"Noto Serif SC", "SimSun", serif') return '思源宋体 / 宋体';
@@ -753,7 +816,7 @@ export default function Seating() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">内容字体</label>
                 <Select value={printSettings.contentFontFamily} onValueChange={(val) => setPrintSettings(prev => ({ ...prev, contentFontFamily: val }))}>
-                  <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                  <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
                     <SelectValue placeholder="选择字体">
                       {(val) => {
                         if (val === '"Noto Serif SC", "SimSun", serif') return '思源宋体 / 宋体';
@@ -776,7 +839,7 @@ export default function Seating() {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">底部字体</label>
                   <Select value={printSettings.footerFontFamily} onValueChange={(val) => setPrintSettings(prev => ({ ...prev, footerFontFamily: val }))}>
-                    <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                    <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
                       <SelectValue placeholder="选择字体">
                         {(val) => {
                           if (val === '"Noto Serif SC", "SimSun", serif') return '思源宋体 / 宋体';
@@ -805,7 +868,7 @@ export default function Seating() {
                       type="checkbox" 
                       checked={printSettings.showMembers}
                       onChange={(e) => setPrintSettings(prev => ({ ...prev, showMembers: e.target.checked }))}
-                      className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 dark:bg-slate-700"
+                      className="rounded border-zinc-200/80 dark:border-slate-600 text-blue-600 focus:ring-blue-600 dark:bg-slate-700"
                     />
                     <span className="text-sm text-slate-700 dark:text-slate-300">显示成员名单</span>
                   </label>
@@ -816,7 +879,7 @@ export default function Seating() {
                           type="checkbox" 
                           checked={printSettings.showIndex}
                           onChange={(e) => setPrintSettings(prev => ({ ...prev, showIndex: e.target.checked }))}
-                          className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 dark:bg-slate-700"
+                          className="rounded border-zinc-200/80 dark:border-slate-600 text-blue-600 focus:ring-blue-600 dark:bg-slate-700"
                         />
                         <span className="text-sm text-slate-700 dark:text-slate-300">显示序号</span>
                       </label>
@@ -825,7 +888,7 @@ export default function Seating() {
                           type="checkbox" 
                           checked={printSettings.showDepartment}
                           onChange={(e) => setPrintSettings(prev => ({ ...prev, showDepartment: e.target.checked }))}
-                          className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 dark:bg-slate-700"
+                          className="rounded border-zinc-200/80 dark:border-slate-600 text-blue-600 focus:ring-blue-600 dark:bg-slate-700"
                         />
                         <span className="text-sm text-slate-700 dark:text-slate-300">显示部门</span>
                       </label>
@@ -834,7 +897,7 @@ export default function Seating() {
                           type="checkbox" 
                           checked={printSettings.showRole}
                           onChange={(e) => setPrintSettings(prev => ({ ...prev, showRole: e.target.checked }))}
-                          className="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 dark:bg-slate-700"
+                          className="rounded border-zinc-200/80 dark:border-slate-600 text-blue-600 focus:ring-blue-600 dark:bg-slate-700"
                         />
                         <span className="text-sm text-slate-700 dark:text-slate-300">显示职位</span>
                       </label>
@@ -845,13 +908,13 @@ export default function Seating() {
                             type="number" 
                             value={printSettings.contentFontSize}
                             onChange={(e) => setPrintSettings(prev => ({ ...prev, contentFontSize: parseInt(e.target.value) || 30 }))}
-                            className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                            className="block w-full border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" 
                           />
                         </div>
                         <div>
                           <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">内容对齐</label>
                           <Select value={printSettings.textAlign} onValueChange={(val) => setPrintSettings(prev => ({ ...prev, textAlign: val }))}>
-                            <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                            <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
                               <SelectValue placeholder="选择对齐方式">
                                 {(val) => val === 'left' ? '居左' : val === 'center' ? '居中' : val === 'right' ? '居右' : '选择对齐方式'}
                               </SelectValue>
@@ -876,7 +939,7 @@ export default function Seating() {
                     type="number" 
                     value={printSettings.contentFontSize}
                     onChange={(e) => setPrintSettings(prev => ({ ...prev, contentFontSize: parseInt(e.target.value) || 30 }))}
-                    className="block w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                    className="block w-full border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" 
                   />
                 </div>
               )}
@@ -1034,7 +1097,7 @@ export default function Seating() {
             <button 
               type="button" 
               onClick={() => setIsPrintWarningOpen(false)} 
-              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm"
+              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm"
             >
               我知道了
             </button>
@@ -1044,7 +1107,7 @@ export default function Seating() {
                 setIsPrintWarningOpen(false);
                 window.print(); // 尝试强制打印
               }} 
-              className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+              className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
             >
               仍然尝试打印
             </button>

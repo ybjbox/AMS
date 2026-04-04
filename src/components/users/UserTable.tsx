@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, memo } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -22,7 +22,7 @@ interface UserTableProps {
   onRowClick?: (user: User) => void;
 }
 
-export function UserTable({ data, isLoading, onEdit, onDelete, onRowClick }: UserTableProps) {
+export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDelete, onRowClick }: UserTableProps) {
   const hasPermission = useAuth(state => state.hasPermission);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnResizeMode] = useState<ColumnResizeMode>('onChange');
@@ -113,12 +113,12 @@ export function UserTable({ data, isLoading, onEdit, onDelete, onRowClick }: Use
           const status = row.original.status;
           return (
             <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
                 status === '在职'
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                   : status === '试用期'
-                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                  : 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-400'
+                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                  : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
               }`}
             >
               {status}
@@ -318,7 +318,7 @@ export function UserTable({ data, isLoading, onEdit, onDelete, onRowClick }: Use
               {table.getFlatHeaders().map((header) => (
                 <th
                   key={header.id}
-                  className="px-6 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700"
+                  className="px-6 py-3.5 text-xs font-medium text-zinc-500 uppercase tracking-wider bg-zinc-50/50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800"
                   style={{ width: header.getSize() }}
                 >
                   {flexRender(
@@ -329,7 +329,7 @@ export function UserTable({ data, isLoading, onEdit, onDelete, onRowClick }: Use
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+          <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-50 dark:divide-zinc-800/50">
             <TableSkeleton columns={columns.length} rows={10} />
           </tbody>
         </table>
@@ -364,7 +364,7 @@ export function UserTable({ data, isLoading, onEdit, onDelete, onRowClick }: Use
                 return (
                   <th
                     key={header.id}
-                    className={`group px-6 py-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-20 ${
+                    className={`group px-6 py-3.5 text-xs font-medium text-zinc-500 uppercase tracking-wider bg-zinc-50/50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800 sticky top-0 z-20 ${
                       isFirst ? 'left-0 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]' : ''
                     } ${
                       isLast ? 'right-0 z-30 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.5)]' : ''
@@ -384,7 +384,7 @@ export function UserTable({ data, isLoading, onEdit, onDelete, onRowClick }: Use
                         onMouseDown={header.getResizeHandler()}
                         onTouchStart={header.getResizeHandler()}
                         className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none bg-slate-300 dark:bg-slate-600 opacity-0 group-hover:opacity-100 transition-opacity ${
-                          header.column.getIsResizing() ? 'opacity-100 bg-blue-500' : ''
+                          header.column.getIsResizing() ? 'opacity-100 bg-blue-600' : ''
                         }`}
                       />
                     )}
@@ -394,7 +394,7 @@ export function UserTable({ data, isLoading, onEdit, onDelete, onRowClick }: Use
             </tr>
           ))}
         </thead>
-        <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+        <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-50 dark:divide-zinc-800/50">
           {paddingTop > 0 && (
             <tr>
               <td style={{ height: `${paddingTop}px` }} colSpan={columns.length} />
@@ -407,7 +407,7 @@ export function UserTable({ data, isLoading, onEdit, onDelete, onRowClick }: Use
                 key={row.id}
                 data-index={virtualRow.index}
                 ref={rowVirtualizer.measureElement}
-                className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group/row ${onRowClick ? 'cursor-pointer' : ''}`}
+                className={`hover:bg-zinc-50/80 dark:hover:bg-zinc-700/30 transition-colors group/row ${onRowClick ? 'cursor-pointer' : ''}`}
                 onClick={() => onRowClick && onRowClick(row.original)}
               >
                 {row.getVisibleCells().map((cell, index) => {
@@ -416,7 +416,7 @@ export function UserTable({ data, isLoading, onEdit, onDelete, onRowClick }: Use
                   return (
                     <td
                       key={cell.id}
-                      className={`px-6 py-4 whitespace-nowrap text-sm bg-white dark:bg-slate-800 group-hover/row:bg-slate-50 dark:group-hover/row:bg-slate-700/50 transition-colors ${
+                      className={`px-6 py-4 whitespace-nowrap text-sm bg-white dark:bg-zinc-800 group-hover/row:bg-zinc-50/80 dark:group-hover/row:bg-zinc-700/30 transition-colors ${
                         isFirst ? 'sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]' : ''
                       } ${
                         isLast ? 'sticky right-0 z-10 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.5)] text-right' : ''
@@ -441,4 +441,4 @@ export function UserTable({ data, isLoading, onEdit, onDelete, onRowClick }: Use
       </table>
     </div>
   );
-}
+});
