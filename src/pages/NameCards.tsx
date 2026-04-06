@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useUserStore } from '../store/users';
 import { useDepartments } from '../store/departments';
 import { IdCard, Users, Printer, Settings2, X, CheckSquare, Square, Plus, Minus, ChevronRight, Upload, FileDown, ChevronDown, FileText } from 'lucide-react';
+import { EmptyState } from '../components/ui/EmptyState';
 import { BaseModal } from '../components/ui/BaseModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
@@ -835,8 +836,12 @@ export default function NameCards() {
           <div className="sticky top-0 self-start text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-8 -ml-8 mb-4">打印预览 ({pages.length}页)</div>
           
           {pages.length === 0 ? (
-            <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-500">
-              请选择人员以预览台卡
+            <div className="w-full h-full flex items-center justify-center">
+              <EmptyState
+                title="暂无预览"
+                description="请选择人员以预览台卡"
+                icon={IdCard}
+              />
             </div>
           ) : (
             <div className="flex flex-col gap-8 items-center w-full pt-2">
@@ -928,7 +933,10 @@ export default function NameCards() {
         size="2xl"
         bodyClassName="p-4 sm:p-6 max-h-[60vh] overflow-y-auto"
         footer={
-          <button type="button" onClick={() => setIsParticipantModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">完成</button>
+          <>
+            <button type="button" onClick={() => setIsParticipantModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm">取消</button>
+            <button type="button" onClick={() => setIsParticipantModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm">完成</button>
+          </>
         }
       >
         <div className="space-y-4 pr-2">
@@ -998,14 +1006,14 @@ export default function NameCards() {
             <button 
               type="button" 
               onClick={() => setIsManualInputOpen(false)} 
-              className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+              className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
             >
               取消
             </button>
             <button 
               type="button" 
               onClick={handleManualInputSubmit} 
-              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm"
+              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm"
             >
               确认导入
             </button>

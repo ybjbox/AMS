@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Building2, User, Sliders, ShieldCheck, BellRing, Palette, Plus, Trash2, Save, RotateCcw, Code2, FileCode, Monitor, Image as ImageIcon, Upload, TerminalSquare } from 'lucide-react';
+import { EmptyState } from '../components/ui/EmptyState';
 import Departments from './Departments';
 import SystemLogs from '../components/SystemLogs';
 import { useAuth } from '../store/auth';
@@ -569,16 +570,21 @@ export default async function applyTemplate(worksheet, data, config) {
             </div>
           ))}
           {scripts.length === 0 && (
-            <div className="col-span-full py-12 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-              <Code2 className="w-12 h-12 text-slate-300 mb-3" />
-              <p className="text-slate-500 text-sm mb-6">暂无脚本模板，点击右上角创建</p>
-              <button
-                onClick={handleAdd}
-                className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-sm"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                立即创建
-              </button>
+            <div className="col-span-full">
+              <EmptyState
+                title="暂无脚本模板"
+                description="点击右上角创建"
+                icon={Code2}
+                action={
+                  <button
+                    onClick={handleAdd}
+                    className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-sm"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    立即创建
+                  </button>
+                }
+              />
             </div>
           )}
         </div>

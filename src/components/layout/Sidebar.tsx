@@ -6,9 +6,9 @@ import { hasPermission } from '../../utils/permission';
 import { useUserStore } from '../../store/useUserStore';
 
 interface SidebarProps {
-  sidebarOpen: boolean;
-  setSidebarOpen: (open: boolean) => void;
-  isCollapsed: boolean;
+  isCollapsed?: boolean;
+  className?: string;
+  onClose?: () => void;
 }
 
 interface NavItem {
@@ -34,7 +34,7 @@ const NAVIGATION_CONFIG: NavItem[] = [
   { name: '系统设置', href: '/settings', icon: Settings, permission: 'settings:view' },
 ];
 
-const Sidebar = React.memo(function Sidebar({ sidebarOpen, setSidebarOpen, isCollapsed }: SidebarProps) {
+const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '', onClose }: SidebarProps) {
   const location = useLocation();
   const systemIcon = useAppSettings(state => state.systemIcon);
   
@@ -52,14 +52,16 @@ const Sidebar = React.memo(function Sidebar({ sidebarOpen, setSidebarOpen, isCol
   }, [userInfo]);
 
   const handleCloseSidebar = useCallback(() => {
-    setSidebarOpen(false);
-  }, [setSidebarOpen]);
+    if (onClose) {
+      onClose();
+    }
+  }, [onClose]);
 
   return (
     <aside 
-      className={`fixed z-50 bg-white dark:bg-zinc-800 border border-zinc-200/60 dark:border-zinc-700/60 shadow-sm rounded-2xl transform transition-all duration-300 ease-in-out flex flex-col print:hidden shrink-0 ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-[120%]'
-      } md:relative md:translate-x-0 ${isCollapsed ? 'md:w-20' : 'md:w-64'} w-64 m-4 md:my-6 md:ml-6 md:mr-0 h-[calc(100vh-2rem)] md:h-[calc(100vh-3rem)]`}
+      className={`bg-white dark:bg-zinc-800 border border-zinc-200/60 dark:border-zinc-700/60 shadow-sm rounded-2xl flex flex-col print:hidden shrink-0 transition-all duration-300 ease-in-out ${
+        isCollapsed ? 'w-20' : 'w-64'
+      } ${className}`}
     >
        {/* Logo */}
        <div className={`h-20 flex items-center transition-all duration-300 ${isCollapsed ? 'justify-center px-0' : 'px-6'}`}>

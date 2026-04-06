@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useLogStore, LogLevel } from '../store/logs';
-import { AlertCircle, AlertTriangle, Info, Trash2, Search, Filter, ChevronDown, ChevronRight } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Info, Trash2, Search, Filter, ChevronDown, ChevronRight, FileText } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { EmptyState } from './ui/EmptyState';
 
 export default function SystemLogs() {
   const logs = useLogStore(state => state.logs);
@@ -101,9 +102,12 @@ export default function SystemLogs() {
 
         <div className="flex-1 overflow-auto p-0">
           {filteredLogs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-slate-500 dark:text-slate-400">
-              <Info className="w-8 h-8 mb-2 opacity-50" />
-              <p>暂无符合条件的日志记录</p>
+            <div className="flex flex-col items-center justify-center h-64">
+              <EmptyState
+                title="暂无日志记录"
+                description="没有找到符合条件的日志记录"
+                icon={Info}
+              />
             </div>
           ) : (
             <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">

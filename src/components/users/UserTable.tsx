@@ -11,8 +11,9 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { User, Permission } from '../../types';
 import { useAuth } from '../../store/auth';
-import { Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react';
+import { Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Search, Users } from 'lucide-react';
 import { TableSkeleton } from '../ui/Skeleton';
+import { EmptyState } from '../ui/EmptyState';
 
 interface UserTableProps {
   data: User[];
@@ -115,9 +116,9 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
             <span
               className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
                 status === '在职'
-                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                  ? 'bg-success/10 text-success'
                   : status === '试用期'
-                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                  ? 'bg-warning/10 text-warning'
                   : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
               }`}
             >
@@ -264,7 +265,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                 e.stopPropagation();
                 onDelete(row.original);
               }}
-              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+              className="text-destructive hover:text-destructive/80 transition-colors"
               title="删除"
             >
               <Trash2 className="h-4 w-4" />
@@ -312,13 +313,13 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
   if (isLoading) {
     return (
       <div className="w-full overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full min-w-[800px] text-left border-collapse">
           <thead>
             <tr>
               {table.getFlatHeaders().map((header) => (
                 <th
                   key={header.id}
-                  className="px-6 py-3.5 text-xs font-medium text-zinc-500 uppercase tracking-wider bg-zinc-50/50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800"
+                  className="px-6 py-2 text-xs font-medium text-zinc-500 uppercase tracking-wider bg-zinc-50/50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800"
                   style={{ width: header.getSize() }}
                 >
                   {flexRender(
@@ -340,19 +341,19 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
   if (data.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 mb-4">
-          <Search className="h-8 w-8 text-slate-400" />
-        </div>
-        <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-1">未找到员工</h3>
-        <p className="text-slate-500 dark:text-slate-400">请尝试调整搜索条件或添加新员工</p>
+        <EmptyState
+          title="未找到员工"
+          description="请尝试调整搜索条件或添加新员工"
+          icon={Users}
+        />
       </div>
     );
   }
 
   return (
-    <div ref={parentRef} className="w-full overflow-auto relative max-h-[600px]">
+    <div ref={parentRef} className="w-full overflow-x-auto overflow-y-auto relative max-h-[600px]">
       <table
-        className="w-full text-left border-collapse"
+        className="w-full min-w-[800px] text-left border-collapse"
         style={{ width: table.getTotalSize() }}
       >
         <thead>
@@ -364,7 +365,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                 return (
                   <th
                     key={header.id}
-                    className={`group px-6 py-3.5 text-xs font-medium text-zinc-500 uppercase tracking-wider bg-zinc-50/50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800 sticky top-0 z-20 ${
+                    className={`group px-6 py-2 text-xs font-medium text-zinc-500 uppercase tracking-wider bg-zinc-50/50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800 sticky top-0 z-20 ${
                       isFirst ? 'left-0 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]' : ''
                     } ${
                       isLast ? 'right-0 z-30 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.5)]' : ''
@@ -416,7 +417,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                   return (
                     <td
                       key={cell.id}
-                      className={`px-6 py-4 whitespace-nowrap text-sm bg-white dark:bg-zinc-800 group-hover/row:bg-zinc-50/80 dark:group-hover/row:bg-zinc-700/30 transition-colors ${
+                      className={`px-6 py-2 whitespace-nowrap text-sm bg-white dark:bg-zinc-800 group-hover/row:bg-zinc-50/80 dark:group-hover/row:bg-zinc-700/30 transition-colors ${
                         isFirst ? 'sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]' : ''
                       } ${
                         isLast ? 'sticky right-0 z-10 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.5)] text-right' : ''

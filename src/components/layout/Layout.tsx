@@ -6,13 +6,8 @@ import Header from './Header';
 import ErrorBoundary from './ErrorBoundary';
 
 export default function Layout({ children }: { children?: React.ReactNode }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
-
-  const handleSetSidebarOpen = useCallback((open: boolean) => {
-    setSidebarOpen(open);
-  }, []);
 
   const handleSetIsCollapsed = useCallback((collapsed: boolean) => {
     setIsCollapsed(collapsed);
@@ -21,14 +16,12 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
   return (
     <div className="h-screen overflow-hidden bg-zinc-50 dark:bg-zinc-900 transition-colors duration-300 flex">
       <Sidebar 
-        sidebarOpen={sidebarOpen} 
-        setSidebarOpen={handleSetSidebarOpen} 
         isCollapsed={isCollapsed} 
+        className="hidden md:flex m-4 md:my-6 md:ml-6 md:mr-0 h-[calc(100vh-2rem)] md:h-[calc(100vh-3rem)]"
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden print:overflow-visible">
         <Header 
-          setSidebarOpen={handleSetSidebarOpen} 
           isCollapsed={isCollapsed}
           setIsCollapsed={handleSetIsCollapsed}
         />
@@ -50,14 +43,6 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
           </ErrorBoundary>
         </main>
       </div>
-
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-zinc-900/20 backdrop-blur-sm md:hidden" 
-          onClick={() => handleSetSidebarOpen(false)} 
-        />
-      )}
     </div>
   );
 }

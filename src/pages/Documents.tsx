@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { FileText, Folder, Plus, Trash2, Printer, Upload, File, Image as ImageIcon, FileArchive, MoreVertical, X, Edit2, Check, Download, FolderPlus, ChevronRight, ChevronDown, FolderOpen, CornerDownRight, Search } from 'lucide-react';
 import { useDocumentStore, Document, DocumentSet, Folder as FolderType } from '../store/documents';
 import { BaseModal } from '../components/ui/BaseModal';
+import { EmptyState } from '../components/ui/EmptyState';
 
 export default function Documents() {
   const folders = useDocumentStore(state => state.folders);
@@ -639,21 +640,11 @@ export default function Documents() {
             
             <div className="flex-1 overflow-y-auto">
               {currentDocs.length === 0 ? (
-                <div className="text-center py-16">
-                  {searchQuery ? (
-                    <>
-                      <Search className="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600" />
-                      <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-200">未找到匹配的文件</h3>
-                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">请尝试更换搜索词</p>
-                    </>
-                  ) : (
-                    <>
-                      <File className="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600" />
-                      <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-200">当前文件夹为空</h3>
-                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">点击右上角上传文件到此文件夹</p>
-                    </>
-                  )}
-                </div>
+                <EmptyState
+                  title={searchQuery ? "未找到匹配的文件" : "当前文件夹为空"}
+                  description={searchQuery ? "请尝试更换搜索词" : "点击右上角上传文件到此文件夹"}
+                  icon={searchQuery ? Search : File}
+                />
               ) : (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
@@ -740,17 +731,21 @@ export default function Documents() {
               </div>
             </div>
           ) : documentSets.length === 0 ? (
-            <div className="col-span-full text-center py-16 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl border-dashed">
-              <Folder className="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600" />
-              <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-200">暂无文件套件</h3>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 mb-6">点击右上角新建套件，将常用文件组合在一起</p>
-              <button
-                onClick={handleCreateSetClick}
-                className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-sm"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                立即创建
-              </button>
+            <div className="col-span-full">
+              <EmptyState
+                title="暂无文件套件"
+                description="点击右上角新建套件，将常用文件组合在一起"
+                icon={Folder}
+                action={
+                  <button
+                    onClick={handleCreateSetClick}
+                    className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-sm"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    立即创建
+                  </button>
+                }
+              />
             </div>
           ) : (
             documentSets.map(set => (
@@ -827,8 +822,8 @@ export default function Documents() {
         size="lg"
         footer={
           <>
-            <button type="button" onClick={() => setIsSetModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
-            <button type="submit" form="set-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+            <button type="button" onClick={() => setIsSetModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm">取消</button>
+            <button type="submit" form="set-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm">保存</button>
           </>
         }
       >
@@ -974,7 +969,7 @@ export default function Documents() {
               type="button" 
               onClick={() => setIsPrintModalOpen(false)} 
               disabled={isPrinting}
-              className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+              className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm disabled:opacity-50"
             >
               取消
             </button>
@@ -982,7 +977,7 @@ export default function Documents() {
               type="button" 
               onClick={handlePrint}
               disabled={isPrinting}
-              className="w-full inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+              className="w-full inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm disabled:opacity-50"
             >
               {isPrinting ? (
                 <>
@@ -1041,8 +1036,8 @@ export default function Documents() {
         size="md"
         footer={
           <>
-            <button type="button" onClick={() => setIsFolderModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
-            <button type="submit" form="folder-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+            <button type="button" onClick={() => setIsFolderModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm">取消</button>
+            <button type="submit" form="folder-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm">保存</button>
           </>
         }
       >
@@ -1070,8 +1065,8 @@ export default function Documents() {
         size="md"
         footer={
           <>
-            <button type="button" onClick={() => setIsMoveModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
-            <button onClick={handleMoveFile} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">确认移动</button>
+            <button type="button" onClick={() => setIsMoveModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm">取消</button>
+            <button onClick={handleMoveFile} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm">确认移动</button>
           </>
         }
       >

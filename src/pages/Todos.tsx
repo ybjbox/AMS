@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useTodoStore } from '../store/todos';
 import { CheckCircle2, Circle, Clock, Plus, Trash2, Calendar, AlertCircle, ListTodo } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { EmptyState } from '../components/ui/EmptyState';
 
 export default function Todos() {
   const todos = useTodoStore(state => state.todos);
@@ -121,20 +122,20 @@ export default function Todos() {
 
       <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl overflow-hidden">
         {sortedTodos.length === 0 ? (
-          <div className="p-12 text-center">
-            <div className="w-16 h-16 bg-slate-50 dark:bg-slate-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <ListTodo className="w-8 h-8 text-slate-300 dark:text-slate-500" />
-            </div>
-            <h3 className="text-slate-900 dark:text-white font-medium">暂无待办事项</h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 mb-6">点击右上角按钮添加您的第一个任务</p>
-            <button
-              onClick={() => setIsAdding(true)}
-              className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-sm"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              立即创建
-            </button>
-          </div>
+          <EmptyState
+            title="暂无待办事项"
+            description="点击右上角按钮添加您的第一个任务"
+            icon={ListTodo}
+            action={
+              <button
+                onClick={() => setIsAdding(true)}
+                className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-sm"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                立即创建
+              </button>
+            }
+          />
         ) : (
           <div className="divide-y divide-slate-100 dark:divide-slate-700">
             <AnimatePresence initial={false}>

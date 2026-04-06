@@ -5,7 +5,7 @@ export type SystemNoticesProps = Pick<UseDashboardReturn, 'notices'>;
 
 export default function SystemNotices({ notices }: SystemNoticesProps) {
   return (
-    <div className="bg-white dark:bg-zinc-800 shadow-sm rounded-3xl p-8 lg:col-span-2">
+    <div className="bg-white dark:bg-zinc-800 border-none shadow-sm rounded-3xl p-4 lg:col-span-2">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-zinc-800 dark:text-white tracking-tight">系统公告</h2>
         <button className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors">查看全部</button>

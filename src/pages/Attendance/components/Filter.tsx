@@ -424,7 +424,7 @@ export default function Filter({
             {hasPermission(Permission.MANAGE_ATTENDANCE) && (
               <button
                 onClick={handleAnalyze}
-                className="flex items-center px-5 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all duration-300 hover:-translate-y-0.5 text-sm font-medium shadow-sm"
+                className="flex items-center px-5 py-2.5 bg-success text-white rounded-xl hover:bg-success/90 transition-all duration-300 hover:-translate-y-0.5 text-sm font-medium shadow-sm"
               >
                 <AlertTriangle className="w-4 h-4 mr-2" />
                 一键分析异常

@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useUserStore } from '../store/users';
 import { useContractStore, defaultTemplate } from '../store/contracts';
-import { Search, Filter, FileSignature, Printer, Eye, X, FileEdit, Upload, Save } from 'lucide-react';
+import { Search, Filter, FileSignature, Printer, Eye, X, FileEdit, Upload, Save, FileText } from 'lucide-react';
 import { BaseModal } from '../components/ui/BaseModal';
+import { EmptyState } from '../components/ui/EmptyState';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
@@ -235,7 +236,7 @@ export default function Contracts() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-              {filteredUsers.map((user) => {
+              {filteredUsers.length > 0 ? filteredUsers.map((user) => {
                 const daysToExpiry = typeof user.daysToExpiry === 'number' ? user.daysToExpiry : parseInt(user.daysToExpiry as string) || 999;
                 const isExpiringSoon = daysToExpiry <= 30 && daysToExpiry > 0;
                 const isExpired = daysToExpiry <= 0;
@@ -281,11 +282,14 @@ export default function Contracts() {
                     </td>
                   </tr>
                 );
-              })}
-              {filteredUsers.length === 0 && (
+              }) : (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                    没有找到符合条件的员工记录
+                  <td colSpan={7} className="p-0">
+                    <EmptyState
+                      title="没有找到符合条件的员工记录"
+                      description="请尝试调整搜索条件或筛选器"
+                      icon={FileText}
+                    />
                   </td>
                 </tr>
               )}
@@ -325,13 +329,13 @@ export default function Contracts() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsPreviewOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-zinc-200/80 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700 active:scale-95 transition-transform"
+                className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
               >
                 取消
               </button>
               <button
                 onClick={handlePrint}
-                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform"
+                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm"
               >
                 <Printer className="w-4 h-4 mr-2" />
                 打印合同
@@ -386,7 +390,7 @@ export default function Contracts() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsTemplateEditorOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-zinc-200/80 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700 active:scale-95 transition-transform"
+                className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
               >
                 取消
               </button>
@@ -395,7 +399,7 @@ export default function Contracts() {
                   setTemplate(editingTemplate);
                   setIsTemplateEditorOpen(false);
                 }}
-                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform"
+                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm"
               >
                 <Save className="w-4 h-4 mr-2" />
                 保存

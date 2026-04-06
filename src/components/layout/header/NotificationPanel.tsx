@@ -1,7 +1,8 @@
 import React, { useCallback } from 'react';
-import { Check, Trash2 } from 'lucide-react';
+import { Check, Trash2, Bell } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTodoStore } from '../../../store/todos';
+import { EmptyState } from '../../ui/EmptyState';
 
 interface NotificationPanelProps {
   onClose: () => void;
@@ -52,9 +53,12 @@ const NotificationPanel = React.memo(function NotificationPanel({ onClose }: Not
       
       <div className="max-h-96 overflow-y-auto">
         {notifications.length === 0 ? (
-          <div className="px-4 py-8 text-center text-slate-500 dark:text-slate-400 text-sm">
-            暂无通知
-          </div>
+          <EmptyState
+            title="暂无通知"
+            description="您目前没有新的通知"
+            icon={Bell}
+            className="p-8"
+          />
         ) : (
           <div className="divide-y divide-slate-100 dark:divide-slate-700">
             {notifications.map((notification) => (

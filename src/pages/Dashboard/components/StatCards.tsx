@@ -27,7 +27,7 @@ export default function StatCards({ stats }: StatCardsProps) {
         return (
           <div 
             key={item.name} 
-            className={`bg-white dark:bg-zinc-800 rounded-3xl shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 flex flex-col justify-between p-6 ${getGridClass(index)}`}
+            className={`bg-white dark:bg-zinc-800 rounded-3xl border-none shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 flex flex-col justify-between p-4 ${getGridClass(index)}`}
           >
             <div className="flex justify-between items-start">
               <div className={`rounded-2xl flex items-center justify-center ${gradientClass} ${isLarge ? 'w-14 h-14' : 'w-12 h-12'}`}>

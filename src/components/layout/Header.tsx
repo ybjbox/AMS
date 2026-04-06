@@ -2,17 +2,16 @@ import React, { memo, useCallback } from 'react';
 import { Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import NotificationTrigger from './header/NotificationTrigger';
 import UserMenu from './header/UserMenu';
+import { Sheet, SheetContent, SheetTrigger } from '../../../components/ui/sheet';
+import Sidebar from './Sidebar';
 
 interface HeaderProps {
-  setSidebarOpen: (open: boolean) => void;
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
 }
 
-const Header = memo(function Header({ setSidebarOpen, isCollapsed, setIsCollapsed }: HeaderProps) {
-  const handleOpenSidebar = useCallback(() => {
-    setSidebarOpen(true);
-  }, [setSidebarOpen]);
+const Header = memo(function Header({ isCollapsed, setIsCollapsed }: HeaderProps) {
+  const [sheetOpen, setSheetOpen] = React.useState(false);
 
   const handleToggleCollapse = useCallback(() => {
     setIsCollapsed(!isCollapsed);
@@ -22,12 +21,22 @@ const Header = memo(function Header({ setSidebarOpen, isCollapsed, setIsCollapse
     <header className="relative z-10 h-16 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-700/50 transition-colors duration-300 flex items-center justify-between px-4 sm:px-6 lg:px-8 print:hidden shrink-0">
       <div className="flex items-center">
         {/* Mobile menu button */}
-        <button 
-          onClick={handleOpenSidebar} 
-          className="md:hidden p-2 -ml-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300 hover:-translate-y-0.5"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+        <div className="md:hidden">
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+            <SheetTrigger 
+              className="p-2 -ml-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300 hover:-translate-y-0.5"
+            >
+              <Menu className="h-5 w-5" />
+            </SheetTrigger>
+            <SheetContent side="left" showCloseButton={false} className="p-0 w-64 border-none bg-transparent shadow-none">
+              <Sidebar 
+                isCollapsed={false} 
+                className="h-full w-full m-0 rounded-none border-r border-zinc-200/60 dark:border-zinc-700/60"
+                onClose={() => setSheetOpen(false)}
+              />
+            </SheetContent>
+          </Sheet>
+        </div>
         
         {/* Desktop collapse button */}
         <button

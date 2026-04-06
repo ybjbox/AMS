@@ -4,6 +4,7 @@ import { useDepartments, DepartmentNode, RoleNode, flattenDepartments } from '..
 import { useAuth } from '../store/auth';
 import { Permission } from '../types';
 import { BaseModal } from '../components/ui/BaseModal';
+import { EmptyState } from '../components/ui/EmptyState';
 
 type ModalState = {
   isOpen: boolean;
@@ -458,17 +459,21 @@ export default function Departments() {
             {departments.length > 0 ? (
               renderTree(departments)
             ) : (
-              <div className="text-center py-12">
-                <Building2 className="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600" />
-                <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-200">暂无部门数据</h3>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 mb-6">开始添加您的第一个公司部门吧。</p>
-                <button
-                  onClick={handleAddRoot}
-                  className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-sm"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  立即创建
-                </button>
+              <div className="py-12">
+                <EmptyState
+                  title="暂无部门数据"
+                  description="开始添加您的第一个公司部门吧"
+                  icon={Building2}
+                  action={
+                    <button
+                      onClick={handleAddRoot}
+                      className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-sm"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      立即创建
+                    </button>
+                  }
+                />
               </div>
             )}
           </div>
@@ -494,10 +499,12 @@ export default function Departments() {
             {departments.length > 0 ? (
               renderRoleTree(departments)
             ) : (
-              <div className="text-center py-12">
-                <Briefcase className="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600" />
-                <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-200">暂无部门数据</h3>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">请先在左侧添加部门</p>
+              <div className="py-12">
+                <EmptyState
+                  title="暂无部门数据"
+                  description="请先在左侧添加部门"
+                  icon={Briefcase}
+                />
               </div>
             )}
           </div>
@@ -512,8 +519,8 @@ export default function Departments() {
         size="md"
         footer={
           <>
-            <button type="button" onClick={() => setModal(prev => ({ ...prev, isOpen: false }))} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
-            <button type="submit" form="dept-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+            <button type="button" onClick={() => setModal(prev => ({ ...prev, isOpen: false }))} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm">取消</button>
+            <button type="submit" form="dept-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm">保存</button>
           </>
         }
       >
@@ -563,8 +570,8 @@ export default function Departments() {
         size="md"
         footer={
           <>
-            <button type="button" onClick={() => setRoleModal(prev => ({ ...prev, isOpen: false }))} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 active:scale-95 transition-transform sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">取消</button>
-            <button type="submit" form="role-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm">保存</button>
+            <button type="button" onClick={() => setRoleModal(prev => ({ ...prev, isOpen: false }))} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm">取消</button>
+            <button type="submit" form="role-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm">保存</button>
           </>
         }
       >

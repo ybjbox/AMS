@@ -1,6 +1,7 @@
 import React, { useMemo, useCallback } from 'react';
 import { Permission } from '../../../types';
 import { TableSkeleton } from '../../../components/ui/Skeleton';
+import { EmptyState } from '../../../components/ui/EmptyState';
 import { AlertTriangle, Search } from 'lucide-react';
 import { UseAttendanceReturn } from '../hooks/useAttendance';
 
@@ -62,20 +63,20 @@ export default function Table({
           {records.length > 0 && hasPermission(Permission.MANAGE_ATTENDANCE) && (
             <button
               onClick={() => setRecords([])}
-              className="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+              className="text-sm text-destructive hover:text-destructive/80 transition-colors"
             >
               清空记录
             </button>
           )}
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-zinc-100 dark:divide-zinc-800">
+          <table className="min-w-[800px] w-full divide-y divide-zinc-100 dark:divide-zinc-800">
             <thead className="bg-zinc-50/50 dark:bg-zinc-800/50">
               <tr>
-                <th className="px-6 py-3.5 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">工号</th>
-                <th className="px-6 py-3.5 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">姓名</th>
-                <th className="px-6 py-3.5 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">日期</th>
-                <th className="px-6 py-3.5 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">时间</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">工号</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">姓名</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">日期</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">时间</th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-50 dark:divide-zinc-800/50">
@@ -83,10 +84,10 @@ export default function Table({
                 <TableSkeleton columns={4} rows={5} />
               ) : records.slice(0, 50).map((record) => (
                 <tr key={record.id} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-700/30 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-200">{record.employeeId}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-200">{record.employeeName}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{record.date}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{record.time}</td>
+                  <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-200">{record.employeeId}</td>
+                  <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-200">{record.employeeName}</td>
+                  <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{record.date}</td>
+                  <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{record.time}</td>
                 </tr>
               ))}
             </tbody>
@@ -120,7 +121,7 @@ export default function Table({
             {schedules.length > 0 && hasPermission(Permission.MANAGE_ATTENDANCE) && (
               <button
                 onClick={() => setSchedules([])}
-                className="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 whitespace-nowrap transition-colors"
+                className="text-sm text-destructive hover:text-destructive/80 whitespace-nowrap transition-colors"
               >
                 清空排班
               </button>
@@ -128,13 +129,13 @@ export default function Table({
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-zinc-100 dark:divide-zinc-800">
+          <table className="min-w-[800px] w-full divide-y divide-zinc-100 dark:divide-zinc-800">
             <thead className="bg-zinc-50/50 dark:bg-zinc-800/50">
               <tr>
-                <th className="px-6 py-3.5 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">工号</th>
-                <th className="px-6 py-3.5 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">姓名</th>
-                <th className="px-6 py-3.5 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">班次</th>
-                <th className="px-6 py-3.5 text-right text-xs font-medium text-zinc-500 uppercase tracking-wider">操作</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">工号</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">姓名</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">班次</th>
+                <th className="px-6 py-2 text-right text-xs font-medium text-zinc-500 uppercase tracking-wider">操作</th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-50 dark:divide-zinc-800/50">
@@ -142,20 +143,20 @@ export default function Table({
                 <TableSkeleton columns={4} rows={5} />
               ) : filteredSchedules.slice(0, 50).map((schedule, idx) => (
                 <tr key={idx} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-700/30 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-200">{schedule.employeeId}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-200">{schedule.employeeName}</td>
-                  <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400">
+                  <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-200">{schedule.employeeId}</td>
+                  <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-200">{schedule.employeeName}</td>
+                  <td className="px-6 py-2 text-sm text-zinc-500 dark:text-zinc-400">
                     {schedule.shiftIds ? schedule.shiftIds.map(id => {
                       const shift = shifts.find(s => s.id === id);
                       return shift ? <span key={id} className="inline-block bg-zinc-100 dark:bg-zinc-700 px-3 py-1 rounded-full text-xs font-medium mr-2 mb-1">{shift.name}</span> : id;
                     }) : (schedule as any).shiftId}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-6 py-2 whitespace-nowrap text-right text-sm font-medium">
                     {hasPermission(Permission.MANAGE_ATTENDANCE) && (
                       <button
                         data-index={idx}
                         onClick={onRemoveScheduleClick}
-                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                        className="text-destructive hover:text-destructive/80 transition-colors"
                       >
                         删除
                       </button>
@@ -175,22 +176,22 @@ export default function Table({
       <div className="p-6 flex flex-col h-full">
         {anomalies.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center py-16 text-center">
-            <AlertTriangle className="w-12 h-12 text-zinc-300 dark:text-zinc-600 mb-4" />
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">暂无异常数据</h3>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-              请先导入打卡记录和排班字典，然后点击"一键分析异常"
-            </p>
+            <EmptyState
+              title="暂无异常数据"
+              description="请先导入打卡记录和排班字典，然后点击'一键分析异常'"
+              icon={AlertTriangle}
+            />
           </div>
         ) : (
           <div className="overflow-x-auto border border-zinc-100 dark:border-zinc-800 rounded-2xl">
-            <table className="min-w-full divide-y divide-zinc-100 dark:divide-zinc-800">
+            <table className="min-w-[800px] w-full divide-y divide-zinc-100 dark:divide-zinc-800">
               <thead className="bg-zinc-50/50 dark:bg-zinc-800/50">
                 <tr>
-                  <th className="px-6 py-3.5 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">日期</th>
-                  <th className="px-6 py-3.5 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">工号</th>
-                  <th className="px-6 py-3.5 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">姓名</th>
-                  <th className="px-6 py-3.5 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">异常类型</th>
-                  <th className="px-6 py-3.5 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">描述</th>
+                  <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">日期</th>
+                  <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">工号</th>
+                  <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">姓名</th>
+                  <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">异常类型</th>
+                  <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">描述</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-50 dark:divide-zinc-800/50">
@@ -198,14 +199,14 @@ export default function Table({
                   <TableSkeleton columns={5} rows={5} />
                 ) : filteredAnomalies.map((anomaly) => (
                   <tr key={anomaly.id} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-700/30 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-200">{anomaly.date}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{anomaly.employeeId}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-900 dark:text-zinc-200">{anomaly.employeeName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-200">{anomaly.date}</td>
+                    <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{anomaly.employeeId}</td>
+                    <td className="px-6 py-2 whitespace-nowrap text-sm font-medium text-zinc-900 dark:text-zinc-200">{anomaly.employeeName}</td>
+                    <td className="px-6 py-2 whitespace-nowrap">
                       <span className={`px-3 py-1 inline-flex text-xs font-medium rounded-full ${
-                        (anomaly.type || '').includes('LATE') ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                        (anomaly.type || '').includes('MISSING') ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' :
-                        'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                        (anomaly.type || '').includes('LATE') ? 'bg-warning/10 text-warning' :
+                        (anomaly.type || '').includes('MISSING') ? 'bg-destructive/10 text-destructive' :
+                        'bg-warning/10 text-warning'
                       }`}>
                         {anomaly.type === 'LATE_5' && '迟到 > 5分'}
                         {anomaly.type === 'LATE_15' && '迟到 > 15分'}
@@ -214,7 +215,7 @@ export default function Table({
                         {anomaly.type === 'EARLY_LEAVE' && '早退'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{anomaly.description}</td>
+                    <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{anomaly.description}</td>
                   </tr>
                 ))}
               </tbody>
@@ -229,14 +230,14 @@ export default function Table({
     return (
       <div className="p-6">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-zinc-100 dark:divide-zinc-800">
+          <table className="min-w-[800px] w-full divide-y divide-zinc-100 dark:divide-zinc-800">
             <thead className="bg-zinc-50/50 dark:bg-zinc-800/50">
               <tr>
-                <th className="px-6 py-3.5 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">班次名称</th>
-                <th className="px-6 py-3.5 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">上班时间</th>
-                <th className="px-6 py-3.5 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">下班时间</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">班次名称</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">上班时间</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">下班时间</th>
                 {hasPermission(Permission.MANAGE_ATTENDANCE) && (
-                  <th className="px-6 py-3.5 text-right text-xs font-medium text-zinc-500 uppercase tracking-wider">操作</th>
+                  <th className="px-6 py-2 text-right text-xs font-medium text-zinc-500 uppercase tracking-wider">操作</th>
                 )}
               </tr>
             </thead>
@@ -245,11 +246,11 @@ export default function Table({
                 <TableSkeleton columns={hasPermission(Permission.MANAGE_ATTENDANCE) ? 4 : 3} rows={5} />
               ) : shifts.map((shift) => (
                 <tr key={shift.id} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-700/30 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-900 dark:text-zinc-200">{shift.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{shift.startTime}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{shift.endTime}</td>
+                  <td className="px-6 py-2 whitespace-nowrap text-sm font-medium text-zinc-900 dark:text-zinc-200">{shift.name}</td>
+                  <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{shift.startTime}</td>
+                  <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{shift.endTime}</td>
                   {hasPermission(Permission.MANAGE_ATTENDANCE) && (
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-2 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         data-shiftid={shift.id}
                         onClick={onEditShiftClick}
@@ -260,7 +261,7 @@ export default function Table({
                       <button
                         data-shiftid={shift.id}
                         onClick={onDeleteShiftClick}
-                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                        className="text-destructive hover:text-destructive/80 transition-colors"
                       >
                         删除
                       </button>
