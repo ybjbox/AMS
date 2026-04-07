@@ -31,7 +31,7 @@ export default function StatCards({ stats }: StatCardsProps) {
           >
             <div className="flex justify-between items-start">
               <div className={`rounded-2xl flex items-center justify-center ${gradientClass} ${isLarge ? 'w-14 h-14' : 'w-12 h-12'}`}>
-                <item.icon className={`${isLarge ? 'h-7 w-7' : 'h-6 w-6'} text-white drop-shadow-sm`} />
+                <item.icon className={`${isLarge ? 'h-7 w-7' : 'h-6 w-6'} drop-shadow-sm`} />
               </div>
               
               {item.trend !== 'neutral' && (

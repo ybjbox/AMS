@@ -1424,7 +1424,7 @@ export default function Users() {
         title="导出配置"
         size="full"
         footer={
-          <div className="flex items-center justify-end space-x-3 w-full">
+          <>
             <button 
               onClick={() => setIsExportModalOpen(false)}
               className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
@@ -1442,7 +1442,7 @@ export default function Users() {
             <button 
               onClick={handleExport}
               disabled={isExporting || exportConfig.columns.filter(c => c.selected).length === 0}
-              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm disabled:opacity-50"
             >
               {isExporting ? (
                 <>
@@ -1456,7 +1456,7 @@ export default function Users() {
                 </>
               )}
             </button>
-          </div>
+          </>
         }
       >
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row h-full">
@@ -1962,7 +1962,7 @@ export default function Users() {
         }
         size="2xl"
         footer={
-          <div className="flex justify-end space-x-3 w-full">
+          <>
             <button
               type="button"
               onClick={() => setIsDetailModalOpen(false)}
@@ -2008,7 +2008,7 @@ export default function Users() {
                   }, 250);
                 }
               }}
-              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm"
+              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm"
             >
               <Printer className="w-4 h-4 mr-2" />
               打印档案标签
@@ -2047,7 +2047,7 @@ export default function Users() {
                   }
                 }
               }}
-              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm"
+              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm"
             >
               <Printer className="w-4 h-4 mr-2" />
               打印联系卡
@@ -2059,13 +2059,13 @@ export default function Users() {
                   setIsDetailModalOpen(false);
                   if (selectedUser) handleEdit(selectedUser);
                 }}
-                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-3 sm:w-auto sm:text-sm"
+                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm"
               >
                 <Edit className="w-4 h-4 mr-2" />
                 编辑信息
               </button>
             )}
-          </div>
+          </>
         }
       >
         {selectedUser && (
