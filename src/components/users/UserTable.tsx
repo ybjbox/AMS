@@ -10,7 +10,7 @@ import {
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { User, Permission } from '../../types';
-import { useAuth } from '../../store/auth';
+import { useUserStore } from '../../store/useUserStore';
 import { Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Search, Users } from 'lucide-react';
 import { TableSkeleton } from '../ui/Skeleton';
 import { EmptyState } from '../ui/EmptyState';
@@ -24,7 +24,7 @@ interface UserTableProps {
 }
 
 export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDelete, onRowClick }: UserTableProps) {
-  const hasPermission = useAuth(state => state.hasPermission);
+  const hasPermission = useUserStore(state => state.hasPermission);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnResizeMode] = useState<ColumnResizeMode>('onChange');
 
@@ -244,7 +244,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
       },
     ];
 
-    if (hasPermission(Permission.MANAGE_USERS)) {
+    if (hasPermission('users:manage')) {
       baseColumns.push({
         id: 'actions',
         header: '操作',

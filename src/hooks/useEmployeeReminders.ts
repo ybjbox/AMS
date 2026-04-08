@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { useUserStore as useUsersStore } from '../store/users';
+import { useEmployeeStore } from '../store/employees';
 import { useUserStore } from '../store/useUserStore';
 import { useTodoStore } from '../store/todos';
 
 export function useEmployeeReminders() {
   const userInfo = useUserStore(state => state.userInfo);
-  const users = useUsersStore(state => state.users);
+  const users = useEmployeeStore(state => state.users);
   
   const hasCheckedReminders = useRef(false);
 

@@ -12,7 +12,7 @@ interface UserStore {
   deleteUser: (id: string) => Promise<void>;
 }
 
-export const useUserStore = create<UserStore>()((set) => ({
+export const useEmployeeStore = create<UserStore>()((set) => ({
   users: [],
   isLoading: false,
   error: null,

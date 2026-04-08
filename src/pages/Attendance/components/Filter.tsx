@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { Clock, FileSpreadsheet, ChevronDown, Search, Plus, AlertTriangle } from 'lucide-react';
 import { PunchRecord, EmployeeSchedule, Shift } from '../../../store/attendance';
 import { attendanceService } from '../../../services/attendance';
-import { Permission } from '../../../types';
 import { UseAttendanceReturn } from '../hooks/useAttendance';
 
 export type FilterProps = Pick<UseAttendanceReturn, 
@@ -65,11 +65,11 @@ export default function Filter({
           { id: '3', employeeId: 'EMP002', employeeName: '李四', date: '2026-03-16', time: '09:15:00' },
         ];
         setRecords(mockRecords);
-        alert(`${response.message}\n成功从后端获取到 ${mockRecords.length} 条打卡记录 (Mock)`);
+        toast.success(`${response.message}\n成功从后端获取到 ${mockRecords.length} 条打卡记录 (Mock)`);
       }
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('文件上传失败，请重试');
+      toast.error('文件上传失败，请重试');
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
@@ -105,7 +105,7 @@ export default function Filter({
 
   const handleAnalyze = useCallback(async () => {
     if (records.length === 0 || schedules.length === 0) {
-      alert('请先导入打卡记录和排班字典');
+      toast.warning('请先导入打卡记录和排班字典');
       return;
     }
     
@@ -118,11 +118,11 @@ export default function Filter({
       if (response.success) {
         analyzeAnomalies();
         setActiveTab('anomalies');
-        alert(response.message);
+        toast.success(response.message);
       }
     } catch (error) {
       console.error('Analysis failed:', error);
-      alert('分析失败，请重试');
+      toast.error('分析失败，请重试');
     }
   }, [records.length, schedules.length, analyzeAnomalies, setActiveTab]);
 
@@ -243,7 +243,7 @@ export default function Filter({
         </div>
       </div>
 
-      {activeTab === 'records' && hasPermission(Permission.MANAGE_ATTENDANCE) && (
+      {activeTab === 'records' && hasPermission('attendance:manage') && (
         <div className="mb-6 bg-white dark:bg-zinc-800 p-6 rounded-2xl shadow-sm">
           <div className="w-full max-w-2xl">
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">上传 Excel 文件</h3>
@@ -272,7 +272,7 @@ export default function Filter({
         </div>
       )}
 
-      {activeTab === 'schedules' && hasPermission(Permission.MANAGE_ATTENDANCE) && (
+      {activeTab === 'schedules' && hasPermission('attendance:manage') && (
         <div className="mb-6 p-6 bg-white dark:bg-zinc-800 rounded-2xl shadow-sm">
           <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">手动分配班次</h3>
           <div className="flex flex-col sm:flex-row gap-4 items-end">
@@ -350,7 +350,7 @@ export default function Filter({
             <button
               onClick={handleAddManualSchedule}
               disabled={!selectedEmployeeId || selectedShiftIds.length === 0}
-              className="px-5 py-2.5 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-300 text-sm font-medium whitespace-nowrap flex items-center shadow-sm"
+              className="px-5 py-2.5 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-xl hover:from-blue-500 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-300 text-sm font-medium whitespace-nowrap flex items-center shadow-sm"
             >
               <Plus className="w-4 h-4 mr-2" />
               添加排班
@@ -359,7 +359,7 @@ export default function Filter({
         </div>
       )}
 
-      {activeTab === 'shifts' && hasPermission(Permission.MANAGE_ATTENDANCE) && (
+      {activeTab === 'shifts' && hasPermission('attendance:manage') && (
         <div className="mb-6 bg-white dark:bg-zinc-800 p-6 rounded-2xl shadow-sm">
           <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">
             {editingShift ? '编辑班次' : '添加新班次'}
@@ -397,7 +397,7 @@ export default function Filter({
               <button
                 onClick={onSaveShiftClick}
                 disabled={!editingShift || !editingShift.name}
-                className="flex-1 px-4 py-2.5 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-300 text-sm font-medium whitespace-nowrap flex items-center justify-center shadow-sm"
+                className="flex-1 px-4 py-2.5 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-xl hover:from-blue-500 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-300 text-sm font-medium whitespace-nowrap flex items-center justify-center shadow-sm"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 保存
@@ -421,7 +421,7 @@ export default function Filter({
       {activeTab === 'anomalies' && (
         <div className="mb-6 bg-white dark:bg-zinc-800 p-6 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center">
-            {hasPermission(Permission.MANAGE_ATTENDANCE) && (
+            {hasPermission('attendance:manage') && (
               <button
                 onClick={handleAnalyze}
                 className="flex items-center px-5 py-2.5 bg-success text-white rounded-xl hover:bg-success/90 transition-all duration-300 hover:-translate-y-0.5 text-sm font-medium shadow-sm"

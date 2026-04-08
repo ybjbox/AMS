@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useTodoStore } from '../store/todos';
 import { CheckCircle2, Circle, Clock, Plus, Trash2, Calendar, AlertCircle, ListTodo } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { EmptyState } from '../components/ui/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 export default function Todos() {
   const todos = useTodoStore(state => state.todos);
@@ -53,7 +53,7 @@ export default function Todos() {
         </div>
         <button
           onClick={() => setIsAdding(true)}
-          className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-sm"
+          className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform shadow-sm"
         >
           <Plus className="w-4 h-4 mr-2" />
           新建待办
@@ -110,7 +110,7 @@ export default function Todos() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform"
+                  className="px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform"
                 >
                   保存待办
                 </button>
@@ -129,7 +129,7 @@ export default function Todos() {
             action={
               <button
                 onClick={() => setIsAdding(true)}
-                className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-sm"
+                className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform shadow-sm"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 立即创建

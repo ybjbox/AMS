@@ -1,8 +1,52 @@
 import { api } from './mockApi';
+import { http } from './api';
 import { User } from '../types';
 
+// 基础的用户信息接口 (From src/api/modules/user.ts)
+export interface UserInfo {
+  id: string | number;
+  username: string;
+  email: string;
+  phone?: string;
+  avatar?: string;
+  status?: number;
+  createdAt?: string;
+}
+
+// 获取用户列表的请求参数接口
+export interface GetUserListParams {
+  page?: number;
+  pageSize?: number;
+  keyword?: string;
+  status?: number;
+}
+
+// 列表返回结构
+export interface UserListResponse {
+  list: UserInfo[];
+  total: number;
+}
+
 /**
- * 获取所有员工列表
+ * 获取用户列表 (Axios)
+ * @param params 请求参数
+ * @returns 用户列表数据
+ */
+export const getUserList = (params?: GetUserListParams): Promise<UserListResponse> => {
+  return http.get('/users', { params });
+};
+
+/**
+ * 获取用户详情 (Axios)
+ * @param userId 用户 ID
+ * @returns 用户详情数据
+ */
+export const getUserInfo = (userId: string | number): Promise<UserInfo> => {
+  return http.get(`/users/${userId}`);
+};
+
+/**
+ * 获取所有员工列表 (Mock)
  * @returns 员工列表
  */
 export const fetchUsers = async (): Promise<User[]> => {

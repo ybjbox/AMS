@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAttendanceStore, PunchRecord, EmployeeSchedule, Anomaly, Shift } from '../../../store/attendance';
-import { useUserStore } from '../../../store/users';
+import { useEmployeeStore } from '../../../store/employees';
 import { User } from '../../../types';
-import { useAuth } from '../../../store/auth';
+import { useUserStore as useAuthStore } from '../../../store/useUserStore';
 
 export type TabType = 'records' | 'schedules' | 'anomalies' | 'shifts';
 
@@ -48,7 +48,7 @@ export function useAttendance(): UseAttendanceReturn {
   const [editingShift, setEditingShift] = useState<Partial<Shift> | null>(null);
 
   const fetchData = useAttendanceStore(state => state.fetchData);
-  const fetchUsers = useUserStore(state => state.fetchUsers);
+  const fetchUsers = useEmployeeStore(state => state.fetchUsers);
   
   const records = useAttendanceStore(state => state.records);
   const schedules = useAttendanceStore(state => state.schedules);
@@ -63,8 +63,8 @@ export function useAttendance(): UseAttendanceReturn {
   const updateShift = useAttendanceStore(state => state.updateShift);
   const deleteShift = useAttendanceStore(state => state.deleteShift);
 
-  const users = useUserStore(state => state.users);
-  const hasPermission = useAuth(state => state.hasPermission);
+  const users = useEmployeeStore(state => state.users);
+  const hasPermission = useAuthStore(state => state.hasPermission);
 
   const filteredAnomalies = useMemo(() => anomalies.filter(a => {
     if (!searchQuery.trim()) return true;

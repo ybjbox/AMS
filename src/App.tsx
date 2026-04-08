@@ -4,7 +4,7 @@
  */
 
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, Outlet } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import { useAppSettings } from './store/appSettings';
@@ -14,7 +14,9 @@ import ConnectivityListener from './components/ConnectivityListener';
 import { useInitData } from './hooks/useInitData';
 import { useTodoStore } from './store/todos';
 import { EVENT_KEYS } from './config/constants';
-import { Skeleton } from './components/ui/Skeleton';
+import { Toaster, toast } from 'sonner';
+import { ConfirmProvider } from './hooks/useConfirm';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 const Login = lazy(() => import('./pages/Login'));
 const Forbidden403 = lazy(() => import('./pages/403'));
@@ -107,7 +109,14 @@ function ApiErrorListener() {
     const handleApiError = (event: Event) => {
       const customEvent = event as CustomEvent;
       if (customEvent.detail) {
-        addNotification(customEvent.detail);
+        const { title, message, type } = customEvent.detail;
+        addNotification({ title, message, type });
+        
+        // Also show toast
+        if (type === 'error') toast.error(title, { description: message });
+        else if (type === 'warning') toast.warning(title, { description: message });
+        else if (type === 'success') toast.success(title, { description: message });
+        else toast.info(title, { description: message });
       }
     };
     window.addEventListener(EVENT_KEYS.API_ERROR, handleApiError);
@@ -135,36 +144,39 @@ function GlobalLoadingOverlay() {
 export default function App() {
   return (
     <BrowserRouter>
-      <ThemeApplier />
-      <ConnectivityListener />
-      <AuthExpiredListener />
-      <ApiErrorListener />
-      <DataInitializer />
-      <GlobalLoadingOverlay />
-      <Suspense fallback={<GlobalLoadingFallback />}>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/403" element={<Forbidden403 />} />
-          <Route path="/*" element={
-            <Layout>
-              <Suspense fallback={<Skeleton className="w-full h-full min-h-[80vh] rounded-xl m-6" />}>
-                <Routes>
-                  <Route path="/" element={<ProtectedRoute requiredPermission="dashboard:view"><Dashboard /></ProtectedRoute>} />
-                  <Route path="/users" element={<ProtectedRoute requiredPermission="users:view"><Users /></ProtectedRoute>} />
-                  <Route path="/todos" element={<ProtectedRoute requiredPermission="todos:view"><Todos /></ProtectedRoute>} />
-                  <Route path="/seating" element={<ProtectedRoute requiredPermission="seating:view"><Seating /></ProtectedRoute>} />
-                  <Route path="/name-cards" element={<ProtectedRoute requiredPermission="name-cards:view"><NameCards /></ProtectedRoute>} />
-                  <Route path="/documents" element={<ProtectedRoute requiredPermission="documents:view"><Documents /></ProtectedRoute>} />
-                  <Route path="/attendance" element={<ProtectedRoute requiredPermission="attendance:view"><Attendance /></ProtectedRoute>} />
-                  <Route path="/contracts" element={<ProtectedRoute requiredPermission="contracts:view"><Contracts /></ProtectedRoute>} />
-                  <Route path="/settings" element={<ProtectedRoute requiredPermission="settings:view"><Settings /></ProtectedRoute>} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </Suspense>
-            </Layout>
-          } />
-        </Routes>
-      </Suspense>
+      <ConfirmProvider>
+        <ThemeApplier />
+        <ConnectivityListener />
+        <AuthExpiredListener />
+        <ApiErrorListener />
+        <DataInitializer />
+        <GlobalLoadingOverlay />
+        <Toaster position="top-center" richColors />
+        <Suspense fallback={<GlobalLoadingFallback />}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/403" element={<Forbidden403 />} />
+            <Route element={
+              <Layout>
+                <Suspense fallback={<Skeleton className="w-full h-full min-h-[80vh] rounded-xl m-6" />}>
+                  <Outlet />
+                </Suspense>
+              </Layout>
+            }>
+              <Route path="/" element={<ProtectedRoute requiredPermission="dashboard:view"><Dashboard /></ProtectedRoute>} />
+              <Route path="/users" element={<ProtectedRoute requiredPermission="users:view"><Users /></ProtectedRoute>} />
+              <Route path="/todos" element={<ProtectedRoute requiredPermission="todos:view"><Todos /></ProtectedRoute>} />
+              <Route path="/seating" element={<ProtectedRoute requiredPermission="seating:view"><Seating /></ProtectedRoute>} />
+              <Route path="/name-cards" element={<ProtectedRoute requiredPermission="name-cards:view"><NameCards /></ProtectedRoute>} />
+              <Route path="/documents" element={<ProtectedRoute requiredPermission="documents:view"><Documents /></ProtectedRoute>} />
+              <Route path="/attendance" element={<ProtectedRoute requiredPermission="attendance:view"><Attendance /></ProtectedRoute>} />
+              <Route path="/contracts" element={<ProtectedRoute requiredPermission="contracts:view"><Contracts /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute requiredPermission="settings:view"><Settings /></ProtectedRoute>} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </ConfirmProvider>
     </BrowserRouter>
   );
 }

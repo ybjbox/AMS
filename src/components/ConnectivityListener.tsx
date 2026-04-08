@@ -1,28 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useBodyOverflow } from '../hooks/useBodyOverflow';
 
 export default function ConnectivityListener() {
   const [isDisconnected, setIsDisconnected] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
 
-  useEffect(() => {
-    if (isDisconnected) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isDisconnected]);
+  useBodyOverflow(isDisconnected);
 
   const checkConnection = useCallback(async () => {
     setIsChecking(true);
     try {
-      // Mock backend health check
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setIsDisconnected(false);
+      const response = await fetch('/api/health');
+      if (response.ok) {
+        setIsDisconnected(false);
+      } else {
+        setIsDisconnected(true);
+      }
     } catch (error) {
       setIsDisconnected(true);
     } finally {
@@ -31,14 +26,20 @@ export default function ConnectivityListener() {
   }, []);
 
   useEffect(() => {
-    // Initial check
-    checkConnection();
-
-    // Periodic check every 5 seconds
-    const interval = setInterval(checkConnection, 5000);
-
-    return () => clearInterval(interval);
-  }, [checkConnection]);
+    const handleOffline = () => setIsDisconnected(true);
+    const handleOnline = () => setIsDisconnected(false);
+    
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+    
+    // Initial state
+    setIsDisconnected(!navigator.onLine);
+    
+    return () => {
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, []);
 
   if (!isDisconnected) return null;
 
@@ -63,7 +64,7 @@ export default function ConnectivityListener() {
           <button
             onClick={checkConnection}
             disabled={isChecking}
-            className="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white font-semibold rounded-xl hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-lg shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed group"
+            className="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white font-semibold rounded-xl hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform shadow-lg shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed group"
           >
             <RefreshCw className={`w-5 h-5 mr-2 ${isChecking ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
             {isChecking ? '正在重试...' : '立即重试'}

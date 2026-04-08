@@ -14,48 +14,6 @@ export enum Permission {
   MANAGE_ATTENDANCE = 'MANAGE_ATTENDANCE',
 }
 
-export enum DataScope {
-  ALL = 'ALL',
-  DEPARTMENT = 'DEPARTMENT',
-  DEPARTMENT_AND_SUB = 'DEPARTMENT_AND_SUB',
-  SELF = 'SELF',
-}
-
-export const RolePermissions: Record<SystemRole, Permission[]> = {
-  [SystemRole.SUPER_ADMIN]: [
-    Permission.VIEW_DASHBOARD,
-    Permission.MANAGE_USERS,
-    Permission.VIEW_USERS,
-    Permission.MANAGE_SETTINGS,
-    Permission.VIEW_SETTINGS,
-    Permission.MANAGE_ATTENDANCE,
-  ],
-  [SystemRole.ADMIN]: [
-    Permission.VIEW_DASHBOARD,
-    Permission.MANAGE_USERS,
-    Permission.VIEW_USERS,
-    Permission.VIEW_SETTINGS,
-    Permission.MANAGE_ATTENDANCE,
-  ],
-  [SystemRole.HR]: [
-    Permission.VIEW_DASHBOARD,
-    Permission.MANAGE_USERS,
-    Permission.VIEW_USERS,
-    Permission.MANAGE_ATTENDANCE,
-  ],
-  [SystemRole.EMPLOYEE]: [
-    Permission.VIEW_DASHBOARD,
-    Permission.VIEW_USERS,
-  ],
-};
-
-export const RoleDataScope: Record<SystemRole, DataScope> = {
-  [SystemRole.SUPER_ADMIN]: DataScope.ALL,
-  [SystemRole.ADMIN]: DataScope.ALL,
-  [SystemRole.HR]: DataScope.DEPARTMENT_AND_SUB,
-  [SystemRole.EMPLOYEE]: DataScope.SELF,
-};
-
 export interface User {
   id: string;
   name: string;

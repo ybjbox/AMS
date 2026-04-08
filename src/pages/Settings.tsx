@@ -1,32 +1,30 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { toast } from 'sonner';
 import { Building2, User, Sliders, ShieldCheck, BellRing, Palette, Plus, Trash2, Save, RotateCcw, Code2, FileCode, Monitor, Image as ImageIcon, Upload, TerminalSquare } from 'lucide-react';
-import { EmptyState } from '../components/ui/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import Departments from './Departments';
 import SystemLogs from '../components/SystemLogs';
-import { useAuth } from '../store/auth';
+import { useUserStore } from '../store/useUserStore';
 import { useTodoStore } from '../store/todos';
 import { useAppSettings } from '../store/appSettings';
 import { SystemRole } from '../types';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('departments');
-  const user = useAuth(state => state.user);
-  const setAuth = useAuth(state => state.setAuth);
+  const userInfo = useUserStore(state => state.userInfo);
   const settings = useTodoStore(state => state.settings);
   const updateSettings = useTodoStore(state => state.updateSettings);
   const enableStrictPermission = useAppSettings(state => state.enableStrictPermission);
   const setEnableStrictPermission = useAppSettings(state => state.setEnableStrictPermission);
 
   const handleRoleChange = useCallback((role: SystemRole) => {
-    setAuth({
-      user: {
-        id: 'ADMIN001',
-        name: '管理员',
-        systemRole: role,
-        department: '集团总部',
-      }
-    });
-  }, [setAuth]);
+    if (userInfo) {
+      useUserStore.getState().setUser({
+        ...userInfo,
+        role: role,
+      }, useUserStore.getState().token || '');
+    }
+  }, [userInfo]);
 
   const onRoleChangeClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     const role = e.currentTarget.dataset.role as SystemRole;
@@ -219,12 +217,12 @@ export default function Settings() {
                       data-role={item.role}
                       onClick={onRoleChangeClick}
                       className={`flex flex-col p-4 rounded-xl border text-left transition-all ${
-                        user?.systemRole === item.role
+                        userInfo?.role === item.role
                           ? 'border-blue-600 bg-blue-50/50 ring-2 ring-blue-600/20'
                           : 'border-slate-200 hover:border-zinc-200/80 hover:bg-slate-50'
                       }`}
                     >
-                      <span className={`text-sm font-bold ${user?.systemRole === item.role ? 'text-blue-700' : 'text-slate-900'}`}>
+                      <span className={`text-sm font-bold ${userInfo?.role === item.role ? 'text-blue-700' : 'text-slate-900'}`}>
                         {item.label}
                       </span>
                       <span className="text-xs text-slate-500 mt-1">{item.desc}</span>
@@ -282,7 +280,7 @@ function AppearanceSettings() {
       } else {
         setSystemIcon(mockUrl);
       }
-      alert(`成功上传${type === 'background' ? '背景图' : '系统图标'} (Mock)`);
+      toast.success(`成功上传${type === 'background' ? '背景图' : '系统图标'} (Mock)`);
     }, 500);
   };
 
@@ -436,7 +434,7 @@ function ExportScriptSettings() {
       await new Promise(resolve => setTimeout(resolve, 500));
       setEditingScript(null);
       fetchScripts();
-      alert('保存成功 (Mock)');
+      toast.success('保存成功 (Mock)');
     } catch (error) {
       console.error('Failed to save script:', error);
     } finally {
@@ -449,7 +447,7 @@ function ExportScriptSettings() {
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
       fetchScripts();
-      alert(`删除成功: ${name} (Mock)`);
+      toast.success(`删除成功: ${name} (Mock)`);
     } catch (error) {
       console.error('Failed to delete script:', error);
     }
@@ -489,7 +487,7 @@ export default async function applyTemplate(worksheet, data, config) {
         {!editingScript && (
           <button
             onClick={handleAdd}
-            className="flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform text-sm font-medium shadow-sm"
+            className="flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform text-sm font-medium shadow-sm"
           >
             <Plus className="w-4 h-4 mr-2" />
             创建脚本
@@ -578,7 +576,7 @@ export default async function applyTemplate(worksheet, data, config) {
                 action={
                   <button
                     onClick={handleAdd}
-                    className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-sm"
+                    className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform shadow-sm"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     立即创建
@@ -630,7 +628,7 @@ function ExportThemeSettings() {
       // Mock backend processing
       await new Promise(resolve => setTimeout(resolve, 500));
       setEditingId(null);
-      alert('保存成功 (Mock)');
+      toast.success('保存成功 (Mock)');
     } catch (error) {
       console.error('Failed to save themes:', error);
     } finally {
@@ -661,7 +659,7 @@ function ExportThemeSettings() {
 
   const handleDeleteTheme = (id: string) => {
     if (id === 'default') {
-      alert('默认主题无法删除');
+      toast.warning('默认主题无法删除');
       return;
     }
     const newThemes = { ...themes };
@@ -681,7 +679,7 @@ function ExportThemeSettings() {
         </div>
         <button
           onClick={handleAddTheme}
-          className="flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform text-sm font-medium shadow-sm"
+          className="flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform text-sm font-medium shadow-sm"
         >
           <Plus className="w-4 h-4 mr-2" />
           新增主题

@@ -2,12 +2,10 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useAuth } from '../../../store/auth';
 import { useUserStore } from '../../../store/useUserStore';
 import ThemeToggle from './ThemeToggle';
 
 export default function UserMenu() {
-  const user = useAuth(state => state.user);
   const { userInfo, logout } = useUserStore();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
@@ -48,11 +46,11 @@ export default function UserMenu() {
           <User className="h-5 w-5" />
         </div>
         <div className="hidden sm:flex flex-col">
-          <span className="text-sm font-medium text-slate-700 dark:text-slate-200 leading-none">{userInfo?.username || user?.name || '未登录'}</span>
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-200 leading-none">{userInfo?.username || '未登录'}</span>
           <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-none">
-            {user?.systemRole === 'SUPER_ADMIN' ? '超级管理员' : 
-             user?.systemRole === 'ADMIN' ? '管理员' : 
-             user?.systemRole === 'HR' ? '人事主管' : '普通员工'}
+            {userInfo?.role === 'SUPER_ADMIN' ? '超级管理员' : 
+             userInfo?.role === 'ADMIN' ? '管理员' : 
+             userInfo?.role === 'HR' ? '人事主管' : '普通员工'}
           </span>
         </div>
       </div>

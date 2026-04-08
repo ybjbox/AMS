@@ -1,7 +1,7 @@
 import React, { useMemo, useCallback } from 'react';
-import { Permission } from '../../../types';
-import { TableSkeleton } from '../../../components/ui/Skeleton';
-import { EmptyState } from '../../../components/ui/EmptyState';
+import { useConfirm } from '../../../hooks/useConfirm';
+import { TableSkeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { AlertTriangle, Search } from 'lucide-react';
 import { UseAttendanceReturn } from '../hooks/useAttendance';
 
@@ -30,6 +30,7 @@ export default function Table({
   filteredAnomalies,
   filteredSchedules
 }: TableProps) {
+  const confirm = useConfirm();
   const onEditShiftClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     const shiftId = e.currentTarget.dataset.shiftid;
     const shift = shifts.find(s => s.id === shiftId);
@@ -38,12 +39,12 @@ export default function Table({
     }
   }, [shifts, setEditingShift]);
 
-  const onDeleteShiftClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+  const onDeleteShiftClick = useCallback(async (e: React.MouseEvent<HTMLButtonElement>) => {
     const shiftId = e.currentTarget.dataset.shiftid;
-    if (shiftId && window.confirm('确定要删除这个班次吗？')) {
+    if (shiftId && await confirm({ title: '确定要删除这个班次吗？', description: '此操作不可恢复。', variant: 'danger' })) {
       deleteShift(shiftId);
     }
-  }, [deleteShift]);
+  }, [deleteShift, confirm]);
 
   const onRemoveScheduleClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     const indexStr = e.currentTarget.dataset.index;
@@ -60,7 +61,7 @@ export default function Table({
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">已导入记录 ({records.length})</h3>
-          {records.length > 0 && hasPermission(Permission.MANAGE_ATTENDANCE) && (
+          {records.length > 0 && hasPermission('attendance:manage') && (
             <button
               onClick={() => setRecords([])}
               className="text-sm text-destructive hover:text-destructive/80 transition-colors"
@@ -118,7 +119,7 @@ export default function Table({
                 className="w-full pl-10 pr-3 py-2 text-sm border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200"
               />
             </div>
-            {schedules.length > 0 && hasPermission(Permission.MANAGE_ATTENDANCE) && (
+            {schedules.length > 0 && hasPermission('attendance:manage') && (
               <button
                 onClick={() => setSchedules([])}
                 className="text-sm text-destructive hover:text-destructive/80 whitespace-nowrap transition-colors"
@@ -152,7 +153,7 @@ export default function Table({
                     }) : (schedule as any).shiftId}
                   </td>
                   <td className="px-6 py-2 whitespace-nowrap text-right text-sm font-medium">
-                    {hasPermission(Permission.MANAGE_ATTENDANCE) && (
+                    {hasPermission('attendance:manage') && (
                       <button
                         data-index={idx}
                         onClick={onRemoveScheduleClick}
@@ -236,20 +237,20 @@ export default function Table({
                 <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">班次名称</th>
                 <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">上班时间</th>
                 <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">下班时间</th>
-                {hasPermission(Permission.MANAGE_ATTENDANCE) && (
+                {hasPermission('attendance:manage') && (
                   <th className="px-6 py-2 text-right text-xs font-medium text-zinc-500 uppercase tracking-wider">操作</th>
                 )}
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-50 dark:divide-zinc-800/50">
               {isLoading ? (
-                <TableSkeleton columns={hasPermission(Permission.MANAGE_ATTENDANCE) ? 4 : 3} rows={5} />
+                <TableSkeleton columns={hasPermission('attendance:manage') ? 4 : 3} rows={5} />
               ) : shifts.map((shift) => (
                 <tr key={shift.id} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-700/30 transition-colors">
                   <td className="px-6 py-2 whitespace-nowrap text-sm font-medium text-zinc-900 dark:text-zinc-200">{shift.name}</td>
                   <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{shift.startTime}</td>
                   <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{shift.endTime}</td>
-                  {hasPermission(Permission.MANAGE_ATTENDANCE) && (
+                  {hasPermission('attendance:manage') && (
                     <td className="px-6 py-2 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         data-shiftid={shift.id}

@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useLogStore, LogLevel } from '../store/logs';
 import { AlertCircle, AlertTriangle, Info, Trash2, Search, Filter, ChevronDown, ChevronRight, FileText } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EmptyState } from './ui/EmptyState';
 
 export default function SystemLogs() {

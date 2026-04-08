@@ -1,18 +1,5 @@
 import { create } from 'zustand';
-
-export type DepartmentNode = {
-  id: string;
-  name: string;
-  priority?: number;
-  children?: DepartmentNode[];
-};
-
-export type RoleNode = {
-  id: string;
-  name: string;
-  departmentId: string;
-  priority?: number;
-};
+import { DepartmentNode, RoleNode } from '../types';
 
 interface DepartmentState {
   departments: DepartmentNode[];

@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { useUserStore } from '../store/users';
+import { toast } from 'sonner';
+import { useBodyOverflow } from '../hooks/useBodyOverflow';
+import { useEmployeeStore } from '../store/employees';
 import { useContractStore, defaultTemplate } from '../store/contracts';
 import { Search, Filter, FileSignature, Printer, Eye, X, FileEdit, Upload, Save, FileText } from 'lucide-react';
-import { BaseModal } from '../components/ui/BaseModal';
-import { EmptyState } from '../components/ui/EmptyState';
+import { BaseModal } from '@/components/ui/BaseModal';
+import { EmptyState } from '@/components/ui/EmptyState';
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const CONTRACT_STYLE: React.CSSProperties = { fontFamily: 'SimSun, "Songti SC", serif' };
 
@@ -47,8 +49,8 @@ const ContractTemplate = ({ user }: { user: any }) => {
 };
 
 export default function Contracts() {
-  const users = useUserStore(state => state.users);
-  const fetchUsers = useUserStore(state => state.fetchUsers);
+  const users = useEmployeeStore(state => state.users);
+  const fetchUsers = useEmployeeStore(state => state.fetchUsers);
   const template = useContractStore(state => state.template);
   const setTemplate = useContractStore(state => state.setTemplate);
   
@@ -67,16 +69,7 @@ export default function Contracts() {
   const printRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (isPreviewOpen || isTemplateEditorOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isPreviewOpen, isTemplateEditorOpen]);
+  useBodyOverflow(isPreviewOpen || isTemplateEditorOpen);
 
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
@@ -164,7 +157,7 @@ export default function Contracts() {
     // Mock backend processing
     setTimeout(() => {
       setEditingTemplate('<h1>Mock Contract Template</h1><p>Name: {name}</p>');
-      alert('成功上传合同模板 (Mock)');
+      toast.success('成功上传合同模板 (Mock)');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -335,7 +328,7 @@ export default function Contracts() {
               </button>
               <button
                 onClick={handlePrint}
-                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm"
+                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm"
               >
                 <Printer className="w-4 h-4 mr-2" />
                 打印合同
@@ -399,7 +392,7 @@ export default function Contracts() {
                   setTemplate(editingTemplate);
                   setIsTemplateEditorOpen(false);
                 }}
-                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm"
+                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm"
               >
                 <Save className="w-4 h-4 mr-2" />
                 保存

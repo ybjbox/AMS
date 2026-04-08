@@ -55,7 +55,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
             </button>
             <button
               onClick={this.handleGoHome}
-              className="flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner hover:from-blue-600 hover:to-blue-700 text-white rounded-lg transition-colors duration-200 shadow-sm"
+              className="flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner hover:from-blue-500 hover:to-blue-600 text-white rounded-lg transition-colors duration-200 shadow-sm"
             >
               <Home className="h-4 w-4 mr-2" />
               返回控制台

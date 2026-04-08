@@ -1,0 +1,94 @@
+import React from 'react';
+import { Printer, Check } from 'lucide-react';
+import { BaseModal } from '@/components/ui/BaseModal';
+import { DocumentSet, Document } from '../../../store/documents';
+
+interface PrintSetModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  printingSet: DocumentSet | null;
+  isPrinting: boolean;
+  handlePrint: () => void;
+  documents: Document[];
+}
+
+export function PrintSetModal({
+  isOpen,
+  onClose,
+  printingSet,
+  isPrinting,
+  handlePrint,
+  documents
+}: PrintSetModalProps) {
+  return (
+    <BaseModal
+      isOpen={isOpen && !!printingSet}
+      onClose={() => !isPrinting && onClose()}
+      title={`准备打印：${printingSet?.name}`}
+      size="md"
+      footer={
+        <>
+          <button 
+            type="button" 
+            onClick={onClose} 
+            disabled={isPrinting}
+            className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm disabled:opacity-50"
+          >
+            取消
+          </button>
+          <button 
+            type="button" 
+            onClick={handlePrint}
+            disabled={isPrinting}
+            className="w-full inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm disabled:opacity-50"
+          >
+            {isPrinting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                处理中...
+              </>
+            ) : (
+              <>
+                <Printer className="w-4 h-4 mr-2" />
+                确认打印
+              </>
+            )}
+          </button>
+        </>
+      }
+    >
+      <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 mb-4">
+        <Printer className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+      </div>
+      <div className="text-center">
+        <div className="mt-2">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            即将为您调用系统打印机，批量打印以下 {printingSet?.documentIds.length} 份文件：
+          </p>
+          <div className="mt-4 text-left bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 max-h-60 overflow-y-auto border border-slate-100 dark:border-slate-700">
+            <ul className="space-y-2">
+              {printingSet?.documentIds.map(id => {
+                const doc = documents.find(d => d.id === id);
+                if (!doc) return null;
+                const settings = printingSet.printSettings?.[id] || { duplex: false, color: false, copies: 1 };
+                return (
+                  <li key={id} className="flex flex-col sm:flex-row sm:items-center justify-between text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700 gap-2">
+                    <div className="flex items-center overflow-hidden">
+                      <Check className="w-4 h-4 mr-2 text-emerald-500 shrink-0" />
+                      <span className="truncate">{doc.name}</span>
+                    </div>
+                    <div className="flex items-center space-x-2 shrink-0 text-xs">
+                      <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300">{settings.copies}份</span>
+                      <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300">{settings.color ? '彩色' : '黑白'}</span>
+                      <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300">{settings.duplex ? '双面' : '单面'}</span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </BaseModal>
+  );
+}

@@ -1,95 +1,12 @@
-import { User, SystemRole, DataScope, RoleDataScope } from '../types';
+import { User, SystemRole } from '../types';
 import { Folder, Document, DocumentSet } from '../store/documents';
 import { Shift, EmployeeSchedule, PunchRecord, Anomaly } from '../store/attendance';
-import { authStore } from '../store/auth';
-import { departmentStore, flattenDepartments, DepartmentNode } from '../store/departments';
-
-// Helper to get all sub-departments
-const getSubDepartments = (deptName: string, nodes: DepartmentNode[]): string[] => {
-  let result: string[] = [];
-  
-  const findNode = (name: string, currentNodes: DepartmentNode[]): DepartmentNode | null => {
-    for (const node of currentNodes) {
-      if (node.name === name) return node;
-      if (node.children) {
-        const found = findNode(name, node.children);
-        if (found) return found;
-      }
-    }
-    return null;
-  };
-
-  const targetNode = findNode(deptName, nodes);
-  if (targetNode) {
-    result = flattenDepartments([targetNode]).map(d => d.name);
-  }
-  
-  return result;
-};
-
-const filterByDataScope = <T extends Partial<{ id: string; userId: string; employeeId: string; department: string }>>(data: T[], user: any, scope: DataScope): T[] => {
-  if (!user) return [];
-  
-  switch (scope) {
-    case DataScope.ALL:
-      return data;
-    case DataScope.SELF:
-      return data.filter(item => item.id === user.id || item.userId === user.id || item.employeeId === user.id);
-    case DataScope.DEPARTMENT:
-      return data.filter(item => item.department === user.department);
-    case DataScope.DEPARTMENT_AND_SUB:
-      if (!user.department) return [];
-      const subDepts = getSubDepartments(user.department, departmentStore.getDepartments());
-      return data.filter(item => item.department && subDepts.includes(item.department));
-    default:
-      return [];
-  }
-};
-
-// Helper functions for mock data generation
-const generateIdCard = () => {
-  const year = 1970 + Math.floor(Math.random() * 30);
-  const month = String(Math.floor(Math.random() * 12) + 1).padStart(2, '0');
-  const day = String(Math.floor(Math.random() * 28) + 1).padStart(2, '0');
-  return `440106${year}${month}${day}${Math.floor(Math.random() * 9000) + 1000}`;
-};
-
-const calculateAge = (idCard: string) => {
-  if (!idCard || idCard.length !== 18) return '-';
-  const year = parseInt(idCard.substring(6, 10));
-  const month = parseInt(idCard.substring(10, 12));
-  const day = parseInt(idCard.substring(12, 14));
-  const today = new Date();
-  let age = today.getFullYear() - year;
-  if (today.getMonth() + 1 < month || (today.getMonth() + 1 === month && today.getDate() < day)) age--;
-  return age;
-};
-
-const getGender = (idCard: string) => {
-  if (!idCard || idCard.length !== 18) return '-';
-  return parseInt(idCard.charAt(16)) % 2 === 0 ? '女' : '男';
-};
-
-const calculateYearsOfService = (joinDate: string) => {
-  if (!joinDate) return '-';
-  const join = new Date(joinDate);
-  const today = new Date();
-  let years = today.getFullYear() - join.getFullYear();
-  let months = today.getMonth() - join.getMonth();
-  if (months < 0 || (months === 0 && today.getDate() < join.getDate())) {
-    years--;
-    months += 12;
-  }
-  return `${years}年${months}个月`;
-};
-
-const calculateDaysToExpiry = (expiryDate: string) => {
-  if (!expiryDate) return '-';
-  const expiry = new Date(expiryDate);
-  const today = new Date();
-  const diffTime = expiry.getTime() - today.getTime();
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-};
+import { useUserStore } from '../store/useUserStore';
+import { departmentStore, flattenDepartments } from '../store/departments';
+import { DepartmentNode } from '../types';
+import { getSubDepartments } from '../utils/departmentUtils';
+import { generateIdCard, calculateAge, getGender } from '../utils/idCardUtils';
+import { calculateYearsOfService, calculateDaysToExpiry } from '../utils/dateUtils';
 
 // Mock Data
 let mockUsers: User[] = Array.from({ length: 45 }).map((_, i) => {
@@ -164,10 +81,9 @@ export const api = {
   // Users
   fetchUsers: async (): Promise<User[]> => {
     await delay();
-    const auth = authStore.getAuth();
-    if (!auth.user) return [];
-    const scope = RoleDataScope[auth.user.systemRole];
-    return filterByDataScope(mockUsers, auth.user, scope);
+    const userInfo = useUserStore.getState().userInfo;
+    if (!userInfo) return [];
+    return mockUsers;
   },
   createUser: async (user: User): Promise<User> => {
     await delay();
@@ -278,10 +194,9 @@ export const api = {
 
   fetchSchedules: async (): Promise<EmployeeSchedule[]> => {
     await delay();
-    const auth = authStore.getAuth();
-    if (!auth.user) return [];
-    const scope = RoleDataScope[auth.user.systemRole];
-    return filterByDataScope(mockSchedules, auth.user, scope);
+    const userInfo = useUserStore.getState().userInfo;
+    if (!userInfo) return [];
+    return mockSchedules;
   },
   updateSchedules: async (schedules: EmployeeSchedule[]): Promise<EmployeeSchedule[]> => {
     await delay();
@@ -291,10 +206,9 @@ export const api = {
 
   fetchRecords: async (): Promise<PunchRecord[]> => {
     await delay();
-    const auth = authStore.getAuth();
-    if (!auth.user) return [];
-    const scope = RoleDataScope[auth.user.systemRole];
-    return filterByDataScope(mockRecords, auth.user, scope);
+    const userInfo = useUserStore.getState().userInfo;
+    if (!userInfo) return [];
+    return mockRecords;
   },
   updateRecords: async (records: PunchRecord[]): Promise<PunchRecord[]> => {
     await delay();
@@ -304,10 +218,9 @@ export const api = {
 
   fetchAnomalies: async (): Promise<Anomaly[]> => {
     await delay();
-    const auth = authStore.getAuth();
-    if (!auth.user) return [];
-    const scope = RoleDataScope[auth.user.systemRole];
-    return filterByDataScope(mockAnomalies, auth.user, scope);
+    const userInfo = useUserStore.getState().userInfo;
+    if (!userInfo) return [];
+    return mockAnomalies;
   },
   analyzeAnomalies: async (): Promise<Anomaly[]> => {
     await delay(1000); // Simulate longer processing time

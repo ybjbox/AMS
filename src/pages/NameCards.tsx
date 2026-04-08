@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useUserStore } from '../store/users';
+import { toast } from 'sonner';
+import { useBodyOverflow } from '../hooks/useBodyOverflow';
+import { useEmployeeStore } from '../store/employees';
 import { useDepartments } from '../store/departments';
 import { IdCard, Users, Printer, Settings2, X, CheckSquare, Square, Plus, Minus, ChevronRight, Upload, FileDown, ChevronDown, FileText } from 'lucide-react';
-import { EmptyState } from '../components/ui/EmptyState';
-import { BaseModal } from '../components/ui/BaseModal';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { BaseModal } from '@/components/ui/BaseModal';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface PrintSettings {
   paperSize: 'A4' | 'A5' | 'custom';
@@ -35,8 +37,8 @@ const VERTICAL_CHAR_STYLE: React.CSSProperties = { writingMode: 'vertical-rl', t
 const CARD_PADDING_STYLE: React.CSSProperties = { padding: '10px' };
 
 export default function NameCards() {
-  const users = useUserStore(state => state.users);
-  const fetchUsers = useUserStore(state => state.fetchUsers);
+  const users = useEmployeeStore(state => state.users);
+  const fetchUsers = useEmployeeStore(state => state.fetchUsers);
   const departments = useDepartments(state => state.departments);
 
   useEffect(() => {
@@ -98,16 +100,7 @@ export default function NameCards() {
     };
   }, [isUploadMenuOpen]);
 
-  useEffect(() => {
-    if (isManualInputOpen || isParticipantModalOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isManualInputOpen, isParticipantModalOpen]);
+  useBodyOverflow(isManualInputOpen || isParticipantModalOpen);
 
   useEffect(() => {
     if (!uploadedUsers) {
@@ -116,7 +109,7 @@ export default function NameCards() {
   }, [activeUsers, uploadedUsers]);
 
   const handleDownloadTemplate = useCallback(() => {
-    alert('请求后端下载模板 (Mock)');
+    toast.info('请求后端下载模板 (Mock)');
   }, []);
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,7 +124,7 @@ export default function NameCards() {
       ];
       setUploadedUsers(newUsers);
       setSelectedUserIds(new Set(newUsers.map(u => u.id)));
-      alert('成功从后端获取到名单 (Mock)');
+      toast.success('成功从后端获取到名单 (Mock)');
     }, 500);
     
     // Reset file input
@@ -140,7 +133,7 @@ export default function NameCards() {
 
   const handleManualInputSubmit = useCallback(() => {
     if (!manualInputText.trim()) {
-      alert('请输入名单');
+      toast.warning('请输入名单');
       return;
     }
 
@@ -513,7 +506,7 @@ export default function NameCards() {
           <button
             onClick={handlePrint}
             disabled={selectedUserIds.size === 0}
-            className="flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Printer className="h-4 w-4 mr-2" />
             打印台卡
@@ -935,7 +928,7 @@ export default function NameCards() {
         footer={
           <>
             <button type="button" onClick={() => setIsParticipantModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm">取消</button>
-            <button type="button" onClick={() => setIsParticipantModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm">完成</button>
+            <button type="button" onClick={() => setIsParticipantModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm">完成</button>
           </>
         }
       >
@@ -1013,7 +1006,7 @@ export default function NameCards() {
             <button 
               type="button" 
               onClick={handleManualInputSubmit} 
-              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm"
+              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm"
             >
               确认导入
             </button>

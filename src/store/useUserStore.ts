@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { STORAGE_KEYS } from '../config/constants';
+import { hasPermission as checkPermission } from '../utils/permission';
 
 // 定义 UserInfo 接口
 export interface UserInfo {
@@ -18,6 +19,7 @@ export interface UserState {
   token: string | null;
   setUser: (userInfo: UserInfo, token: string) => void;
   logout: () => void;
+  hasPermission: (permissionCode: string) => boolean;
 }
 
 // 尝试从 localStorage 初始化 userInfo
@@ -52,5 +54,9 @@ export const useUserStore = create<UserState>((set) => ({
     
     // 清空状态
     set({ userInfo: null, token: null });
+  },
+
+  hasPermission: (permissionCode: string) => {
+    return checkPermission(permissionCode);
   },
 }));

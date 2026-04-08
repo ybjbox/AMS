@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useConfirm } from '../hooks/useConfirm';
 import { ChevronRight, ChevronDown, Folder, FolderOpen, Plus, Edit2, Trash2, Building2, X, Briefcase } from 'lucide-react';
-import { useDepartments, DepartmentNode, RoleNode, flattenDepartments } from '../store/departments';
-import { useAuth } from '../store/auth';
-import { Permission } from '../types';
-import { BaseModal } from '../components/ui/BaseModal';
-import { EmptyState } from '../components/ui/EmptyState';
+import { useBodyOverflow } from '../hooks/useBodyOverflow';
+import { useDepartments, flattenDepartments } from '../store/departments';
+import { DepartmentNode, RoleNode } from '../types';
+import { useUserStore } from '../store/useUserStore';
+import { BaseModal } from '@/components/ui/BaseModal';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 type ModalState = {
   isOpen: boolean;
@@ -25,7 +27,8 @@ type RoleModalState = {
 };
 
 export default function Departments() {
-  const hasPermission = useAuth(state => state.hasPermission);
+  const confirm = useConfirm();
+  const hasPermission = useUserStore(state => state.hasPermission);
   const departments = useDepartments(state => state.departments);
   const setDepartments = useDepartments(state => state.setDepartments);
   const roles = useDepartments(state => state.roles);
@@ -52,16 +55,7 @@ export default function Departments() {
   });
 
   // 防止弹窗打开时底层页面滚动
-  useEffect(() => {
-    if (modal.isOpen || roleModal.isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [modal.isOpen, roleModal.isOpen]);
+  useBodyOverflow(modal.isOpen || roleModal.isOpen);
 
   const toggleExpand = useCallback((id: string) => {
     setExpandedIds(prev => {
@@ -89,9 +83,9 @@ export default function Departments() {
     setModal({ isOpen: true, mode: 'edit', targetId: node.id, parentId: null, defaultName: node.name, defaultPriority: node.priority || 0 });
   }, []);
 
-  const handleDelete = useCallback((id: string, e: React.MouseEvent) => {
+  const handleDelete = useCallback(async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('确定要删除该部门吗？如果包含子部门也将一并删除。')) {
+    if (await confirm({ title: '确定要删除该部门吗？', description: '如果包含子部门也将一并删除。', variant: 'danger' })) {
       const deleteNode = (nodes: DepartmentNode[]): DepartmentNode[] => {
         return nodes.filter(n => n.id !== id).map(n => ({
           ...n,
@@ -157,11 +151,11 @@ export default function Departments() {
     setRoleModal({ isOpen: true, mode: 'edit', targetId: role.id, departmentId: role.departmentId, defaultName: role.name, defaultPriority: role.priority || 0 });
   }, []);
 
-  const handleDeleteRole = useCallback((id: string) => {
-    if (confirm('确定要删除该职位吗？')) {
+  const handleDeleteRole = useCallback(async (id: string) => {
+    if (await confirm({ title: '确定要删除该职位吗？', description: '此操作不可恢复。', variant: 'danger' })) {
       setRoles(roles.filter(r => r.id !== id));
     }
-  }, [roles, setRoles]);
+  }, [roles, setRoles, confirm]);
 
   const handleRoleModalSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -266,7 +260,7 @@ export default function Departments() {
                 </div>
                 
                 <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {hasPermission(Permission.MANAGE_SETTINGS) && (
+                  {hasPermission('settings:manage') && (
                     <>
                       <button 
                         data-id={node.id}
@@ -374,7 +368,7 @@ export default function Departments() {
                     <span className="text-sm text-slate-700 dark:text-slate-300">{node.name}</span>
                     <span className="text-xs text-slate-400">({deptRoles.length})</span>
                   </div>
-                  {hasPermission(Permission.MANAGE_SETTINGS) && (
+                  {hasPermission('settings:manage') && (
                     <button 
                       data-id={node.id}
                       onClick={onAddRoleClick}
@@ -393,7 +387,7 @@ export default function Departments() {
                         {deptRoles.map(role => (
                           <li key={role.id} className="flex items-center justify-between p-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700/50 group">
                             <span className="text-sm text-slate-600 dark:text-slate-300">{role.name}</span>
-                            {hasPermission(Permission.MANAGE_SETTINGS) && (
+                            {hasPermission('settings:manage') && (
                               <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button 
                                   data-id={role.id}
@@ -445,10 +439,10 @@ export default function Departments() {
               <Building2 className="w-5 h-5 text-slate-500 dark:text-slate-400" />
               <h2 className="text-base font-medium text-slate-800 dark:text-slate-200">部门架构 ({flatDepts.length})</h2>
             </div>
-            {hasPermission(Permission.MANAGE_SETTINGS) && (
+            {hasPermission('settings:manage') && (
               <button 
                 onClick={handleAddRoot}
-                className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white text-sm font-medium rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-sm"
+                className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white text-sm font-medium rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform shadow-sm"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 新增一级部门
@@ -467,7 +461,7 @@ export default function Departments() {
                   action={
                     <button
                       onClick={handleAddRoot}
-                      className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform shadow-sm"
+                      className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform shadow-sm"
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       立即创建
@@ -520,7 +514,7 @@ export default function Departments() {
         footer={
           <>
             <button type="button" onClick={() => setModal(prev => ({ ...prev, isOpen: false }))} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm">取消</button>
-            <button type="submit" form="dept-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm">保存</button>
+            <button type="submit" form="dept-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm">保存</button>
           </>
         }
       >
@@ -571,7 +565,7 @@ export default function Departments() {
         footer={
           <>
             <button type="button" onClick={() => setRoleModal(prev => ({ ...prev, isOpen: false }))} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm">取消</button>
-            <button type="submit" form="role-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm">保存</button>
+            <button type="submit" form="role-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm">保存</button>
           </>
         }
       >

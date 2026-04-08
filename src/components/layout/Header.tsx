@@ -2,7 +2,7 @@ import React, { memo, useCallback } from 'react';
 import { Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import NotificationTrigger from './header/NotificationTrigger';
 import UserMenu from './header/UserMenu';
-import { Sheet, SheetContent, SheetTrigger } from '../../../components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import Sidebar from './Sidebar';
 
 interface HeaderProps {

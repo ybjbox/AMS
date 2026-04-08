@@ -2,7 +2,6 @@ import React, { useMemo, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, Settings, Building2, ListTodo, Armchair, IdCard, FileStack, Clock, FileSignature } from 'lucide-react';
 import { useAppSettings } from '../../store/appSettings';
-import { hasPermission } from '../../utils/permission';
 import { useUserStore } from '../../store/useUserStore';
 
 interface SidebarProps {
@@ -40,6 +39,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
   
   // 订阅 userInfo 以确保权限变化时能重新渲染
   const userInfo = useUserStore(state => state.userInfo);
+  const hasPermission = useUserStore(state => state.hasPermission);
 
   const visibleNav = useMemo(() => {
     return NAVIGATION_CONFIG.filter(item => {
@@ -49,7 +49,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
       }
       return true;
     });
-  }, [userInfo]);
+  }, [userInfo, hasPermission]);
 
   const handleCloseSidebar = useCallback(() => {
     if (onClose) {
