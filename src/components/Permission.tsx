@@ -19,7 +19,7 @@ export interface PermissionProps {
  */
 export const Permission: React.FC<PermissionProps> = React.memo(({ code, children }) => {
   // 订阅 userInfo 状态，确保在用户登录/登出或角色变化时，组件能够自动重新渲染
-  useUserStore(state => state.userInfo);
+  useUserStore((state) => state.userInfo);
 
   const isAllowed = hasPermission(code);
 

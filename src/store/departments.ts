@@ -19,7 +19,7 @@ const initialDepartments: DepartmentNode[] = [
       { id: '4', name: '人力资源中心', priority: 70 },
       { id: '5', name: '法务部', priority: 60 },
       { id: '6', name: '行政部', priority: 50 },
-    ]
+    ],
   },
   {
     id: '7',
@@ -30,7 +30,7 @@ const initialDepartments: DepartmentNode[] = [
       { id: '9', name: '产品部', priority: 80 },
       { id: '10', name: '设计部', priority: 70 },
       { id: '11', name: '市场部', priority: 60 },
-    ]
+    ],
   },
   {
     id: '12',
@@ -40,8 +40,8 @@ const initialDepartments: DepartmentNode[] = [
       { id: '13', name: '销售部', priority: 90 },
       { id: '14', name: '客户成功部', priority: 80 },
       { id: '15', name: '运营部', priority: 70 },
-    ]
-  }
+    ],
+  },
 ];
 
 const initialRoles: RoleNode[] = [
@@ -57,9 +57,9 @@ const initialRoles: RoleNode[] = [
 const sortDepartments = (nodes: DepartmentNode[]): DepartmentNode[] => {
   return [...nodes]
     .sort((a, b) => (b.priority || 0) - (a.priority || 0))
-    .map(node => ({
+    .map((node) => ({
       ...node,
-      children: node.children ? sortDepartments(node.children) : undefined
+      children: node.children ? sortDepartments(node.children) : undefined,
     }));
 };
 
@@ -71,7 +71,7 @@ export const useDepartments = create<DepartmentState>((set) => ({
   departments: sortDepartments(initialDepartments),
   roles: sortRoles(initialRoles),
   setDepartments: (newDepts) => set({ departments: sortDepartments(newDepts) }),
-  setRoles: (newRoles) => set({ roles: sortRoles(newRoles) })
+  setRoles: (newRoles) => set({ roles: sortRoles(newRoles) }),
 }));
 
 // Export departmentStore for backwards compatibility with non-react code if needed
@@ -80,12 +80,12 @@ export const departmentStore = {
   setDepartments: (newDepts: DepartmentNode[]) => useDepartments.getState().setDepartments(newDepts),
   getRoles: () => useDepartments.getState().roles,
   setRoles: (newRoles: RoleNode[]) => useDepartments.getState().setRoles(newRoles),
-  subscribe: (listener: () => void) => useDepartments.subscribe(listener)
+  subscribe: (listener: () => void) => useDepartments.subscribe(listener),
 };
 
-export function flattenDepartments(nodes: DepartmentNode[]): { id: string, name: string }[] {
-  let result: { id: string, name: string }[] = [];
-  nodes.forEach(node => {
+export function flattenDepartments(nodes: DepartmentNode[]): { id: string; name: string }[] {
+  let result: { id: string; name: string }[] = [];
+  nodes.forEach((node) => {
     result.push({ id: node.id, name: node.name });
     if (node.children) {
       result = result.concat(flattenDepartments(node.children));

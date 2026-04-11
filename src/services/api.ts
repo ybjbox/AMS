@@ -35,13 +35,15 @@ api.interceptors.response.use(
   (error) => {
     if (!error.response) {
       // Handle network errors or server downtime
-      window.dispatchEvent(new CustomEvent(EVENT_KEYS.API_ERROR, {
-        detail: {
-          title: '网络请求失败',
-          message: '请检查网络或联系管理员',
-          type: 'error'
-        }
-      }));
+      window.dispatchEvent(
+        new CustomEvent(EVENT_KEYS.API_ERROR, {
+          detail: {
+            title: '网络请求失败',
+            message: '请检查网络或联系管理员',
+            type: 'error',
+          },
+        })
+      );
       return Promise.reject(error);
     }
 
@@ -49,20 +51,22 @@ api.interceptors.response.use(
     if (error.response.status === 401) {
       localStorage.removeItem(STORAGE_KEYS.TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER_INFO);
-      
+
       // 抛出自定义事件，交由顶层组件处理通知
-      window.dispatchEvent(new CustomEvent(EVENT_KEYS.API_ERROR, {
-        detail: {
-          title: '身份验证失败',
-          message: '登录已过期，请重新登录',
-          type: 'warning'
-        }
-      }));
+      window.dispatchEvent(
+        new CustomEvent(EVENT_KEYS.API_ERROR, {
+          detail: {
+            title: '身份验证失败',
+            message: '登录已过期，请重新登录',
+            type: 'warning',
+          },
+        })
+      );
 
       // 抛出自定义事件，交由 React Router 或顶层组件处理跳转
       window.dispatchEvent(new CustomEvent(EVENT_KEYS.AUTH_EXPIRED));
     }
-    
+
     const errorData = (error.response?.data || error.response || error) as ApiErrorResponse;
     return Promise.reject(errorData);
   }
@@ -70,7 +74,7 @@ api.interceptors.response.use(
 
 export const http = {
   get: <T>(url: string, config?: AxiosRequestConfig): Promise<T> => api.get(url, config),
-  post: <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => api.post(url, data, config),
-  put: <T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => api.put(url, data, config),
+  post: <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> => api.post(url, data, config),
+  put: <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> => api.put(url, data, config),
   delete: <T>(url: string, config?: AxiosRequestConfig): Promise<T> => api.delete(url, config),
 };

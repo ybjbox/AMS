@@ -20,7 +20,7 @@ export function DocumentSetGrid({
   onEditSetClick,
   onDeleteSetClick,
   onPrintSetClick,
-  handleCreateSetClick
+  handleCreateSetClick,
 }: DocumentSetGridProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -49,20 +49,23 @@ export function DocumentSetGrid({
           />
         </div>
       ) : (
-        documentSets.map(set => (
-          <div key={set.id} className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+        documentSets.map((set) => (
+          <div
+            key={set.id}
+            className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl overflow-hidden flex flex-col hover:shadow-md transition-shadow"
+          >
             <div className="p-5 border-b border-slate-100 dark:border-slate-700">
               <div className="flex justify-between items-start mb-2">
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{set.name}</h3>
                 <div className="flex space-x-1">
-                  <button 
+                  <button
                     onClick={() => onEditSetClick(set)}
                     className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors"
                     title="编辑套件"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
-                  <button 
+                  <button
                     onClick={() => onDeleteSetClick(set.id)}
                     className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
                     title="删除套件"
@@ -74,10 +77,12 @@ export function DocumentSetGrid({
               <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 min-h-[40px]">{set.description}</p>
             </div>
             <div className="p-5 flex-1 bg-slate-50/50 dark:bg-slate-800/50">
-              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">包含文件 ({set.documentIds.length})</div>
+              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+                包含文件 ({set.documentIds.length})
+              </div>
               <ul className="space-y-2">
-                {set.documentIds.slice(0, 3).map(id => {
-                  const doc = documents.find(d => d.id === id);
+                {set.documentIds.slice(0, 3).map((id) => {
+                  const doc = documents.find((d) => d.id === id);
                   if (!doc) return null;
                   return (
                     <li key={id} className="flex items-center text-sm text-slate-700 dark:text-slate-300">

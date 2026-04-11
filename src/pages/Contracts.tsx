@@ -3,22 +3,23 @@ import { toast } from 'sonner';
 import { useBodyOverflow } from '../hooks/useBodyOverflow';
 import { useEmployeeStore } from '../store/employees';
 import { useContractStore, defaultTemplate } from '../store/contracts';
-import { Search, Filter, FileSignature, Printer, Eye, X, FileEdit, Upload, Save, FileText } from 'lucide-react';
+import { Search, Filter, FileSignature, Printer, Eye, FileEdit, Upload, Save, FileText } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { User } from '../types';
 
 const CONTRACT_STYLE: React.CSSProperties = { fontFamily: 'SimSun, "Songti SC", serif' };
 
-const ContractTemplate = ({ user }: { user: any }) => {
-  const template = useContractStore(state => state.template);
-  
+const ContractTemplate = ({ user }: { user: User }) => {
+  const template = useContractStore((state) => state.template);
+
   if (!user) return null;
 
   const signDate = user.contractSignDate ? new Date(user.contractSignDate) : null;
   const expiryDate = user.contractExpiry ? new Date(user.contractExpiry) : null;
-  
+
   const replacements: Record<string, string> = {
     '{name}': user.name || '',
     '{idCard}': user.idCard || '__________________',
@@ -40,7 +41,7 @@ const ContractTemplate = ({ user }: { user: any }) => {
   }
 
   return (
-    <div 
+    <div
       className="bg-white max-w-3xl mx-auto p-12 shadow-sm border border-slate-200 min-h-[1056px] text-black"
       style={CONTRACT_STYLE}
       dangerouslySetInnerHTML={{ __html: processed }}
@@ -49,52 +50,52 @@ const ContractTemplate = ({ user }: { user: any }) => {
 };
 
 export default function Contracts() {
-  const users = useEmployeeStore(state => state.users);
-  const fetchUsers = useEmployeeStore(state => state.fetchUsers);
-  const template = useContractStore(state => state.template);
-  const setTemplate = useContractStore(state => state.setTemplate);
-  
+  const users = useEmployeeStore((state) => state.users);
+  const fetchUsers = useEmployeeStore((state) => state.fetchUsers);
+  const template = useContractStore((state) => state.template);
+  const setTemplate = useContractStore((state) => state.setTemplate);
+
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
-  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isTemplateEditorOpen, setIsTemplateEditorOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(template);
   const [isDoubleSided, setIsDoubleSided] = useState(true);
-  
+
   const printRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useBodyOverflow(isPreviewOpen || isTemplateEditorOpen);
 
   const filteredUsers = useMemo(() => {
-    return users.filter(user => {
-      const matchesSearch = 
+    return users.filter((user) => {
+      const matchesSearch =
         user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.department.toLowerCase().includes(searchQuery.toLowerCase());
-      
+
       const matchesStatus = filterStatus === 'ALL' || user.status === filterStatus;
-      
+
       return matchesSearch && matchesStatus;
     });
   }, [users, searchQuery, filterStatus]);
 
-  const handlePreview = useCallback((user: any) => {
+  const handlePreview = useCallback((user: User) => {
     setSelectedUser(user);
     setIsPreviewOpen(true);
   }, []);
 
   const handlePrint = useCallback(() => {
     if (!printRef.current) return;
-    
+
     const printContent = printRef.current.innerHTML;
     const originalContent = document.body.innerHTML;
-    
+
     const printStyle = `
       <style>
         @media print {
@@ -102,7 +103,9 @@ export default function Contracts() {
             size: A4;
             margin: 20mm;
           }
-          ${isDoubleSided ? `
+          ${
+            isDoubleSided
+              ? `
           @page :left {
             margin-left: 15mm;
             margin-right: 25mm;
@@ -111,49 +114,60 @@ export default function Contracts() {
             margin-left: 25mm;
             margin-right: 15mm;
           }
-          ` : `
+          `
+              : `
           @page {
             margin-left: 25mm;
             margin-right: 15mm;
           }
-          `}
+          `
+          }
         }
       </style>
     `;
-    
+
     document.body.innerHTML = printStyle + printContent;
     window.print();
     document.body.innerHTML = originalContent;
     window.location.reload(); // Reload to restore React bindings
   }, [isDoubleSided]);
 
-  const handleDirectPrint = useCallback((user: any) => {
-    setSelectedUser(user);
-    setTimeout(() => {
-      handlePrint();
-    }, 100);
-  }, [handlePrint]);
+  const handleDirectPrint = useCallback(
+    (user: User) => {
+      setSelectedUser(user);
+      setTimeout(() => {
+        handlePrint();
+      }, 100);
+    },
+    [handlePrint]
+  );
 
-  const onPreviewClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    const userId = e.currentTarget.dataset.userid;
-    const user = users.find(u => u.id === userId);
-    if (user) {
-      handlePreview(user);
-    }
-  }, [users, handlePreview]);
+  const onPreviewClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      const userId = e.currentTarget.dataset.userid;
+      const user = users.find((u) => u.id === userId);
+      if (user) {
+        handlePreview(user);
+      }
+    },
+    [users, handlePreview]
+  );
 
-  const onDirectPrintClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    const userId = e.currentTarget.dataset.userid;
-    const user = users.find(u => u.id === userId);
-    if (user) {
-      handleDirectPrint(user);
-    }
-  }, [users, handleDirectPrint]);
+  const onDirectPrintClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      const userId = e.currentTarget.dataset.userid;
+      const user = users.find((u) => u.id === userId);
+      if (user) {
+        handleDirectPrint(user);
+      }
+    },
+    [users, handleDirectPrint]
+  );
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     // Mock backend processing
     setTimeout(() => {
       setEditingTemplate('<h1>Mock Contract Template</h1><p>Name: {name}</p>');
@@ -199,10 +213,20 @@ export default function Contracts() {
           </div>
           <div className="flex items-center space-x-2">
             <Filter className="w-4 h-4 text-slate-400" />
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <Select value={filterStatus} onValueChange={(val) => setFilterStatus(val || 'ALL')}>
               <SelectTrigger className="w-[180px] text-sm border-zinc-200/80 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white">
                 <SelectValue placeholder="选择状态">
-                  {(val) => val === 'ALL' ? '所有状态' : val === '在职' ? '在职' : val === '试用期' ? '试用期' : val === '离职' ? '离职' : '选择状态'}
+                  {(val) =>
+                    val === 'ALL'
+                      ? '所有状态'
+                      : val === '在职'
+                        ? '在职'
+                        : val === '试用期'
+                          ? '试用期'
+                          : val === '离职'
+                            ? '离职'
+                            : '选择状态'
+                  }
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -219,63 +243,117 @@ export default function Contracts() {
           <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
             <thead className="bg-slate-50 dark:bg-slate-900/50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">工号</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">姓名</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">部门</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">合同状态</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">签订日期</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">到期日期</th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">操作</th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+                >
+                  工号
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+                >
+                  姓名
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+                >
+                  部门
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+                >
+                  合同状态
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+                >
+                  签订日期
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+                >
+                  到期日期
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+                >
+                  操作
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-              {filteredUsers.length > 0 ? filteredUsers.map((user) => {
-                const daysToExpiry = typeof user.daysToExpiry === 'number' ? user.daysToExpiry : parseInt(user.daysToExpiry as string) || 999;
-                const isExpiringSoon = daysToExpiry <= 30 && daysToExpiry > 0;
-                const isExpired = daysToExpiry <= 0;
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map((user) => {
+                  const daysToExpiry =
+                    typeof user.daysToExpiry === 'number'
+                      ? user.daysToExpiry
+                      : parseInt(user.daysToExpiry as string) || 999;
+                  const isExpiringSoon = daysToExpiry <= 30 && daysToExpiry > 0;
+                  const isExpired = daysToExpiry <= 0;
 
-                return (
-                  <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">{user.id}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{user.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{user.department}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        isExpired ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
-                        isExpiringSoon ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
-                        'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-                      }`}>
-                        {isExpired ? '已过期' : isExpiringSoon ? '即将到期' : '正常'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{user.contractSignDate || '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
-                      {user.contractExpiry || '-'}
-                      {isExpiringSoon && <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">({daysToExpiry}天后)</span>}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end space-x-3">
-                        <button
-                          data-userid={user.id}
-                          onClick={onPreviewClick}
-                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 flex items-center"
+                  return (
+                    <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">
+                        {user.id}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                        {user.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                        {user.department}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            isExpired
+                              ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                              : isExpiringSoon
+                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                                : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                          }`}
                         >
-                          <Eye className="w-4 h-4 mr-1" />
-                          预览
-                        </button>
-                        <button
-                          data-userid={user.id}
-                          onClick={onDirectPrintClick}
-                          className="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300 flex items-center"
-                        >
-                          <Printer className="w-4 h-4 mr-1" />
-                          打印
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              }) : (
+                          {isExpired ? '已过期' : isExpiringSoon ? '即将到期' : '正常'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                        {user.contractSignDate || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                        {user.contractExpiry || '-'}
+                        {isExpiringSoon && (
+                          <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">({daysToExpiry}天后)</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex items-center justify-end space-x-3">
+                          <button
+                            data-userid={user.id}
+                            onClick={onPreviewClick}
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 flex items-center"
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            预览
+                          </button>
+                          <button
+                            data-userid={user.id}
+                            onClick={onDirectPrintClick}
+                            className="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300 flex items-center"
+                          >
+                            <Printer className="w-4 h-4 mr-1" />
+                            打印
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
                 <tr>
                   <td colSpan={7} className="p-0">
                     <EmptyState
@@ -345,9 +423,7 @@ export default function Contracts() {
 
       {/* Hidden Printable Area for Direct Print */}
       <div className="hidden">
-        <div ref={printRef}>
-          {selectedUser && <ContractTemplate user={selectedUser} />}
-        </div>
+        <div ref={printRef}>{selectedUser && <ContractTemplate user={selectedUser} />}</div>
       </div>
 
       {/* Template Editor Modal */}
@@ -365,10 +441,10 @@ export default function Contracts() {
         footer={
           <div className="flex items-center w-full justify-between">
             <div className="flex items-center">
-              <input 
-                type="file" 
-                accept=".html,.txt" 
-                className="hidden" 
+              <input
+                type="file"
+                accept=".html,.txt"
+                className="hidden"
                 ref={fileInputRef}
                 onChange={handleFileUpload}
               />
@@ -403,25 +479,27 @@ export default function Contracts() {
       >
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row w-full h-[70vh]">
           <div className="w-full md:w-2/3 p-4 flex flex-col border-r border-slate-200 dark:border-slate-700">
-             <div className="mb-2 flex justify-between items-center">
-               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">HTML 模板源码</span>
-               <button 
-                 onClick={() => setEditingTemplate(defaultTemplate)}
-                 className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
-               >
-                 恢复默认模板
-               </button>
-             </div>
-             <textarea
-               value={editingTemplate}
-               onChange={(e) => setEditingTemplate(e.target.value)}
-               className="flex-1 w-full p-4 font-mono text-sm border border-zinc-200/80 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-300 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 resize-none"
-               spellCheck={false}
-             />
+            <div className="mb-2 flex justify-between items-center">
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">HTML 模板源码</span>
+              <button
+                onClick={() => setEditingTemplate(defaultTemplate)}
+                className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
+              >
+                恢复默认模板
+              </button>
+            </div>
+            <textarea
+              value={editingTemplate}
+              onChange={(e) => setEditingTemplate(e.target.value)}
+              className="flex-1 w-full p-4 font-mono text-sm border border-zinc-200/80 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-300 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 resize-none"
+              spellCheck={false}
+            />
           </div>
           <div className="w-full md:w-1/3 p-4 bg-slate-50 dark:bg-slate-800/50 overflow-y-auto">
             <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-4">可用变量</h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">在左侧模板中使用以下变量，生成合同时会自动替换为员工的实际信息。</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+              在左侧模板中使用以下变量，生成合同时会自动替换为员工的实际信息。
+            </p>
             <div className="space-y-2">
               {[
                 { key: '{name}', desc: '员工姓名' },
@@ -436,9 +514,14 @@ export default function Contracts() {
                 { key: '{expiryYear}', desc: '到期年份' },
                 { key: '{expiryMonth}', desc: '到期月份' },
                 { key: '{expiryDay}', desc: '到期日期' },
-              ].map(v => (
-                <div key={v.key} className="flex items-center justify-between bg-white dark:bg-slate-700 p-2 rounded border border-slate-200 dark:border-slate-600">
-                  <code className="text-xs text-blue-600 dark:text-blue-400 font-mono bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">{v.key}</code>
+              ].map((v) => (
+                <div
+                  key={v.key}
+                  className="flex items-center justify-between bg-white dark:bg-slate-700 p-2 rounded border border-slate-200 dark:border-slate-600"
+                >
+                  <code className="text-xs text-blue-600 dark:text-blue-400 font-mono bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">
+                    {v.key}
+                  </code>
                   <span className="text-xs text-slate-600 dark:text-slate-300">{v.desc}</span>
                 </div>
               ))}

@@ -12,8 +12,8 @@ export interface ProtectedRouteProps {
 
 export default function ProtectedRoute({ children, requiredPermission }: ProtectedRouteProps) {
   // 订阅 userInfo 状态
-  const userInfo = useUserStore(state => state.userInfo);
-  const hasPermission = useUserStore(state => state.hasPermission);
+  const userInfo = useUserStore((state) => state.userInfo);
+  const hasPermission = useUserStore((state) => state.hasPermission);
 
   // 1. 判断是否登录
   if (!userInfo) {

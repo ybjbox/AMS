@@ -10,7 +10,7 @@ interface UserToolbarProps {
   setIsFilterOpen: (isOpen: boolean) => void;
   activeFilterCount: number;
   clearFilters: () => void;
-  filters: { department: string[], status: string[] };
+  filters: { department: string[]; status: string[] };
   handleFilterChange: (key: 'department' | 'status', value: string) => void;
   departments: DepartmentNode[];
   hasPermission: (permission: string) => boolean;
@@ -32,21 +32,21 @@ export function UserToolbar({
   hasPermission,
   setIsAddressBookModalOpen,
   setIsExportModalOpen,
-  handleAdd
+  handleAdd,
 }: UserToolbarProps) {
   return (
     <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">员工管理</h1>
         <div className="flex items-center space-x-3">
-          <button 
+          <button
             onClick={() => setIsAddressBookModalOpen(true)}
             className="inline-flex items-center justify-center px-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
           >
             <Printer className="h-4 w-4 mr-2" />
             导出通讯录
           </button>
-          <button 
+          <button
             onClick={() => setIsExportModalOpen(true)}
             className="inline-flex items-center justify-center px-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
           >
@@ -54,7 +54,7 @@ export function UserToolbar({
             导出花名册
           </button>
           {hasPermission('users:manage') && (
-            <button 
+            <button
               onClick={handleAdd}
               className="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white text-sm font-medium rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform shadow-sm"
             >
@@ -79,15 +79,17 @@ export function UserToolbar({
           />
         </div>
         <div className="flex items-center space-x-2 relative">
-          <button 
+          <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             className={`inline-flex items-center px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
               activeFilterCount > 0 || isFilterOpen
-                ? 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 shadow-sm' 
+                ? 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 shadow-sm'
                 : 'text-zinc-700 dark:text-zinc-200 bg-zinc-100/50 dark:bg-zinc-800 hover:bg-zinc-200/50 dark:hover:bg-zinc-700'
             }`}
           >
-            <Filter className={`h-4 w-4 mr-2 ${activeFilterCount > 0 || isFilterOpen ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-400'}`} />
+            <Filter
+              className={`h-4 w-4 mr-2 ${activeFilterCount > 0 || isFilterOpen ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-400'}`}
+            />
             筛选 {activeFilterCount > 0 && `(${activeFilterCount})`}
           </button>
 

@@ -60,7 +60,7 @@ export const fetchUsers = async (): Promise<User[]> => {
  */
 export const getUserById = async (id: string): Promise<User> => {
   const users = await api.fetchUsers();
-  const user = users.find(u => u.id === id);
+  const user = users.find((u) => u.id === id);
   if (!user) throw new Error('User not found');
   return user;
 };

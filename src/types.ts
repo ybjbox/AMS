@@ -130,5 +130,5 @@ export interface AttendanceRecord {
 export interface ApiErrorResponse {
   code?: number;
   message: string;
-  details?: any;
+  details?: unknown;
 }

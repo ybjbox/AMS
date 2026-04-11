@@ -8,7 +8,7 @@ export default function NotificationTrigger() {
   const [isOpen, setIsOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const unreadCount = useTodoStore(state => state.unreadCount);
+  const unreadCount = useTodoStore((state) => state.unreadCount);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -25,12 +25,12 @@ export default function NotificationTrigger() {
   }, []);
 
   const toggleOpen = useCallback(() => {
-    setIsOpen(prev => !prev);
+    setIsOpen((prev) => !prev);
   }, []);
 
   return (
     <div className="relative" ref={panelRef}>
-      <button 
+      <button
         onClick={toggleOpen}
         className="p-2 text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-200 relative"
       >
@@ -42,11 +42,7 @@ export default function NotificationTrigger() {
         )}
       </button>
 
-      <AnimatePresence>
-        {isOpen && (
-          <NotificationPanel onClose={handleClose} />
-        )}
-      </AnimatePresence>
+      <AnimatePresence>{isOpen && <NotificationPanel onClose={handleClose} />}</AnimatePresence>
     </div>
   );
 }

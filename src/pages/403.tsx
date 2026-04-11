@@ -17,16 +17,14 @@ const Forbidden403 = React.memo(function Forbidden403() {
             <ShieldAlert className="h-12 w-12 text-red-600 dark:text-red-500" />
           </div>
         </div>
-        
+
         <div>
-          <h2 className="mt-6 text-3xl font-extrabold text-slate-900 dark:text-white">
-            403 - 无权限访问
-          </h2>
+          <h2 className="mt-6 text-3xl font-extrabold text-slate-900 dark:text-white">403 - 无权限访问</h2>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
             抱歉，您没有权限访问此页面。如果您认为这是一个错误，请联系系统管理员。
           </p>
         </div>
-        
+
         <div className="mt-8">
           <button
             onClick={handleGoBack}
@@ -39,6 +37,6 @@ const Forbidden403 = React.memo(function Forbidden403() {
       </div>
     </div>
   );
-})
+});
 
 export default Forbidden403;

@@ -5,11 +5,26 @@ import { PunchRecord, EmployeeSchedule, Shift } from '../../../store/attendance'
 import { attendanceService } from '../../../services/attendance';
 import { UseAttendanceReturn } from '../hooks/useAttendance';
 
-export type FilterProps = Pick<UseAttendanceReturn, 
-  'activeTab' | 'setActiveTab' | 'searchQuery' | 'setSearchQuery' | 
-  'scheduleSearchQuery' | 'setScheduleSearchQuery' | 'editingShift' | 'setEditingShift' |
-  'records' | 'schedules' | 'shifts' | 'setRecords' | 'setSchedules' | 
-  'analyzeAnomalies' | 'addShift' | 'updateShift' | 'users' | 'hasPermission'
+export type FilterProps = Pick<
+  UseAttendanceReturn,
+  | 'activeTab'
+  | 'setActiveTab'
+  | 'searchQuery'
+  | 'setSearchQuery'
+  | 'scheduleSearchQuery'
+  | 'setScheduleSearchQuery'
+  | 'editingShift'
+  | 'setEditingShift'
+  | 'records'
+  | 'schedules'
+  | 'shifts'
+  | 'setRecords'
+  | 'setSchedules'
+  | 'analyzeAnomalies'
+  | 'addShift'
+  | 'updateShift'
+  | 'users'
+  | 'hasPermission'
 >;
 
 export default function Filter({
@@ -17,8 +32,6 @@ export default function Filter({
   setActiveTab,
   searchQuery,
   setSearchQuery,
-  scheduleSearchQuery,
-  setScheduleSearchQuery,
   editingShift,
   setEditingShift,
   records,
@@ -30,7 +43,7 @@ export default function Filter({
   addShift,
   updateShift,
   users,
-  hasPermission
+  hasPermission,
 }: FilterProps) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -51,46 +64,49 @@ export default function Filter({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    setIsUploading(true);
-    try {
-      const response = await attendanceService.uploadFile(file, 'excel');
-      if (response.success) {
-        const mockRecords: PunchRecord[] = [
-          { id: '1', employeeId: 'EMP001', employeeName: '张三', date: '2026-03-16', time: '08:50:00' },
-          { id: '2', employeeId: 'EMP001', employeeName: '张三', date: '2026-03-16', time: '18:05:00' },
-          { id: '3', employeeId: 'EMP002', employeeName: '李四', date: '2026-03-16', time: '09:15:00' },
-        ];
-        setRecords(mockRecords);
-        toast.success(`${response.message}\n成功从后端获取到 ${mockRecords.length} 条打卡记录 (Mock)`);
+      setIsUploading(true);
+      try {
+        const response = await attendanceService.uploadFile(file, 'excel');
+        if (response.success) {
+          const mockRecords: PunchRecord[] = [
+            { id: '1', employeeId: 'EMP001', employeeName: '张三', date: '2026-03-16', time: '08:50:00' },
+            { id: '2', employeeId: 'EMP001', employeeName: '张三', date: '2026-03-16', time: '18:05:00' },
+            { id: '3', employeeId: 'EMP002', employeeName: '李四', date: '2026-03-16', time: '09:15:00' },
+          ];
+          setRecords(mockRecords);
+          toast.success(`${response.message}\n成功从后端获取到 ${mockRecords.length} 条打卡记录 (Mock)`);
+        }
+      } catch (error) {
+        console.error('Upload failed:', error);
+        toast.error('文件上传失败，请重试');
+      } finally {
+        setIsUploading(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       }
-    } catch (error) {
-      console.error('Upload failed:', error);
-      toast.error('文件上传失败，请重试');
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  }, [setRecords]);
+    },
+    [setRecords]
+  );
 
   const handleAddManualSchedule = useCallback(() => {
     if (!selectedEmployeeId || selectedShiftIds.length === 0) return;
-    
-    const employee = users.find(u => u.id === selectedEmployeeId);
+
+    const employee = users.find((u) => u.id === selectedEmployeeId);
     if (!employee) return;
 
     const newSchedule: EmployeeSchedule = {
       employeeId: employee.id,
       employeeName: employee.name,
-      shiftIds: selectedShiftIds
+      shiftIds: selectedShiftIds,
     };
 
-    const existingIndex = schedules.findIndex(s => s.employeeId === employee.id);
+    const existingIndex = schedules.findIndex((s) => s.employeeId === employee.id);
     if (existingIndex >= 0) {
       const updatedSchedules = [...schedules];
       updatedSchedules[existingIndex] = newSchedule;
@@ -98,7 +114,7 @@ export default function Filter({
     } else {
       setSchedules([...schedules, newSchedule]);
     }
-    
+
     setSelectedEmployeeId('');
     setSelectedShiftIds([]);
   }, [selectedEmployeeId, selectedShiftIds, users, schedules, setSchedules]);
@@ -108,13 +124,13 @@ export default function Filter({
       toast.warning('请先导入打卡记录和排班字典');
       return;
     }
-    
+
     try {
       const response = await attendanceService.triggerAnalysis({
         startDate: '2026-03-01',
-        endDate: '2026-03-31'
+        endDate: '2026-03-31',
       });
-      
+
       if (response.success) {
         analyzeAnomalies();
         setActiveTab('anomalies');
@@ -139,31 +155,52 @@ export default function Filter({
     const shiftId = e.currentTarget.dataset.shiftid;
     if (shiftId) {
       if (e.target.checked) {
-        setSelectedShiftIds(prev => [...prev, shiftId]);
+        setSelectedShiftIds((prev) => [...prev, shiftId]);
       } else {
-        setSelectedShiftIds(prev => prev.filter(id => id !== shiftId));
+        setSelectedShiftIds((prev) => prev.filter((id) => id !== shiftId));
       }
     }
   }, []);
 
-  const onShiftNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setEditingShift(prev => prev ? { ...prev, name: value } : { id: Math.random().toString(36).substr(2, 9), name: value, startTime: '09:00', endTime: '18:00' });
-  }, [setEditingShift]);
+  const onShiftNameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setEditingShift((prev) =>
+        prev
+          ? { ...prev, name: value }
+          : { id: Math.random().toString(36).substr(2, 9), name: value, startTime: '09:00', endTime: '18:00' }
+      );
+    },
+    [setEditingShift]
+  );
 
-  const onShiftStartTimeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setEditingShift(prev => prev ? { ...prev, startTime: value } : { id: Math.random().toString(36).substr(2, 9), name: '', startTime: value, endTime: '18:00' });
-  }, [setEditingShift]);
+  const onShiftStartTimeChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setEditingShift((prev) =>
+        prev
+          ? { ...prev, startTime: value }
+          : { id: Math.random().toString(36).substr(2, 9), name: '', startTime: value, endTime: '18:00' }
+      );
+    },
+    [setEditingShift]
+  );
 
-  const onShiftEndTimeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setEditingShift(prev => prev ? { ...prev, endTime: value } : { id: Math.random().toString(36).substr(2, 9), name: '', startTime: '09:00', endTime: value });
-  }, [setEditingShift]);
+  const onShiftEndTimeChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setEditingShift((prev) =>
+        prev
+          ? { ...prev, endTime: value }
+          : { id: Math.random().toString(36).substr(2, 9), name: '', startTime: '09:00', endTime: value }
+      );
+    },
+    [setEditingShift]
+  );
 
   const onSaveShiftClick = useCallback(() => {
     if (!editingShift || !editingShift.name) return;
-    const existing = shifts.find(s => s.id === editingShift.id);
+    const existing = shifts.find((s) => s.id === editingShift.id);
     if (existing) {
       updateShift(editingShift.id!, editingShift);
     } else {
@@ -176,12 +213,15 @@ export default function Filter({
     setEditingShift(null);
   }, [setEditingShift]);
 
-  const onTabClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    const tab = e.currentTarget.dataset.tab as 'records' | 'schedules' | 'anomalies' | 'shifts';
-    if (tab) {
-      setActiveTab(tab);
-    }
-  }, [setActiveTab]);
+  const onTabClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      const tab = e.currentTarget.dataset.tab as 'records' | 'schedules' | 'anomalies' | 'shifts';
+      if (tab) {
+        setActiveTab(tab);
+      }
+    },
+    [setActiveTab]
+  );
 
   return (
     <>
@@ -191,17 +231,15 @@ export default function Filter({
             <Clock className="w-6 h-6 mr-2 text-blue-600 dark:text-blue-400" />
             考勤管理
           </h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            导入打卡记录与排班字典，自动分析考勤异常
-          </p>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">导入打卡记录与排班字典，自动分析考勤异常</p>
         </div>
         <div className="flex items-center space-x-2 bg-zinc-100/80 dark:bg-zinc-800/80 p-1.5 rounded-xl">
           <button
             data-tab="records"
             onClick={onTabClick}
             className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-300 ${
-              activeTab === 'records' 
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' 
+              activeTab === 'records'
+                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
                 : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50'
             }`}
           >
@@ -211,8 +249,8 @@ export default function Filter({
             data-tab="schedules"
             onClick={onTabClick}
             className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-300 ${
-              activeTab === 'schedules' 
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' 
+              activeTab === 'schedules'
+                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
                 : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50'
             }`}
           >
@@ -222,8 +260,8 @@ export default function Filter({
             data-tab="shifts"
             onClick={onTabClick}
             className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-300 ${
-              activeTab === 'shifts' 
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' 
+              activeTab === 'shifts'
+                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
                 : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50'
             }`}
           >
@@ -233,8 +271,8 @@ export default function Filter({
             data-tab="anomalies"
             onClick={onTabClick}
             className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-300 ${
-              activeTab === 'anomalies' 
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' 
+              activeTab === 'anomalies'
+                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
                 : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50'
             }`}
           >
@@ -250,21 +288,23 @@ export default function Filter({
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
               支持 .xls 和 .xlsx 格式。表头需包含：工号、姓名、日期、时间（或打卡时间）。
             </p>
-            <div 
+            <div
               className={`border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl p-8 text-center transition-colors ${isUploading ? 'bg-zinc-50 dark:bg-zinc-800/50 cursor-wait' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer'}`}
               onClick={() => !isUploading && fileInputRef.current?.click()}
             >
-              <FileSpreadsheet className={`w-10 h-10 mx-auto mb-3 ${isUploading ? 'text-blue-400 animate-pulse' : 'text-zinc-400'}`} />
+              <FileSpreadsheet
+                className={`w-10 h-10 mx-auto mb-3 ${isUploading ? 'text-blue-400 animate-pulse' : 'text-zinc-400'}`}
+              />
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 {isUploading ? '正在上传并处理...' : '点击选择 Excel 文件'}
               </p>
               <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">支持 .xls, .xlsx</p>
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileUpload} 
-                accept=".xls,.xlsx" 
-                className="hidden" 
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept=".xls,.xlsx"
+                className="hidden"
                 disabled={isUploading}
               />
             </div>
@@ -278,17 +318,19 @@ export default function Filter({
           <div className="flex flex-col sm:flex-row gap-4 items-end">
             <div className="flex-1 relative" ref={dropdownRef}>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">选择员工</label>
-              <div 
+              <div
                 className="w-full p-2.5 border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white cursor-pointer flex justify-between items-center focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200"
                 onClick={() => setIsEmployeeDropdownOpen(!isEmployeeDropdownOpen)}
                 tabIndex={0}
               >
                 <span className={selectedEmployeeId ? '' : 'text-zinc-500'}>
-                  {selectedEmployeeId ? users.find(u => u.id === selectedEmployeeId)?.name + ' (' + selectedEmployeeId + ')' : '-- 请选择员工 --'}
+                  {selectedEmployeeId
+                    ? users.find((u) => u.id === selectedEmployeeId)?.name + ' (' + selectedEmployeeId + ')'
+                    : '-- 请选择员工 --'}
                 </span>
                 <ChevronDown className="w-4 h-4 text-zinc-400" />
               </div>
-              
+
               {isEmployeeDropdownOpen && (
                 <div className="absolute z-10 w-full mt-2 bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-xl shadow-lg max-h-60 flex flex-col overflow-hidden">
                   <div className="p-2 border-b border-zinc-100 dark:border-zinc-700">
@@ -306,34 +348,39 @@ export default function Filter({
                     </div>
                   </div>
                   <div className="overflow-y-auto flex-1 py-1">
-                    <div 
+                    <div
                       className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-700/50 ${!selectedEmployeeId ? 'bg-blue-50/50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-zinc-700 dark:text-zinc-300'}`}
                       data-employeeid=""
                       onClick={onEmployeeSelectClick}
                     >
                       -- 请选择员工 --
                     </div>
-                    {users.filter(u => 
-                      u.name.toLowerCase().includes(employeeSearchQuery.toLowerCase()) || 
-                      u.id.toLowerCase().includes(employeeSearchQuery.toLowerCase())
-                    ).map(u => (
-                      <div
-                        key={u.id}
-                        className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-700/50 ${selectedEmployeeId === u.id ? 'bg-blue-50/50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-zinc-700 dark:text-zinc-300'}`}
-                        data-employeeid={u.id}
-                        onClick={onEmployeeSelectClick}
-                      >
-                        {u.name} ({u.id})
-                      </div>
-                    ))}
+                    {users
+                      .filter(
+                        (u) =>
+                          u.name.toLowerCase().includes(employeeSearchQuery.toLowerCase()) ||
+                          u.id.toLowerCase().includes(employeeSearchQuery.toLowerCase())
+                      )
+                      .map((u) => (
+                        <div
+                          key={u.id}
+                          className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-700/50 ${selectedEmployeeId === u.id ? 'bg-blue-50/50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-zinc-700 dark:text-zinc-300'}`}
+                          data-employeeid={u.id}
+                          onClick={onEmployeeSelectClick}
+                        >
+                          {u.name} ({u.id})
+                        </div>
+                      ))}
                   </div>
                 </div>
               )}
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">选择班次 (可多选)</label>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                选择班次 (可多选)
+              </label>
               <div className="flex flex-wrap gap-3">
-                {shifts.map(s => (
+                {shifts.map((s) => (
                   <label key={s.id} className="flex items-center space-x-2 cursor-pointer group">
                     <input
                       type="checkbox"
@@ -342,7 +389,9 @@ export default function Filter({
                       onChange={onShiftCheckboxChange}
                       className="w-4 h-4 text-blue-600 border-zinc-300 rounded focus:ring-blue-600/30 transition-colors"
                     />
-                    <span className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">{s.name} ({s.startTime}-{s.endTime})</span>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
+                      {s.name} ({s.startTime}-{s.endTime})
+                    </span>
                   </label>
                 ))}
               </div>
@@ -431,7 +480,7 @@ export default function Filter({
               </button>
             )}
           </div>
-          
+
           <div className="relative w-full sm:w-72">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 transform -translate-y-1/2 text-zinc-400" />
             <input

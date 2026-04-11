@@ -9,12 +9,7 @@ interface FolderFormModalProps {
   handleSaveFolder: (e: React.FormEvent<HTMLFormElement>) => void;
 }
 
-export function FolderFormModal({
-  isOpen,
-  onClose,
-  editingFolder,
-  handleSaveFolder
-}: FolderFormModalProps) {
+export function FolderFormModal({ isOpen, onClose, editingFolder, handleSaveFolder }: FolderFormModalProps) {
   return (
     <BaseModal
       isOpen={isOpen}
@@ -23,22 +18,36 @@ export function FolderFormModal({
       size="md"
       footer={
         <>
-          <button type="button" onClick={onClose} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm">取消</button>
-          <button type="submit" form="folder-form" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm">保存</button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
+          >
+            取消
+          </button>
+          <button
+            type="submit"
+            form="folder-form"
+            className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm"
+          >
+            保存
+          </button>
         </>
       }
     >
       <form id="folder-form" onSubmit={handleSaveFolder} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">文件夹名称 <span className="text-red-500">*</span></label>
-          <input 
-            required 
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+            文件夹名称 <span className="text-red-500">*</span>
+          </label>
+          <input
+            required
             autoFocus
             name="name"
-            type="text" 
-            defaultValue={editingFolder?.name} 
+            type="text"
+            defaultValue={editingFolder?.name}
             placeholder="如：人事文件"
-            className="block w-full border border-zinc-200/80 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm" 
+            className="block w-full border border-zinc-200/80 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
           />
         </div>
       </form>

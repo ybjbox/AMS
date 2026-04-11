@@ -1,18 +1,11 @@
-import { http } from './api';
 import { AttendanceRecord } from '../types';
 
 export const attendanceService = {
   // Fetch attendance records with optional filters
-  getRecords: async (params?: {
-    startDate?: string;
-    endDate?: string;
-    departmentId?: string;
-    userId?: string;
-    status?: string;
-  }): Promise<AttendanceRecord[]> => {
+  getRecords: async (): Promise<AttendanceRecord[]> => {
     // In a real app, this would call the Python backend:
     // return http.get<AttendanceRecord[]>('/attendance', { params });
-    
+
     // For now, we return mock data as requested
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -56,7 +49,7 @@ export const attendanceService = {
     //     'Content-Type': 'multipart/form-data',
     //   },
     // });
-    
+
     // Mock response
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -64,15 +57,15 @@ export const attendanceService = {
       }, 1000);
     });
   },
-  
+
   // Trigger automatic analysis rule calculation on the backend
-  triggerAnalysis: async (dateRange: { startDate: string; endDate: string }): Promise<{ success: boolean; message: string }> => {
+  triggerAnalysis: async (): Promise<{ success: boolean; message: string }> => {
     // return http.post<{ success: boolean; message: string }>('/attendance/analyze', dateRange);
-    
+
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({ success: true, message: '考勤分析任务已提交' });
       }, 800);
     });
-  }
+  },
 };

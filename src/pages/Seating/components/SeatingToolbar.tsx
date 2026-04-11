@@ -1,5 +1,17 @@
 import React from 'react';
-import { LayoutGrid, List, Trash2, X, Upload, ChevronDown, FileDown, Users, Settings2, Printer, RefreshCw } from 'lucide-react';
+import {
+  LayoutGrid,
+  List,
+  Trash2,
+  X,
+  Upload,
+  ChevronDown,
+  FileDown,
+  Users,
+  Settings2,
+  Printer,
+  RefreshCw,
+} from 'lucide-react';
 
 interface SeatingToolbarProps {
   viewMode: 'grid' | 'list';
@@ -34,7 +46,7 @@ export function SeatingToolbar({
   selectedCount,
   setIsPrintModalOpen,
   handlePrint,
-  handleAutoArrange
+  handleAutoArrange,
 }: SeatingToolbarProps) {
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -102,14 +114,14 @@ export function SeatingToolbar({
               <label className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center cursor-pointer mb-0">
                 <Upload className="w-4 h-4 mr-2" />
                 上传文件
-                <input 
-                  type="file" 
-                  accept=".xlsx,.xls,.csv" 
-                  className="hidden" 
+                <input
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  className="hidden"
                   onChange={(e) => {
                     handleFileUpload(e);
                     setIsUploadMenuOpen(false);
-                  }} 
+                  }}
                 />
               </label>
             </div>

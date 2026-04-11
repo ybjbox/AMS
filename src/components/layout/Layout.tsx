@@ -15,16 +15,13 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
 
   return (
     <div className="h-screen overflow-hidden bg-zinc-50 dark:bg-zinc-900 transition-colors duration-300 flex">
-      <Sidebar 
-        isCollapsed={isCollapsed} 
+      <Sidebar
+        isCollapsed={isCollapsed}
         className="hidden md:flex m-4 md:my-6 md:ml-6 md:mr-0 h-[calc(100vh-2rem)] md:h-[calc(100vh-3rem)]"
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden print:overflow-visible">
-        <Header 
-          isCollapsed={isCollapsed}
-          setIsCollapsed={handleSetIsCollapsed}
-        />
+        <Header isCollapsed={isCollapsed} setIsCollapsed={handleSetIsCollapsed} />
 
         <main className="flex-1 overflow-auto p-6 lg:p-8 print:p-0 print:overflow-visible relative flex flex-col">
           <ErrorBoundary>

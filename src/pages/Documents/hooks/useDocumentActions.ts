@@ -1,22 +1,21 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useConfirm } from '../../../hooks/useConfirm';
 import { useDocumentStore, Document, DocumentSet, Folder as FolderType } from '../../../store/documents';
 
 export function useDocumentActions() {
   const confirm = useConfirm();
-  const folders = useDocumentStore(state => state.folders);
-  const documents = useDocumentStore(state => state.documents);
-  const documentSets = useDocumentStore(state => state.documentSets);
-  const addFolder = useDocumentStore(state => state.addFolder);
-  const updateFolder = useDocumentStore(state => state.updateFolder);
-  const removeFolder = useDocumentStore(state => state.removeFolder);
-  const addDocument = useDocumentStore(state => state.addDocument);
-  const updateDocument = useDocumentStore(state => state.updateDocument);
-  const removeDocument = useDocumentStore(state => state.removeDocument);
-  const addDocumentSet = useDocumentStore(state => state.addDocumentSet);
-  const updateDocumentSet = useDocumentStore(state => state.updateDocumentSet);
-  const removeDocumentSet = useDocumentStore(state => state.removeDocumentSet);
+  const folders = useDocumentStore((state) => state.folders);
+  const documents = useDocumentStore((state) => state.documents);
+  const addFolder = useDocumentStore((state) => state.addFolder);
+  const updateFolder = useDocumentStore((state) => state.updateFolder);
+  const removeFolder = useDocumentStore((state) => state.removeFolder);
+  const addDocument = useDocumentStore((state) => state.addDocument);
+  const updateDocument = useDocumentStore((state) => state.updateDocument);
+  const removeDocument = useDocumentStore((state) => state.removeDocument);
+  const addDocumentSet = useDocumentStore((state) => state.addDocumentSet);
+  const updateDocumentSet = useDocumentStore((state) => state.updateDocumentSet);
+  const removeDocumentSet = useDocumentStore((state) => state.removeDocumentSet);
 
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
@@ -34,23 +33,25 @@ export function useDocumentActions() {
   const [printingSet, setPrintingSet] = useState<DocumentSet | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
   const [expandedModalFolders, setExpandedModalFolders] = useState<Set<string>>(new Set());
-  
+
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
-  const [printSettings, setPrintSettings] = useState<Record<string, { duplex: boolean, color: boolean, copies: number }>>({});
+  const [printSettings, setPrintSettings] = useState<
+    Record<string, { duplex: boolean; color: boolean; copies: number }>
+  >({});
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const toggleAllModalFolders = useCallback(() => {
-    const foldersWithDocs = folders.filter(f => documents.some(d => d.folderId === f.id));
+    const foldersWithDocs = folders.filter((f) => documents.some((d) => d.folderId === f.id));
     if (expandedModalFolders.size === foldersWithDocs.length) {
       setExpandedModalFolders(new Set());
     } else {
-      setExpandedModalFolders(new Set(foldersWithDocs.map(f => f.id)));
+      setExpandedModalFolders(new Set(foldersWithDocs.map((f) => f.id)));
     }
   }, [folders, documents, expandedModalFolders.size]);
 
   const toggleModalFolder = useCallback((id: string) => {
-    setExpandedModalFolders(prev => {
+    setExpandedModalFolders((prev) => {
       const newExpanded = new Set(prev);
       if (newExpanded.has(id)) newExpanded.delete(id);
       else newExpanded.add(id);
@@ -58,13 +59,15 @@ export function useDocumentActions() {
     });
   }, []);
 
-  const handleDocToggle = useCallback((docId: string, checked: boolean) => {
+  const handleDocToggle = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const docId = e.target.value;
+    const checked = e.target.checked;
     if (checked) {
-      setSelectedDocIds(prev => [...prev, docId]);
-      setPrintSettings(prev => ({ ...prev, [docId]: { duplex: false, color: false, copies: 1 } }));
+      setSelectedDocIds((prev) => [...prev, docId]);
+      setPrintSettings((prev) => ({ ...prev, [docId]: { duplex: false, color: false, copies: 1 } }));
     } else {
-      setSelectedDocIds(prev => prev.filter(id => id !== docId));
-      setPrintSettings(prev => {
+      setSelectedDocIds((prev) => prev.filter((id) => id !== docId));
+      setPrintSettings((prev) => {
         const newSettings = { ...prev };
         delete newSettings[docId];
         return newSettings;
@@ -72,41 +75,44 @@ export function useDocumentActions() {
     }
   }, []);
 
-  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  const handleFileUpload = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
 
-    setTimeout(() => {
-      Array.from(files).forEach((file: File) => {
-        const newDoc: Document = {
-          id: Date.now().toString() + Math.random().toString(36).substring(7),
-          name: file.name,
-          type: file.type || file.name.split('.').pop() || 'unknown',
-          url: 'https://picsum.photos/seed/document/800/600',
-          size: file.size,
-          uploadedAt: new Date().toISOString().split('T')[0],
-          folderId: currentFolderId
-        };
-        addDocument(newDoc);
-      });
+      setTimeout(() => {
+        Array.from(files).forEach((file: File) => {
+          const newDoc: Document = {
+            id: Date.now().toString() + Math.random().toString(36).substring(7),
+            name: file.name,
+            type: file.type || file.name.split('.').pop() || 'unknown',
+            url: 'https://picsum.photos/seed/document/800/600',
+            size: file.size,
+            uploadedAt: new Date().toISOString().split('T')[0],
+            folderId: currentFolderId,
+          };
+          addDocument(newDoc);
+        });
 
-      toast.success(`成功上传 ${files.length} 个文件 (Mock)`);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }, 500);
-  }, [addDocument, currentFolderId]);
+        toast.success(`成功上传 ${files.length} 个文件 (Mock)`);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }, 500);
+    },
+    [addDocument, currentFolderId]
+  );
 
   const handleCreateSetClick = useCallback(() => {
-    setEditingSet(null); 
+    setEditingSet(null);
     setSelectedDocIds([]);
     setPrintSettings({});
     setIsSetModalOpen(true);
   }, []);
 
   const handleCreateRootFolderClick = useCallback(() => {
-    setEditingFolder(null); 
-    setFolderParentId(null); 
+    setEditingFolder(null);
+    setFolderParentId(null);
     setIsFolderModalOpen(true);
   }, []);
 
@@ -117,63 +123,72 @@ export function useDocumentActions() {
   }, []);
 
   const handleEditSetClick = useCallback((set: DocumentSet) => {
-    setEditingSet(set); 
+    setEditingSet(set);
     setSelectedDocIds(set.documentIds);
     setPrintSettings(set.printSettings || {});
     setIsSetModalOpen(true);
   }, []);
 
-  const handleDeleteSetClick = useCallback(async (setId: string) => {
-    if (await confirm({ title: '确定要删除该套件吗？', description: '此操作不可恢复。', variant: 'danger' })) {
-      removeDocumentSet(setId);
-    }
-  }, [removeDocumentSet, confirm]);
+  const handleDeleteSetClick = useCallback(
+    async (setId: string) => {
+      if (await confirm({ title: '确定要删除该套件吗？', description: '此操作不可恢复。', variant: 'danger' })) {
+        removeDocumentSet(setId);
+      }
+    },
+    [removeDocumentSet, confirm]
+  );
 
   const handlePrintSetClick = useCallback((set: DocumentSet) => {
-    setPrintingSet(set); 
+    setPrintingSet(set);
     setIsPrintModalOpen(true);
   }, []);
 
-  const handleSaveSet = useCallback((e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const name = formData.get('name') as string;
-    const description = formData.get('description') as string;
+  const handleSaveSet = useCallback(
+    (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      const formData = new FormData(e.currentTarget);
+      const name = formData.get('name') as string;
+      const description = formData.get('description') as string;
 
-    if (editingSet) {
-      updateDocumentSet(editingSet.id, { name, description, documentIds: selectedDocIds, printSettings });
-    } else {
-      addDocumentSet({
-        id: Date.now().toString(),
-        name,
-        description,
-        documentIds: selectedDocIds,
-        printSettings
-      });
-    }
-    setIsSetModalOpen(false);
-    setEditingSet(null);
-  }, [editingSet, selectedDocIds, printSettings, updateDocumentSet, addDocumentSet]);
-
-  const handleSaveFolder = useCallback((e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const name = formData.get('name') as string;
-
-    if (editingFolder) {
-      updateFolder(editingFolder.id, { name });
-    } else {
-      addFolder({
-        id: Date.now().toString(),
-        name,
-        parentId: folderParentId
-      });
-      if (folderParentId) {
-        setExpandedFolders(prev => new Set(prev).add(folderParentId));
+      if (editingSet) {
+        updateDocumentSet(editingSet.id, { name, description, documentIds: selectedDocIds, printSettings });
+      } else {
+        addDocumentSet({
+          id: Date.now().toString(),
+          name,
+          description,
+          documentIds: selectedDocIds,
+          printSettings,
+        });
       }
-    }
-    setIsFolderModalOpen(false);
-  }, [editingFolder, folderParentId, updateFolder, addFolder]);
+      setIsSetModalOpen(false);
+      setEditingSet(null);
+    },
+    [editingSet, selectedDocIds, printSettings, updateDocumentSet, addDocumentSet]
+  );
+
+  const handleSaveFolder = useCallback(
+    (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      const formData = new FormData(e.currentTarget);
+      const name = formData.get('name') as string;
+
+      if (editingFolder) {
+        updateFolder(editingFolder.id, { name });
+      } else {
+        addFolder({
+          id: Date.now().toString(),
+          name,
+          parentId: folderParentId,
+        });
+        if (folderParentId) {
+          setExpandedFolders((prev) => new Set(prev).add(folderParentId));
+        }
+      }
+      setIsFolderModalOpen(false);
+    },
+    [editingFolder, folderParentId, updateFolder, addFolder]
+  );
 
   const handleMoveFile = useCallback(() => {
     if (movingDocId) {
@@ -183,7 +198,7 @@ export function useDocumentActions() {
   }, [movingDocId, targetFolderId, updateDocument]);
 
   const toggleFolder = useCallback((id: string) => {
-    setExpandedFolders(prev => {
+    setExpandedFolders((prev) => {
       const newExpanded = new Set(prev);
       if (newExpanded.has(id)) newExpanded.delete(id);
       else newExpanded.add(id);
@@ -201,39 +216,60 @@ export function useDocumentActions() {
     setIsFolderModalOpen(true);
   }, []);
 
-  const onEditFolderClick = useCallback((folderId: string) => {
-    const folder = folders.find(f => f.id === folderId);
-    if (folder) {
-      setEditingFolder(folder);
-      setIsFolderModalOpen(true);
-    }
-  }, [folders]);
+  const onEditFolderClick = useCallback(
+    (folderId: string) => {
+      const folder = folders.find((f) => f.id === folderId);
+      if (folder) {
+        setEditingFolder(folder);
+        setIsFolderModalOpen(true);
+      }
+    },
+    [folders]
+  );
 
-  const onDeleteFolderClick = useCallback(async (folderId: string) => {
-    if (await confirm({ title: '确定要删除该文件夹吗？', description: '其包含的子文件夹和文件也将被删除。', variant: 'danger' })) {
-      removeFolder(folderId);
-    }
-  }, [removeFolder, confirm]);
+  const onDeleteFolderClick = useCallback(
+    async (folderId: string) => {
+      if (
+        await confirm({
+          title: '确定要删除该文件夹吗？',
+          description: '其包含的子文件夹和文件也将被删除。',
+          variant: 'danger',
+        })
+      ) {
+        removeFolder(folderId);
+      }
+    },
+    [removeFolder, confirm]
+  );
 
-  const handleDeleteDocClick = useCallback(async (docId: string) => {
-    if (await confirm({ title: '确定要删除该文件吗？', description: '删除后包含该文件的套件也将受影响。', variant: 'danger' })) {
-      removeDocument(docId);
-    }
-  }, [removeDocument, confirm]);
+  const handleDeleteDocClick = useCallback(
+    async (docId: string) => {
+      if (
+        await confirm({
+          title: '确定要删除该文件吗？',
+          description: '删除后包含该文件的套件也将受影响。',
+          variant: 'danger',
+        })
+      ) {
+        removeDocument(docId);
+      }
+    },
+    [removeDocument, confirm]
+  );
 
   const onSetColorClick = useCallback((id: string, color: boolean) => {
-    setPrintSettings(prev => ({...prev, [id]: {...(prev[id] || { duplex: false, copies: 1 }), color}}));
+    setPrintSettings((prev) => ({ ...prev, [id]: { ...(prev[id] || { duplex: false, copies: 1 }), color } }));
   }, []);
 
   const onSetDuplexClick = useCallback((id: string, duplex: boolean) => {
-    setPrintSettings(prev => ({...prev, [id]: {...(prev[id] || { color: false, copies: 1 }), duplex}}));
+    setPrintSettings((prev) => ({ ...prev, [id]: { ...(prev[id] || { color: false, copies: 1 }), duplex } }));
   }, []);
 
   const onSetCopiesClick = useCallback((id: string, action: 'inc' | 'dec') => {
-    setPrintSettings(prev => {
+    setPrintSettings((prev) => {
       const currentSettings = prev[id] || { duplex: false, color: false, copies: 1 };
       const newCopies = action === 'inc' ? currentSettings.copies + 1 : Math.max(1, currentSettings.copies - 1);
-      return {...prev, [id]: {...currentSettings, copies: newCopies}};
+      return { ...prev, [id]: { ...currentSettings, copies: newCopies } };
     });
   }, []);
 
@@ -297,6 +333,6 @@ export function useDocumentActions() {
     onSetColorClick,
     onSetDuplexClick,
     onSetCopiesClick,
-    onTargetFolderChange
+    onTargetFolderChange,
   };
 }

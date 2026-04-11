@@ -8,8 +8,6 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate, Outlet } from 'rea
 import Layout from './components/layout/Layout';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import { useAppSettings } from './store/appSettings';
-import { useAppStore } from './store/useAppStore';
-import { useUserStore } from './store/useUserStore';
 import ConnectivityListener from './components/ConnectivityListener';
 import { useInitData } from './hooks/useInitData';
 import { useTodoStore } from './store/todos';
@@ -36,8 +34,8 @@ function DataInitializer() {
 }
 
 function ThemeApplier() {
-  const theme = useAppSettings(state => state.theme);
-  const systemIcon = useAppSettings(state => state.systemIcon);
+  const theme = useAppSettings((state) => state.theme);
+  const systemIcon = useAppSettings((state) => state.systemIcon);
 
   React.useLayoutEffect(() => {
     const root = window.document.documentElement;
@@ -57,7 +55,7 @@ function ThemeApplier() {
     if (theme === 'system') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handleChange = () => applyTheme();
-      
+
       mediaQuery.addEventListener('change', handleChange);
       return () => mediaQuery.removeEventListener('change', handleChange);
     }
@@ -89,21 +87,21 @@ function GlobalLoadingFallback() {
 
 function AuthExpiredListener() {
   const navigate = useNavigate();
-  
+
   React.useEffect(() => {
     const handleAuthExpired = () => {
       navigate('/login', { replace: true });
     };
-    
+
     window.addEventListener(EVENT_KEYS.AUTH_EXPIRED, handleAuthExpired);
     return () => window.removeEventListener(EVENT_KEYS.AUTH_EXPIRED, handleAuthExpired);
   }, [navigate]);
-  
+
   return null;
 }
 
 function ApiErrorListener() {
-  const addNotification = useTodoStore(state => state.addNotification);
+  const addNotification = useTodoStore((state) => state.addNotification);
 
   React.useEffect(() => {
     const handleApiError = (event: Event) => {
@@ -111,7 +109,7 @@ function ApiErrorListener() {
       if (customEvent.detail) {
         const { title, message, type } = customEvent.detail;
         addNotification({ title, message, type });
-        
+
         // Also show toast
         if (type === 'error') toast.error(title, { description: message });
         else if (type === 'warning') toast.warning(title, { description: message });
@@ -127,10 +125,10 @@ function ApiErrorListener() {
 }
 
 function GlobalLoadingOverlay() {
-  const globalLoading = useAppStore(state => state.globalLoading);
-  
+  const globalLoading = useAppSettings((state) => state.globalLoading);
+
   if (!globalLoading) return null;
-  
+
   return (
     <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-900/50 backdrop-blur-sm">
       <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl flex flex-col items-center">
@@ -156,22 +154,87 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/403" element={<Forbidden403 />} />
-            <Route element={
-              <Layout>
-                <Suspense fallback={<Skeleton className="w-full h-full min-h-[80vh] rounded-xl m-6" />}>
-                  <Outlet />
-                </Suspense>
-              </Layout>
-            }>
-              <Route path="/" element={<ProtectedRoute requiredPermission="dashboard:view"><Dashboard /></ProtectedRoute>} />
-              <Route path="/users" element={<ProtectedRoute requiredPermission="users:view"><Users /></ProtectedRoute>} />
-              <Route path="/todos" element={<ProtectedRoute requiredPermission="todos:view"><Todos /></ProtectedRoute>} />
-              <Route path="/seating" element={<ProtectedRoute requiredPermission="seating:view"><Seating /></ProtectedRoute>} />
-              <Route path="/name-cards" element={<ProtectedRoute requiredPermission="name-cards:view"><NameCards /></ProtectedRoute>} />
-              <Route path="/documents" element={<ProtectedRoute requiredPermission="documents:view"><Documents /></ProtectedRoute>} />
-              <Route path="/attendance" element={<ProtectedRoute requiredPermission="attendance:view"><Attendance /></ProtectedRoute>} />
-              <Route path="/contracts" element={<ProtectedRoute requiredPermission="contracts:view"><Contracts /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute requiredPermission="settings:view"><Settings /></ProtectedRoute>} />
+            <Route
+              element={
+                <Layout>
+                  <Suspense fallback={<Skeleton className="w-full h-full min-h-[80vh] rounded-xl m-6" />}>
+                    <Outlet />
+                  </Suspense>
+                </Layout>
+              }
+            >
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute requiredPermission="dashboard:view">
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/users"
+                element={
+                  <ProtectedRoute requiredPermission="users:view">
+                    <Users />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/todos"
+                element={
+                  <ProtectedRoute requiredPermission="todos:view">
+                    <Todos />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/seating"
+                element={
+                  <ProtectedRoute requiredPermission="seating:view">
+                    <Seating />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/name-cards"
+                element={
+                  <ProtectedRoute requiredPermission="name-cards:view">
+                    <NameCards />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/documents"
+                element={
+                  <ProtectedRoute requiredPermission="documents:view">
+                    <Documents />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/attendance"
+                element={
+                  <ProtectedRoute requiredPermission="attendance:view">
+                    <Attendance />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/contracts"
+                element={
+                  <ProtectedRoute requiredPermission="contracts:view">
+                    <Contracts />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute requiredPermission="settings:view">
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>

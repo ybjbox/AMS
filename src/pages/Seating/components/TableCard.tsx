@@ -35,21 +35,31 @@ export function TableCard({ table, viewMode, onRemove }: TableCardProps) {
         {viewMode === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {table.members.map((m) => (
-              <div key={m.id} className="p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700">
+              <div
+                key={m.id}
+                className="p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700"
+              >
                 <div className="text-sm font-bold text-slate-900 dark:text-white truncate">{m.name}</div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{m.department} · {m.role}</div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                  {m.department} · {m.role}
+                </div>
               </div>
             ))}
           </div>
         ) : (
           <div className="space-y-2">
             {table.members.map((m, idx) => (
-              <div key={m.id} className="flex items-center justify-between p-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-lg transition-colors group">
+              <div
+                key={m.id}
+                className="flex items-center justify-between p-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-lg transition-colors group"
+              >
                 <div className="flex items-center space-x-3">
                   <span className="text-xs text-slate-400 dark:text-slate-500 w-4">{idx + 1}.</span>
                   <div>
                     <div className="text-sm font-bold text-slate-900 dark:text-white">{m.name}</div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400">{m.department} · {m.role}</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                      {m.department} · {m.role}
+                    </div>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />

@@ -11,13 +11,7 @@ interface UserDetailModalProps {
   handleEdit: (user: User) => void;
 }
 
-export function UserDetailModal({
-  isOpen,
-  onClose,
-  selectedUser,
-  hasPermission,
-  handleEdit
-}: UserDetailModalProps) {
+export function UserDetailModal({ isOpen, onClose, selectedUser, hasPermission, handleEdit }: UserDetailModalProps) {
   return (
     <BaseModal
       isOpen={isOpen && !!selectedUser}
@@ -49,9 +43,15 @@ export function UserDetailModal({
                 printWindow.document.write('<html><head><title>打印档案标签</title>');
                 printWindow.document.write('<style>');
                 printWindow.document.write('@page { size: 17cm 4cm; margin: 0; }');
-                printWindow.document.write('body { margin: 0; padding: 0; width: 17cm; height: 4cm; display: flex; align-items: center; justify-content: center; font-family: "SimSun", "STSong", serif; }');
-                printWindow.document.write('.label-container { width: 16.6cm; height: 3.6cm; box-sizing: border-box; padding: 0.3cm 0.5cm; display: flex; flex-direction: column; justify-content: flex-start; border: 1px solid #000; }');
-                printWindow.document.write('.row { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-bottom: 0.3cm; }');
+                printWindow.document.write(
+                  'body { margin: 0; padding: 0; width: 17cm; height: 4cm; display: flex; align-items: center; justify-content: center; font-family: "SimSun", "STSong", serif; }'
+                );
+                printWindow.document.write(
+                  '.label-container { width: 16.6cm; height: 3.6cm; box-sizing: border-box; padding: 0.3cm 0.5cm; display: flex; flex-direction: column; justify-content: flex-start; border: 1px solid #000; }'
+                );
+                printWindow.document.write(
+                  '.row { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-bottom: 0.3cm; }'
+                );
                 printWindow.document.write('.text-item { font-size: 32px; letter-spacing: 1px; }');
                 printWindow.document.write('.dept { flex: 1; text-align: left; }');
                 printWindow.document.write('.name { flex: 1; text-align: center; }');
@@ -95,8 +95,12 @@ export function UserDetailModal({
                   printWindow.document.write('<style>');
                   printWindow.document.write('body { font-family: sans-serif; padding: 20px; }');
                   printWindow.document.write('.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }');
-                  printWindow.document.write('.bg-slate-50 { background-color: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; }');
-                  printWindow.document.write('.flex { display: flex; justify-content: space-between; margin-bottom: 8px; }');
+                  printWindow.document.write(
+                    '.bg-slate-50 { background-color: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; }'
+                  );
+                  printWindow.document.write(
+                    '.flex { display: flex; justify-content: space-between; margin-bottom: 8px; }'
+                  );
                   printWindow.document.write('.text-sm { font-size: 14px; }');
                   printWindow.document.write('.text-slate-500 { color: #64748b; }');
                   printWindow.document.write('.font-medium { font-weight: 500; }');
@@ -179,13 +183,22 @@ export function UserDetailModal({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-slate-500 dark:text-slate-400">状态</span>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                    selectedUser.status === '在职' || selectedUser.status === 'active' ? 'bg-emerald-100 text-emerald-800' 
-                    : selectedUser.status === '试用期' ? 'bg-amber-100 text-amber-800'
-                    : selectedUser.status === '离职' || selectedUser.status === 'inactive' ? 'bg-slate-200 text-slate-800'
-                    : 'bg-blue-100 text-blue-800'
-                  }`}>
-                    {selectedUser.status === 'active' ? '在职' : selectedUser.status === 'inactive' ? '离职' : selectedUser.status}
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                      selectedUser.status === '在职' || selectedUser.status === 'active'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : selectedUser.status === '试用期'
+                          ? 'bg-amber-100 text-amber-800'
+                          : selectedUser.status === '离职' || selectedUser.status === 'inactive'
+                            ? 'bg-slate-200 text-slate-800'
+                            : 'bg-blue-100 text-blue-800'
+                    }`}
+                  >
+                    {selectedUser.status === 'active'
+                      ? '在职'
+                      : selectedUser.status === 'inactive'
+                        ? '离职'
+                        : selectedUser.status}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -194,7 +207,9 @@ export function UserDetailModal({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-slate-500 dark:text-slate-400">工龄</span>
-                  <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.yearsOfService}</span>
+                  <span className="text-sm font-medium text-slate-900 dark:text-white">
+                    {selectedUser.yearsOfService}
+                  </span>
                 </div>
               </div>
             </div>
@@ -204,18 +219,26 @@ export function UserDetailModal({
               <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-3">
                 <div className="flex justify-between">
                   <span className="text-sm text-slate-500 dark:text-slate-400">用工形式</span>
-                  <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.employmentType}</span>
+                  <span className="text-sm font-medium text-slate-900 dark:text-white">
+                    {selectedUser.employmentType}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-slate-500 dark:text-slate-400">合同到期</span>
-                  <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.contractExpiry}</span>
+                  <span className="text-sm font-medium text-slate-900 dark:text-white">
+                    {selectedUser.contractExpiry}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-slate-500 dark:text-slate-400">系统角色</span>
                   <span className="text-sm font-medium text-slate-900 dark:text-white">
-                    {selectedUser.systemRole === SystemRole.SUPER_ADMIN ? '超级管理员' : 
-                     selectedUser.systemRole === SystemRole.ADMIN ? '管理员' : 
-                     selectedUser.systemRole === SystemRole.HR ? '人事主管' : '普通员工'}
+                    {selectedUser.systemRole === SystemRole.SUPER_ADMIN
+                      ? '超级管理员'
+                      : selectedUser.systemRole === SystemRole.ADMIN
+                        ? '管理员'
+                        : selectedUser.systemRole === SystemRole.HR
+                          ? '人事主管'
+                          : '普通员工'}
                   </span>
                 </div>
               </div>

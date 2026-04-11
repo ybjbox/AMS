@@ -47,6 +47,6 @@ export function usePrintSettings() {
 
   return {
     printSettings,
-    setPrintSettings
+    setPrintSettings,
   };
 }

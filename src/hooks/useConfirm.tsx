@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { AlertTriangle } from 'lucide-react';
@@ -77,9 +78,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             </div>
           )}
           <div className="flex-1">
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {options?.description}
-            </p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{options?.description}</p>
           </div>
         </div>
       </BaseModal>

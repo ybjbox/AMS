@@ -3,7 +3,7 @@ import { DepartmentNode } from '../types';
 
 export const getSubDepartments = (deptName: string, nodes: DepartmentNode[]): string[] => {
   let result: string[] = [];
-  
+
   const findNode = (name: string, currentNodes: DepartmentNode[]): DepartmentNode | null => {
     for (const node of currentNodes) {
       if (node.name === name) return node;
@@ -17,8 +17,8 @@ export const getSubDepartments = (deptName: string, nodes: DepartmentNode[]): st
 
   const targetNode = findNode(deptName, nodes);
   if (targetNode) {
-    result = flattenDepartments([targetNode]).map(d => d.name);
+    result = flattenDepartments([targetNode]).map((d) => d.name);
   }
-  
+
   return result;
 };

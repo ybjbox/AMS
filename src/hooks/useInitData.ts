@@ -4,8 +4,8 @@ import { useUserStore } from '../store/useUserStore';
 import { useEmployeeReminders } from './useEmployeeReminders';
 
 export function useInitData() {
-  const userInfo = useUserStore(state => state.userInfo);
-  const fetchUsers = useEmployeeStore(state => state.fetchUsers);
+  const userInfo = useUserStore((state) => state.userInfo);
+  const fetchUsers = useEmployeeStore((state) => state.fetchUsers);
 
   useEffect(() => {
     if (userInfo) {

@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useConfirm } from '../../hooks/useConfirm';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useDepartments, flattenDepartments } from '../../store/departments';
+import { useDepartments } from '../../store/departments';
 import { useUserStore as useAuthStore } from '../../store/useUserStore';
 import { useBodyOverflow } from '../../hooks/useBodyOverflow';
 import { useEmployeeStore } from '../../store/employees';
@@ -17,18 +17,18 @@ import { useExport } from './hooks/useExport';
 
 export default function Users() {
   const confirm = useConfirm();
-  const hasPermission = useAuthStore(state => state.hasPermission);
-  const users = useEmployeeStore(state => state.users);
-  const fetchUsers = useEmployeeStore(state => state.fetchUsers);
-  const isLoading = useEmployeeStore(state => state.isLoading);
-  const deleteUser = useEmployeeStore(state => state.deleteUser);
-  
+  const hasPermission = useAuthStore((state) => state.hasPermission);
+  const users = useEmployeeStore((state) => state.users);
+  const fetchUsers = useEmployeeStore((state) => state.fetchUsers);
+  const isLoading = useEmployeeStore((state) => state.isLoading);
+  const deleteUser = useEmployeeStore((state) => state.deleteUser);
+
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
-  const allDepartments = useDepartments(state => state.departments);
-  const roles = useDepartments(state => state.roles);
+  const allDepartments = useDepartments((state) => state.departments);
+  const roles = useDepartments((state) => state.roles);
   const departments = useMemo(() => allDepartments, [allDepartments]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,23 +39,44 @@ export default function Users() {
   const [selectedRoleName, setSelectedRoleName] = useState<string>('');
 
   const {
-    searchTerm, setSearchTerm,
-    currentPage, setCurrentPage,
-    isFilterOpen, setIsFilterOpen,
-    filters, handleFilterChange, clearFilters, activeFilterCount,
-    currentUsers, filteredUsers, totalPages, itemsPerPage
+    searchTerm,
+    setSearchTerm,
+    currentPage,
+    setCurrentPage,
+    isFilterOpen,
+    setIsFilterOpen,
+    filters,
+    handleFilterChange,
+    clearFilters,
+    activeFilterCount,
+    currentUsers,
+    filteredUsers,
+    totalPages,
+    itemsPerPage,
   } = useUserFilters(users);
 
   const {
     isExporting,
-    isExportModalOpen, setIsExportModalOpen,
-    isAddressBookModalOpen, setIsAddressBookModalOpen,
-    themes, scripts,
-    exportConfig, setExportConfig,
-    addressBookConfig, setAddressBookConfig,
-    addressBookPrintRef, rosterPrintRef,
-    processedAddressBookUsers, leftUsers, rightUsers, previewLeft, previewRight,
-    handleExport, handlePrintRoster, handlePrintAddressBook
+    isExportModalOpen,
+    setIsExportModalOpen,
+    isAddressBookModalOpen,
+    setIsAddressBookModalOpen,
+    themes,
+    scripts,
+    exportConfig,
+    setExportConfig,
+    addressBookConfig,
+    setAddressBookConfig,
+    addressBookPrintRef,
+    rosterPrintRef,
+    processedAddressBookUsers,
+    leftUsers,
+    rightUsers,
+    previewLeft,
+    previewRight,
+    handleExport,
+    handlePrintRoster,
+    handlePrintAddressBook,
   } = useExport(users);
 
   useBodyOverflow(isModalOpen || isDetailModalOpen || isExportModalOpen || isAddressBookModalOpen);
@@ -77,7 +98,7 @@ export default function Users() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="bg-white dark:bg-zinc-800 shadow-sm rounded-3xl">
-        <UserToolbar 
+        <UserToolbar
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           isFilterOpen={isFilterOpen}
@@ -93,15 +114,21 @@ export default function Users() {
           handleAdd={handleAdd}
         />
 
-        <UserTable 
-          data={currentUsers} 
-          isLoading={isLoading} 
-          onEdit={handleEdit} 
+        <UserTable
+          data={currentUsers}
+          isLoading={isLoading}
+          onEdit={handleEdit}
           onDelete={async (user) => {
-            if (await confirm({ title: `确定要删除员工 ${user.name} 吗？`, description: '此操作不可恢复。', variant: 'danger' })) {
+            if (
+              await confirm({
+                title: `确定要删除员工 ${user.name} 吗？`,
+                description: '此操作不可恢复。',
+                variant: 'danger',
+              })
+            ) {
               deleteUser(user.id);
             }
-          }} 
+          }}
           onRowClick={(user) => {
             setSelectedUser(user);
             setIsDetailModalOpen(true);
@@ -112,14 +139,15 @@ export default function Users() {
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
               <p className="text-sm text-slate-700 dark:text-slate-300">
-                显示第 <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> 到 <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredUsers.length)}</span> 条，
+                显示第 <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> 到{' '}
+                <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredUsers.length)}</span> 条，
                 共 <span className="font-medium">{filteredUsers.length}</span> 条记录
               </p>
             </div>
             <div>
               <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                 <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
                   className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -130,7 +158,7 @@ export default function Users() {
                   {currentPage} / {totalPages || 1}
                 </span>
                 <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages || totalPages === 0}
                   className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-zinc-200/80 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -140,10 +168,10 @@ export default function Users() {
               </nav>
             </div>
           </div>
-          
+
           <div className="flex items-center justify-between w-full sm:hidden">
             <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
               className="relative inline-flex items-center px-4 py-2 border border-zinc-200/80 dark:border-slate-600 text-sm font-medium rounded-md text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50"
             >
@@ -153,7 +181,7 @@ export default function Users() {
               {currentPage} / {totalPages || 1}
             </span>
             <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages || totalPages === 0}
               className="relative inline-flex items-center px-4 py-2 border border-zinc-200/80 dark:border-slate-600 text-sm font-medium rounded-md text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50"
             >
@@ -163,7 +191,7 @@ export default function Users() {
         </div>
       </div>
 
-      <ExportModal 
+      <ExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
         exportConfig={exportConfig}
@@ -177,7 +205,7 @@ export default function Users() {
         filteredUsersLength={filteredUsers.length}
       />
 
-      <AddressBookModal 
+      <AddressBookModal
         isOpen={isAddressBookModalOpen}
         onClose={() => setIsAddressBookModalOpen(false)}
         addressBookConfig={addressBookConfig}
@@ -188,7 +216,7 @@ export default function Users() {
         previewRight={previewRight}
       />
 
-      <UserDetailModal 
+      <UserDetailModal
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
         selectedUser={selectedUser}
@@ -196,7 +224,7 @@ export default function Users() {
         handleEdit={handleEdit}
       />
 
-      <UserFormModal 
+      <UserFormModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         editingUser={editingUser}
@@ -215,19 +243,23 @@ export default function Users() {
           <table>
             <thead>
               <tr>
-                {exportConfig.columns.filter((c: any) => c.selected).map((col: any) => (
-                  <th key={col.key}>{col.label}</th>
-                ))}
+                {exportConfig.columns
+                  .filter((c: ExportColumn) => c.selected)
+                  .map((col: ExportColumn) => (
+                    <th key={col.key}>{col.label}</th>
+                  ))}
               </tr>
             </thead>
             <tbody>
               {users
-                .filter(u => exportConfig.includeResigned ? true : u.status !== '离职')
-                .map(u => (
+                .filter((u) => (exportConfig.includeResigned ? true : u.status !== '离职'))
+                .map((u) => (
                   <tr key={u.id}>
-                    {exportConfig.columns.filter((c: any) => c.selected).map((col: any) => (
-                      <td key={col.key}>{(u as Record<string, any>)[col.key] || '-'}</td>
-                    ))}
+                    {exportConfig.columns
+                      .filter((c: ExportColumn) => c.selected)
+                      .map((col: ExportColumn) => (
+                        <td key={col.key}>{(u as Record<string, unknown>)[col.key] as string || '-'}</td>
+                      ))}
                   </tr>
                 ))}
             </tbody>
@@ -244,30 +276,50 @@ export default function Users() {
               <table className="w-full border-collapse text-sm" style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
-                    {addressBookConfig.columns.filter((c: any) => c.selected).map((col: any) => (
-                      <th key={col.key} style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'left' }}>{col.label}</th>
-                    ))}
+                    {addressBookConfig.columns
+                      .filter((c: ExportColumn) => c.selected)
+                      .map((col: ExportColumn) => (
+                        <th key={col.key} style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'left' }}>
+                          {col.label}
+                        </th>
+                      ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {leftUsers.map((user: any, idx: number) => (
+                  {leftUsers.map((user: User & { _deptSpan?: number; _deptCount?: number }, idx: number) => (
                     <tr key={user.id || idx}>
-                      {addressBookConfig.columns.filter((c: any) => c.selected).map((col: any) => {
-                        if (col.key === 'department' && addressBookConfig.mergeDepartments) {
-                          if (user._deptSpan === 0) return null;
+                      {addressBookConfig.columns
+                        .filter((c: ExportColumn) => c.selected)
+                        .map((col: ExportColumn) => {
+                          if (col.key === 'department' && addressBookConfig.mergeDepartments) {
+                            if (user._deptSpan === 0) return null;
+                            return (
+                              <td
+                                key={col.key}
+                                rowSpan={user._deptSpan}
+                                style={{
+                                  border: '1px solid #000',
+                                  padding: '4px 6px',
+                                  textAlign: 'center',
+                                  verticalAlign: 'middle',
+                                }}
+                              >
+                                {(user as Record<string, unknown>)[col.key] as string || '-'}
+                                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
+                                  ({user._deptCount}人)
+                                </div>
+                              </td>
+                            );
+                          }
                           return (
-                            <td key={col.key} rowSpan={user._deptSpan} style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center', verticalAlign: 'middle' }}>
-                              {user[col.key] || '-'}
-                              <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>({user._deptCount}人)</div>
+                            <td
+                              key={col.key}
+                              style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center' }}
+                            >
+                              {(user as Record<string, unknown>)[col.key] as string || '-'}
                             </td>
                           );
-                        }
-                        return (
-                          <td key={col.key} style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center' }}>
-                            {user[col.key] || '-'}
-                          </td>
-                        );
-                      })}
+                        })}
                     </tr>
                   ))}
                 </tbody>
@@ -278,30 +330,50 @@ export default function Users() {
                 <table className="w-full border-collapse text-sm" style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr>
-                      {addressBookConfig.columns.filter((c: any) => c.selected).map((col: any) => (
-                        <th key={col.key} style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'left' }}>{col.label}</th>
-                      ))}
+                      {addressBookConfig.columns
+                        .filter((c: ExportColumn) => c.selected)
+                        .map((col: ExportColumn) => (
+                          <th key={col.key} style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'left' }}>
+                            {col.label}
+                          </th>
+                        ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {rightUsers.map((user: any, idx: number) => (
+                    {rightUsers.map((user: User & { _deptSpan?: number; _deptCount?: number }, idx: number) => (
                       <tr key={user.id || idx}>
-                        {addressBookConfig.columns.filter((c: any) => c.selected).map((col: any) => {
-                          if (col.key === 'department' && addressBookConfig.mergeDepartments) {
-                            if (user._deptSpan === 0) return null;
+                        {addressBookConfig.columns
+                          .filter((c: ExportColumn) => c.selected)
+                          .map((col: ExportColumn) => {
+                            if (col.key === 'department' && addressBookConfig.mergeDepartments) {
+                              if (user._deptSpan === 0) return null;
+                              return (
+                                <td
+                                  key={col.key}
+                                  rowSpan={user._deptSpan}
+                                  style={{
+                                    border: '1px solid #000',
+                                    padding: '4px 6px',
+                                    textAlign: 'center',
+                                    verticalAlign: 'middle',
+                                  }}
+                                >
+                                  {(user as Record<string, unknown>)[col.key] as string || '-'}
+                                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
+                                    ({user._deptCount}人)
+                                  </div>
+                                </td>
+                              );
+                            }
                             return (
-                              <td key={col.key} rowSpan={user._deptSpan} style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center', verticalAlign: 'middle' }}>
-                                {user[col.key] || '-'}
-                                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>({user._deptCount}人)</div>
+                              <td
+                                key={col.key}
+                                style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center' }}
+                              >
+                                {(user as Record<string, unknown>)[col.key] as string || '-'}
                               </td>
                             );
-                          }
-                          return (
-                            <td key={col.key} style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center' }}>
-                              {user[col.key] || '-'}
-                            </td>
-                          );
-                        })}
+                          })}
                       </tr>
                     ))}
                   </tbody>

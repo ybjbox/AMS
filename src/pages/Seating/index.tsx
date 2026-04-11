@@ -17,10 +17,10 @@ import { useSeatingArrange } from './hooks/useSeatingArrange';
 import { usePrintSettings } from './hooks/usePrintSettings';
 
 export default function Seating() {
-  const users = useEmployeeStore(state => state.users);
-  const fetchUsers = useEmployeeStore(state => state.fetchUsers);
-  const departments = useDepartments(state => state.departments);
-  const roles = useDepartments(state => state.roles);
+  const users = useEmployeeStore((state) => state.users);
+  const fetchUsers = useEmployeeStore((state) => state.fetchUsers);
+  const departments = useDepartments((state) => state.departments);
+  const roles = useDepartments((state) => state.roles);
 
   useEffect(() => {
     fetchUsers();
@@ -28,7 +28,7 @@ export default function Seating() {
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isUploadMenuOpen, setIsUploadMenuOpen] = useState(false);
-  const [uploadedUsers, setUploadedUsers] = useState<any[] | null>(null);
+  const [uploadedUsers, setUploadedUsers] = useState<User[] | null>(null);
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
@@ -36,7 +36,7 @@ export default function Seating() {
 
   const activeUsers = useMemo(() => {
     if (uploadedUsers) return uploadedUsers;
-    return users.filter(u => u.status !== '离职');
+    return users.filter((u) => u.status !== '离职');
   }, [users, uploadedUsers]);
 
   const { printSettings, setPrintSettings } = usePrintSettings();
@@ -50,14 +50,15 @@ export default function Seating() {
     removeTableCapacity,
     handleAutoArrange,
     handleClear,
-    removeTable
+    removeTable,
   } = useSeatingArrange(activeUsers, selectedUserIds, departments, roles);
 
   useEffect(() => {
-    if (!uploadedUsers) {
-      setSelectedUserIds(new Set(activeUsers.map(u => u.id)));
+    if (!uploadedUsers && activeUsers.length > 0 && selectedUserIds.size === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedUserIds(new Set(activeUsers.map((u) => u.id)));
     }
-  }, [activeUsers, uploadedUsers]);
+  }, [activeUsers, uploadedUsers, selectedUserIds.size]);
 
   useBodyOverflow(isParticipantModalOpen || isPrintModalOpen || isPrintWarningOpen);
 
@@ -70,27 +71,41 @@ export default function Seating() {
     if (!file) return;
     setTimeout(() => {
       const newUsers = [
-        { id: `uploaded-${Date.now()}-1`, name: '张三', department: '技术部', role: '前端工程师', status: '在职', joinDate: new Date().toISOString() },
-        { id: `uploaded-${Date.now()}-2`, name: '李四', department: '市场部', role: '市场总监', status: '在职', joinDate: new Date().toISOString() },
+        {
+          id: `uploaded-${Date.now()}-1`,
+          name: '张三',
+          department: '技术部',
+          role: '前端工程师',
+          status: '在职',
+          joinDate: new Date().toISOString(),
+        },
+        {
+          id: `uploaded-${Date.now()}-2`,
+          name: '李四',
+          department: '市场部',
+          role: '市场总监',
+          status: '在职',
+          joinDate: new Date().toISOString(),
+        },
       ];
       setUploadedUsers(newUsers);
-      setSelectedUserIds(new Set(newUsers.map(u => u.id)));
+      setSelectedUserIds(new Set(newUsers.map((u) => u.id)));
       toast.success('成功从后端获取到名单 (Mock)');
     }, 500);
     e.target.value = '';
   }, []);
 
   const groupedUsers = useMemo(() => {
-    const groups: Record<string, any[]> = {};
-    activeUsers.forEach(u => {
+    const groups: Record<string, User[]> = {};
+    activeUsers.forEach((u) => {
       if (!groups[u.department || '']) groups[u.department || ''] = [];
       groups[u.department || ''].push(u);
     });
     return groups;
   }, [activeUsers]);
 
-  const getTableDepartments = useCallback((members: any[]) => {
-    const depts = new Set(members.map(m => m.department).filter(Boolean));
+  const getTableDepartments = useCallback((members: User[]) => {
+    const depts = new Set(members.map((m) => m.department).filter(Boolean));
     return Array.from(depts).join('、');
   }, []);
 
@@ -108,7 +123,7 @@ export default function Seating() {
   }, []);
 
   const toggleUserSelection = useCallback((id: string) => {
-    setSelectedUserIds(prev => {
+    setSelectedUserIds((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(id)) newSet.delete(id);
       else newSet.add(id);
@@ -116,16 +131,19 @@ export default function Seating() {
     });
   }, []);
 
-  const toggleDepartmentSelection = useCallback((dept: string, isSelected: boolean) => {
-    setSelectedUserIds(prev => {
-      const newSet = new Set(prev);
-      groupedUsers[dept]?.forEach(u => {
-        if (isSelected) newSet.add(u.id);
-        else newSet.delete(u.id);
+  const toggleDepartmentSelection = useCallback(
+    (dept: string, isSelected: boolean) => {
+      setSelectedUserIds((prev) => {
+        const newSet = new Set(prev);
+        groupedUsers[dept]?.forEach((u) => {
+          if (isSelected) newSet.add(u.id);
+          else newSet.delete(u.id);
+        });
+        return newSet;
       });
-      return newSet;
-    });
-  }, [groupedUsers]);
+    },
+    [groupedUsers]
+  );
 
   const handlePrint = useCallback(() => {
     try {
@@ -134,7 +152,7 @@ export default function Seating() {
       } else {
         window.print();
       }
-    } catch (e) {
+    } catch {
       setIsPrintWarningOpen(true);
     }
   }, []);
@@ -171,7 +189,7 @@ export default function Seating() {
         />
 
         {tables.length > 0 ? (
-          <div className={viewMode === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
+          <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
             {tables.map((table) => (
               <TableCard key={table.number} table={table} viewMode={viewMode} onRemove={removeTable} />
             ))}
@@ -216,8 +234,23 @@ export default function Seating() {
         size="md"
         footer={
           <>
-            <button type="button" onClick={() => setIsPrintWarningOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm">我知道了</button>
-            <button type="button" onClick={() => { setIsPrintWarningOpen(false); window.print(); }} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm">仍然尝试打印</button>
+            <button
+              type="button"
+              onClick={() => setIsPrintWarningOpen(false)}
+              className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
+            >
+              我知道了
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsPrintWarningOpen(false);
+                window.print();
+              }}
+              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm"
+            >
+              仍然尝试打印
+            </button>
           </>
         }
       >
@@ -228,8 +261,11 @@ export default function Seating() {
           <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
             <div className="mt-2">
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                由于您当前处于预览模式，浏览器的打印功能可能无法正常工作。<br /><br />
-                请点击右上角的<strong className="text-slate-700 dark:text-slate-300">“在新标签页中打开”</strong>按钮，或者复制当前网址到新标签页中打开，然后再进行打印。
+                由于您当前处于预览模式，浏览器的打印功能可能无法正常工作。
+                <br />
+                <br />
+                请点击右上角的<strong className="text-slate-700 dark:text-slate-300">“在新标签页中打开”</strong>
+                按钮，或者复制当前网址到新标签页中打开，然后再进行打印。
               </p>
             </div>
           </div>

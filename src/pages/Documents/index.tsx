@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Plus, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { useBodyOverflow } from '../../hooks/useBodyOverflow';
@@ -15,11 +15,11 @@ import { PrintSetModal } from './components/PrintSetModal';
 import { useDocumentActions } from './hooks/useDocumentActions';
 
 export default function Documents() {
-  const folders = useDocumentStore(state => state.folders);
-  const documents = useDocumentStore(state => state.documents);
-  const documentSets = useDocumentStore(state => state.documentSets);
-  const fetchData = useDocumentStore(state => state.fetchData);
-  const isLoading = useDocumentStore(state => state.isLoading);
+  const folders = useDocumentStore((state) => state.folders);
+  const documents = useDocumentStore((state) => state.documents);
+  const documentSets = useDocumentStore((state) => state.documentSets);
+  const fetchData = useDocumentStore((state) => state.fetchData);
+  const isLoading = useDocumentStore((state) => state.isLoading);
 
   const [activeTab, setActiveTab] = useState<'files' | 'sets'>('sets');
   const [searchQuery, setSearchQuery] = useState('');
@@ -31,7 +31,6 @@ export default function Documents() {
     isFolderModalOpen,
     setIsFolderModalOpen,
     editingFolder,
-    folderParentId,
     isMoveModalOpen,
     setIsMoveModalOpen,
     targetFolderId,
@@ -69,7 +68,7 @@ export default function Documents() {
     onSetColorClick,
     onSetDuplexClick,
     onSetCopiesClick,
-    onTargetFolderChange
+    onTargetFolderChange,
   } = useDocumentActions();
 
   useEffect(() => {
@@ -88,16 +87,16 @@ export default function Documents() {
 
   const getBreadcrumbs = useCallback(() => {
     const crumbs = [];
-    let current = folders.find(f => f.id === currentFolderId);
+    let current = folders.find((f) => f.id === currentFolderId);
     while (current) {
       crumbs.unshift(current);
-      current = folders.find(f => f.id === current!.parentId);
+      current = folders.find((f) => f.id === current!.parentId);
     }
     return crumbs;
   }, [folders, currentFolderId]);
 
   const currentDocs = useMemo(() => {
-    return documents.filter(d => {
+    return documents.filter((d) => {
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
         return (d.name || '').toLowerCase().includes(query) || (d.type || '').toLowerCase().includes(query);
@@ -111,13 +110,13 @@ export default function Documents() {
     setTimeout(() => {
       setIsPrinting(false);
       setIsPrintModalOpen(false);
-      
+
       const printIframe = document.createElement('iframe');
       printIframe.style.position = 'absolute';
       printIframe.style.top = '-1000px';
       printIframe.style.left = '-1000px';
       document.body.appendChild(printIframe);
-      
+
       const printDoc = printIframe.contentWindow?.document;
       if (printDoc) {
         printDoc.write(`
@@ -139,11 +138,12 @@ export default function Documents() {
               <h1>${printingSet?.name}</h1>
               <p style="text-align: center; color: #666;">包含 ${printingSet?.documentIds.length} 份文件</p>
               <hr/>
-              ${printingSet?.documentIds.map(id => {
-                const doc = documents.find(d => d.id === id);
-                if (!doc) return '';
-                const settings = printingSet.printSettings?.[id] || { duplex: false, color: false, copies: 1 };
-                return `
+              ${printingSet?.documentIds
+                .map((id) => {
+                  const doc = documents.find((d) => d.id === id);
+                  if (!doc) return '';
+                  const settings = printingSet.printSettings?.[id] || { duplex: false, color: false, copies: 1 };
+                  return `
                   <div class="doc-item page-break">
                     <div class="doc-title">文件：${doc.name}</div>
                     <div class="doc-content">
@@ -156,7 +156,8 @@ export default function Documents() {
                     </div>
                   </div>
                 `;
-              }).join('')}
+                })
+                .join('')}
               <script>
                 window.onload = function() {
                   setTimeout(function() {
@@ -200,8 +201,8 @@ export default function Documents() {
             <button
               onClick={() => setActiveTab('sets')}
               className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                activeTab === 'sets' 
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                activeTab === 'sets'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
               }`}
             >
@@ -210,8 +211,8 @@ export default function Documents() {
             <button
               onClick={() => setActiveTab('files')}
               className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                activeTab === 'files' 
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                activeTab === 'files'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
               }`}
             >
@@ -220,13 +221,7 @@ export default function Documents() {
           </div>
           {activeTab === 'files' ? (
             <>
-              <input 
-                type="file" 
-                multiple 
-                className="hidden" 
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-              />
+              <input type="file" multiple className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform text-sm font-medium shadow-sm"
@@ -296,7 +291,7 @@ export default function Documents() {
         folders={folders}
         documents={documents}
         selectedDocIds={selectedDocIds}
-        onDocToggleChange={handleDocToggle as any}
+        onDocToggleChange={handleDocToggle}
         expandedModalFolders={expandedModalFolders}
         toggleAllModalFolders={toggleAllModalFolders}
         toggleModalFolder={toggleModalFolder}
@@ -318,10 +313,7 @@ export default function Documents() {
         onClose={() => setIsMoveModalOpen(false)}
         folders={folders}
         targetFolderId={targetFolderId}
-        onTargetFolderChange={(e) => {
-          const folderId = (e.currentTarget as any).dataset.folderid;
-          onTargetFolderChange(folderId === 'null' ? null : folderId);
-        }}
+        onTargetFolderChange={onTargetFolderChange}
         handleMoveFile={handleMoveFile}
       />
 

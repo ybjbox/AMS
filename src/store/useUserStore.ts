@@ -37,21 +37,21 @@ const getInitialUserInfo = (): UserInfo | null => {
 export const useUserStore = create<UserState>((set) => ({
   userInfo: getInitialUserInfo(),
   token: localStorage.getItem(STORAGE_KEYS.TOKEN) || null,
-  
+
   setUser: (userInfo: UserInfo, token: string) => {
     // 写入 localStorage
     localStorage.setItem(STORAGE_KEYS.TOKEN, token);
     localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(userInfo));
-    
+
     // 更新状态
     set({ userInfo, token });
   },
-  
+
   logout: () => {
     // 清除 localStorage
     localStorage.removeItem(STORAGE_KEYS.TOKEN);
     localStorage.removeItem(STORAGE_KEYS.USER_INFO);
-    
+
     // 清空状态
     set({ userInfo: null, token: null });
   },

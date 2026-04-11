@@ -9,9 +9,9 @@ import {
   ColumnResizeMode,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { User, Permission } from '../../types';
+import { User } from '../../types';
 import { useUserStore } from '../../store/useUserStore';
-import { Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Search, Users } from 'lucide-react';
+import { Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Users } from 'lucide-react';
 import { TableSkeleton } from '../ui/Skeleton';
 import { EmptyState } from '../ui/EmptyState';
 
@@ -24,7 +24,7 @@ interface UserTableProps {
 }
 
 export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDelete, onRowClick }: UserTableProps) {
-  const hasPermission = useUserStore(state => state.hasPermission);
+  const hasPermission = useUserStore((state) => state.hasPermission);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnResizeMode] = useState<ColumnResizeMode>('onChange');
 
@@ -34,10 +34,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
         accessorKey: 'name',
         header: ({ column }) => {
           return (
-            <div
-              className="flex items-center cursor-pointer select-none"
-              onClick={column.getToggleSortingHandler()}
-            >
+            <div className="flex items-center cursor-pointer select-none" onClick={column.getToggleSortingHandler()}>
               姓名/工号
               {{
                 asc: <ArrowUp className="ml-2 h-4 w-4" />,
@@ -50,12 +47,8 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
         },
         cell: ({ row }) => (
           <div>
-            <div className="font-medium text-slate-900 dark:text-white">
-              {row.original.name}
-            </div>
-            <div className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
-              {row.original.id}
-            </div>
+            <div className="font-medium text-slate-900 dark:text-white">{row.original.name}</div>
+            <div className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">{row.original.id}</div>
           </div>
         ),
         size: 150,
@@ -65,10 +58,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
         accessorKey: 'department',
         header: ({ column }) => {
           return (
-            <div
-              className="flex items-center cursor-pointer select-none"
-              onClick={column.getToggleSortingHandler()}
-            >
+            <div className="flex items-center cursor-pointer select-none" onClick={column.getToggleSortingHandler()}>
               部门/职位
               {{
                 asc: <ArrowUp className="ml-2 h-4 w-4" />,
@@ -81,12 +71,8 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
         },
         cell: ({ row }) => (
           <div>
-            <div className="text-slate-900 dark:text-slate-200">
-              {row.original.department || '-'}
-            </div>
-            <div className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
-              {row.original.role || '-'}
-            </div>
+            <div className="text-slate-900 dark:text-slate-200">{row.original.department || '-'}</div>
+            <div className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">{row.original.role || '-'}</div>
           </div>
         ),
         size: 180,
@@ -96,10 +82,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
         accessorKey: 'status',
         header: ({ column }) => {
           return (
-            <div
-              className="flex items-center cursor-pointer select-none"
-              onClick={column.getToggleSortingHandler()}
-            >
+            <div className="flex items-center cursor-pointer select-none" onClick={column.getToggleSortingHandler()}>
               状态
               {{
                 asc: <ArrowUp className="ml-2 h-4 w-4" />,
@@ -118,8 +101,8 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                 status === '在职'
                   ? 'bg-success/10 text-success'
                   : status === '试用期'
-                  ? 'bg-warning/10 text-warning'
-                  : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
+                    ? 'bg-warning/10 text-warning'
+                    : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
               }`}
             >
               {status}
@@ -132,11 +115,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
       {
         accessorKey: 'phone',
         header: '联系电话',
-        cell: ({ row }) => (
-          <div className="text-slate-900 dark:text-slate-200">
-            {row.original.phone || '-'}
-          </div>
-        ),
+        cell: ({ row }) => <div className="text-slate-900 dark:text-slate-200">{row.original.phone || '-'}</div>,
         size: 130,
         minSize: 100,
       },
@@ -183,12 +162,8 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
           }
           return (
             <div>
-              <div className="text-slate-900 dark:text-slate-200">
-                {joinDate || '-'}
-              </div>
-              <div className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
-                {yearsOfService}
-              </div>
+              <div className="text-slate-900 dark:text-slate-200">{joinDate || '-'}</div>
+              <div className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">{yearsOfService}</div>
             </div>
           );
         },
@@ -199,9 +174,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
         accessorKey: 'employmentType',
         header: '用工形式',
         cell: ({ row }) => (
-          <div className="text-slate-900 dark:text-slate-200">
-            {row.original.employmentType || '-'}
-          </div>
+          <div className="text-slate-900 dark:text-slate-200">{row.original.employmentType || '-'}</div>
         ),
         size: 100,
         minSize: 80,
@@ -210,10 +183,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
         accessorKey: 'contractExpiry',
         header: ({ column }) => {
           return (
-            <div
-              className="flex items-center cursor-pointer select-none"
-              onClick={column.getToggleSortingHandler()}
-            >
+            <div className="flex items-center cursor-pointer select-none" onClick={column.getToggleSortingHandler()}>
               合同到期(天)
               {{
                 asc: <ArrowUp className="ml-2 h-4 w-4" />,
@@ -233,11 +203,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
             const diffTime = expiry.getTime() - today.getTime();
             daysToExpiry = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
           }
-          return (
-            <div className="text-slate-900 dark:text-slate-200">
-              {daysToExpiry}
-            </div>
-          );
+          return <div className="text-slate-900 dark:text-slate-200">{daysToExpiry}</div>;
         },
         size: 130,
         minSize: 100,
@@ -282,6 +248,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
     return baseColumns;
   }, [hasPermission, onEdit, onDelete]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,
@@ -300,32 +267,30 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 65,
+    estimateSize: () => 52,
     overscan: 5,
   });
 
   const virtualItems = rowVirtualizer.getVirtualItems();
   const paddingTop = virtualItems.length > 0 ? virtualItems[0]?.start || 0 : 0;
-  const paddingBottom = virtualItems.length > 0
-    ? rowVirtualizer.getTotalSize() - (virtualItems[virtualItems.length - 1]?.end || 0)
-    : 0;
+  const paddingBottom =
+    virtualItems.length > 0 ? rowVirtualizer.getTotalSize() - (virtualItems[virtualItems.length - 1]?.end || 0) : 0;
 
   if (isLoading) {
     return (
       <div className="w-full overflow-x-auto">
         <table className="w-full min-w-[800px] text-left border-collapse">
+          <caption className="sr-only">员工列表加载中</caption>
           <thead>
             <tr>
               {table.getFlatHeaders().map((header) => (
                 <th
                   key={header.id}
+                  scope="col"
                   className="px-6 py-2 text-xs font-medium text-zinc-500 uppercase tracking-wider bg-zinc-50/50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800"
                   style={{ width: header.getSize() }}
                 >
-                  {flexRender(
-                    header.column.columnDef.header,
-                    header.getContext()
-                  )}
+                  {flexRender(header.column.columnDef.header, header.getContext())}
                 </th>
               ))}
             </tr>
@@ -341,21 +306,15 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
   if (data.length === 0) {
     return (
       <div className="text-center py-12">
-        <EmptyState
-          title="未找到员工"
-          description="请尝试调整搜索条件或添加新员工"
-          icon={Users}
-        />
+        <EmptyState title="未找到员工" description="请尝试调整搜索条件或添加新员工" icon={Users} />
       </div>
     );
   }
 
   return (
     <div ref={parentRef} className="w-full overflow-x-auto overflow-y-auto relative max-h-[600px]">
-      <table
-        className="w-full min-w-[800px] text-left border-collapse"
-        style={{ width: table.getTotalSize() }}
-      >
+      <table className="w-full min-w-[800px] text-left border-collapse" style={{ width: table.getTotalSize() }}>
+        <caption className="sr-only">员工列表</caption>
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
@@ -365,21 +324,21 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                 return (
                   <th
                     key={header.id}
+                    scope="col"
                     className={`group px-6 py-2 text-xs font-medium text-zinc-500 uppercase tracking-wider bg-zinc-50/50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800 sticky top-0 z-20 ${
-                      isFirst ? 'left-0 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]' : ''
+                      isFirst
+                        ? 'left-0 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]'
+                        : ''
                     } ${
-                      isLast ? 'right-0 z-30 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.5)]' : ''
+                      isLast
+                        ? 'right-0 z-30 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.5)]'
+                        : ''
                     }`}
                     style={{
                       width: header.getSize(),
                     }}
                   >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     {header.column.getCanResize() && (
                       <div
                         onMouseDown={header.getResizeHandler()}
@@ -407,8 +366,8 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
               <tr
                 key={row.id}
                 data-index={virtualRow.index}
-                ref={rowVirtualizer.measureElement}
                 className={`hover:bg-zinc-50/80 dark:hover:bg-zinc-700/30 transition-colors group/row ${onRowClick ? 'cursor-pointer' : ''}`}
+                style={{ height: '52px' }}
                 onClick={() => onRowClick && onRowClick(row.original)}
               >
                 {row.getVisibleCells().map((cell, index) => {
@@ -417,13 +376,18 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                   return (
                     <td
                       key={cell.id}
-                      className={`px-6 py-2 whitespace-nowrap text-sm bg-white dark:bg-zinc-800 group-hover/row:bg-zinc-50/80 dark:group-hover/row:bg-zinc-700/30 transition-colors ${
-                        isFirst ? 'sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]' : ''
+                      className={`px-6 whitespace-nowrap text-sm bg-white dark:bg-zinc-800 group-hover/row:bg-zinc-50/80 dark:group-hover/row:bg-zinc-700/30 transition-colors ${
+                        isFirst
+                          ? 'sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]'
+                          : ''
                       } ${
-                        isLast ? 'sticky right-0 z-10 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.5)] text-right' : ''
+                        isLast
+                          ? 'sticky right-0 z-10 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.5)] text-right'
+                          : ''
                       }`}
                       style={{
                         width: cell.column.getSize(),
+                        height: '52px',
                       }}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

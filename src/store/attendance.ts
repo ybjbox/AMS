@@ -39,20 +39,20 @@ interface AttendanceState {
   anomalies: Anomaly[];
   isLoading: boolean;
   error: string | null;
-  
+
   fetchData: () => Promise<void>;
-  
+
   addShift: (shift: Shift) => Promise<void>;
   updateShift: (id: string, shift: Partial<Shift>) => Promise<void>;
   deleteShift: (id: string) => Promise<void>;
-  
+
   setSchedules: (schedules: EmployeeSchedule[]) => Promise<void>;
   setRecords: (records: PunchRecord[]) => Promise<void>;
-  
+
   analyzeAnomalies: () => Promise<void>;
 }
 
-export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
+export const useAttendanceStore = create<AttendanceState>()((set) => ({
   shifts: [],
   schedules: [],
   records: [],
@@ -67,11 +67,11 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
         api.fetchShifts(),
         api.fetchSchedules(),
         api.fetchRecords(),
-        api.fetchAnomalies()
+        api.fetchAnomalies(),
       ]);
       set({ shifts, schedules, records, anomalies, isLoading: false });
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
   },
 
@@ -80,8 +80,8 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
     try {
       const newShift = await api.createShift(shift);
       set((state) => ({ shifts: [...state.shifts, newShift], isLoading: false }));
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
   },
 
@@ -90,11 +90,11 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
     try {
       const updatedShift = await api.updateShift(id, shift);
       set((state) => ({
-        shifts: state.shifts.map(s => s.id === id ? updatedShift : s),
-        isLoading: false
+        shifts: state.shifts.map((s) => (s.id === id ? updatedShift : s)),
+        isLoading: false,
       }));
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
   },
 
@@ -103,11 +103,11 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
     try {
       await api.deleteShift(id);
       set((state) => ({
-        shifts: state.shifts.filter(s => s.id !== id),
-        isLoading: false
+        shifts: state.shifts.filter((s) => s.id !== id),
+        isLoading: false,
       }));
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
   },
 
@@ -116,8 +116,8 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
     try {
       const updatedSchedules = await api.updateSchedules(schedules);
       set({ schedules: updatedSchedules, isLoading: false });
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
   },
 
@@ -126,8 +126,8 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
     try {
       const updatedRecords = await api.updateRecords(records);
       set({ records: updatedRecords, isLoading: false });
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
   },
 
@@ -136,13 +136,8 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
     try {
       const anomalies = await api.analyzeAnomalies();
       set({ anomalies, isLoading: false });
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
-  }
+  },
 }));
-
-function timeToMinutes(time: string): number {
-  const [h, m] = time.split(':').map(Number);
-  return h * 60 + m;
-}

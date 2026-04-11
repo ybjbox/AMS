@@ -2,39 +2,48 @@ import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building2, User, Lock, ArrowRight } from 'lucide-react';
 import { useAppSettings } from '../store/appSettings';
-import { useAppStore } from '../store/useAppStore';
 import { useUserStore } from '../store/useUserStore';
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const { globalLoading: loading, setLoading } = useAppStore();
-  const setUser = useUserStore(state => state.setUser);
+  const { globalLoading: loading, setLoading } = useAppSettings();
+  const setUser = useUserStore((state) => state.setUser);
   const navigate = useNavigate();
-  const loginBackground = useAppSettings(state => state.loginBackground);
-  const systemIcon = useAppSettings(state => state.systemIcon);
+  const loginBackground = useAppSettings((state) => state.loginBackground);
+  const systemIcon = useAppSettings((state) => state.systemIcon);
 
-  const handleLogin = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    // 模拟登录请求延迟
-    setTimeout(() => {
-      setLoading(false);
-      // 临时调试：为模拟用户赋予 admin 角色，以获得所有权限
-      setUser({ id: 'ADMIN001', username: username || 'admin', email: 'admin@example.com', role: 'admin' }, 'mock_token_123');
-      navigate('/');
-    }, 1000);
-  }, [username, setLoading, setUser, navigate]);
+  const handleLogin = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      setLoading(true);
+
+      // 模拟登录请求延迟
+      setTimeout(() => {
+        setLoading(false);
+        // 临时调试：为模拟用户赋予 admin 角色，以获得所有权限
+        setUser(
+          { id: 'ADMIN001', username: username || 'admin', email: 'admin@example.com', role: 'admin' },
+          'mock_token_123'
+        );
+        navigate('/');
+      }, 1000);
+    },
+    [username, setLoading, setUser, navigate]
+  );
 
   return (
-    <div 
+    <div
       className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden"
-      style={loginBackground ? {
-        backgroundImage: `url(${loginBackground})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      } : {}}
+      style={
+        loginBackground
+          ? {
+              backgroundImage: `url(${loginBackground})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }
+          : {}
+      }
     >
       {/* 背景装饰 */}
       {!loginBackground && (
@@ -44,9 +53,7 @@ export default function Login() {
         </div>
       )}
 
-      {loginBackground && (
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm -z-10" />
-      )}
+      {loginBackground && <div className="absolute inset-0 bg-black/40 backdrop-blur-sm -z-10" />}
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md animate-in fade-in slide-in-from-bottom-4 duration-700">
         <div className="flex justify-center">
@@ -58,10 +65,14 @@ export default function Login() {
             )}
           </div>
         </div>
-        <h2 className={`mt-6 text-center text-2xl font-bold tracking-tight ${loginBackground ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
+        <h2
+          className={`mt-6 text-center text-2xl font-bold tracking-tight ${loginBackground ? 'text-white' : 'text-slate-900 dark:text-white'}`}
+        >
           登录行政管理系统
         </h2>
-        <p className={`mt-2 text-center text-sm ${loginBackground ? 'text-slate-200' : 'text-slate-500 dark:text-slate-400'}`}>
+        <p
+          className={`mt-2 text-center text-sm ${loginBackground ? 'text-slate-200' : 'text-slate-500 dark:text-slate-400'}`}
+        >
           企业级后台管理解决方案
         </p>
       </div>
@@ -119,13 +130,19 @@ export default function Login() {
                   type="checkbox"
                   className="h-4 w-4 text-blue-600 focus:ring-blue-600 border-zinc-200/80 dark:border-slate-600 rounded cursor-pointer"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
+                <label
+                  htmlFor="remember-me"
+                  className="ml-2 block text-sm text-slate-700 dark:text-slate-300 cursor-pointer"
+                >
                   记住我
                 </label>
               </div>
 
               <div className="text-sm">
-                <a href="#" className="font-medium text-blue-600 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
+                <a
+                  href="#"
+                  className="font-medium text-blue-600 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                >
                   忘记密码？
                 </a>
               </div>
@@ -148,7 +165,7 @@ export default function Login() {
               </button>
             </div>
           </form>
-          
+
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">

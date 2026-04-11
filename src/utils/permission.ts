@@ -18,7 +18,7 @@ export function hasPermission(permissionCode: string): boolean {
 
   // 获取当前用户信息
   const userInfo = useUserStore.getState().userInfo;
-  
+
   // 如果未登录或没有角色信息，默认无权限
   if (!userInfo || !userInfo.role) {
     return false;

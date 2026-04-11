@@ -2,16 +2,16 @@ import { useState, useCallback } from 'react';
 
 export interface TreeNode {
   id: string;
+  name: string;
   children?: TreeNode[];
-  [key: string]: any;
 }
 
-export function useTreeExpand(nodes: TreeNode[]) {
+export function useTreeExpand<T extends { id: string; children?: T[] }>(nodes: T[]) {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
-  const toggleNode = useCallback((e: React.MouseEvent, id: string) => {
+  const toggleNode = useCallback((e: React.SyntheticEvent, id: string) => {
     e.stopPropagation();
-    setExpandedNodes(prev => {
+    setExpandedNodes((prev) => {
       const newExpanded = new Set(prev);
       if (newExpanded.has(id)) {
         newExpanded.delete(id);
@@ -22,20 +22,23 @@ export function useTreeExpand(nodes: TreeNode[]) {
     });
   }, []);
 
-  const expandAll = useCallback((e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    const allIds = new Set<string>();
-    const traverse = (currentNodes: TreeNode[]) => {
-      currentNodes.forEach(node => {
-        allIds.add(node.id);
-        if (node.children && node.children.length > 0) {
-          traverse(node.children);
-        }
-      });
-    };
-    traverse(nodes);
-    setExpandedNodes(allIds);
-  }, [nodes]);
+  const expandAll = useCallback(
+    (e?: React.MouseEvent) => {
+      if (e) e.stopPropagation();
+      const allIds = new Set<string>();
+      const traverse = (currentNodes: T[]) => {
+        currentNodes.forEach((node) => {
+          allIds.add(node.id);
+          if (node.children && node.children.length > 0) {
+            traverse(node.children);
+          }
+        });
+      };
+      traverse(nodes);
+      setExpandedNodes(allIds);
+    },
+    [nodes]
+  );
 
   const collapseAll = useCallback((e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -44,8 +47,8 @@ export function useTreeExpand(nodes: TreeNode[]) {
 
   const isAllExpanded = useCallback(() => {
     let totalNodes = 0;
-    const traverse = (currentNodes: TreeNode[]) => {
-      currentNodes.forEach(node => {
+    const traverse = (currentNodes: T[]) => {
+      currentNodes.forEach((node) => {
         totalNodes++;
         if (node.children && node.children.length > 0) {
           traverse(node.children);

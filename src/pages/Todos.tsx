@@ -1,27 +1,30 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useTodoStore } from '../store/todos';
-import { CheckCircle2, Circle, Clock, Plus, Trash2, Calendar, AlertCircle, ListTodo } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, Plus, Trash2, Calendar, ListTodo } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 export default function Todos() {
-  const todos = useTodoStore(state => state.todos);
-  const toggleTodo = useTodoStore(state => state.toggleTodo);
-  const deleteTodo = useTodoStore(state => state.deleteTodo);
-  const addTodo = useTodoStore(state => state.addTodo);
+  const todos = useTodoStore((state) => state.todos);
+  const toggleTodo = useTodoStore((state) => state.toggleTodo);
+  const deleteTodo = useTodoStore((state) => state.deleteTodo);
+  const addTodo = useTodoStore((state) => state.addTodo);
   const [isAdding, setIsAdding] = useState(false);
   const [newTodo, setNewTodo] = useState({ title: '', description: '', dueDate: '' });
 
-  const handleAdd = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTodo.title) return;
-    addTodo({
-      ...newTodo,
-      type: 'manual',
-    });
-    setNewTodo({ title: '', description: '', dueDate: '' });
-    setIsAdding(false);
-  }, [newTodo, addTodo]);
+  const handleAdd = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!newTodo.title) return;
+      addTodo({
+        ...newTodo,
+        type: 'manual',
+      });
+      setNewTodo({ title: '', description: '', dueDate: '' });
+      setIsAdding(false);
+    },
+    [newTodo, addTodo]
+  );
 
   const sortedTodos = useMemo(() => {
     return [...todos].sort((a, b) => {
@@ -30,19 +33,25 @@ export default function Todos() {
     });
   }, [todos]);
 
-  const onToggleTodoClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    const todoId = e.currentTarget.dataset.todoid;
-    if (todoId) {
-      toggleTodo(todoId);
-    }
-  }, [toggleTodo]);
+  const onToggleTodoClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      const todoId = e.currentTarget.dataset.todoid;
+      if (todoId) {
+        toggleTodo(todoId);
+      }
+    },
+    [toggleTodo]
+  );
 
-  const onDeleteTodoClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    const todoId = e.currentTarget.dataset.todoid;
-    if (todoId) {
-      deleteTodo(todoId);
-    }
-  }, [deleteTodo]);
+  const onDeleteTodoClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      const todoId = e.currentTarget.dataset.todoid;
+      if (todoId) {
+        deleteTodo(todoId);
+      }
+    },
+    [deleteTodo]
+  );
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl mx-auto">
@@ -62,7 +71,7 @@ export default function Todos() {
 
       <AnimatePresence>
         {isAdding && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -155,35 +164,39 @@ export default function Todos() {
                     data-todoid={todo.id}
                     onClick={onToggleTodoClick}
                     className={`mt-1 transition-colors ${
-                      todo.completed ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400'
+                      todo.completed
+                        ? 'text-emerald-500'
+                        : 'text-slate-300 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400'
                     }`}
                   >
-                    {todo.completed ? (
-                      <CheckCircle2 className="w-6 h-6" />
-                    ) : (
-                      <Circle className="w-6 h-6" />
-                    )}
+                    {todo.completed ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
                   </button>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2">
-                      <h3 className={`text-sm font-medium truncate ${
-                        todo.completed ? 'line-through text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-white'
-                      }`}>
+                      <h3
+                        className={`text-sm font-medium truncate ${
+                          todo.completed
+                            ? 'line-through text-slate-500 dark:text-slate-400'
+                            : 'text-slate-900 dark:text-white'
+                        }`}
+                      >
                         {todo.title}
                       </h3>
                       {todo.type !== 'manual' && (
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          todo.type === 'contract' 
-                            ? 'bg-amber-100 text-amber-700' 
-                            : 'bg-blue-100 text-blue-700'
-                        }`}>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            todo.type === 'contract' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                          }`}
+                        >
                           系统生成
                         </span>
                       )}
                     </div>
-                    <p className={`text-sm mt-1 ${
-                      todo.completed ? 'text-slate-400 dark:text-slate-500' : 'text-slate-500 dark:text-slate-400'
-                    }`}>
+                    <p
+                      className={`text-sm mt-1 ${
+                        todo.completed ? 'text-slate-400 dark:text-slate-500' : 'text-slate-500 dark:text-slate-400'
+                      }`}
+                    >
                       {todo.description}
                     </p>
                     <div className="flex items-center space-x-4 mt-2">

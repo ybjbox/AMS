@@ -37,17 +37,17 @@ interface DocumentState {
   documentSets: DocumentSet[];
   isLoading: boolean;
   error: string | null;
-  
+
   fetchData: () => Promise<void>;
-  
+
   addFolder: (folder: Folder) => Promise<void>;
   updateFolder: (id: string, folder: Partial<Folder>) => Promise<void>;
   removeFolder: (id: string) => Promise<void>;
-  
+
   addDocument: (doc: Document) => Promise<void>;
   updateDocument: (id: string, doc: Partial<Document>) => Promise<void>;
   removeDocument: (id: string) => Promise<void>;
-  
+
   addDocumentSet: (set: DocumentSet) => Promise<void>;
   updateDocumentSet: (id: string, set: Partial<DocumentSet>) => Promise<void>;
   removeDocumentSet: (id: string) => Promise<void>;
@@ -66,11 +66,11 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
       const [folders, documents, documentSets] = await Promise.all([
         api.fetchFolders(),
         api.fetchDocuments(),
-        api.fetchDocumentSets()
+        api.fetchDocumentSets(),
       ]);
       set({ folders, documents, documentSets, isLoading: false });
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
   },
 
@@ -79,8 +79,8 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
     try {
       const newFolder = await api.createFolder(folder);
       set((state) => ({ folders: [...state.folders, newFolder], isLoading: false }));
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
   },
 
@@ -89,11 +89,11 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
     try {
       const updatedFolder = await api.updateFolder(id, folder);
       set((state) => ({
-        folders: state.folders.map(f => f.id === id ? updatedFolder : f),
-        isLoading: false
+        folders: state.folders.map((f) => (f.id === id ? updatedFolder : f)),
+        isLoading: false,
       }));
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
   },
 
@@ -103,25 +103,27 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
       await api.deleteFolder(id);
       set((state) => {
         const getSubFolders = (parentId: string, allFolders: Folder[]): string[] => {
-          const children = allFolders.filter(f => f.parentId === parentId).map(f => f.id);
+          const children = allFolders.filter((f) => f.parentId === parentId).map((f) => f.id);
           return children.reduce((acc, childId) => [...acc, ...getSubFolders(childId, allFolders)], children);
         };
         const folderIdsToRemove = [id, ...getSubFolders(id, state.folders)];
-        
-        const removedDocIds = state.documents.filter(d => d.folderId !== null && folderIdsToRemove.includes(d.folderId)).map(d => d.id);
+
+        const removedDocIds = state.documents
+          .filter((d) => d.folderId !== null && folderIdsToRemove.includes(d.folderId))
+          .map((d) => d.id);
 
         return {
-          folders: state.folders.filter(f => !folderIdsToRemove.includes(f.id)),
-          documents: state.documents.filter(d => d.folderId === null || !folderIdsToRemove.includes(d.folderId)),
-          documentSets: state.documentSets.map(s => ({
+          folders: state.folders.filter((f) => !folderIdsToRemove.includes(f.id)),
+          documents: state.documents.filter((d) => d.folderId === null || !folderIdsToRemove.includes(d.folderId)),
+          documentSets: state.documentSets.map((s) => ({
             ...s,
-            documentIds: s.documentIds.filter(did => !removedDocIds.includes(did))
+            documentIds: s.documentIds.filter((did) => !removedDocIds.includes(did)),
           })),
-          isLoading: false
+          isLoading: false,
         };
       });
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
   },
 
@@ -130,8 +132,8 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
     try {
       const newDoc = await api.createDocument(doc);
       set((state) => ({ documents: [...state.documents, newDoc], isLoading: false }));
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
   },
 
@@ -140,11 +142,11 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
     try {
       const updatedDoc = await api.updateDocument(id, doc);
       set((state) => ({
-        documents: state.documents.map(d => d.id === id ? updatedDoc : d),
-        isLoading: false
+        documents: state.documents.map((d) => (d.id === id ? updatedDoc : d)),
+        isLoading: false,
       }));
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
   },
 
@@ -152,13 +154,13 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
     set({ isLoading: true, error: null });
     try {
       await api.deleteDocument(id);
-      set((state) => ({ 
-        documents: state.documents.filter(d => d.id !== id),
-        documentSets: state.documentSets.map(s => ({ ...s, documentIds: s.documentIds.filter(did => did !== id) })),
-        isLoading: false
+      set((state) => ({
+        documents: state.documents.filter((d) => d.id !== id),
+        documentSets: state.documentSets.map((s) => ({ ...s, documentIds: s.documentIds.filter((did) => did !== id) })),
+        isLoading: false,
       }));
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
   },
 
@@ -167,8 +169,8 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
     try {
       const newSet = await api.createDocumentSet(docSet);
       set((state) => ({ documentSets: [...state.documentSets, newSet], isLoading: false }));
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
   },
 
@@ -177,11 +179,11 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
     try {
       const updatedSet = await api.updateDocumentSet(id, docSet);
       set((state) => ({
-        documentSets: state.documentSets.map(s => s.id === id ? updatedSet : s),
-        isLoading: false
+        documentSets: state.documentSets.map((s) => (s.id === id ? updatedSet : s)),
+        isLoading: false,
       }));
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
   },
 
@@ -189,12 +191,12 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
     set({ isLoading: true, error: null });
     try {
       await api.deleteDocumentSet(id);
-      set((state) => ({ 
-        documentSets: state.documentSets.filter(s => s.id !== id),
-        isLoading: false
+      set((state) => ({
+        documentSets: state.documentSets.filter((s) => s.id !== id),
+        isLoading: false,
       }));
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
   },
 }));

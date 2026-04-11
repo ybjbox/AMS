@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 
 interface Props {
@@ -12,7 +12,7 @@ interface State {
 
 export default class ErrorBoundary extends React.Component<Props, State> {
   public state: State = {
-    hasError: false
+    hasError: false,
   };
 
   public static getDerivedStateFromError(error: Error): State {
@@ -39,9 +39,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
           <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-full mb-4">
             <AlertTriangle className="h-12 w-12 text-red-500 dark:text-red-400" />
           </div>
-          <h2 className="text-2xl font-semibold text-slate-800 dark:text-white mb-2">
-            页面加载出错
-          </h2>
+          <h2 className="text-2xl font-semibold text-slate-800 dark:text-white mb-2">页面加载出错</h2>
           <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md">
             {this.state.error?.message || '抱歉，我们在加载此页面时遇到了一些问题。请尝试刷新页面或返回控制台。'}
           </p>

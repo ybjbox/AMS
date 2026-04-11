@@ -1,18 +1,10 @@
 import React, { memo } from 'react';
 
-export const Skeleton = memo(function Skeleton({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={`animate-pulse rounded-md bg-slate-200 dark:bg-slate-700 ${className || ''}`}
-      {...props}
-    />
-  );
+export const Skeleton = memo(function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={`animate-pulse rounded-md bg-slate-200 dark:bg-slate-700 ${className || ''}`} {...props} />;
 });
 
-export const TableSkeleton = memo(function TableSkeleton({ columns, rows = 5 }: { columns: number, rows?: number }) {
+export const TableSkeleton = memo(function TableSkeleton({ columns, rows = 5 }: { columns: number; rows?: number }) {
   return (
     <>
       {Array.from({ length: rows }).map((_, rowIndex) => (

@@ -5,20 +5,20 @@ export function useUserFilters(users: User[]) {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [filters, setFilters] = useState<{ department: string[], status: string[] }>({
+  const [filters, setFilters] = useState<{ department: string[]; status: string[] }>({
     department: [],
-    status: []
+    status: [],
   });
 
   const itemsPerPage = 10;
 
   const filteredUsers = useMemo(() => {
-    return users.filter(u => {
-      const matchesSearch = 
-        (u.name || '').includes(searchTerm) || 
+    return users.filter((u) => {
+      const matchesSearch =
+        (u.name || '').includes(searchTerm) ||
         (u.id || '').includes(searchTerm) ||
         (u.department || '').includes(searchTerm);
-      
+
       const matchesDept = filters.department.length > 0 ? filters.department.includes(u.department || '') : true;
       const matchesStatus = filters.status.length > 0 ? filters.status.includes(u.status || '') : true;
 
@@ -27,16 +27,13 @@ export function useUserFilters(users: User[]) {
   }, [searchTerm, filters, users]);
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-  const currentUsers = filteredUsers.slice(
-    (currentPage - 1) * itemsPerPage, 
-    currentPage * itemsPerPage
-  );
+  const currentUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleFilterChange = useCallback((key: keyof typeof filters, value: string) => {
-    setFilters(prev => {
+    setFilters((prev) => {
       const currentValues = prev[key] || [];
       const newValues = currentValues.includes(value)
-        ? currentValues.filter(v => v !== value)
+        ? currentValues.filter((v) => v !== value)
         : [...currentValues, value];
       return { ...prev, [key]: newValues };
     });
@@ -64,6 +61,6 @@ export function useUserFilters(users: User[]) {
     itemsPerPage,
     handleFilterChange,
     clearFilters,
-    activeFilterCount
+    activeFilterCount,
   };
 }

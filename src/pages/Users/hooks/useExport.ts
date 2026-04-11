@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
 import { User } from '../../../types';
 import { DEFAULT_ROSTER_COLUMNS, DEFAULT_ADDRESS_BOOK_COLUMNS, ExportTheme, ExportScript } from '../constants';
@@ -9,7 +9,7 @@ export function useExport(users: User[]) {
   const [isAddressBookModalOpen, setIsAddressBookModalOpen] = useState(false);
   const [themes, setThemes] = useState<Record<string, ExportTheme>>({});
   const [scripts, setScripts] = useState<ExportScript[]>([]);
-  
+
   const [exportConfig, setExportConfig] = useState(() => {
     const savedTitle = localStorage.getItem('rosterExportTitle');
     return {
@@ -21,7 +21,7 @@ export function useExport(users: User[]) {
       paperSize: 'A4',
       orientation: 'landscape',
       isDoubleSided: true,
-      columns: DEFAULT_ROSTER_COLUMNS
+      columns: DEFAULT_ROSTER_COLUMNS,
     };
   });
 
@@ -35,7 +35,7 @@ export function useExport(users: User[]) {
       isDoubleSided: true,
       isTwoColumn: false,
       mergeDepartments: false,
-      columns: DEFAULT_ADDRESS_BOOK_COLUMNS
+      columns: DEFAULT_ADDRESS_BOOK_COLUMNS,
     };
   });
 
@@ -54,32 +54,32 @@ export function useExport(users: User[]) {
     if (isExportModalOpen) {
       setTimeout(() => {
         setThemes({
-          'theme_1': {
+          theme_1: {
             id: 'theme_1',
             name: '默认主题',
             titleFill: 'FFF1F5F9',
             headerFill: 'FF2563EB',
             headerFontColor: 'FFFFFFFF',
             zebraFill: 'FFF8FAFC',
-          }
+          },
         });
       }, 500);
 
       setTimeout(() => {
         const mockScripts = [
           { id: '1', name: 'default_template', code: '// 默认导出模板' },
-          { id: '2', name: 'custom_template', code: '// 自定义导出模板' }
+          { id: '2', name: 'custom_template', code: '// 自定义导出模板' },
         ];
         setScripts(mockScripts);
         if (mockScripts.length > 0 && !exportConfig.templateName) {
-          setExportConfig(prev => ({ ...prev, templateName: mockScripts[0].name }));
+          setExportConfig((prev) => ({ ...prev, templateName: mockScripts[0].name }));
         }
       }, 500);
     }
-  }, [isExportModalOpen]);
+  }, [isExportModalOpen, exportConfig.templateName]);
 
   const processedAddressBookUsers = useMemo(() => {
-    let processed = users.filter(u => addressBookConfig.includeResigned ? true : u.status !== '离职');
+    let processed = users.filter((u) => (addressBookConfig.includeResigned ? true : u.status !== '离职'));
     if (addressBookConfig.mergeDepartments) {
       processed = [...processed].sort((a, b) => (a.department || '').localeCompare(b.department || ''));
     }
@@ -87,13 +87,13 @@ export function useExport(users: User[]) {
   }, [users, addressBookConfig.includeResigned, addressBookConfig.mergeDepartments]);
 
   const calculateRowSpans = useCallback((usersList: User[], config: typeof addressBookConfig) => {
-    if (!config.mergeDepartments) return usersList.map(u => ({ ...u, _deptSpan: 1 }));
-    
-    const result: (User & { _deptSpan?: number, _deptCount?: number })[] = [];
+    if (!config.mergeDepartments) return usersList.map((u) => ({ ...u, _deptSpan: 1 }));
+
+    const result: (User & { _deptSpan?: number; _deptCount?: number })[] = [];
     let currentDept: string | null = null;
     let currentSpanIndex = -1;
     let deptCount = 0;
-    
+
     for (let i = 0; i < usersList.length; i++) {
       const user = usersList[i];
       if (user.department !== currentDept) {
@@ -116,12 +116,12 @@ export function useExport(users: User[]) {
       const mid = Math.ceil(processedAddressBookUsers.length / 2);
       return {
         leftUsers: calculateRowSpans(processedAddressBookUsers.slice(0, mid), addressBookConfig),
-        rightUsers: calculateRowSpans(processedAddressBookUsers.slice(mid), addressBookConfig)
+        rightUsers: calculateRowSpans(processedAddressBookUsers.slice(mid), addressBookConfig),
       };
     } else {
       return {
         leftUsers: calculateRowSpans(processedAddressBookUsers, addressBookConfig),
-        rightUsers: []
+        rightUsers: [],
       };
     }
   }, [processedAddressBookUsers, addressBookConfig, calculateRowSpans]);
@@ -132,12 +132,12 @@ export function useExport(users: User[]) {
       const mid = Math.ceil(previewUsers.length / 2);
       return {
         previewLeft: calculateRowSpans(previewUsers.slice(0, mid), addressBookConfig),
-        previewRight: calculateRowSpans(previewUsers.slice(mid), addressBookConfig)
+        previewRight: calculateRowSpans(previewUsers.slice(mid), addressBookConfig),
       };
     } else {
       return {
         previewLeft: calculateRowSpans(previewUsers, addressBookConfig),
-        previewRight: []
+        previewRight: [],
       };
     }
   }, [processedAddressBookUsers, addressBookConfig, calculateRowSpans]);
@@ -145,7 +145,7 @@ export function useExport(users: User[]) {
   const handleExport = useCallback(async (filteredUsersLength: number) => {
     setIsExporting(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       toast.success(`成功导出 ${filteredUsersLength} 条员工数据 (Mock)`);
       setIsExportModalOpen(false);
     } catch (error) {
@@ -251,6 +251,6 @@ export function useExport(users: User[]) {
     previewRight,
     handleExport,
     handlePrintRoster,
-    handlePrintAddressBook
+    handlePrintAddressBook,
   };
 }

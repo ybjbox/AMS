@@ -23,33 +23,35 @@ const Header = memo(function Header({ isCollapsed, setIsCollapsed }: HeaderProps
         {/* Mobile menu button */}
         <div className="md:hidden">
           <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-            <SheetTrigger 
-              className="p-2 -ml-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300 hover:-translate-y-0.5"
-            >
+            <SheetTrigger className="p-2 -ml-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300 hover:-translate-y-0.5">
               <Menu className="h-5 w-5" />
             </SheetTrigger>
-            <SheetContent side="left" showCloseButton={false} className="p-0 w-64 border-none bg-transparent shadow-none">
-              <Sidebar 
-                isCollapsed={false} 
+            <SheetContent
+              side="left"
+              showCloseButton={false}
+              className="p-0 w-64 border-none bg-transparent shadow-none"
+            >
+              <Sidebar
+                isCollapsed={false}
                 className="h-full w-full m-0 rounded-none border-r border-zinc-200/60 dark:border-zinc-700/60"
                 onClose={() => setSheetOpen(false)}
               />
             </SheetContent>
           </Sheet>
         </div>
-        
+
         {/* Desktop collapse button */}
         <button
           onClick={handleToggleCollapse}
           className="hidden md:block p-2 -ml-2 text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300 hover:-translate-y-0.5"
-          title={isCollapsed ? "展开菜单" : "收起菜单"}
+          title={isCollapsed ? '展开菜单' : '收起菜单'}
         >
           {isCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
         </button>
       </div>
-      
+
       <div className="flex-1" />
-      
+
       <div className="flex items-center space-x-4">
         <NotificationTrigger />
 

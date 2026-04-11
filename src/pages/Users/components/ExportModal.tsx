@@ -11,14 +11,14 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent
+  DragEndEvent,
 } from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-  useSortable
+  useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -29,14 +29,9 @@ interface SortableColumnProps {
 }
 
 const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: SortableColumnProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: col.key as string });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: col.key as string,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -50,26 +45,27 @@ const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: Sor
       ref={setNodeRef}
       style={style}
       className={`flex items-center p-3 rounded-xl border transition-all ${
-        col.selected 
-          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 shadow-sm' 
+        col.selected
+          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 shadow-sm'
           : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'
       }`}
     >
-      <div 
-        {...attributes} 
+      <div
+        {...attributes}
         {...listeners}
         className="mr-3 cursor-grab active:cursor-grabbing p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400 dark:text-slate-500"
       >
         <GripVertical className="h-4 w-4" />
       </div>
-      
-      <button
-        onClick={onToggle}
-        className="flex-1 flex items-center text-left"
-      >
-        <div className={`w-4 h-4 rounded border mr-3 flex items-center justify-center transition-colors ${
-          col.selected ? 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner border-blue-600' : 'bg-white dark:bg-slate-800 border-zinc-200/80 dark:border-slate-600'
-        }`}>
+
+      <button onClick={onToggle} className="flex-1 flex items-center text-left">
+        <div
+          className={`w-4 h-4 rounded border mr-3 flex items-center justify-center transition-colors ${
+            col.selected
+              ? 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner border-blue-600'
+              : 'bg-white dark:bg-slate-800 border-zinc-200/80 dark:border-slate-600'
+          }`}
+        >
           {col.selected && <Check className="h-3 w-3 text-white" />}
         </div>
         <span className="text-sm font-medium">{col.label}</span>
@@ -78,11 +74,23 @@ const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: Sor
   );
 });
 
+export interface ExportConfig {
+  title: string;
+  includeResigned: boolean;
+  paperSize: string;
+  orientation: string;
+  isDoubleSided: boolean;
+  mode: 'theme' | 'script';
+  themeId: string;
+  templateName: string;
+  columns: ExportColumn[];
+}
+
 interface ExportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  exportConfig: any;
-  setExportConfig: React.Dispatch<React.SetStateAction<any>>;
+  exportConfig: ExportConfig;
+  setExportConfig: React.Dispatch<React.SetStateAction<ExportConfig>>;
   themes: Record<string, ExportTheme>;
   scripts: ExportScript[];
   isExporting: boolean;
@@ -103,7 +111,7 @@ export function ExportModal({
   handleExport,
   handlePrintRoster,
   users,
-  filteredUsersLength
+  filteredUsersLength,
 }: ExportModalProps) {
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -112,35 +120,44 @@ export function ExportModal({
     })
   );
 
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const { active, over } = event;
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
 
-    if (over && active.id !== over.id) {
-      setExportConfig((prev: any) => {
-        const oldIndex = prev.columns.findIndex((col: ExportColumn) => col.key === active.id);
-        const newIndex = prev.columns.findIndex((col: ExportColumn) => col.key === over.id);
+      if (over && active.id !== over.id) {
+        setExportConfig((prev: ExportConfig) => {
+          const oldIndex = prev.columns.findIndex((col: ExportColumn) => col.key === active.id);
+          const newIndex = prev.columns.findIndex((col: ExportColumn) => col.key === over.id);
 
-        return {
-          ...prev,
-          columns: arrayMove(prev.columns, oldIndex, newIndex),
-        };
-      });
-    }
-  }, [setExportConfig]);
+          return {
+            ...prev,
+            columns: arrayMove(prev.columns, oldIndex, newIndex),
+          };
+        });
+      }
+    },
+    [setExportConfig]
+  );
 
-  const onThemeSelect = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    const themeId = e.currentTarget.dataset.id;
-    if (themeId) {
-      setExportConfig((prev: any) => ({ ...prev, themeId }));
-    }
-  }, [setExportConfig]);
+  const onThemeSelect = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      const themeId = e.currentTarget.dataset.id;
+      if (themeId) {
+        setExportConfig((prev: ExportConfig) => ({ ...prev, themeId }));
+      }
+    },
+    [setExportConfig]
+  );
 
-  const onScriptSelect = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    const templateName = e.currentTarget.dataset.name;
-    if (templateName) {
-      setExportConfig((prev: any) => ({ ...prev, templateName }));
-    }
-  }, [setExportConfig]);
+  const onScriptSelect = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      const templateName = e.currentTarget.dataset.name;
+      if (templateName) {
+        setExportConfig((prev: ExportConfig) => ({ ...prev, templateName }));
+      }
+    },
+    [setExportConfig]
+  );
 
   return (
     <BaseModal
@@ -150,13 +167,13 @@ export function ExportModal({
       size="full"
       footer={
         <>
-          <button 
+          <button
             onClick={onClose}
             className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
           >
             取消
           </button>
-          <button 
+          <button
             onClick={handlePrintRoster}
             disabled={exportConfig.columns.filter((c: ExportColumn) => c.selected).length === 0}
             className="inline-flex items-center justify-center px-6 py-2 bg-white dark:bg-slate-700 border border-zinc-200/80 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-all shadow-sm disabled:opacity-50"
@@ -164,7 +181,7 @@ export function ExportModal({
             <Printer className="h-4 w-4 mr-2" />
             打印
           </button>
-          <button 
+          <button
             onClick={() => handleExport(filteredUsersLength)}
             disabled={isExporting || exportConfig.columns.filter((c: ExportColumn) => c.selected).length === 0}
             className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm disabled:opacity-50"
@@ -188,10 +205,10 @@ export function ExportModal({
         <div className="w-full md:w-1/3 p-6 space-y-6 overflow-y-auto border-r border-slate-100 dark:border-slate-700 custom-scrollbar h-full">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">表格大标题</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={exportConfig.title}
-              onChange={(e) => setExportConfig((prev: any) => ({ ...prev, title: e.target.value }))}
+              onChange={(e) => setExportConfig((prev: ExportConfig) => ({ ...prev, title: e.target.value }))}
               className="w-full px-3 py-2 border border-zinc-200/80 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
               placeholder="请输入表格标题"
             />
@@ -201,14 +218,18 @@ export function ExportModal({
             <div>
               <label className="flex items-center cursor-pointer group">
                 <div className="relative">
-                  <input 
-                    type="checkbox" 
-                    className="sr-only" 
+                  <input
+                    type="checkbox"
+                    className="sr-only"
                     checked={exportConfig.includeResigned}
-                    onChange={(e) => setExportConfig((prev: any) => ({ ...prev, includeResigned: e.target.checked }))}
+                    onChange={(e) => setExportConfig((prev: ExportConfig) => ({ ...prev, includeResigned: e.target.checked }))}
                   />
-                  <div className={`block w-10 h-6 rounded-full transition-colors ${exportConfig.includeResigned ? 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
-                  <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${exportConfig.includeResigned ? 'translate-x-4' : ''}`}></div>
+                  <div
+                    className={`block w-10 h-6 rounded-full transition-colors ${exportConfig.includeResigned ? 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner' : 'bg-slate-300 dark:bg-slate-600'}`}
+                  ></div>
+                  <div
+                    className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${exportConfig.includeResigned ? 'translate-x-4' : ''}`}
+                  ></div>
                 </div>
                 <span className="ml-3 text-sm font-medium text-slate-700 dark:text-slate-300">包含离职人员</span>
               </label>
@@ -220,7 +241,10 @@ export function ExportModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张大小</label>
-                <Select value={exportConfig.paperSize} onValueChange={(val) => setExportConfig((prev: any) => ({ ...prev, paperSize: val }))}>
+                <Select
+                  value={exportConfig.paperSize}
+                  onValueChange={(val) => setExportConfig((prev: ExportConfig) => ({ ...prev, paperSize: val }))}
+                >
                   <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
                     <SelectValue placeholder="选择纸张大小" />
                   </SelectTrigger>
@@ -233,10 +257,13 @@ export function ExportModal({
               </div>
               <div>
                 <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张方向</label>
-                <Select value={exportConfig.orientation} onValueChange={(val) => setExportConfig((prev: any) => ({ ...prev, orientation: val }))}>
+                <Select
+                  value={exportConfig.orientation}
+                  onValueChange={(val) => setExportConfig((prev: ExportConfig) => ({ ...prev, orientation: val }))}
+                >
                   <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
                     <SelectValue placeholder="选择纸张方向">
-                      {(val) => val === 'portrait' ? '纵向' : val === 'landscape' ? '横向' : '选择纸张方向'}
+                      {(val) => (val === 'portrait' ? '纵向' : val === 'landscape' ? '横向' : '选择纸张方向')}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -249,14 +276,18 @@ export function ExportModal({
             <div className="flex items-center justify-between pt-2">
               <label className="flex items-center cursor-pointer group">
                 <div className="relative">
-                  <input 
-                    type="checkbox" 
-                    className="sr-only" 
+                  <input
+                    type="checkbox"
+                    className="sr-only"
                     checked={exportConfig.isDoubleSided}
-                    onChange={(e) => setExportConfig((prev: any) => ({ ...prev, isDoubleSided: e.target.checked }))}
+                    onChange={(e) => setExportConfig((prev: ExportConfig) => ({ ...prev, isDoubleSided: e.target.checked }))}
                   />
-                  <div className={`block w-8 h-5 rounded-full transition-colors ${exportConfig.isDoubleSided ? 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
-                  <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${exportConfig.isDoubleSided ? 'translate-x-3' : ''}`}></div>
+                  <div
+                    className={`block w-8 h-5 rounded-full transition-colors ${exportConfig.isDoubleSided ? 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner' : 'bg-slate-300 dark:bg-slate-600'}`}
+                  ></div>
+                  <div
+                    className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${exportConfig.isDoubleSided ? 'translate-x-3' : ''}`}
+                  ></div>
                 </div>
                 <span className="ml-2 text-sm text-slate-600 dark:text-slate-400">双面打印 (预留装订边距)</span>
               </label>
@@ -265,17 +296,21 @@ export function ExportModal({
 
           <div className="flex p-1 bg-slate-100 dark:bg-slate-700 rounded-lg">
             <button
-              onClick={() => setExportConfig((prev: any) => ({ ...prev, mode: 'theme' }))}
+              onClick={() => setExportConfig((prev: ExportConfig) => ({ ...prev, mode: 'theme' }))}
               className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
-                exportConfig.mode === 'theme' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                exportConfig.mode === 'theme'
+                  ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               }`}
             >
               配色主题模式
             </button>
             <button
-              onClick={() => setExportConfig((prev: any) => ({ ...prev, mode: 'script' }))}
+              onClick={() => setExportConfig((prev: ExportConfig) => ({ ...prev, mode: 'script' }))}
               className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
-                exportConfig.mode === 'script' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                exportConfig.mode === 'script'
+                  ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               }`}
             >
               JS 脚本模式
@@ -292,16 +327,18 @@ export function ExportModal({
                     data-id={theme.id}
                     onClick={onThemeSelect}
                     className={`flex flex-col items-center p-2 rounded-xl border transition-all ${
-                      exportConfig.themeId === theme.id 
-                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-600/20' 
+                      exportConfig.themeId === theme.id
+                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-600/20'
                         : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-zinc-200/80 dark:hover:border-slate-600'
                     }`}
                   >
-                    <div 
-                      className="w-full h-8 rounded-lg mb-2" 
+                    <div
+                      className="w-full h-8 rounded-lg mb-2"
                       style={{ backgroundColor: `#${theme.headerFill.substring(2)}` }}
                     ></div>
-                    <span className={`text-[10px] font-medium truncate w-full text-center ${exportConfig.themeId === theme.id ? 'text-blue-700 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}>
+                    <span
+                      className={`text-[10px] font-medium truncate w-full text-center ${exportConfig.themeId === theme.id ? 'text-blue-700 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}
+                    >
                       {theme.name}
                     </span>
                   </button>
@@ -318,8 +355,8 @@ export function ExportModal({
                     data-name={script.name}
                     onClick={onScriptSelect}
                     className={`w-full flex items-center p-3 rounded-xl border transition-all ${
-                      exportConfig.templateName === script.name 
-                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-600/20' 
+                      exportConfig.templateName === script.name
+                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-600/20'
                         : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-zinc-200/80 dark:hover:border-slate-600'
                     }`}
                   >
@@ -327,7 +364,9 @@ export function ExportModal({
                       <FileCode className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div className="text-left">
-                      <div className={`text-sm font-semibold ${exportConfig.templateName === script.name ? 'text-blue-700 dark:text-blue-400' : 'text-slate-900 dark:text-white'}`}>
+                      <div
+                        className={`text-sm font-semibold ${exportConfig.templateName === script.name ? 'text-blue-700 dark:text-blue-400' : 'text-slate-900 dark:text-white'}`}
+                      >
                         {script.name}.js
                       </div>
                       <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
@@ -351,28 +390,26 @@ export function ExportModal({
           <div>
             <div className="flex items-center justify-between mb-3">
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">选择并排序导出列</label>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">拖拽左侧图标进行排序</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
+                拖拽左侧图标进行排序
+              </span>
             </div>
-            
-            <DndContext 
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext 
+
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext
                 items={exportConfig.columns.map((c: ExportColumn) => c.key as string)}
                 strategy={verticalListSortingStrategy}
               >
                 <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                   {exportConfig.columns.map((col: ExportColumn, idx: number) => {
                     return (
-                      <SortableColumn 
-                        key={col.key} 
-                        col={col} 
+                      <SortableColumn
+                        key={col.key}
+                        col={col}
                         onToggle={() => {
                           const newCols = [...exportConfig.columns];
                           newCols[idx].selected = !newCols[idx].selected;
-                          setExportConfig((prev: any) => ({ ...prev, columns: newCols }));
+                          setExportConfig((prev: ExportConfig) => ({ ...prev, columns: newCols }));
                         }}
                       />
                     );
@@ -384,7 +421,9 @@ export function ExportModal({
         </div>
 
         <div className="w-full md:w-2/3 flex flex-col items-center bg-slate-100 dark:bg-slate-900 p-6 overflow-auto relative min-h-[400px] h-full custom-scrollbar">
-          <div className="sticky top-0 self-start text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-6 -ml-6 mb-4">打印预览</div>
+          <div className="sticky top-0 self-start text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-6 -ml-6 mb-4">
+            打印预览
+          </div>
           <div className="w-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl p-8">
             <div className="text-center mb-6">
               <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{exportConfig.title}</h1>
@@ -392,31 +431,42 @@ export function ExportModal({
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr>
-                  {exportConfig.columns.filter((c: ExportColumn) => c.selected).map((col: ExportColumn) => (
-                    <th key={col.key as string} className="border border-zinc-200/80 dark:border-slate-600 px-3 py-2 bg-slate-50 dark:bg-slate-700 text-left font-semibold text-slate-700 dark:text-slate-200">
-                      {col.label}
-                    </th>
-                  ))}
+                  {exportConfig.columns
+                    .filter((c: ExportColumn) => c.selected)
+                    .map((col: ExportColumn) => (
+                      <th
+                        key={col.key as string}
+                        className="border border-zinc-200/80 dark:border-slate-600 px-3 py-2 bg-slate-50 dark:bg-slate-700 text-left font-semibold text-slate-700 dark:text-slate-200"
+                      >
+                        {col.label}
+                      </th>
+                    ))}
                 </tr>
               </thead>
               <tbody>
                 {users
-                  .filter(u => exportConfig.includeResigned ? true : u.status !== '离职')
+                  .filter((u) => (exportConfig.includeResigned ? true : u.status !== '离职'))
                   .slice(0, 10)
-                  .map(u => (
+                  .map((u) => (
                     <tr key={u.id}>
-                      {exportConfig.columns.filter((c: ExportColumn) => c.selected).map((col: ExportColumn) => (
-                        <td key={col.key as string} className="border border-zinc-200/80 dark:border-slate-600 px-3 py-2 text-slate-600 dark:text-slate-300">
-                          {(u as Record<string, any>)[col.key as string] || '-'}
-                        </td>
-                      ))}
+                      {exportConfig.columns
+                        .filter((c: ExportColumn) => c.selected)
+                        .map((col: ExportColumn) => (
+                          <td
+                            key={col.key as string}
+                            className="border border-zinc-200/80 dark:border-slate-600 px-3 py-2 text-slate-600 dark:text-slate-300"
+                          >
+                            {(u as Record<string, unknown>)[col.key as string] as string || '-'}
+                          </td>
+                        ))}
                     </tr>
                   ))}
               </tbody>
             </table>
-            {users.filter(u => exportConfig.includeResigned ? true : u.status !== '离职').length > 10 && (
+            {users.filter((u) => (exportConfig.includeResigned ? true : u.status !== '离职')).length > 10 && (
               <div className="text-center py-4 text-sm text-slate-500 dark:text-slate-400">
-                ... 仅显示前 10 条预览数据，共 {users.filter(u => exportConfig.includeResigned ? true : u.status !== '离职').length} 条 ...
+                ... 仅显示前 10 条预览数据，共{' '}
+                {users.filter((u) => (exportConfig.includeResigned ? true : u.status !== '离职')).length} 条 ...
               </div>
             )}
           </div>

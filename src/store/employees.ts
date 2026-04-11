@@ -22,8 +22,8 @@ export const useEmployeeStore = create<UserStore>()((set) => ({
     try {
       const users = await userApi.fetchUsers();
       set({ users, isLoading: false });
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
   },
 
@@ -32,8 +32,8 @@ export const useEmployeeStore = create<UserStore>()((set) => ({
     try {
       const newUser = await userApi.createUser(user);
       set((state) => ({ users: [newUser, ...state.users], isLoading: false }));
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
   },
 
@@ -43,11 +43,11 @@ export const useEmployeeStore = create<UserStore>()((set) => ({
       const { id, ...rest } = user;
       const updatedUser = await userApi.updateUser(id, rest);
       set((state) => ({
-        users: state.users.map((u) => u.id === updatedUser.id ? updatedUser : u),
-        isLoading: false
+        users: state.users.map((u) => (u.id === updatedUser.id ? updatedUser : u)),
+        isLoading: false,
       }));
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
   },
 
@@ -57,10 +57,10 @@ export const useEmployeeStore = create<UserStore>()((set) => ({
       await userApi.deleteUser(id);
       set((state) => ({
         users: state.users.filter((u) => u.id !== id),
-        isLoading: false
+        isLoading: false,
       }));
-    } catch (error: any) {
-      set({ error: error.message, isLoading: false });
+    } catch (error: unknown) {
+      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
     }
   },
 }));

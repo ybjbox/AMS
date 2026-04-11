@@ -3,8 +3,8 @@ import { Sun, Moon, Monitor } from 'lucide-react';
 import { useAppSettings } from '../../../store/appSettings';
 
 const ThemeToggle = React.memo(function ThemeToggle() {
-  const theme = useAppSettings(state => state.theme);
-  const setTheme = useAppSettings(state => state.setTheme);
+  const theme = useAppSettings((state) => state.theme);
+  const setTheme = useAppSettings((state) => state.setTheme);
 
   const handleSetLight = useCallback(() => setTheme('light'), [setTheme]);
   const handleSetDark = useCallback(() => setTheme('dark'), [setTheme]);
@@ -38,6 +38,6 @@ const ThemeToggle = React.memo(function ThemeToggle() {
       </div>
     </div>
   );
-})
+});
 
 export default ThemeToggle;
