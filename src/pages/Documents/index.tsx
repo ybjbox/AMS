@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Plus, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { useBodyOverflow } from '../../hooks/useBodyOverflow';
