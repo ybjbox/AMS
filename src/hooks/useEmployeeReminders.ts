@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useEmployeeStore } from '../store/employees';
 import { useUserStore } from '../store/useUserStore';
 import { useTodoStore } from '../store/todos';
+import { useNotificationStore } from '../store/notifications';
 
 export function useEmployeeReminders() {
   const userInfo = useUserStore((state) => state.userInfo);
@@ -17,7 +18,8 @@ export function useEmployeeReminders() {
     const timer = setTimeout(() => {
       const today = new Date();
 
-      const { settings, notifications, addTodo, addNotification } = useTodoStore.getState();
+      const { settings, addTodo } = useTodoStore.getState();
+      const { notifications, addNotification } = useNotificationStore.getState();
       const { contractExpiryDays, probationConversionDays } = settings;
 
       users.forEach((emp) => {

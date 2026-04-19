@@ -1,14 +1,14 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Bell } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
-import { useTodoStore } from '../../../store/todos';
+import { useNotificationStore } from '../../../store/notifications';
 import NotificationPanel from './NotificationPanel';
 
 export default function NotificationTrigger() {
   const [isOpen, setIsOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const unreadCount = useTodoStore((state) => state.unreadCount);
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -33,6 +33,9 @@ export default function NotificationTrigger() {
       <button
         onClick={toggleOpen}
         className="p-2 text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-200 relative"
+        aria-label={unreadCount > 0 ? `通知，${unreadCount}条未读` : '通知'}
+        aria-haspopup="true"
+        aria-expanded={isOpen}
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (

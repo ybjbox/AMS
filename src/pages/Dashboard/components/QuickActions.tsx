@@ -28,6 +28,7 @@ export default function QuickActions({ quickActions, isLoading }: QuickActionsPr
           {quickActions.map((action) => (
             <button
               key={action.name}
+              aria-label={`快捷操作：${action.name}`}
               className="flex flex-col items-center justify-center p-5 rounded-2xl border border-zinc-100 dark:border-zinc-700/50 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 group bg-white dark:bg-zinc-800"
             >
               <div

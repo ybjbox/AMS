@@ -13,6 +13,13 @@ interface DashboardChartProps {
 }
 
 export default function DashboardChart({ data, isLoading }: DashboardChartProps) {
+  const isDark = document.documentElement.classList.contains('dark');
+  const gridColor = isDark ? '#3f3f46' : '#e4e4e7';
+  const tickColor = isDark ? '#a1a1aa' : '#71717a';
+  const tooltipBg = isDark ? 'rgba(39,39,42,0.95)' : 'rgba(255,255,255,0.95)';
+  const tooltipTextColor = isDark ? '#f4f4f5' : '#18181b';
+  const skeletonHeights = [60, 85, 70, 95, 75, 55, 40];
+
   return (
     <div className="bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700/50 shadow-sm rounded-2xl p-6 lg:col-span-2 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
       <div className="flex items-center justify-between mb-6">
@@ -22,7 +29,7 @@ export default function DashboardChart({ data, isLoading }: DashboardChartProps)
       {isLoading ? (
         <div className="h-[300px] w-full animate-pulse flex items-end justify-between space-x-2 pt-10">
           {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-            <div key={i} className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-t-md" style={{ height: `${Math.max(20, Math.random() * 100)}%` }}></div>
+            <div key={i} className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-t-md" style={{ height: `${skeletonHeights[i-1]}%` }}></div>
           ))}
         </div>
       ) : data.length === 0 ? (
@@ -40,27 +47,27 @@ export default function DashboardChart({ data, isLoading }: DashboardChartProps)
                   <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e4e4e7" className="dark:stroke-zinc-700" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
               <XAxis 
                 dataKey="name" 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fontSize: 12, fill: '#71717a' }} 
+                tick={{ fontSize: 12, fill: tickColor }} 
                 dy={10}
               />
               <YAxis 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fontSize: 12, fill: '#71717a' }} 
+                tick={{ fontSize: 12, fill: tickColor }} 
               />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)', 
+                  backgroundColor: tooltipBg, 
                   borderRadius: '8px',
-                  border: 'none',
+                  border: `1px solid ${isDark ? '#3f3f46' : '#e4e4e7'}`,
                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
                 }} 
-                itemStyle={{ color: '#18181b', fontWeight: 500 }}
+                itemStyle={{ color: tooltipTextColor, fontWeight: 500 }}
               />
               <Area 
                 type="monotone" 

@@ -1,13 +1,14 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, User, Lock, ArrowRight } from 'lucide-react';
-import { useAppSettings } from '../store/appSettings';
+import { Building2, User, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { useAppSettings, useLoadingStore } from '../store/appSettings';
 import { useUserStore } from '../store/useUserStore';
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const { globalLoading: loading, setLoading } = useAppSettings();
+  const [showPassword, setShowPassword] = useState(false);
+  const { globalLoading: loading, setLoading } = useLoadingStore();
   const setUser = useUserStore((state) => state.setUser);
   const navigate = useNavigate();
   const loginBackground = useAppSettings((state) => state.loginBackground);
@@ -34,7 +35,7 @@ export default function Login() {
 
   return (
     <div
-      className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden"
+      className="min-h-screen bg-zinc-50 dark:bg-zinc-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden"
       style={
         loginBackground
           ? {
@@ -66,27 +67,27 @@ export default function Login() {
           </div>
         </div>
         <h2
-          className={`mt-6 text-center text-2xl font-bold tracking-tight ${loginBackground ? 'text-white' : 'text-slate-900 dark:text-white'}`}
+          className={`mt-6 text-center text-2xl font-bold tracking-tight ${loginBackground ? 'text-white' : 'text-zinc-900 dark:text-white'}`}
         >
           登录行政管理系统
         </h2>
         <p
-          className={`mt-2 text-center text-sm ${loginBackground ? 'text-slate-200' : 'text-slate-500 dark:text-slate-400'}`}
+          className={`mt-2 text-center text-sm ${loginBackground ? 'text-zinc-200' : 'text-zinc-500 dark:text-zinc-400'}`}
         >
           企业级后台管理解决方案
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md animate-in fade-in slide-in-from-bottom-8 duration-700 delay-150 fill-mode-both">
-        <div className="bg-white dark:bg-slate-800 py-8 px-4 shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-700 sm:rounded-2xl sm:px-10">
+        <div className="bg-white dark:bg-zinc-800 py-8 px-4 shadow-xl shadow-zinc-200/40 dark:shadow-none border border-zinc-100 dark:border-zinc-700 sm:rounded-2xl sm:px-10">
           <form className="space-y-6" onSubmit={handleLogin}>
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label htmlFor="username" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 用户名
               </label>
               <div className="mt-2 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-slate-400" />
+                  <User className="h-5 w-5 text-zinc-400" />
                 </div>
                 <input
                   id="username"
@@ -95,30 +96,38 @@ export default function Login() {
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="block w-full pl-10 py-2.5 sm:text-sm border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg border focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 transition-all outline-none"
+                  className="block w-full pl-10 py-2.5 sm:text-sm border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-lg border focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 transition-all outline-none"
                   placeholder="请输入用户名 (admin)"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label htmlFor="password" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 密码
               </label>
               <div className="mt-2 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-slate-400" />
+                  <Lock className="h-5 w-5 text-zinc-400" />
                 </div>
                 <input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 py-2.5 sm:text-sm border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg border focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 transition-all outline-none"
+                  className="block w-full pl-10 pr-10 py-2.5 sm:text-sm border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-lg border focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 outline-none"
                   placeholder="请输入密码 (123456)"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+                  aria-label={showPassword ? '隐藏密码' : '显示密码'}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
             </div>
 
@@ -128,11 +137,11 @@ export default function Login() {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-600 border-zinc-200/80 dark:border-slate-600 rounded cursor-pointer"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-600 border-zinc-200/80 dark:border-zinc-600 rounded cursor-pointer"
                 />
                 <label
                   htmlFor="remember-me"
-                  className="ml-2 block text-sm text-slate-700 dark:text-slate-300 cursor-pointer"
+                  className="ml-2 block text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer"
                 >
                   记住我
                 </label>
@@ -169,10 +178,10 @@ export default function Login() {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200" />
+                <div className="w-full border-t border-zinc-200" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-slate-500">测试账号: admin / 123456</span>
+                <span className="px-2 bg-white text-zinc-500">测试账号: admin / 123456</span>
               </div>
             </div>
           </div>

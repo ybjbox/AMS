@@ -120,20 +120,20 @@ export const BaseModal: React.FC<BaseModalProps> = React.memo(
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className={`relative z-10 w-full bg-white dark:bg-slate-800 rounded-2xl text-left shadow-xl flex flex-col max-h-full outline-none ${sizeClasses[size]} ${size === 'full' ? 'h-full' : ''} ${className}`}
+              className={`relative z-10 w-full bg-white dark:bg-zinc-800 rounded-2xl text-left shadow-xl flex flex-col max-h-full outline-none ${sizeClasses[size]} ${size === 'full' ? 'h-full' : ''} ${className}`}
             >
               {/* Header */}
               <div
                 ref={headerRef}
-                className="px-4 py-4 sm:px-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between shrink-0 bg-white dark:bg-slate-800 rounded-t-2xl"
+                className="px-4 py-4 sm:px-6 border-b border-zinc-100 dark:border-zinc-700 flex items-center justify-between shrink-0 bg-white dark:bg-zinc-800 rounded-t-2xl"
               >
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white" id="modal-title">
+                <h3 className="text-lg font-semibold text-zinc-900 dark:text-white" id="modal-title">
                   {title}
                 </h3>
                 <button
                   onClick={onClose}
                   aria-label="关闭弹窗"
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"
+                  className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-700"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -155,7 +155,7 @@ export const BaseModal: React.FC<BaseModalProps> = React.memo(
               {footer && (
                 <div
                   ref={footerRef}
-                  className="px-4 py-3 sm:px-6 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 rounded-b-2xl"
+                  className="px-4 py-3 sm:px-6 border-t border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 rounded-b-2xl"
                 >
                   {footer}
                 </div>

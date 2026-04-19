@@ -7,10 +7,10 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, Outlet } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import ProtectedRoute from './components/layout/ProtectedRoute';
-import { useAppSettings } from './store/appSettings';
+import { useAppSettings, useLoadingStore } from './store/appSettings';
 import ConnectivityListener from './components/ConnectivityListener';
 import { useInitData } from './hooks/useInitData';
-import { useTodoStore } from './store/todos';
+import { useNotificationStore } from './store/notifications';
 import { EVENT_KEYS } from './config/constants';
 import { Toaster, toast } from 'sonner';
 import { ConfirmProvider } from './hooks/useConfirm';
@@ -23,7 +23,7 @@ const Users = lazy(() => import('./pages/Users'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Todos = lazy(() => import('./pages/Todos'));
 const Seating = lazy(() => import('./pages/Seating'));
-const NameCards = lazy(() => import('./pages/NameCards'));
+const NameCards = lazy(() => import('./pages/NameCards/index'));
 const Documents = lazy(() => import('./pages/Documents'));
 const Attendance = lazy(() => import('./pages/Attendance/index'));
 const Contracts = lazy(() => import('./pages/Contracts'));
@@ -78,9 +78,9 @@ function ThemeApplier() {
 
 function GlobalLoadingFallback() {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900">
-      <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-blue-600 dark:border-slate-700 dark:border-t-blue-500"></div>
-      <p className="mt-4 text-sm font-medium text-slate-500 dark:text-slate-400">系统加载中...</p>
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-900">
+      <div className="animate-spin rounded-full h-12 w-12 border-4 border-zinc-200 border-t-blue-600 dark:border-zinc-700 dark:border-t-blue-500"></div>
+      <p className="mt-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">系统加载中...</p>
     </div>
   );
 }
@@ -101,7 +101,7 @@ function AuthExpiredListener() {
 }
 
 function ApiErrorListener() {
-  const addNotification = useTodoStore((state) => state.addNotification);
+  const addNotification = useNotificationStore((state) => state.addNotification);
 
   React.useEffect(() => {
     const handleApiError = (event: Event) => {
@@ -125,15 +125,15 @@ function ApiErrorListener() {
 }
 
 function GlobalLoadingOverlay() {
-  const globalLoading = useAppSettings((state) => state.globalLoading);
+  const globalLoading = useLoadingStore((state) => state.globalLoading);
 
   if (!globalLoading) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-900/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl flex flex-col items-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-blue-600 dark:border-slate-700 dark:border-t-blue-500"></div>
-        <p className="mt-4 text-sm font-medium text-slate-700 dark:text-slate-300">处理中，请稍候...</p>
+    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-zinc-900/50 backdrop-blur-sm">
+      <div className="bg-white dark:bg-zinc-800 p-6 rounded-2xl shadow-xl flex flex-col items-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-4 border-zinc-200 border-t-blue-600 dark:border-zinc-700 dark:border-t-blue-500"></div>
+        <p className="mt-4 text-sm font-medium text-zinc-700 dark:text-zinc-300">处理中，请稍候...</p>
       </div>
     </div>
   );

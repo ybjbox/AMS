@@ -92,7 +92,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
         )}
       </div>
       {/* Nav */}
-      <nav className="px-3 pb-4 space-y-1.5 flex-1 overflow-y-auto overflow-x-hidden">
+      <nav aria-label="主导航" className="px-3 pb-4 space-y-1.5 flex-1 overflow-y-auto overflow-x-hidden">
         {visibleNav.map((item) => {
           const isActive = location.pathname === item.href;
           return (
@@ -101,6 +101,8 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
               to={item.href}
               onClick={handleCloseSidebar}
               title={isCollapsed ? item.name : undefined}
+              aria-current={isActive ? 'page' : undefined}
+              aria-label={isCollapsed ? item.name : undefined}
               className={`flex items-center py-2.5 px-3 rounded-xl transition-all duration-300 ease-in-out group ${
                 isCollapsed ? 'justify-center' : ''
               } ${
