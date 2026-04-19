@@ -1,6 +1,7 @@
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Activity } from 'lucide-react';
+import { useAppSettings } from '../../../store/appSettings';
 
 export interface ChartData {
   name: string;
@@ -13,7 +14,11 @@ interface DashboardChartProps {
 }
 
 export default function DashboardChart({ data, isLoading }: DashboardChartProps) {
-  const isDark = document.documentElement.classList.contains('dark');
+  const theme = useAppSettings((state) => state.theme);
+  const isDark =
+    theme === 'dark' ||
+    (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
   const gridColor = isDark ? '#3f3f46' : '#e4e4e7';
   const tickColor = isDark ? '#a1a1aa' : '#71717a';
   const tooltipBg = isDark ? 'rgba(39,39,42,0.95)' : 'rgba(255,255,255,0.95)';

@@ -96,46 +96,51 @@ export default function Users() {
   }, []);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="bg-white dark:bg-zinc-800 shadow-sm rounded-3xl">
-        <UserToolbar
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          isFilterOpen={isFilterOpen}
-          setIsFilterOpen={setIsFilterOpen}
-          activeFilterCount={activeFilterCount}
-          clearFilters={clearFilters}
-          filters={filters}
-          handleFilterChange={handleFilterChange}
-          departments={departments}
-          hasPermission={hasPermission}
-          setIsAddressBookModalOpen={setIsAddressBookModalOpen}
-          setIsExportModalOpen={setIsExportModalOpen}
-          handleAdd={handleAdd}
-        />
+    <div className="absolute inset-0 w-full flex flex-col p-4 sm:p-6 lg:p-8">
+      <div className="space-y-6 animate-in fade-in duration-500 w-full flex-1 flex flex-col min-h-0">
+        <div className="bg-white dark:bg-zinc-800 shadow-sm rounded-3xl flex flex-col flex-1 min-h-0">
+          <div className="shrink-0">
+            <UserToolbar
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              isFilterOpen={isFilterOpen}
+              setIsFilterOpen={setIsFilterOpen}
+              activeFilterCount={activeFilterCount}
+              clearFilters={clearFilters}
+              filters={filters}
+              handleFilterChange={handleFilterChange}
+              departments={departments}
+              hasPermission={hasPermission}
+              setIsAddressBookModalOpen={setIsAddressBookModalOpen}
+              setIsExportModalOpen={setIsExportModalOpen}
+              handleAdd={handleAdd}
+            />
+          </div>
 
-        <UserTable
-          data={currentUsers}
-          isLoading={isLoading}
-          onEdit={handleEdit}
-          onDelete={async (user) => {
-            if (
-              await confirm({
-                title: `确定要删除员工 ${user.name} 吗？`,
-                description: '此操作不可恢复。',
-                variant: 'danger',
-              })
-            ) {
-              deleteUser(user.id);
-            }
-          }}
-          onRowClick={(user) => {
-            setSelectedUser(user);
-            setIsDetailModalOpen(true);
-          }}
-        />
+          <div className="flex-1 min-h-0">
+            <UserTable
+              data={currentUsers}
+              isLoading={isLoading}
+              onEdit={handleEdit}
+              onDelete={async (user) => {
+                if (
+                  await confirm({
+                    title: `确定要删除员工 ${user.name} 吗？`,
+                    description: '此操作不可恢复。',
+                    variant: 'danger',
+                  })
+                ) {
+                  deleteUser(user.id);
+                }
+              }}
+              onRowClick={(user) => {
+                setSelectedUser(user);
+                setIsDetailModalOpen(true);
+              }}
+            />
+          </div>
 
-        <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50 rounded-b-xl">
+          <div className="shrink-0 px-4 py-3 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50 rounded-b-3xl">
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
               <p className="text-sm text-slate-700 dark:text-slate-300">
@@ -382,6 +387,7 @@ export default function Users() {
             )}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

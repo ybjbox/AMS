@@ -20,7 +20,7 @@ const Login = lazy(() => import('./pages/Login'));
 const Forbidden403 = lazy(() => import('./pages/403'));
 const Dashboard = lazy(() => import('./pages/Dashboard/index'));
 const Users = lazy(() => import('./pages/Users'));
-const Settings = lazy(() => import('./pages/Settings'));
+const Settings = lazy(() => import('./pages/Settings/index'));
 const Todos = lazy(() => import('./pages/Todos'));
 const Seating = lazy(() => import('./pages/Seating'));
 const NameCards = lazy(() => import('./pages/NameCards/index'));

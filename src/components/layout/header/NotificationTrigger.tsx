@@ -32,14 +32,14 @@ export default function NotificationTrigger() {
     <div className="relative" ref={panelRef}>
       <button
         onClick={toggleOpen}
-        className="p-2 text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-200 relative"
+        className="p-2 text-zinc-400 hover:text-zinc-500 dark:hover:text-zinc-300 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors duration-200 relative"
         aria-label={unreadCount > 0 ? `通知，${unreadCount}条未读` : '通知'}
         aria-haspopup="true"
         aria-expanded={isOpen}
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
-          <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-800 text-[10px] font-bold text-white">
+          <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 ring-2 ring-white dark:ring-zinc-800 text-[10px] font-bold text-white">
             {unreadCount}
           </span>
         )}

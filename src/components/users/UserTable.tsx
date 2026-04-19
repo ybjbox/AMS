@@ -312,7 +312,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
   }
 
   return (
-    <div ref={parentRef} className="w-full overflow-x-auto overflow-y-auto relative max-h-[600px]">
+    <div ref={parentRef} className="w-full h-full overflow-x-auto overflow-y-auto relative">
       <table className="w-full min-w-[800px] text-left border-collapse" style={{ width: table.getTotalSize() }}>
         <caption className="sr-only">员工列表</caption>
         <thead>

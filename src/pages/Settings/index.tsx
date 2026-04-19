@@ -1,0 +1,98 @@
+import React, { useState } from 'react';
+import { Building2, User, Sliders, BellRing, Palette, Code2, TerminalSquare, Monitor } from 'lucide-react';
+import DepartmentsPanel from './panels/DepartmentsPanel';
+import ProfilePanel from './panels/ProfilePanel';
+import AppearancePanel from './panels/AppearancePanel';
+import PreferencesPanel from './panels/PreferencesPanel';
+import RemindersPanel from './panels/RemindersPanel';
+import ThemesPanel from './panels/ThemesPanel';
+import ScriptsPanel from './panels/ScriptsPanel';
+import LogsPanel from './panels/LogsPanel';
+
+const tabs = [
+  { id: 'departments', label: '部门与职位架构', icon: Building2 },
+  { id: 'profile', label: '个人设置', icon: User },
+  { id: 'appearance', label: '外观设置', icon: Monitor },
+  { id: 'preferences', label: '系统偏好', icon: Sliders },
+  { id: 'reminders', label: '提醒设置', icon: BellRing },
+  { id: 'themes', label: '导出主题管理', icon: Palette },
+  { id: 'scripts', label: '导出脚本模板', icon: Code2 },
+  { id: 'logs', label: '系统日志', icon: TerminalSquare },
+];
+
+export default function Settings() {
+  const [activeTab, setActiveTab] = useState('departments');
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'departments': return <DepartmentsPanel />;
+      case 'profile': return <ProfilePanel />;
+      case 'appearance': return <AppearancePanel />;
+      case 'preferences': return <PreferencesPanel />;
+      case 'reminders': return <RemindersPanel />;
+      case 'themes': return <ThemesPanel />;
+      case 'scripts': return <ScriptsPanel />;
+      case 'logs': return <LogsPanel />;
+      default: return null;
+    }
+  };
+
+  return (
+    <div className="absolute inset-0 w-full flex flex-col p-4 sm:p-6 lg:p-8">
+      <div className="max-w-6xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-6 animate-in fade-in duration-500">
+        <div className="shrink-0">
+          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">系统设置</h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">管理系统偏好、组织架构及个人信息</p>
+        </div>
+
+        <div className="flex-1 bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl overflow-hidden flex flex-col md:flex-row min-h-0">
+          {/* 移动端下拉选择（仅小屏显示） */}
+          <div className="md:hidden border-b border-zinc-200 dark:border-zinc-700 p-4">
+            <select
+              value={activeTab}
+              onChange={(e) => setActiveTab(e.target.value)}
+              className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="设置分类"
+            >
+              <option value="departments">部门与职位架构</option>
+              <option value="profile">个人设置</option>
+              <option value="appearance">外观设置</option>
+              <option value="preferences">系统偏好</option>
+              <option value="reminders">提醒设置</option>
+              <option value="themes">导出主题管理</option>
+              <option value="scripts">导出脚本模板</option>
+              <option value="logs">系统日志</option>
+            </select>
+          </div>
+
+          {/* 桌面端侧边导航（仅大屏显示） */}
+          <div className="hidden md:block w-64 bg-zinc-50 dark:bg-zinc-900/50 border-r border-zinc-200 dark:border-zinc-700 p-4 shrink-0 overflow-y-auto custom-scrollbar">
+            <nav className="space-y-1">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-blue-700 dark:text-blue-400' : 'text-zinc-400 dark:text-zinc-500'}`} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+          <div className="flex-1 bg-zinc-50/30 dark:bg-zinc-900/30 min-h-0 custom-scrollbar flex flex-col overflow-hidden">
+            {renderContent()}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

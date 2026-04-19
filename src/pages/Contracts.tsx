@@ -10,6 +10,15 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User } from '../types';
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 const CONTRACT_STYLE: React.CSSProperties = { fontFamily: 'SimSun, "Songti SC", serif' };
 
 const ContractTemplate = ({ user }: { user: User }) => {
@@ -21,12 +30,12 @@ const ContractTemplate = ({ user }: { user: User }) => {
   const expiryDate = user.contractExpiry ? new Date(user.contractExpiry) : null;
 
   const replacements: Record<string, string> = {
-    '{name}': user.name || '',
-    '{idCard}': user.idCard || '__________________',
-    '{phone}': user.phone || '__________________',
-    '{department}': user.department || '',
-    '{role}': user.role || '员工',
-    '{contractYears}': String(user.contractYears || 3),
+    '{name}': escapeHtml(user.name || ''),
+    '{idCard}': escapeHtml(user.idCard || '__________________'),
+    '{phone}': escapeHtml(user.phone || '__________________'),
+    '{department}': escapeHtml(user.department || ''),
+    '{role}': escapeHtml(user.role || '员工'),
+    '{contractYears}': escapeHtml(String(user.contractYears || 3)),
     '{signYear}': signDate ? String(signDate.getFullYear()) : '____',
     '{signMonth}': signDate ? String(signDate.getMonth() + 1) : '__',
     '{signDay}': signDate ? String(signDate.getDate()) : '__',
@@ -42,6 +51,7 @@ const ContractTemplate = ({ user }: { user: User }) => {
 
   return (
     <div
+      id="contract-print-area"
       className="bg-white max-w-3xl mx-auto p-12 shadow-sm border border-slate-200 min-h-[1056px] text-black"
       style={CONTRACT_STYLE}
       dangerouslySetInnerHTML={{ __html: processed }}
@@ -91,45 +101,31 @@ export default function Contracts() {
   }, []);
 
   const handlePrint = useCallback(() => {
-    if (!printRef.current) return;
+    const printArea = document.getElementById('contract-print-area');
+    if (!printArea) return;
 
-    const printContent = printRef.current.innerHTML;
-    const originalContent = document.body.innerHTML;
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none';
+    document.body.appendChild(iframe);
 
-    const printStyle = `
-      <style>
-        @media print {
-          @page {
-            size: A4;
-            margin: 20mm;
-          }
-          ${
-            isDoubleSided
-              ? `
-          @page :left {
-            margin-left: 15mm;
-            margin-right: 25mm;
-          }
-          @page :right {
-            margin-left: 25mm;
-            margin-right: 15mm;
-          }
-          `
-              : `
-          @page {
-            margin-left: 25mm;
-            margin-right: 15mm;
-          }
-          `
-          }
-        }
-      </style>
-    `;
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) { document.body.removeChild(iframe); return; }
 
-    document.body.innerHTML = printStyle + printContent;
-    window.print();
-    document.body.innerHTML = originalContent;
-    window.location.reload(); // Reload to restore React bindings
+    doc.open();
+    doc.write(`<!DOCTYPE html><html><head><style>
+      body { margin:0; padding:0; font-family: SimSun,"Songti SC",serif; }
+      @page { size:A4; margin:0; }
+      ${isDoubleSided ? '.page { page-break-after: always; }' : ''}
+    </style></head><body>${printArea.outerHTML}</body></html>`);
+    doc.close();
+
+    iframe.onload = () => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      setTimeout(() => {
+        if (document.body.contains(iframe)) document.body.removeChild(iframe);
+      }, 1000);
+    };
   }, [isDoubleSided]);
 
   const handleDirectPrint = useCallback(
@@ -179,69 +175,70 @@ export default function Contracts() {
   }, []);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">合同管理</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">劳动合同管理、生成与打印</p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => {
-              setEditingTemplate(template);
-              setIsTemplateEditorOpen(true);
-            }}
-            className="flex items-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-zinc-200/80 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-700 transition-colors"
-          >
-            <FileEdit className="w-4 h-4 mr-2" />
-            模板设置
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl overflow-hidden flex flex-col">
-        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="搜索员工姓名、工号或部门..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-zinc-200/80 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200"
-            />
+    <div className="absolute inset-0 w-full flex flex-col p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-6 animate-in fade-in duration-500">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shrink-0">
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">合同管理</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">劳动合同管理、生成与打印</p>
           </div>
-          <div className="flex items-center space-x-2">
-            <Filter className="w-4 h-4 text-slate-400" />
-            <Select value={filterStatus} onValueChange={(val) => setFilterStatus(val || 'ALL')}>
-              <SelectTrigger className="w-[180px] text-sm border-zinc-200/80 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white">
-                <SelectValue placeholder="选择状态">
-                  {(val) =>
-                    val === 'ALL'
-                      ? '所有状态'
-                      : val === '在职'
-                        ? '在职'
-                        : val === '试用期'
-                          ? '试用期'
-                          : val === '离职'
-                            ? '离职'
-                            : '选择状态'
-                  }
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">所有状态</SelectItem>
-                <SelectItem value="在职">在职</SelectItem>
-                <SelectItem value="试用期">试用期</SelectItem>
-                <SelectItem value="离职">离职</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => {
+                setEditingTemplate(template);
+                setIsTemplateEditorOpen(true);
+              }}
+              className="flex items-center px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-zinc-200/80 rounded-lg hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-700 transition-colors"
+            >
+              <FileEdit className="w-4 h-4 mr-2" />
+              模板设置
+            </button>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-            <thead className="bg-slate-50 dark:bg-slate-900/50">
+        <div className="flex-1 min-h-0 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl overflow-hidden flex flex-col">
+          <div className="shrink-0 p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="搜索员工姓名、工号或部门..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 text-sm border border-zinc-200/80 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200"
+              />
+            </div>
+            <div className="flex items-center space-x-2 shrink-0">
+              <Filter className="w-4 h-4 text-slate-400" />
+              <Select value={filterStatus} onValueChange={(val) => setFilterStatus(val || 'ALL')}>
+                <SelectTrigger className="w-[180px] text-sm border-zinc-200/80 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white">
+                  <SelectValue placeholder="选择状态">
+                    {(val) =>
+                      val === 'ALL'
+                        ? '所有状态'
+                        : val === '在职'
+                          ? '在职'
+                          : val === '试用期'
+                            ? '试用期'
+                            : val === '离职'
+                              ? '离职'
+                              : '选择状态'
+                    }
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">所有状态</SelectItem>
+                  <SelectItem value="在职">在职</SelectItem>
+                  <SelectItem value="试用期">试用期</SelectItem>
+                  <SelectItem value="离职">离职</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-auto">
+            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+              <thead className="bg-slate-50 dark:bg-slate-900/50 sticky top-0 z-10 shadow-sm">
               <tr>
                 <th
                   scope="col"
@@ -529,6 +526,7 @@ export default function Contracts() {
           </div>
         </div>
       </BaseModal>
+    </div>
     </div>
   );
 }
