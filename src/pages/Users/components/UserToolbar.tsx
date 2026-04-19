@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Plus, Download, Printer, Filter } from 'lucide-react';
+import { Search, Plus, Download, Printer, Filter, Users } from 'lucide-react';
 import { DepartmentNode } from '../../../types';
 import { UserFilters } from './UserFilters';
 
@@ -37,7 +37,19 @@ export function UserToolbar({
   return (
     <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">员工管理</h1>
+        <div>
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/40 dark:to-blue-800/20 rounded-xl shadow-sm ring-1 ring-blue-200/50 dark:ring-blue-700/50 backdrop-blur-sm">
+              <Users className="w-6 h-6 text-blue-600 dark:text-blue-400 stroke-[2.5]" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-600 dark:from-white dark:via-zinc-100 dark:to-zinc-400">
+              员工管理
+            </h1>
+          </div>
+          <p className="mt-1.5 sm:mt-2 text-sm sm:text-base font-medium text-zinc-500 dark:text-zinc-400/80">
+            管理企业员工档案、部门分配与权限配置
+          </p>
+        </div>
         <div className="flex items-center space-x-3">
           <button
             onClick={() => setIsAddressBookModalOpen(true)}

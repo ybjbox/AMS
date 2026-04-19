@@ -2,43 +2,44 @@ import React from 'react';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { UseDashboardReturn } from '../hooks/useDashboard';
 
-export type StatCardsProps = Pick<UseDashboardReturn, 'stats'>;
+export type StatCardsProps = Pick<UseDashboardReturn, 'stats' | 'isLoading'>;
 
-export default function StatCards({ stats }: StatCardsProps) {
-  const getGridClass = (index: number) => {
-    switch (index) {
-      case 0:
-        return 'col-span-2 row-span-2';
-      case 1:
-        return 'col-span-1 row-span-1';
-      case 2:
-        return 'col-span-1 row-span-1';
-      case 3:
-        return 'col-span-2 row-span-1';
-      default:
-        return 'col-span-1 row-span-1';
-    }
-  };
+export default function StatCards({ stats, isLoading }: StatCardsProps) {
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="bg-white dark:bg-zinc-800 rounded-2xl p-6 shadow-sm border border-zinc-100 dark:border-zinc-700/50 h-[160px] flex flex-col justify-between animate-pulse"
+          >
+            <div className="flex justify-between items-start">
+              <div className="w-12 h-12 rounded-2xl bg-zinc-200 dark:bg-zinc-700"></div>
+              <div className="w-16 h-6 rounded-full bg-zinc-200 dark:bg-zinc-700"></div>
+            </div>
+            <div className="mt-auto">
+              <div className="w-20 h-4 bg-zinc-200 dark:bg-zinc-700 rounded mb-2"></div>
+              <div className="w-24 h-8 bg-zinc-200 dark:bg-zinc-700 rounded"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 auto-rows-[160px]">
-      {stats.map((item, index) => {
-        const isLarge = index === 0;
-
-        // Convert bg-blue-600 to from-blue-400 to-blue-700
-        const colorBase = item.color.replace('bg-', '').replace('-500', '');
-        const gradientClass = `bg-gradient-to-br from-${colorBase}-400 to-${colorBase}-600 shadow-inner`;
-
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      {stats.map((item) => {
         return (
           <div
             key={item.name}
-            className={`bg-white dark:bg-zinc-800 rounded-3xl border-none shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 flex flex-col justify-between p-4 ${getGridClass(index)}`}
+            className="bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-100 dark:border-zinc-700/50 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1 flex flex-col justify-between p-6 h-[160px]"
           >
             <div className="flex justify-between items-start">
               <div
-                className={`rounded-2xl flex items-center justify-center ${gradientClass} ${isLarge ? 'w-14 h-14' : 'w-12 h-12'}`}
+                className={`rounded-2xl flex items-center justify-center w-12 h-12 ${item.bg}`}
               >
-                <item.icon className={`${isLarge ? 'h-7 w-7' : 'h-6 w-6'} drop-shadow-sm`} />
+                <item.icon className={`h-6 w-6 ${item.color}`} />
               </div>
 
               {item.trend !== 'neutral' && (
@@ -60,10 +61,8 @@ export default function StatCards({ stats }: StatCardsProps) {
             </div>
 
             <div className="mt-auto">
-              <h3 className="text-zinc-500 dark:text-zinc-400 font-semibold text-sm mb-1">{item.name}</h3>
-              <div
-                className={`${isLarge ? 'text-5xl md:text-6xl' : 'text-4xl'} font-extrabold tracking-tight text-zinc-900 dark:text-white`}
-              >
+              <h3 className="text-zinc-500 dark:text-zinc-400 font-medium text-sm mb-1">{item.name}</h3>
+              <div className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
                 {item.value}
               </div>
             </div>

@@ -18,7 +18,7 @@ const Header = memo(function Header({ isCollapsed, setIsCollapsed }: HeaderProps
   }, [isCollapsed, setIsCollapsed]);
 
   return (
-    <header className="relative z-10 h-16 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-700/50 transition-colors duration-300 flex items-center justify-between px-4 sm:px-6 lg:px-8 print:hidden shrink-0">
+    <header className="relative z-40 h-16 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-700/50 transition-colors duration-300 flex items-center justify-between px-4 sm:px-6 lg:px-8 print:hidden shrink-0">
       <div className="flex items-center">
         {/* Mobile menu button */}
         <div className="md:hidden">

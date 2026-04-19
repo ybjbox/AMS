@@ -227,11 +227,17 @@ export default function Filter({
     <>
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-white flex items-center">
-            <Clock className="w-6 h-6 mr-2 text-blue-600 dark:text-blue-400" />
-            考勤管理
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">导入打卡记录与排班字典，自动分析考勤异常</p>
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/40 dark:to-blue-800/20 rounded-xl shadow-sm ring-1 ring-blue-200/50 dark:ring-blue-700/50 backdrop-blur-sm">
+              <Clock className="w-6 h-6 text-blue-600 dark:text-blue-400 stroke-[2.5]" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-600 dark:from-white dark:via-zinc-100 dark:to-zinc-400">
+              考勤管理
+            </h1>
+          </div>
+          <p className="mt-1.5 sm:mt-2 text-sm sm:text-base font-medium text-zinc-500 dark:text-zinc-400/80">
+            导入打卡记录与排班字典，自动分析考勤异常
+          </p>
         </div>
         <div className="flex items-center space-x-2 bg-zinc-100/80 dark:bg-zinc-800/80 p-1.5 rounded-xl">
           <button
