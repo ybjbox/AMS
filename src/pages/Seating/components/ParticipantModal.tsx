@@ -49,7 +49,7 @@ export function ParticipantModal({
       onClose={onClose}
       title={
         <div className="flex items-center space-x-4">
-          <span className="text-lg leading-6 font-medium text-slate-900 dark:text-white">选择参与人员</span>
+          <span className="text-lg leading-6 font-medium text-zinc-900 dark:text-white">选择参与人员</span>
           <button
             onClick={toggleAllDeptsExpand}
             className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
@@ -76,9 +76,9 @@ export function ParticipantModal({
           const someSelected = deptUsers.some((u) => selectedUserIds.has(u.id)) && !allSelected;
           const isExpanded = expandedDepts.has(dept);
           return (
-            <div key={dept} className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+            <div key={dept} className="border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden">
               <div
-                className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                className="bg-zinc-50 dark:bg-zinc-800/50 px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
                 onClick={() => toggleDepartmentSelection(dept, !allSelected)}
               >
                 <div className="flex items-center">
@@ -86,37 +86,37 @@ export function ParticipantModal({
                     <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-600 mr-3" />
                   ) : someSelected ? (
                     <div className="w-5 h-5 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner dark:bg-blue-600 rounded flex items-center justify-center mr-3">
-                      <div className="w-3 h-0.5 bg-white"></div>
+                      <div className="w-3 h-0.5 bg-white dark:bg-zinc-800"></div>
                     </div>
                   ) : (
-                    <Square className="w-5 h-5 text-slate-400 dark:text-slate-500 mr-3" />
+                    <Square className="w-5 h-5 text-zinc-400 dark:text-zinc-500 mr-3" />
                   )}
-                  <span className="font-medium text-slate-800 dark:text-slate-200">{dept}</span>
-                  <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">
+                  <span className="font-medium text-zinc-800 dark:text-zinc-200">{dept}</span>
+                  <span className="ml-2 text-xs text-zinc-500 dark:text-zinc-400">
                     ({deptUsers.filter((u) => selectedUserIds.has(u.id)).length}/{deptUsers.length})
                   </span>
                 </div>
                 <button
                   onClick={(e) => toggleDeptExpand(dept, e)}
-                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
                 >
                   <ChevronRight className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                 </button>
               </div>
               {isExpanded && (
-                <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
+                <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-white dark:bg-zinc-800 border-t border-zinc-200 dark:border-zinc-700">
                   {deptUsers.map((u) => (
                     <label key={u.id} className="flex items-center space-x-2 cursor-pointer group">
                       <input
                         type="checkbox"
                         checked={selectedUserIds.has(u.id)}
                         onChange={() => toggleUserSelection(u.id)}
-                        className="rounded border-zinc-200/80 dark:border-slate-600 text-blue-600 focus:ring-blue-600 bg-white dark:bg-slate-900"
+                        className="rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600 bg-white dark:bg-zinc-900"
                       />
-                      <span className="text-sm text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      <span className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         {u.name}
                       </span>
-                      <span className="text-xs text-slate-400 dark:text-slate-500">({u.role})</span>
+                      <span className="text-xs text-zinc-400 dark:text-zinc-500">({u.role})</span>
                     </label>
                   ))}
                 </div>

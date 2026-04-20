@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Clock, FileSpreadsheet, ChevronDown, Search, Plus, AlertTriangle } from 'lucide-react';
-import { PunchRecord, EmployeeSchedule, Shift } from '../../../store/attendance';
+import { PunchRecord, EmployeeSchedule, Shift } from '../../../store/useAttendanceStore';
 import { attendanceService } from '../../../services/attendance';
 import { UseAttendanceReturn } from '../hooks/useAttendance';
 
@@ -126,10 +126,7 @@ export default function Filter({
     }
 
     try {
-      const response = await attendanceService.triggerAnalysis({
-        startDate: '2026-03-01',
-        endDate: '2026-03-31',
-      });
+      const response = await attendanceService.triggerAnalysis();
 
       if (response.success) {
         analyzeAnomalies();

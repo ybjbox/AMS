@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useEmployeeStore } from '../store/employees';
+import { useEmployeeStore } from '../store/useEmployeeStore';
 import { useUserStore } from '../store/useUserStore';
 import { useEmployeeReminders } from './useEmployeeReminders';
 

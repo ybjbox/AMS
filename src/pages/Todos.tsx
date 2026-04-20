@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { useTodoStore } from '../store/todos';
+import { useTodoStore } from '../store/useTodoStore';
 import { CheckCircle2, Circle, Clock, Plus, Trash2, Calendar, ListTodo } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -57,8 +57,8 @@ export default function Todos() {
     <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl mx-auto">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">待办事项</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">管理您的日常任务及系统自动生成的提醒事项</p>
+          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">待办事项</h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">管理您的日常任务及系统自动生成的提醒事项</p>
         </div>
         <button
           onClick={() => setIsAdding(true)}
@@ -75,37 +75,37 @@ export default function Todos() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="bg-white dark:bg-slate-800 p-6 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl"
+            className="bg-white dark:bg-zinc-800 p-6 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl"
           >
             <form onSubmit={handleAdd} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">标题</label>
+                  <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">标题</label>
                   <input
                     type="text"
                     required
                     value={newTodo.title}
                     onChange={(e) => setNewTodo({ ...newTodo, title: e.target.value })}
-                    className="w-full px-3 py-2 border border-zinc-200/80 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 outline-none transition-all bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-zinc-200/80 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 outline-none transition-all bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
                     placeholder="要做什么？"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">截止日期</label>
+                  <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">截止日期</label>
                   <input
                     type="date"
                     value={newTodo.dueDate}
                     onChange={(e) => setNewTodo({ ...newTodo, dueDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-zinc-200/80 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 outline-none transition-all bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-zinc-200/80 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 outline-none transition-all bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
                   />
                 </div>
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">描述</label>
+                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">描述</label>
                 <textarea
                   value={newTodo.description}
                   onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-zinc-200/80 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 outline-none transition-all h-20 resize-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-zinc-200/80 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 outline-none transition-all h-20 resize-none bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
                   placeholder="添加更多细节..."
                 />
               </div>
@@ -113,7 +113,7 @@ export default function Todos() {
                 <button
                   type="button"
                   onClick={() => setIsAdding(false)}
-                  className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg active:scale-95 transition-transform"
+                  className="px-4 py-2 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-lg active:scale-95 transition-transform"
                 >
                   取消
                 </button>
@@ -129,7 +129,7 @@ export default function Todos() {
         )}
       </AnimatePresence>
 
-      <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl overflow-hidden">
         {sortedTodos.length === 0 ? (
           <EmptyState
             title="暂无待办事项"
@@ -146,7 +146,7 @@ export default function Todos() {
             }
           />
         ) : (
-          <div className="divide-y divide-slate-100 dark:divide-slate-700">
+          <div className="divide-y divide-zinc-100 dark:divide-zinc-700">
             <AnimatePresence initial={false}>
               {sortedTodos.map((todo) => (
                 <motion.div
@@ -156,7 +156,7 @@ export default function Todos() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
-                  className={`p-4 flex items-start space-x-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group ${
+                  className={`p-4 flex items-start space-x-4 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors group ${
                     todo.completed ? 'opacity-60' : ''
                   }`}
                 >
@@ -166,7 +166,7 @@ export default function Todos() {
                     className={`mt-1 transition-colors ${
                       todo.completed
                         ? 'text-emerald-500'
-                        : 'text-slate-300 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400'
+                        : 'text-zinc-300 dark:text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400'
                     }`}
                   >
                     {todo.completed ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
@@ -176,8 +176,8 @@ export default function Todos() {
                       <h3
                         className={`text-sm font-medium truncate ${
                           todo.completed
-                            ? 'line-through text-slate-500 dark:text-slate-400'
-                            : 'text-slate-900 dark:text-white'
+                            ? 'line-through text-zinc-500 dark:text-zinc-400'
+                            : 'text-zinc-900 dark:text-white'
                         }`}
                       >
                         {todo.title}
@@ -194,19 +194,19 @@ export default function Todos() {
                     </div>
                     <p
                       className={`text-sm mt-1 ${
-                        todo.completed ? 'text-slate-400 dark:text-slate-500' : 'text-slate-500 dark:text-slate-400'
+                        todo.completed ? 'text-zinc-400 dark:text-zinc-500' : 'text-zinc-500 dark:text-zinc-400'
                       }`}
                     >
                       {todo.description}
                     </p>
                     <div className="flex items-center space-x-4 mt-2">
                       {todo.dueDate && (
-                        <div className="flex items-center text-xs text-slate-400 dark:text-slate-500">
+                        <div className="flex items-center text-xs text-zinc-400 dark:text-zinc-500">
                           <Calendar className="w-3.5 h-3.5 mr-1.5" />
                           截止日期: {todo.dueDate}
                         </div>
                       )}
-                      <div className="flex items-center text-xs text-slate-400 dark:text-slate-500">
+                      <div className="flex items-center text-xs text-zinc-400 dark:text-zinc-500">
                         <Clock className="w-3.5 h-3.5 mr-1.5" />
                         创建于: {new Date(todo.createdAt).toLocaleDateString()}
                       </div>
@@ -215,7 +215,7 @@ export default function Todos() {
                   <button
                     data-todoid={todo.id}
                     onClick={onDeleteTodoClick}
-                    className="p-2 text-slate-300 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                    className="p-2 text-zinc-300 dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

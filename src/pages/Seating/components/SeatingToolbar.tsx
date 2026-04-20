@@ -51,21 +51,21 @@ export function SeatingToolbar({
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">自动排座模块</h1>
-        <p className="text-sm text-slate-500 mt-1">根据部门和职位优先级自动分配桌号，支持导出 A4 台卡</p>
+        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">自动排座模块</h1>
+        <p className="text-sm text-zinc-500 mt-1">根据部门和职位优先级自动分配桌号，支持导出 A4 台卡</p>
       </div>
       <div className="flex items-center space-x-3">
-        <div className="flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1 shadow-sm">
+        <div className="flex items-center bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-1 shadow-sm">
           <button
             onClick={() => setViewMode('grid')}
-            className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-blue-50 text-blue-600' : 'text-zinc-400 hover:text-zinc-600'}`}
             title="网格视图"
           >
             <LayoutGrid className="w-4 h-4" />
           </button>
           <button
             onClick={() => setViewMode('list')}
-            className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-blue-50 text-blue-600' : 'text-zinc-400 hover:text-zinc-600'}`}
             title="列表视图"
           >
             <List className="w-4 h-4" />
@@ -74,7 +74,7 @@ export function SeatingToolbar({
         {hasTables && (
           <button
             onClick={handleClear}
-            className="flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm font-medium shadow-sm"
+            className="flex items-center px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm font-medium shadow-sm"
           >
             <Trash2 className="w-4 h-4 mr-2" />
             重置
@@ -83,7 +83,7 @@ export function SeatingToolbar({
         {hasUploadedUsers && (
           <button
             onClick={clearUploadedUsers}
-            className="flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-amber-600 dark:text-amber-400 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors text-sm font-medium shadow-sm"
+            className="flex items-center px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-amber-600 dark:text-amber-400 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors text-sm font-medium shadow-sm"
             title="清除上传的名单，恢复系统人员"
           >
             <X className="w-4 h-4 mr-2" />
@@ -93,25 +93,25 @@ export function SeatingToolbar({
         <div className="relative" onMouseLeave={() => setIsUploadMenuOpen(false)}>
           <button
             onClick={() => setIsUploadMenuOpen(!isUploadMenuOpen)}
-            className="flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-sm font-medium shadow-sm"
+            className="flex items-center px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors text-sm font-medium shadow-sm"
           >
             <Upload className="w-4 h-4 mr-2" />
             导入名单
             <ChevronDown className="w-4 h-4 ml-1" />
           </button>
           {isUploadMenuOpen && (
-            <div className="absolute right-0 mt-1 w-36 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50">
+            <div className="absolute right-0 mt-1 w-36 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-700 py-1 z-50">
               <button
                 onClick={() => {
                   handleDownloadTemplate();
                   setIsUploadMenuOpen(false);
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center"
+                className="w-full text-left px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center"
               >
                 <FileDown className="w-4 h-4 mr-2" />
                 下载模板
               </button>
-              <label className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center cursor-pointer mb-0">
+              <label className="w-full text-left px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center cursor-pointer mb-0">
                 <Upload className="w-4 h-4 mr-2" />
                 上传文件
                 <input
@@ -129,7 +129,7 @@ export function SeatingToolbar({
         </div>
         <button
           onClick={() => setIsParticipantModalOpen(true)}
-          className="flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-sm font-medium shadow-sm"
+          className="flex items-center px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors text-sm font-medium shadow-sm"
         >
           <Users className="w-4 h-4 mr-2" />
           选择人员 ({selectedCount})
@@ -137,7 +137,7 @@ export function SeatingToolbar({
         <button
           onClick={() => setIsPrintModalOpen(true)}
           disabled={!hasTables}
-          className="flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-sm font-medium shadow-sm disabled:opacity-50"
+          className="flex items-center px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors text-sm font-medium shadow-sm disabled:opacity-50"
         >
           <Settings2 className="w-4 h-4 mr-2" />
           台卡设置
@@ -145,7 +145,7 @@ export function SeatingToolbar({
         <button
           onClick={handlePrint}
           disabled={!hasTables}
-          className="flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-sm font-medium shadow-sm disabled:opacity-50"
+          className="flex items-center px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors text-sm font-medium shadow-sm disabled:opacity-50"
         >
           <Printer className="w-4 h-4 mr-2" />
           打印台卡

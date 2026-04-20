@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { useEmployeeStore } from '../../../store/employees';
+import { useEmployeeStore } from '../../../store/useEmployeeStore';
 import { User } from '../../../types';
 import { PrintSettings, DEFAULT_PRINT_SETTINGS } from '../constants';
 
@@ -63,7 +63,7 @@ export function useNameCards() {
       const newUsers = [
         { id: `uploaded-${Date.now()}-1`, name: '张三', department: '技术部', role: '前端工程师', status: '在职' },
         { id: `uploaded-${Date.now()}-2`, name: '李四', department: '市场部', role: '市场总监', status: '在职' },
-      ];
+      ] as User[];
       setUploadedUsers(newUsers);
       setSelectedUserIds(new Set(newUsers.map((u) => u.id)));
       toast.success('成功从后端获取到名单 (Mock)');
@@ -87,7 +87,7 @@ export function useNameCards() {
         department: parts[1] || '',
         role: parts[2] || '',
         status: '在职',
-      };
+      } as User;
     });
 
     setUploadedUsers(newUsers);

@@ -45,19 +45,19 @@ export default function ConnectivityListener() {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-8 text-center"
+          className="bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-700 max-w-md w-full p-8 text-center"
         >
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <AlertCircle className="w-8 h-8 text-red-600" />
           </div>
 
-          <h2 className="text-xl font-bold text-slate-900 mb-2">后端连接已断开</h2>
-          <p className="text-slate-600 mb-8">无法连接到服务器，请检查您的网络连接或稍后重试。</p>
+          <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-200 mb-2">后端连接已断开</h2>
+          <p className="text-zinc-600 mb-8">无法连接到服务器，请检查您的网络连接或稍后重试。</p>
 
           <button
             onClick={checkConnection}

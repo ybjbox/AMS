@@ -1,7 +1,7 @@
 import React from 'react';
 import { FolderOpen, Folder } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
-import { Folder as FolderType } from '../../../store/documents';
+import { Folder as FolderType } from '../../../store/useDocumentStore';
 
 interface MoveFileModalProps {
   isOpen: boolean;
@@ -31,7 +31,7 @@ export function MoveFileModal({
           <button
             type="button"
             onClick={onClose}
-            className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
+            className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-zinc-600 shadow-sm px-4 py-2 bg-white dark:bg-zinc-700 text-base font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
           >
             取消
           </button>
@@ -46,9 +46,9 @@ export function MoveFileModal({
     >
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">选择目标文件夹</label>
-          <div className="max-h-60 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-md bg-slate-50 dark:bg-slate-800/50 p-2 space-y-1">
-            <label className="flex items-center p-2 hover:bg-white dark:hover:bg-slate-700 rounded-md cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
+          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">选择目标文件夹</label>
+          <div className="max-h-60 overflow-y-auto border border-zinc-200 dark:border-zinc-700 rounded-md bg-zinc-50 dark:bg-zinc-800/50 p-2 space-y-1">
+            <label className="flex items-center p-2 hover:bg-white dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-md cursor-pointer transition-colors border border-transparent hover:border-zinc-200 dark:border-zinc-700 dark:hover:border-zinc-600">
               <input
                 type="radio"
                 name="targetFolder"
@@ -56,15 +56,15 @@ export function MoveFileModal({
                 onChange={() => {
                   onTargetFolderChange(null);
                 }}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-600 border-zinc-200/80"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-600 border-zinc-200 dark:border-zinc-700/80"
               />
-              <FolderOpen className="w-4 h-4 ml-3 mr-2 text-slate-400 dark:text-slate-500" />
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">全部文件 (根目录)</span>
+              <FolderOpen className="w-4 h-4 ml-3 mr-2 text-zinc-400 dark:text-zinc-500" />
+              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">全部文件 (根目录)</span>
             </label>
             {folders.map((folder) => (
               <label
                 key={folder.id}
-                className="flex items-center p-2 hover:bg-white dark:hover:bg-slate-700 rounded-md cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600"
+                className="flex items-center p-2 hover:bg-white dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-md cursor-pointer transition-colors border border-transparent hover:border-zinc-200 dark:border-zinc-700 dark:hover:border-zinc-600"
               >
                 <input
                   type="radio"
@@ -73,10 +73,10 @@ export function MoveFileModal({
                   onChange={() => {
                     onTargetFolderChange(folder.id);
                   }}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-600 border-zinc-200/80"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-600 border-zinc-200 dark:border-zinc-700/80"
                 />
-                <Folder className="w-4 h-4 ml-3 mr-2 text-slate-400 dark:text-slate-500" />
-                <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{folder.name}</span>
+                <Folder className="w-4 h-4 ml-3 mr-2 text-zinc-400 dark:text-zinc-500" />
+                <span className="text-sm text-zinc-700 dark:text-zinc-300 truncate">{folder.name}</span>
               </label>
             ))}
           </div>

@@ -1,6 +1,6 @@
 import { User, SystemRole } from '../types';
-import { Folder, Document, DocumentSet } from '../store/documents';
-import { Shift, EmployeeSchedule, PunchRecord, Anomaly } from '../store/attendance';
+import { Folder, Document, DocumentSet } from '../store/useDocumentStore';
+import { Shift, EmployeeSchedule, PunchRecord, Anomaly } from '../store/useAttendanceStore';
 import { useUserStore } from '../store/useUserStore';
 import { generateIdCard, calculateAge, getGender } from '../utils/idCardUtils';
 import { calculateYearsOfService, calculateDaysToExpiry } from '../utils/dateUtils';
@@ -146,7 +146,7 @@ export const api = {
     mockDocuments = mockDocuments.filter((d) => d.folderId === null || !folderIdsToRemove.includes(d.folderId));
     mockDocumentSets = mockDocumentSets.map((s) => ({
       ...s,
-      documentIds: s.documentIds.filter((did) => !removedDocIds.includes(did)),
+      documentIds: s.documentIds.filter((did: string) => !removedDocIds.includes(did)),
     }));
   },
 
@@ -167,7 +167,7 @@ export const api = {
   deleteDocument: async (id: string): Promise<void> => {
     await delay();
     mockDocuments = mockDocuments.filter((d) => d.id !== id);
-    mockDocumentSets = mockDocumentSets.map((s) => ({ ...s, documentIds: s.documentIds.filter((did) => did !== id) }));
+    mockDocumentSets = mockDocumentSets.map((s) => ({ ...s, documentIds: s.documentIds.filter((did: string) => did !== id) }));
   },
 
   fetchDocumentSets: async (): Promise<DocumentSet[]> => {

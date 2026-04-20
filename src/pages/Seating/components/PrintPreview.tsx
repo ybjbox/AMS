@@ -15,12 +15,12 @@ export function PrintPreview({ tables, printSettings, getTableDepartments, rende
   return (
     <div
       id="printable-area"
-      className="hidden print:flex print:flex-wrap print:gap-[10mm] print:justify-center print:items-start print:p-[10mm] print:w-full print:bg-white"
+      className="hidden print:flex print:flex-wrap print:gap-[10mm] print:justify-center print:items-start print:p-[10mm] print:w-full print:bg-white dark:bg-zinc-800"
     >
       {tables.map((table) => (
         <div
           key={table.number}
-          className="relative flex flex-col bg-white box-border break-inside-avoid"
+          className="relative flex flex-col bg-white dark:bg-zinc-800 box-border break-inside-avoid"
           style={{
             width: `${printSettings.cardWidth}mm`,
             minHeight: `${printSettings.cardHeight}mm`,
@@ -61,10 +61,10 @@ export function PrintPreview({ tables, printSettings, getTableDepartments, rende
                   style={{ fontFamily: printSettings.contentFontFamily }}
                 >
                   {table.members.map((m, idx) => (
-                    <div key={m.id} className="flex items-center p-2 bg-slate-50 rounded-lg">
+                    <div key={m.id} className="flex items-center p-2 bg-zinc-50 rounded-lg">
                       {printSettings.showIndex && (
                         <div
-                          className="font-bold text-slate-400 mr-3 flex-shrink-0 text-right"
+                          className="font-bold text-zinc-400 mr-3 flex-shrink-0 text-right"
                           style={{
                             fontSize: `${printSettings.contentFontSize * 1.2}px`,
                             width: '1.5em',
@@ -73,16 +73,16 @@ export function PrintPreview({ tables, printSettings, getTableDepartments, rende
                           {idx + 1}
                         </div>
                       )}
-                      <div className="flex-1 overflow-hidden" style={{ textAlign: printSettings.textAlign }}>
+                      <div className="flex-1 overflow-hidden" style={{ textAlign: printSettings.textAlign as React.CSSProperties['textAlign'] }}>
                         <div
-                          className="font-bold text-slate-900 whitespace-nowrap overflow-hidden text-ellipsis"
+                          className="font-bold text-zinc-900 dark:text-zinc-200 whitespace-nowrap overflow-hidden text-ellipsis"
                           style={{ fontSize: `${printSettings.contentFontSize * 1.2}px` }}
                         >
                           {m.name}
                         </div>
                         {(printSettings.showDepartment || printSettings.showRole) && (
                           <div
-                            className="text-slate-500 mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis"
+                            className="text-zinc-500 mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis"
                             style={{ fontSize: `${printSettings.contentFontSize}px` }}
                           >
                             {printSettings.showDepartment ? m.department : ''}
@@ -99,7 +99,7 @@ export function PrintPreview({ tables, printSettings, getTableDepartments, rende
               )}
 
               <div
-                className="mt-3 text-center text-[10px] text-slate-400"
+                className="mt-3 text-center text-[10px] text-zinc-400"
                 style={{ fontFamily: printSettings.footerFontFamily }}
               >
                 {printSettings.footerText}

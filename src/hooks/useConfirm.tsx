@@ -53,7 +53,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 sm:flex-none inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:text-sm"
+              className="flex-1 sm:flex-none inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-zinc-600 shadow-sm px-4 py-2 bg-white dark:bg-zinc-700 text-base font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-600 active:scale-95 transition-transform sm:text-sm"
             >
               {options?.cancelText || '取消'}
             </button>
@@ -78,7 +78,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             </div>
           )}
           <div className="flex-1">
-            <p className="text-sm text-slate-500 dark:text-slate-400">{options?.description}</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">{options?.description}</p>
           </div>
         </div>
       </BaseModal>

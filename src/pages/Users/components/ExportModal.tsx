@@ -47,13 +47,13 @@ const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: Sor
       className={`flex items-center p-3 rounded-xl border transition-all ${
         col.selected
           ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 shadow-sm'
-          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+          : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
       }`}
     >
       <div
         {...attributes}
         {...listeners}
-        className="mr-3 cursor-grab active:cursor-grabbing p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400 dark:text-slate-500"
+        className="mr-3 cursor-grab active:cursor-grabbing p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded text-zinc-400 dark:text-zinc-500"
       >
         <GripVertical className="h-4 w-4" />
       </div>
@@ -63,7 +63,7 @@ const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: Sor
           className={`w-4 h-4 rounded border mr-3 flex items-center justify-center transition-colors ${
             col.selected
               ? 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner border-blue-600'
-              : 'bg-white dark:bg-slate-800 border-zinc-200/80 dark:border-slate-600'
+              : 'bg-white dark:bg-zinc-800 border-zinc-200/80 dark:border-zinc-600'
           }`}
         >
           {col.selected && <Check className="h-3 w-3 text-white" />}
@@ -169,14 +169,14 @@ export function ExportModal({
         <>
           <button
             onClick={onClose}
-            className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
+            className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-zinc-600 shadow-sm px-4 py-2 bg-white dark:bg-zinc-700 text-base font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
           >
             取消
           </button>
           <button
             onClick={handlePrintRoster}
             disabled={exportConfig.columns.filter((c: ExportColumn) => c.selected).length === 0}
-            className="inline-flex items-center justify-center px-6 py-2 bg-white dark:bg-slate-700 border border-zinc-200/80 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-all shadow-sm disabled:opacity-50"
+            className="inline-flex items-center justify-center px-6 py-2 bg-white dark:bg-zinc-700 border border-zinc-200/80 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-600 transition-all shadow-sm disabled:opacity-50"
           >
             <Printer className="h-4 w-4 mr-2" />
             打印
@@ -202,14 +202,14 @@ export function ExportModal({
       }
     >
       <div className="flex-1 overflow-hidden flex flex-col md:flex-row h-full">
-        <div className="w-full md:w-1/3 p-6 space-y-6 overflow-y-auto border-r border-slate-100 dark:border-slate-700 custom-scrollbar h-full">
+        <div className="w-full md:w-1/3 p-6 space-y-6 overflow-y-auto border-r border-zinc-100 dark:border-zinc-700 custom-scrollbar h-full">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">表格大标题</label>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">表格大标题</label>
             <input
               type="text"
               value={exportConfig.title}
               onChange={(e) => setExportConfig((prev: ExportConfig) => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 border border-zinc-200/80 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200 outline-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+              className="w-full px-3 py-2 border border-zinc-200/80 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200 outline-none bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500"
               placeholder="请输入表格标题"
             />
           </div>
@@ -225,27 +225,27 @@ export function ExportModal({
                     onChange={(e) => setExportConfig((prev: ExportConfig) => ({ ...prev, includeResigned: e.target.checked }))}
                   />
                   <div
-                    className={`block w-10 h-6 rounded-full transition-colors ${exportConfig.includeResigned ? 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner' : 'bg-slate-300 dark:bg-slate-600'}`}
+                    className={`block w-10 h-6 rounded-full transition-colors ${exportConfig.includeResigned ? 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner' : 'bg-zinc-300 dark:bg-zinc-600'}`}
                   ></div>
                   <div
-                    className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${exportConfig.includeResigned ? 'translate-x-4' : ''}`}
+                    className={`absolute left-1 top-1 bg-white dark:bg-zinc-800 w-4 h-4 rounded-full transition-transform ${exportConfig.includeResigned ? 'translate-x-4' : ''}`}
                   ></div>
                 </div>
-                <span className="ml-3 text-sm font-medium text-slate-700 dark:text-slate-300">包含离职人员</span>
+                <span className="ml-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">包含离职人员</span>
               </label>
             </div>
           </div>
 
-          <div className="space-y-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">打印设置</label>
+          <div className="space-y-3 bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-xl border border-zinc-100 dark:border-zinc-700">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">打印设置</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张大小</label>
+                <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">纸张大小</label>
                 <Select
                   value={exportConfig.paperSize}
-                  onValueChange={(val) => setExportConfig((prev: ExportConfig) => ({ ...prev, paperSize: val }))}
+                  onValueChange={(val) => setExportConfig((prev: ExportConfig) => ({ ...prev, paperSize: val || 'A4' }))}
                 >
-                  <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
+                  <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
                     <SelectValue placeholder="选择纸张大小" />
                   </SelectTrigger>
                   <SelectContent>
@@ -256,12 +256,12 @@ export function ExportModal({
                 </Select>
               </div>
               <div>
-                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">纸张方向</label>
+                <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">纸张方向</label>
                 <Select
                   value={exportConfig.orientation}
-                  onValueChange={(val) => setExportConfig((prev: ExportConfig) => ({ ...prev, orientation: val }))}
+                  onValueChange={(val) => setExportConfig((prev: ExportConfig) => ({ ...prev, orientation: val || 'portrait' }))}
                 >
-                  <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
+                  <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
                     <SelectValue placeholder="选择纸张方向">
                       {(val) => (val === 'portrait' ? '纵向' : val === 'landscape' ? '横向' : '选择纸张方向')}
                     </SelectValue>
@@ -283,24 +283,24 @@ export function ExportModal({
                     onChange={(e) => setExportConfig((prev: ExportConfig) => ({ ...prev, isDoubleSided: e.target.checked }))}
                   />
                   <div
-                    className={`block w-8 h-5 rounded-full transition-colors ${exportConfig.isDoubleSided ? 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner' : 'bg-slate-300 dark:bg-slate-600'}`}
+                    className={`block w-8 h-5 rounded-full transition-colors ${exportConfig.isDoubleSided ? 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner' : 'bg-zinc-300 dark:bg-zinc-600'}`}
                   ></div>
                   <div
-                    className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${exportConfig.isDoubleSided ? 'translate-x-3' : ''}`}
+                    className={`absolute left-0.5 top-0.5 bg-white dark:bg-zinc-800 w-4 h-4 rounded-full transition-transform ${exportConfig.isDoubleSided ? 'translate-x-3' : ''}`}
                   ></div>
                 </div>
-                <span className="ml-2 text-sm text-slate-600 dark:text-slate-400">双面打印 (预留装订边距)</span>
+                <span className="ml-2 text-sm text-zinc-600 dark:text-zinc-400">双面打印 (预留装订边距)</span>
               </label>
             </div>
           </div>
 
-          <div className="flex p-1 bg-slate-100 dark:bg-slate-700 rounded-lg">
+          <div className="flex p-1 bg-zinc-100 dark:bg-zinc-700 rounded-lg">
             <button
               onClick={() => setExportConfig((prev: ExportConfig) => ({ ...prev, mode: 'theme' }))}
               className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
                 exportConfig.mode === 'theme'
-                  ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-sm'
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
               }`}
             >
               配色主题模式
@@ -309,8 +309,8 @@ export function ExportModal({
               onClick={() => setExportConfig((prev: ExportConfig) => ({ ...prev, mode: 'script' }))}
               className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
                 exportConfig.mode === 'script'
-                  ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-sm'
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
               }`}
             >
               JS 脚本模式
@@ -319,7 +319,7 @@ export function ExportModal({
 
           {exportConfig.mode === 'theme' ? (
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">选择表格主题</label>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">选择表格主题</label>
               <div className="grid grid-cols-4 gap-3">
                 {Object.values(themes).map((theme: ExportTheme) => (
                   <button
@@ -329,7 +329,7 @@ export function ExportModal({
                     className={`flex flex-col items-center p-2 rounded-xl border transition-all ${
                       exportConfig.themeId === theme.id
                         ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-600/20'
-                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-zinc-200/80 dark:hover:border-slate-600'
+                        : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-200/80 dark:hover:border-zinc-600'
                     }`}
                   >
                     <div
@@ -337,7 +337,7 @@ export function ExportModal({
                       style={{ backgroundColor: `#${theme.headerFill.substring(2)}` }}
                     ></div>
                     <span
-                      className={`text-[10px] font-medium truncate w-full text-center ${exportConfig.themeId === theme.id ? 'text-blue-700 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}
+                      className={`text-[10px] font-medium truncate w-full text-center ${exportConfig.themeId === theme.id ? 'text-blue-700 dark:text-blue-400' : 'text-zinc-600 dark:text-zinc-400'}`}
                     >
                       {theme.name}
                     </span>
@@ -347,7 +347,7 @@ export function ExportModal({
             </div>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">选择脚本模板</label>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">选择脚本模板</label>
               <div className="space-y-2">
                 {scripts.map((script) => (
                   <button
@@ -357,7 +357,7 @@ export function ExportModal({
                     className={`w-full flex items-center p-3 rounded-xl border transition-all ${
                       exportConfig.templateName === script.name
                         ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-600/20'
-                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-zinc-200/80 dark:hover:border-slate-600'
+                        : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-200/80 dark:hover:border-zinc-600'
                     }`}
                   >
                     <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3">
@@ -365,11 +365,11 @@ export function ExportModal({
                     </div>
                     <div className="text-left">
                       <div
-                        className={`text-sm font-semibold ${exportConfig.templateName === script.name ? 'text-blue-700 dark:text-blue-400' : 'text-slate-900 dark:text-white'}`}
+                        className={`text-sm font-semibold ${exportConfig.templateName === script.name ? 'text-blue-700 dark:text-blue-400' : 'text-zinc-900 dark:text-white'}`}
                       >
                         {script.name}.js
                       </div>
-                      <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
+                      <div className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate max-w-[200px]">
                         {script.code.substring(0, 50)}...
                       </div>
                     </div>
@@ -379,8 +379,8 @@ export function ExportModal({
                   </button>
                 ))}
                 {scripts.length === 0 && (
-                  <div className="py-6 text-center border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">暂无脚本，请前往系统设置创建</p>
+                  <div className="py-6 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl bg-zinc-50 dark:bg-zinc-800/50">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">暂无脚本，请前往系统设置创建</p>
                   </div>
                 )}
               </div>
@@ -389,8 +389,8 @@ export function ExportModal({
 
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">选择并排序导出列</label>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">选择并排序导出列</label>
+              <span className="text-[10px] text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-700 px-2 py-0.5 rounded-full">
                 拖拽左侧图标进行排序
               </span>
             </div>
@@ -420,13 +420,13 @@ export function ExportModal({
           </div>
         </div>
 
-        <div className="w-full md:w-2/3 flex flex-col items-center bg-slate-100 dark:bg-slate-900 p-6 overflow-auto relative min-h-[400px] h-full custom-scrollbar">
-          <div className="sticky top-0 self-start text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-6 -ml-6 mb-4">
+        <div className="w-full md:w-2/3 flex flex-col items-center bg-zinc-100 dark:bg-zinc-900 p-6 overflow-auto relative min-h-[400px] h-full custom-scrollbar">
+          <div className="sticky top-0 self-start text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-zinc-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-6 -ml-6 mb-4">
             打印预览
           </div>
-          <div className="w-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl p-8">
+          <div className="w-full bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl p-8">
             <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{exportConfig.title}</h1>
+              <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">{exportConfig.title}</h1>
             </div>
             <table className="w-full border-collapse text-sm">
               <thead>
@@ -436,7 +436,7 @@ export function ExportModal({
                     .map((col: ExportColumn) => (
                       <th
                         key={col.key as string}
-                        className="border border-zinc-200/80 dark:border-slate-600 px-3 py-2 bg-slate-50 dark:bg-slate-700 text-left font-semibold text-slate-700 dark:text-slate-200"
+                        className="border border-zinc-200/80 dark:border-zinc-600 px-3 py-2 bg-zinc-50 dark:bg-zinc-700 text-left font-semibold text-zinc-700 dark:text-zinc-200"
                       >
                         {col.label}
                       </th>
@@ -454,9 +454,9 @@ export function ExportModal({
                         .map((col: ExportColumn) => (
                           <td
                             key={col.key as string}
-                            className="border border-zinc-200/80 dark:border-slate-600 px-3 py-2 text-slate-600 dark:text-slate-300"
+                            className="border border-zinc-200/80 dark:border-zinc-600 px-3 py-2 text-zinc-600 dark:text-zinc-300"
                           >
-                            {(u as Record<string, unknown>)[col.key as string] as string || '-'}
+                            {(u as unknown as Record<string, unknown>)[col.key as string] as string || '-'}
                           </td>
                         ))}
                     </tr>
@@ -464,7 +464,7 @@ export function ExportModal({
               </tbody>
             </table>
             {users.filter((u) => (exportConfig.includeResigned ? true : u.status !== '离职')).length > 10 && (
-              <div className="text-center py-4 text-sm text-slate-500 dark:text-slate-400">
+              <div className="text-center py-4 text-sm text-zinc-500 dark:text-zinc-400">
                 ... 仅显示前 10 条预览数据，共{' '}
                 {users.filter((u) => (exportConfig.includeResigned ? true : u.status !== '离职')).length} 条 ...
               </div>

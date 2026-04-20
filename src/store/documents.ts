@@ -1,35 +1,7 @@
 import { create } from 'zustand';
 import { api } from '../services/mockApi';
-
-export type Folder = {
-  id: string;
-  name: string;
-  parentId: string | null;
-};
-
-export type Document = {
-  id: string;
-  name: string;
-  type: string;
-  url: string;
-  size: number;
-  uploadedAt: string;
-  folderId: string | null;
-};
-
-export type PrintSettings = {
-  duplex: boolean;
-  color: boolean;
-  copies: number;
-};
-
-export type DocumentSet = {
-  id: string;
-  name: string;
-  description: string;
-  documentIds: string[];
-  printSettings?: Record<string, PrintSettings>;
-};
+import { Folder, Document, DocumentSet } from '../types';
+import { createAsyncAction } from './utils';
 
 interface DocumentState {
   folders: Folder[];
@@ -53,7 +25,7 @@ interface DocumentState {
   removeDocumentSet: (id: string) => Promise<void>;
 }
 
-export const useDocumentStore = create<DocumentState>()((set) => ({
+export const useDocumentStore = create<DocumentState>()((set, get) => ({
   folders: [],
   documents: [],
   documentSets: [],
@@ -61,142 +33,106 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
   error: null,
 
   fetchData: async () => {
-    set({ isLoading: true, error: null });
-    try {
+    return createAsyncAction(set, async () => {
       const [folders, documents, documentSets] = await Promise.all([
         api.fetchFolders(),
         api.fetchDocuments(),
         api.fetchDocumentSets(),
       ]);
-      set({ folders, documents, documentSets, isLoading: false });
-    } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
-    }
+      return { folders, documents, documentSets };
+    });
   },
 
   addFolder: async (folder) => {
-    set({ isLoading: true, error: null });
-    try {
+    return createAsyncAction(set, async () => {
       const newFolder = await api.createFolder(folder);
-      set((state) => ({ folders: [...state.folders, newFolder], isLoading: false }));
-    } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
-    }
+      return { folders: [...get().folders, newFolder] };
+    });
   },
 
   updateFolder: async (id, folder) => {
-    set({ isLoading: true, error: null });
-    try {
+    return createAsyncAction(set, async () => {
       const updatedFolder = await api.updateFolder(id, folder);
-      set((state) => ({
-        folders: state.folders.map((f) => (f.id === id ? updatedFolder : f)),
-        isLoading: false,
-      }));
-    } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
-    }
+      return {
+        folders: get().folders.map((f) => (f.id === id ? updatedFolder : f)),
+      };
+    });
   },
 
   removeFolder: async (id) => {
-    set({ isLoading: true, error: null });
-    try {
+    return createAsyncAction(set, async () => {
       await api.deleteFolder(id);
-      set((state) => {
-        const getSubFolders = (parentId: string, allFolders: Folder[]): string[] => {
-          const children = allFolders.filter((f) => f.parentId === parentId).map((f) => f.id);
-          return children.reduce((acc, childId) => [...acc, ...getSubFolders(childId, allFolders)], children);
-        };
-        const folderIdsToRemove = [id, ...getSubFolders(id, state.folders)];
+      
+      const state = get();
+      const getSubFolders = (parentId: string, allFolders: Folder[]): string[] => {
+        const children = allFolders.filter((f) => f.parentId === parentId).map((f) => f.id);
+        return children.reduce((acc, childId) => [...acc, ...getSubFolders(childId, allFolders)], children);
+      };
+      const folderIdsToRemove = [id, ...getSubFolders(id, state.folders)];
 
-        const removedDocIds = state.documents
-          .filter((d) => d.folderId !== null && folderIdsToRemove.includes(d.folderId))
-          .map((d) => d.id);
+      const removedDocIds = state.documents
+        .filter((d) => d.folderId !== null && folderIdsToRemove.includes(d.folderId))
+        .map((d) => d.id);
 
-        return {
-          folders: state.folders.filter((f) => !folderIdsToRemove.includes(f.id)),
-          documents: state.documents.filter((d) => d.folderId === null || !folderIdsToRemove.includes(d.folderId)),
-          documentSets: state.documentSets.map((s) => ({
-            ...s,
-            documentIds: s.documentIds.filter((did) => !removedDocIds.includes(did)),
-          })),
-          isLoading: false,
-        };
-      });
-    } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
-    }
+      return {
+        folders: state.folders.filter((f) => !folderIdsToRemove.includes(f.id)),
+        documents: state.documents.filter((d) => d.folderId === null || !folderIdsToRemove.includes(d.folderId)),
+        documentSets: state.documentSets.map((s) => ({
+          ...s,
+          documentIds: s.documentIds.filter((did) => !removedDocIds.includes(did)),
+        })),
+      };
+    });
   },
 
   addDocument: async (doc) => {
-    set({ isLoading: true, error: null });
-    try {
+    return createAsyncAction(set, async () => {
       const newDoc = await api.createDocument(doc);
-      set((state) => ({ documents: [...state.documents, newDoc], isLoading: false }));
-    } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
-    }
+      return { documents: [...get().documents, newDoc] };
+    });
   },
 
   updateDocument: async (id, doc) => {
-    set({ isLoading: true, error: null });
-    try {
+    return createAsyncAction(set, async () => {
       const updatedDoc = await api.updateDocument(id, doc);
-      set((state) => ({
-        documents: state.documents.map((d) => (d.id === id ? updatedDoc : d)),
-        isLoading: false,
-      }));
-    } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
-    }
+      return {
+        documents: get().documents.map((d) => (d.id === id ? updatedDoc : d)),
+      };
+    });
   },
 
   removeDocument: async (id) => {
-    set({ isLoading: true, error: null });
-    try {
+    return createAsyncAction(set, async () => {
       await api.deleteDocument(id);
-      set((state) => ({
-        documents: state.documents.filter((d) => d.id !== id),
-        documentSets: state.documentSets.map((s) => ({ ...s, documentIds: s.documentIds.filter((did) => did !== id) })),
-        isLoading: false,
-      }));
-    } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
-    }
+      return {
+        documents: get().documents.filter((d) => d.id !== id),
+        documentSets: get().documentSets.map((s) => ({ ...s, documentIds: s.documentIds.filter((did) => did !== id) })),
+      };
+    });
   },
 
   addDocumentSet: async (docSet) => {
-    set({ isLoading: true, error: null });
-    try {
+    return createAsyncAction(set, async () => {
       const newSet = await api.createDocumentSet(docSet);
-      set((state) => ({ documentSets: [...state.documentSets, newSet], isLoading: false }));
-    } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
-    }
+      return { documentSets: [...get().documentSets, newSet] };
+    });
   },
 
   updateDocumentSet: async (id, docSet) => {
-    set({ isLoading: true, error: null });
-    try {
+    return createAsyncAction(set, async () => {
       const updatedSet = await api.updateDocumentSet(id, docSet);
-      set((state) => ({
-        documentSets: state.documentSets.map((s) => (s.id === id ? updatedSet : s)),
-        isLoading: false,
-      }));
-    } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
-    }
+      return {
+        documentSets: get().documentSets.map((s) => (s.id === id ? updatedSet : s)),
+      };
+    });
   },
 
   removeDocumentSet: async (id) => {
-    set({ isLoading: true, error: null });
-    try {
+    return createAsyncAction(set, async () => {
       await api.deleteDocumentSet(id);
-      set((state) => ({
-        documentSets: state.documentSets.filter((s) => s.id !== id),
-        isLoading: false,
-      }));
-    } catch (error: unknown) {
-      set({ error: error instanceof Error ? error.message : String(error), isLoading: false });
-    }
+      return {
+        documentSets: get().documentSets.filter((s) => s.id !== id),
+      };
+    });
   },
 }));

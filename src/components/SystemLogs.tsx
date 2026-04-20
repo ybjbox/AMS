@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { useLogStore, LogLevel } from '../store/logs';
+import { useLogStore, LogLevel } from '../store/useLogStore';
 import {
   AlertCircle,
   AlertTriangle,
@@ -70,8 +70,8 @@ export default function SystemLogs() {
     <div className="animate-in fade-in duration-300 h-full flex flex-col">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-lg font-medium text-slate-900 dark:text-white">系统日志</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">查看和分析系统运行日志</p>
+          <h2 className="text-lg font-medium text-zinc-900 dark:text-white">系统日志</h2>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">查看和分析系统运行日志</p>
         </div>
         <button
           onClick={clearLogs}
@@ -82,22 +82,22 @@ export default function SystemLogs() {
         </button>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl overflow-hidden flex flex-col flex-1 min-h-0">
-        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row gap-4">
+      <div className="bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl overflow-hidden flex flex-col flex-1 min-h-0">
+        <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
             <input
               type="text"
               placeholder="搜索日志内容、来源或详情..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-zinc-200/80 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200"
+              className="w-full pl-9 pr-4 py-2 text-sm border border-zinc-200/80 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200"
             />
           </div>
           <div className="flex items-center space-x-2">
-            <Filter className="w-4 h-4 text-slate-400" />
+            <Filter className="w-4 h-4 text-zinc-400" />
             <Select value={filterLevel} onValueChange={(value) => setFilterLevel(value as LogLevel | 'ALL')}>
-              <SelectTrigger className="w-[180px] text-sm border border-zinc-200/80 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200">
+              <SelectTrigger className="w-[180px] text-sm border border-zinc-200/80 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200">
                 <SelectValue placeholder="所有等级">
                   {(val) =>
                     val === 'ALL'
@@ -128,39 +128,39 @@ export default function SystemLogs() {
               <EmptyState title="暂无日志记录" description="没有找到符合条件的日志记录" icon={Info} />
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-              <thead className="bg-slate-50 dark:bg-slate-900/50 sticky top-0 z-10">
+            <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
+              <thead className="bg-zinc-50 dark:bg-zinc-900/50 sticky top-0 z-10">
                 <tr>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider w-48"
+                    className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider w-48"
                   >
                     时间
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider w-24"
+                    className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider w-24"
                   >
                     等级
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider w-32"
+                    className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider w-32"
                   >
                     来源
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider"
                   >
                     内容
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+              <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
                 {filteredLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 font-mono">
+                  <tr key={log.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400 font-mono">
                       {new Date(log.timestamp).toLocaleString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -171,10 +171,10 @@ export default function SystemLogs() {
                         <span className="ml-1">{log.level}</span>
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
                       {log.source || '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-900 dark:text-slate-200">
+                    <td className="px-6 py-4 text-sm text-zinc-900 dark:text-zinc-200">
                       <div className="flex items-start justify-between gap-4">
                         <div className="font-medium">{log.message}</div>
                         {log.details && (
@@ -197,7 +197,7 @@ export default function SystemLogs() {
                         )}
                       </div>
                       {log.details && expandedLogs.has(log.id) && (
-                        <div className="mt-2 text-xs text-slate-500 dark:text-slate-400 font-mono bg-slate-50 dark:bg-slate-900 p-3 rounded border border-slate-100 dark:border-slate-700 overflow-x-auto whitespace-pre-wrap">
+                        <div className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 font-mono bg-zinc-50 dark:bg-zinc-900 p-3 rounded border border-zinc-100 dark:border-zinc-700 overflow-x-auto whitespace-pre-wrap">
                           {log.details}
                         </div>
                       )}

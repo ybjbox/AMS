@@ -10,7 +10,7 @@ import ProtectedRoute from './components/layout/ProtectedRoute';
 import { useAppSettings, useLoadingStore } from './store/appSettings';
 import ConnectivityListener from './components/ConnectivityListener';
 import { useInitData } from './hooks/useInitData';
-import { useNotificationStore } from './store/notifications';
+import { useNotificationStore } from './store/useNotificationStore';
 import { EVENT_KEYS } from './config/constants';
 import { Toaster, toast } from 'sonner';
 import { ConfirmProvider } from './hooks/useConfirm';

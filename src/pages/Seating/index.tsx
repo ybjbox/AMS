@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useBodyOverflow } from '../../hooks/useBodyOverflow';
-import { useEmployeeStore } from '../../store/employees';
-import { useDepartments } from '../../store/departments';
+import { useEmployeeStore } from '../../store/useEmployeeStore';
+import { useDepartments } from '../../store/useDepartmentStore';
 import { Armchair, Printer } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
+import { User } from '../../types';
 
 import { SeatingToolbar } from './components/SeatingToolbar';
 import { TableConfig } from './components/TableConfig';
@@ -87,7 +88,7 @@ export default function Seating() {
           status: '在职',
           joinDate: new Date().toISOString(),
         },
-      ];
+      ] as User[];
       setUploadedUsers(newUsers);
       setSelectedUserIds(new Set(newUsers.map((u) => u.id)));
       toast.success('成功从后端获取到名单 (Mock)');
@@ -195,12 +196,12 @@ export default function Seating() {
             ))}
           </div>
         ) : (
-          <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700">
+          <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-zinc-800 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-700">
             <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-full mb-4">
               <Armchair className="w-12 h-12 text-blue-400 dark:text-blue-600" />
             </div>
-            <h3 className="text-lg font-medium text-slate-900 dark:text-white">准备好开始排座了吗？</h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 max-w-sm text-center">
+            <h3 className="text-lg font-medium text-zinc-900 dark:text-white">准备好开始排座了吗？</h3>
+            <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1 max-w-sm text-center">
               点击右上角的“自动排座”按钮，系统将根据员工的部门和职位优先级为您生成最佳方案。
             </p>
           </div>
@@ -237,7 +238,7 @@ export default function Seating() {
             <button
               type="button"
               onClick={() => setIsPrintWarningOpen(false)}
-              className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
+              className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-zinc-600 shadow-sm px-4 py-2 bg-white dark:bg-zinc-700 text-base font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
             >
               我知道了
             </button>
@@ -260,11 +261,11 @@ export default function Seating() {
           </div>
           <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
             <div className="mt-2">
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
                 由于您当前处于预览模式，浏览器的打印功能可能无法正常工作。
                 <br />
                 <br />
-                请点击右上角的<strong className="text-slate-700 dark:text-slate-300">“在新标签页中打开”</strong>
+                请点击右上角的<strong className="text-zinc-700 dark:text-zinc-300">“在新标签页中打开”</strong>
                 按钮，或者复制当前网址到新标签页中打开，然后再进行打印。
               </p>
             </div>

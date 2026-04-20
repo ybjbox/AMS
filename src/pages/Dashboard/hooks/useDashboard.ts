@@ -75,8 +75,8 @@ export function useDashboard(): UseDashboardReturn {
     {
       name: '系统设置',
       icon: Settings,
-      color: 'text-slate-600 dark:text-slate-400',
-      bg: 'bg-slate-50 dark:bg-slate-800',
+      color: 'text-zinc-600 dark:text-zinc-400',
+      bg: 'bg-zinc-50 dark:bg-zinc-800',
     },
   ];
 

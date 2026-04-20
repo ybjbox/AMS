@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { useEmployeeStore } from '../store/employees';
+import { useEmployeeStore } from '../store/useEmployeeStore';
 import { useUserStore } from '../store/useUserStore';
-import { useTodoStore } from '../store/todos';
-import { useNotificationStore } from '../store/notifications';
+import { useTodoStore } from '../store/useTodoStore';
+import { useNotificationStore } from '../store/useNotificationStore';
 
 export function useEmployeeReminders() {
   const userInfo = useUserStore((state) => state.userInfo);

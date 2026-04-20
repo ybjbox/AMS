@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Bell } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
-import { useNotificationStore } from '../../../store/notifications';
+import { useNotificationStore } from '../../../store/useNotificationStore';
 import NotificationPanel from './NotificationPanel';
 
 export default function NotificationTrigger() {

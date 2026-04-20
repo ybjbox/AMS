@@ -1,4 +1,4 @@
-import { flattenDepartments } from '../store/departments';
+import { flattenDepartments } from '../store/useDepartmentStore';
 import { DepartmentNode } from '../types';
 
 export const getSubDepartments = (deptName: string, nodes: DepartmentNode[]): string[] => {

@@ -256,7 +256,7 @@ export default function ThemesPanel() {
                 <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 block">效果预览</label>
                 <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden shadow-sm">
                   <div
-                    className="h-10 flex items-center justify-center text-sm font-bold text-zinc-900"
+                    className="h-10 flex items-center justify-center text-sm font-bold text-zinc-900 dark:text-zinc-200"
                     style={{ backgroundColor: `#${theme.titleFill.substring(2)}` }}
                   >
                     员工信息表预览
@@ -297,19 +297,19 @@ export default function ThemesPanel() {
                   </div>
                   <div className="h-6 grid grid-cols-3 gap-px bg-zinc-200 dark:bg-zinc-700">
                     <div
-                      className="flex items-center px-2 text-[10px] text-zinc-900"
+                      className="flex items-center px-2 text-[10px] text-zinc-900 dark:text-zinc-200"
                       style={{ backgroundColor: `#${theme.zebraFill.substring(2)}` }}
                     >
                       002
                     </div>
                     <div
-                      className="flex items-center px-2 text-[10px] text-zinc-900"
+                      className="flex items-center px-2 text-[10px] text-zinc-900 dark:text-zinc-200"
                       style={{ backgroundColor: `#${theme.zebraFill.substring(2)}` }}
                     >
                       李四
                     </div>
                     <div
-                      className="flex items-center px-2 text-[10px] text-zinc-900"
+                      className="flex items-center px-2 text-[10px] text-zinc-900 dark:text-zinc-200"
                       style={{ backgroundColor: `#${theme.zebraFill.substring(2)}` }}
                     >
                       人事部

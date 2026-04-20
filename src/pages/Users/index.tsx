@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useConfirm } from '../../hooks/useConfirm';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useDepartments } from '../../store/departments';
+import { useDepartments } from '../../store/useDepartmentStore';
 import { useUserStore as useAuthStore } from '../../store/useUserStore';
 import { useBodyOverflow } from '../../hooks/useBodyOverflow';
-import { useEmployeeStore } from '../../store/employees';
+import { useEmployeeStore } from '../../store/useEmployeeStore';
 import { User } from '../../types';
 import { UserTable } from '../../components/users/UserTable';
 import { UserToolbar } from './components/UserToolbar';
@@ -14,6 +14,7 @@ import { ExportModal } from './components/ExportModal';
 import { AddressBookModal } from './components/AddressBookModal';
 import { useUserFilters } from './hooks/useUserFilters';
 import { useExport } from './hooks/useExport';
+import { ExportColumn } from './constants';
 
 export default function Users() {
   const confirm = useConfirm();
@@ -140,10 +141,10 @@ export default function Users() {
             />
           </div>
 
-          <div className="shrink-0 px-4 py-3 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50 rounded-b-3xl">
+          <div className="shrink-0 px-4 py-3 border-t border-zinc-200 dark:border-zinc-700 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-800/50 rounded-b-3xl">
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm text-slate-700 dark:text-slate-300">
+              <p className="text-sm text-zinc-700 dark:text-zinc-300">
                 显示第 <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> 到{' '}
                 <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredUsers.length)}</span> 条，
                 共 <span className="font-medium">{filteredUsers.length}</span> 条记录
@@ -154,18 +155,18 @@ export default function Users() {
                 <button
                   onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="sr-only">上一页</span>
                   <ChevronLeft className="h-4 w-4" />
                 </button>
-                <span className="relative inline-flex items-center px-4 py-2 border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300">
+                <span className="relative inline-flex items-center px-4 py-2 border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-sm font-medium text-zinc-700 dark:text-zinc-300">
                   {currentPage} / {totalPages || 1}
                 </span>
                 <button
                   onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages || totalPages === 0}
-                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-zinc-200/80 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="sr-only">下一页</span>
                   <ChevronRight className="h-4 w-4" />
@@ -175,23 +176,26 @@ export default function Users() {
           </div>
 
           <div className="flex items-center justify-between w-full sm:hidden">
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="relative inline-flex items-center px-4 py-2 border border-zinc-200/80 dark:border-slate-600 text-sm font-medium rounded-md text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50"
-            >
-              上一页
-            </button>
-            <span className="text-sm text-slate-700 dark:text-slate-300">
-              {currentPage} / {totalPages || 1}
-            </span>
-            <button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages || totalPages === 0}
-              className="relative inline-flex items-center px-4 py-2 border border-zinc-200/80 dark:border-slate-600 text-sm font-medium rounded-md text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 disabled:opacity-50"
-            >
-              下一页
-            </button>
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">共 {filteredUsers.length} 条</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="relative inline-flex items-center px-4 py-2 border border-zinc-200/80 dark:border-zinc-600 text-sm font-medium rounded-md text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-600 disabled:opacity-50"
+              >
+                上一页
+              </button>
+              <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                {currentPage} / {totalPages || 1}
+              </span>
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages || totalPages === 0}
+                className="relative inline-flex items-center px-4 py-2 border border-zinc-200/80 dark:border-zinc-600 text-sm font-medium rounded-md text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-600 disabled:opacity-50"
+              >
+                下一页
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -263,7 +267,7 @@ export default function Users() {
                     {exportConfig.columns
                       .filter((c: ExportColumn) => c.selected)
                       .map((col: ExportColumn) => (
-                        <td key={col.key}>{(u as Record<string, unknown>)[col.key] as string || '-'}</td>
+                        <td key={col.key}>{(u as unknown as Record<string, unknown>)[col.key] as string || '-'}</td>
                       ))}
                   </tr>
                 ))}
@@ -309,7 +313,7 @@ export default function Users() {
                                   verticalAlign: 'middle',
                                 }}
                               >
-                                {(user as Record<string, unknown>)[col.key] as string || '-'}
+                                {(user as unknown as Record<string, unknown>)[col.key] as string || '-'}
                                 <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
                                   ({user._deptCount}人)
                                 </div>
@@ -321,7 +325,7 @@ export default function Users() {
                               key={col.key}
                               style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center' }}
                             >
-                              {(user as Record<string, unknown>)[col.key] as string || '-'}
+                              {(user as unknown as Record<string, unknown>)[col.key] as string || '-'}
                             </td>
                           );
                         })}
@@ -363,7 +367,7 @@ export default function Users() {
                                     verticalAlign: 'middle',
                                   }}
                                 >
-                                  {(user as Record<string, unknown>)[col.key] as string || '-'}
+                                  {(user as unknown as Record<string, unknown>)[col.key] as string || '-'}
                                   <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
                                     ({user._deptCount}人)
                                   </div>
@@ -375,7 +379,7 @@ export default function Users() {
                                 key={col.key}
                                 style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center' }}
                               >
-                                {(user as Record<string, unknown>)[col.key] as string || '-'}
+                                {(user as unknown as Record<string, unknown>)[col.key] as string || '-'}
                               </td>
                             );
                           })}

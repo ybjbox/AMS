@@ -1,6 +1,6 @@
 import React from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
-import { Folder as FolderType } from '../../../store/documents';
+import { Folder as FolderType } from '../../../store/useDocumentStore';
 
 interface FolderFormModalProps {
   isOpen: boolean;
@@ -21,7 +21,7 @@ export function FolderFormModal({ isOpen, onClose, editingFolder, handleSaveFold
           <button
             type="button"
             onClick={onClose}
-            className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
+            className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-zinc-600 shadow-sm px-4 py-2 bg-white dark:bg-zinc-700 text-base font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
           >
             取消
           </button>
@@ -37,7 +37,7 @@ export function FolderFormModal({ isOpen, onClose, editingFolder, handleSaveFold
     >
       <form id="folder-form" onSubmit={handleSaveFolder} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
             文件夹名称 <span className="text-red-500">*</span>
           </label>
           <input
@@ -47,7 +47,7 @@ export function FolderFormModal({ isOpen, onClose, editingFolder, handleSaveFold
             type="text"
             defaultValue={editingFolder?.name}
             placeholder="如：人事文件"
-            className="block w-full border border-zinc-200/80 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+            className="block w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
           />
         </div>
       </form>

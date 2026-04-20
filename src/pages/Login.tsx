@@ -1,12 +1,20 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building2, User, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useAppSettings, useLoadingStore } from '../store/appSettings';
 import { useUserStore } from '../store/useUserStore';
 
+const loginSchema = z.object({
+  username: z.string().min(1, '请输入用户名'),
+  password: z.string().min(1, '请输入密码'),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
+
 export default function Login() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { globalLoading: loading, setLoading } = useLoadingStore();
   const setUser = useUserStore((state) => state.setUser);
@@ -14,23 +22,37 @@ export default function Login() {
   const loginBackground = useAppSettings((state) => state.loginBackground);
   const systemIcon = useAppSettings((state) => state.systemIcon);
 
-  const handleLogin = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      username: '',
+      password: '',
+    },
+  });
+
+  const onSubmit = useCallback(
+    async (data: LoginFormValues) => {
       setLoading(true);
 
       // 模拟登录请求延迟
-      setTimeout(() => {
-        setLoading(false);
-        // 临时调试：为模拟用户赋予 admin 角色，以获得所有权限
-        setUser(
-          { id: 'ADMIN001', username: username || 'admin', email: 'admin@example.com', role: 'admin' },
-          'mock_token_123'
-        );
-        navigate('/');
-      }, 1000);
+      return new Promise<void>((resolve) => {
+        setTimeout(() => {
+          setLoading(false);
+          // 临时调试：为模拟用户赋予 admin 角色，以获得所有权限
+          setUser(
+            { id: 'ADMIN001', username: data.username || 'admin', email: 'admin@example.com', role: 'admin' },
+            'mock_token_123'
+          );
+          navigate('/');
+          resolve();
+        }, 1000);
+      });
     },
-    [username, setLoading, setUser, navigate]
+    [setLoading, setUser, navigate]
   );
 
   return (
@@ -60,7 +82,7 @@ export default function Login() {
         <div className="flex justify-center">
           <div className="w-14 h-14 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 overflow-hidden">
             {systemIcon ? (
-              <img src={systemIcon} alt="Logo" className="w-full h-full object-contain bg-white" />
+              <img src={systemIcon} alt="Logo" className="w-full h-full object-contain bg-white dark:bg-zinc-800" />
             ) : (
               <Building2 className="h-8 w-8 text-white" />
             )}
@@ -80,7 +102,7 @@ export default function Login() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md animate-in fade-in slide-in-from-bottom-8 duration-700 delay-150 fill-mode-both">
         <div className="bg-white dark:bg-zinc-800 py-8 px-4 shadow-xl shadow-zinc-200/40 dark:shadow-none border border-zinc-100 dark:border-zinc-700 sm:rounded-2xl sm:px-10">
-          <form className="space-y-6" onSubmit={handleLogin}>
+          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 用户名
@@ -90,16 +112,14 @@ export default function Login() {
                   <User className="h-5 w-5 text-zinc-400" />
                 </div>
                 <input
+                  {...register('username')}
                   id="username"
-                  name="username"
                   type="text"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="block w-full pl-10 py-2.5 sm:text-sm border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-lg border focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 outline-none"
+                  className={`block w-full pl-10 py-2.5 sm:text-sm border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-lg border focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 outline-none ${errors.username ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
                   placeholder="请输入用户名 (admin)"
                 />
               </div>
+              {errors.username && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.username.message}</p>}
             </div>
 
             <div>
@@ -111,13 +131,10 @@ export default function Login() {
                   <Lock className="h-5 w-5 text-zinc-400" />
                 </div>
                 <input
+                  {...register('password')}
                   id="password"
-                  name="password"
                   type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-10 py-2.5 sm:text-sm border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-lg border focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 outline-none"
+                  className={`block w-full pl-10 pr-10 py-2.5 sm:text-sm border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-lg border focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 outline-none ${errors.password ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
                   placeholder="请输入密码 (123456)"
                 />
                 <button
@@ -129,6 +146,7 @@ export default function Login() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              {errors.password && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.password.message}</p>}
             </div>
 
             <div className="flex items-center justify-between">
@@ -160,10 +178,10 @@ export default function Login() {
             <div>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || isSubmitting}
                 className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 disabled:opacity-70 disabled:cursor-not-allowed group"
               >
-                {loading ? (
+                {loading || isSubmitting ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   <>
@@ -178,10 +196,10 @@ export default function Login() {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-zinc-200" />
+                <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-zinc-500">测试账号: admin / 123456</span>
+                <span className="px-2 bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">测试账号: admin / 123456</span>
               </div>
             </div>
           </div>

@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { File, FileText, ImageIcon, FileArchive, Search, ChevronRight } from 'lucide-react';
-import { Document } from '../../../store/documents';
+import { Document } from '../../../store/useDocumentStore';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 interface FileListProps {
@@ -29,17 +29,17 @@ export function FileList({
   formatFileSize,
 }: FileListProps) {
   const getFileIcon = useCallback((type: string) => {
-    if (!type) return <File className="w-8 h-8 text-slate-500" />;
+    if (!type) return <File className="w-8 h-8 text-zinc-500" />;
     if (type.includes('pdf')) return <FileText className="w-8 h-8 text-red-500" />;
     if (type.includes('image')) return <ImageIcon className="w-8 h-8 text-blue-600" />;
     if (type.includes('zip') || type.includes('rar')) return <FileArchive className="w-8 h-8 text-amber-500" />;
-    return <File className="w-8 h-8 text-slate-500" />;
+    return <File className="w-8 h-8 text-zinc-500" />;
   }, []);
 
   return (
-    <div className="flex-1 bg-white dark:bg-slate-800 shadow-sm border border-slate-200/60 dark:border-slate-700/60 rounded-xl flex flex-col overflow-hidden">
-      <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-slate-50/50 dark:bg-slate-800/50 gap-4">
-        <div className="flex items-center text-sm text-slate-500 dark:text-slate-400">
+    <div className="flex-1 bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl flex flex-col overflow-hidden">
+      <div className="p-4 border-b border-zinc-100 dark:border-zinc-700 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-zinc-50/50 dark:bg-zinc-800/50 gap-4">
+        <div className="flex items-center text-sm text-zinc-500 dark:text-zinc-400">
           <button
             onClick={() => onBreadcrumbClick(null)}
             className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
@@ -59,13 +59,13 @@ export function FileList({
           ))}
         </div>
         <div className="relative">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400" />
           <input
             type="text"
             placeholder="搜索文件名称或类型..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-4 py-1.5 text-sm border border-slate-200 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200 w-full sm:w-64 transition-all"
+            className="pl-9 pr-4 py-1.5 text-sm border border-zinc-200 dark:border-zinc-600 rounded-md bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200 w-full sm:w-64 transition-all"
           />
         </div>
       </div>
@@ -79,39 +79,39 @@ export function FileList({
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-              <thead className="bg-slate-50 dark:bg-slate-800/50 sticky top-0 z-10">
+            <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
+              <thead className="bg-zinc-50 dark:bg-zinc-800/50 sticky top-0 z-10">
                 <tr>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider"
                   >
                     文件名称
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider"
                   >
                     大小
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider"
                   >
                     上传时间
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider"
+                    className="px-6 py-3 text-right text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider"
                   >
                     操作
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+              <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                    <td colSpan={4} className="px-6 py-12 text-center text-zinc-500 dark:text-zinc-400">
                       <div className="flex flex-col items-center justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
                         <p>加载中...</p>
@@ -120,28 +120,28 @@ export function FileList({
                   </tr>
                 ) : (
                   documents.map((doc) => (
-                    <tr key={doc.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                    <tr key={doc.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-lg">
+                          <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-zinc-100 dark:bg-zinc-700 rounded-lg">
                             {getFileIcon(doc.type)}
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-slate-900 dark:text-slate-200">{doc.name}</div>
-                            <div className="text-xs text-slate-500 dark:text-slate-400">{doc.type.toUpperCase()}</div>
+                            <div className="text-sm font-medium text-zinc-900 dark:text-zinc-200">{doc.name}</div>
+                            <div className="text-xs text-zinc-500 dark:text-zinc-400">{doc.type.toUpperCase()}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
                         {formatFileSize(doc.size)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
                         {doc.uploadedAt}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
                           onClick={() => onMoveDocClick(doc.id, doc.folderId || null)}
-                          className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 mr-4"
+                          className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 mr-4"
                         >
                           移动
                         </button>

@@ -138,14 +138,14 @@ export default function NameCardPreview({
         marks.push(
           <div
             key={`top-${i}`}
-            className="absolute top-0 bg-slate-400 z-10 print:bg-black"
+            className="absolute top-0 bg-zinc-400 z-10 print:bg-black"
             style={{ left: `${x}mm`, width: '1px', height: '5mm' }}
           />
         );
         marks.push(
           <div
             key={`bottom-${i}`}
-            className="absolute bottom-0 bg-slate-400 z-10 print:bg-black"
+            className="absolute bottom-0 bg-zinc-400 z-10 print:bg-black"
             style={{ left: `${x}mm`, width: '1px', height: '5mm' }}
           />
         );
@@ -159,14 +159,14 @@ export default function NameCardPreview({
         marks.push(
           <div
             key={`left-${i}`}
-            className="absolute left-0 bg-slate-400 z-10 print:bg-black"
+            className="absolute left-0 bg-zinc-400 z-10 print:bg-black"
             style={{ top: `${y}mm`, width: '5mm', height: '1px' }}
           />
         );
         marks.push(
           <div
             key={`right-${i}`}
-            className="absolute right-0 bg-slate-400 z-10 print:bg-black"
+            className="absolute right-0 bg-zinc-400 z-10 print:bg-black"
             style={{ top: `${y}mm`, width: '5mm', height: '1px' }}
           />
         );
@@ -178,8 +178,8 @@ export default function NameCardPreview({
 
   return (
     <>
-      <div className="flex-1 bg-slate-100 dark:bg-slate-900 overflow-auto p-8 flex flex-col items-center space-y-8 min-h-0 relative print:hidden">
-        <div className="sticky top-0 self-start text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-8 -ml-8 mb-4">
+      <div className="flex-1 bg-zinc-100 dark:bg-zinc-900 overflow-auto p-8 flex flex-col items-center space-y-8 min-h-0 relative print:hidden">
+        <div className="sticky top-0 self-start text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-zinc-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-8 -ml-8 mb-4">
           打印预览 ({pages.length}页)
         </div>
 
@@ -191,7 +191,7 @@ export default function NameCardPreview({
           <div className="flex flex-col gap-8 items-center w-full pt-2">
             {pages.map((pageCards, pageIdx) => (
               <div key={`page-${pageIdx}`} className="flex flex-col items-center">
-                <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">
+                <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">
                   预览纸张: {printSettings.paperSize} ({printSettings.paperWidth}x{printSettings.paperHeight}mm) - 第{' '}
                   {pageIdx + 1} 页
                 </div>
@@ -203,7 +203,7 @@ export default function NameCardPreview({
                   className="flex-shrink-0 relative"
                 >
                   <div
-                    className="absolute top-0 left-0 bg-white dark:bg-slate-800 shadow-lg origin-top-left transition-all duration-300"
+                    className="absolute top-0 left-0 bg-white dark:bg-zinc-800 shadow-lg origin-top-left transition-all duration-300"
                     style={{
                       width: `${printSettings.paperWidth}mm`,
                       height: `${printSettings.paperHeight}mm`,
@@ -228,7 +228,7 @@ export default function NameCardPreview({
                       {pageCards.map((user, idx) => (
                         <div
                           key={`${user.id}-${idx}`}
-                          className="border border-slate-200 dark:border-slate-700 border-dashed flex flex-col justify-center overflow-hidden relative print:border-none"
+                          className="border border-zinc-200 dark:border-zinc-700 border-dashed flex flex-col justify-center overflow-hidden relative print:border-none"
                           style={{
                             backgroundColor: printSettings.backgroundColor,
                             color: printSettings.fontColor,
@@ -238,7 +238,7 @@ export default function NameCardPreview({
                         >
                           {printSettings.isDoubleSided ? (
                             <>
-                              <div className="flex-1 border-b border-slate-200 dark:border-slate-700 border-dashed flex items-center justify-center">
+                              <div className="flex-1 border-b border-zinc-200 dark:border-zinc-700 border-dashed flex items-center justify-center">
                                 {renderCardContent(user, true)}
                               </div>
                               <div className="flex-1 flex items-center justify-center">
@@ -272,7 +272,7 @@ export default function NameCardPreview({
           .print\\:hidden {
             display: none !important;
           }
-          .print\\:bg-white {
+          .print\\:bg-white dark:bg-zinc-800 {
             background-color: white !important;
           }
           .print\\:h-auto {
@@ -282,11 +282,11 @@ export default function NameCardPreview({
       `}</style>
 
       {/* Actual Printable Area */}
-      <div className="hidden print:block w-full bg-white">
+      <div className="hidden print:block w-full bg-white dark:bg-zinc-800">
         {pages.map((pageCards, pageIdx) => (
           <div
             key={`print-page-${pageIdx}`}
-            className="relative bg-white"
+            className="relative bg-white dark:bg-zinc-800"
             style={{
               width: `${printSettings.paperWidth}mm`,
               height: `${printSettings.paperHeight}mm`,
@@ -321,7 +321,7 @@ export default function NameCardPreview({
                 >
                   {printSettings.isDoubleSided ? (
                     <>
-                      <div className="flex-1 border-b border-slate-200 border-dashed flex items-center justify-center">
+                      <div className="flex-1 border-b border-zinc-200 dark:border-zinc-700 border-dashed flex items-center justify-center">
                         {renderCardContent(user, true)}
                       </div>
                       <div className="flex-1 flex items-center justify-center">{renderCardContent(user, false)}</div>

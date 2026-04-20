@@ -30,7 +30,7 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, hasPermission, 
           <button
             type="button"
             onClick={onClose}
-            className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
+            className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-zinc-600 shadow-sm px-4 py-2 bg-white dark:bg-zinc-700 text-base font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
           >
             取消
           </button>
@@ -96,13 +96,13 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, hasPermission, 
                   printWindow.document.write('body { font-family: sans-serif; padding: 20px; }');
                   printWindow.document.write('.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }');
                   printWindow.document.write(
-                    '.bg-slate-50 { background-color: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; }'
+                    '.bg-zinc-50 { background-color: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; }'
                   );
                   printWindow.document.write(
                     '.flex { display: flex; justify-content: space-between; margin-bottom: 8px; }'
                   );
                   printWindow.document.write('.text-sm { font-size: 14px; }');
-                  printWindow.document.write('.text-slate-500 { color: #64748b; }');
+                  printWindow.document.write('.text-zinc-500 { color: #64748b; }');
                   printWindow.document.write('.font-medium { font-weight: 500; }');
                   printWindow.document.write('h4 { margin-top: 0; margin-bottom: 10px; color: #475569; }');
                   printWindow.document.write('@media print { .md\\:col-span-2 { grid-column: span 2; } }');
@@ -145,44 +145,44 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, hasPermission, 
         <div id="printable-contact-card">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">基本信息</h4>
-              <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-3">
+              <h4 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1">基本信息</h4>
+              <div className="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-4 space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">姓名</span>
-                  <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.name}</span>
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">姓名</span>
+                  <span className="text-sm font-medium text-zinc-900 dark:text-white">{selectedUser.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">工号</span>
-                  <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.id}</span>
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">工号</span>
+                  <span className="text-sm font-medium text-zinc-900 dark:text-white">{selectedUser.id}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">性别</span>
-                  <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.gender}</span>
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">性别</span>
+                  <span className="text-sm font-medium text-zinc-900 dark:text-white">{selectedUser.gender}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">年龄</span>
-                  <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.age}岁</span>
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">年龄</span>
+                  <span className="text-sm font-medium text-zinc-900 dark:text-white">{selectedUser.age}岁</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">联系电话</span>
-                  <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.phone}</span>
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">联系电话</span>
+                  <span className="text-sm font-medium text-zinc-900 dark:text-white">{selectedUser.phone}</span>
                 </div>
               </div>
             </div>
 
             <div>
-              <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">工作信息</h4>
-              <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-3">
+              <h4 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1">工作信息</h4>
+              <div className="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-4 space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">部门</span>
-                  <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.department}</span>
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">部门</span>
+                  <span className="text-sm font-medium text-zinc-900 dark:text-white">{selectedUser.department}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">职位</span>
-                  <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.role}</span>
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">职位</span>
+                  <span className="text-sm font-medium text-zinc-900 dark:text-white">{selectedUser.role}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">状态</span>
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">状态</span>
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                       selectedUser.status === '在职' || selectedUser.status === 'active'
@@ -190,7 +190,7 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, hasPermission, 
                         : selectedUser.status === '试用期'
                           ? 'bg-amber-100 text-amber-800'
                           : selectedUser.status === '离职' || selectedUser.status === 'inactive'
-                            ? 'bg-slate-200 text-slate-800'
+                            ? 'bg-zinc-200 text-zinc-800 dark:text-zinc-200'
                             : 'bg-blue-100 text-blue-800'
                     }`}
                   >
@@ -202,12 +202,12 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, hasPermission, 
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">入职时间</span>
-                  <span className="text-sm font-medium text-slate-900 dark:text-white">{selectedUser.joinDate}</span>
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">入职时间</span>
+                  <span className="text-sm font-medium text-zinc-900 dark:text-white">{selectedUser.joinDate}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">工龄</span>
-                  <span className="text-sm font-medium text-slate-900 dark:text-white">
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">工龄</span>
+                  <span className="text-sm font-medium text-zinc-900 dark:text-white">
                     {selectedUser.yearsOfService}
                   </span>
                 </div>
@@ -215,23 +215,23 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, hasPermission, 
             </div>
 
             <div className="md:col-span-2">
-              <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">合同与权限</h4>
-              <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-3">
+              <h4 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1">合同与权限</h4>
+              <div className="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-4 space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">用工形式</span>
-                  <span className="text-sm font-medium text-slate-900 dark:text-white">
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">用工形式</span>
+                  <span className="text-sm font-medium text-zinc-900 dark:text-white">
                     {selectedUser.employmentType}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">合同到期</span>
-                  <span className="text-sm font-medium text-slate-900 dark:text-white">
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">合同到期</span>
+                  <span className="text-sm font-medium text-zinc-900 dark:text-white">
                     {selectedUser.contractExpiry}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-slate-500 dark:text-slate-400">系统角色</span>
-                  <span className="text-sm font-medium text-slate-900 dark:text-white">
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">系统角色</span>
+                  <span className="text-sm font-medium text-zinc-900 dark:text-white">
                     {selectedUser.systemRole === SystemRole.SUPER_ADMIN
                       ? '超级管理员'
                       : selectedUser.systemRole === SystemRole.ADMIN

@@ -1,17 +1,6 @@
 import { api } from './mockApi';
 import { http } from './api';
-import { User } from '../types';
-
-// 基础的用户信息接口 (From src/api/modules/user.ts)
-export interface UserInfo {
-  id: string | number;
-  username: string;
-  email: string;
-  phone?: string;
-  avatar?: string;
-  status?: number;
-  createdAt?: string;
-}
+import { User, UserInfo } from '../types';
 
 // 获取用户列表的请求参数接口
 export interface GetUserListParams {

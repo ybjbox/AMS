@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Plus, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { useBodyOverflow } from '../../hooks/useBodyOverflow';
-import { useDocumentStore } from '../../store/documents';
+import { useDocumentStore } from '../../store/useDocumentStore';
 
 import { FolderTree } from './components/FolderTree';
 import { FileList } from './components/FileList';
@@ -139,7 +139,7 @@ export default function Documents() {
               <p style="text-align: center; color: #666;">包含 ${printingSet?.documentIds.length} 份文件</p>
               <hr/>
               ${printingSet?.documentIds
-                .map((id) => {
+                .map((id: string) => {
                   const doc = documents.find((d) => d.id === id);
                   if (!doc) return '';
                   const settings = printingSet.printSettings?.[id] || { duplex: false, color: false, copies: 1 };
@@ -193,17 +193,17 @@ export default function Documents() {
     <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">常用文件</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">管理公司常用文件模板，支持一键打包打印</p>
+          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">常用文件</h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">管理公司常用文件模板，支持一键打包打印</p>
         </div>
         <div className="flex items-center space-x-3">
-          <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-lg flex">
+          <div className="bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg flex">
             <button
               onClick={() => setActiveTab('sets')}
               className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
                 activeTab === 'sets'
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
               }`}
             >
               文件套件
@@ -212,8 +212,8 @@ export default function Documents() {
               onClick={() => setActiveTab('files')}
               className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
                 activeTab === 'files'
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
               }`}
             >
               文件库

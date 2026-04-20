@@ -38,7 +38,7 @@ export function PrintSettingsModal({
           <button
             type="button"
             onClick={onClose}
-            className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
+            className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-zinc-600 shadow-sm px-4 py-2 bg-white dark:bg-zinc-700 text-base font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
           >
             取消
           </button>
@@ -57,7 +57,7 @@ export function PrintSettingsModal({
         <div className="w-full md:w-[380px] shrink-0 overflow-y-auto pr-2 min-h-0 custom-scrollbar">
           <div className="space-y-3 pb-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">台卡样式</label>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">台卡样式</label>
               <Select
                 value={printSettings.cardStyle}
                 onValueChange={(val) => {
@@ -69,7 +69,7 @@ export function PrintSettingsModal({
                   }));
                 }}
               >
-                <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
+                <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
                   <SelectValue placeholder="选择样式">
                     {printSettings.cardStyle === 'style1'
                       ? '样式1 (经典双列)'
@@ -87,41 +87,41 @@ export function PrintSettingsModal({
             {printSettings.cardStyle === 'style1' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">台卡标题</label>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">台卡标题</label>
                   <input
                     type="text"
                     value={printSettings.cardTitle}
                     onChange={(e) => setPrintSettings((prev) => ({ ...prev, cardTitle: e.target.value }))}
-                    className="block w-full border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+                    className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">底部文字</label>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">底部文字</label>
                   <input
                     type="text"
                     value={printSettings.footerText}
                     onChange={(e) => setPrintSettings((prev) => ({ ...prev, footerText: e.target.value }))}
-                    className="block w-full border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+                    className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
                   />
                 </div>
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">主题颜色</label>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">主题颜色</label>
               <div className="flex items-center space-x-3">
                 <input
                   type="color"
                   value={printSettings.themeColor}
                   onChange={(e) => setPrintSettings((prev) => ({ ...prev, themeColor: e.target.value }))}
-                  className="h-9 w-14 rounded border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 cursor-pointer p-0.5"
+                  className="h-9 w-14 rounded border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 cursor-pointer p-0.5"
                 />
-                <span className="text-sm text-slate-500 dark:text-slate-400 uppercase">{printSettings.themeColor}</span>
+                <span className="text-sm text-zinc-500 dark:text-zinc-400 uppercase">{printSettings.themeColor}</span>
               </div>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">宽度 (cm)</label>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">宽度 (cm)</label>
               <input
                 type="number"
                 step="0.1"
@@ -132,11 +132,11 @@ export function PrintSettingsModal({
                     cardWidth: Math.round(parseFloat(e.target.value) * 10) || 210,
                   }))
                 }
-                className="block w-full border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+                className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">高度 (cm)</label>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">高度 (cm)</label>
               <input
                 type="number"
                 step="0.1"
@@ -147,14 +147,14 @@ export function PrintSettingsModal({
                     cardHeight: Math.round(parseFloat(e.target.value) * 10) || 297,
                   }))
                 }
-                className="block w-full border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+                className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
               />
             </div>
           </div>
           <div className="text-xs text-blue-600 mt-1">默认使用A4纸的尺寸</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">标题字号 (px)</label>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">标题字号 (px)</label>
               <input
                 type="number"
                 value={printSettings.titleFontSize}
@@ -164,29 +164,29 @@ export function PrintSettingsModal({
                     titleFontSize: parseInt(e.target.value) || (prev.cardStyle === 'style2' ? 30 : 24),
                   }))
                 }
-                className="block w-full border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+                className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">桌号字号 (px)</label>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">桌号字号 (px)</label>
               <input
                 type="number"
                 value={printSettings.numberFontSize}
                 onChange={(e) =>
                   setPrintSettings((prev) => ({ ...prev, numberFontSize: parseInt(e.target.value) || 48 }))
                 }
-                className="block w-full border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+                className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
               />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">标题字体</label>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">标题字体</label>
               <Select
                 value={printSettings.titleFontFamily}
                 onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, titleFontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif' }))}
               >
-                <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
+                <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
                   <SelectValue placeholder="选择字体">
                     {printSettings.titleFontFamily === '"Noto Serif SC", "SimSun", serif'
                       ? '思源宋体 / 宋体'
@@ -208,12 +208,12 @@ export function PrintSettingsModal({
               </Select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">桌号字体</label>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">桌号字体</label>
               <Select
                 value={printSettings.numberFontFamily}
                 onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, numberFontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif' }))}
               >
-                <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
+                <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
                   <SelectValue placeholder="选择字体">
                     {printSettings.numberFontFamily === '"Noto Serif SC", "SimSun", serif'
                       ? '思源宋体 / 宋体'
@@ -235,12 +235,12 @@ export function PrintSettingsModal({
               </Select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">内容字体</label>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">内容字体</label>
               <Select
                 value={printSettings.contentFontFamily}
                 onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, contentFontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif' }))}
               >
-                <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
+                <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
                   <SelectValue placeholder="选择字体">
                     {printSettings.contentFontFamily === '"Noto Serif SC", "SimSun", serif'
                       ? '思源宋体 / 宋体'
@@ -263,12 +263,12 @@ export function PrintSettingsModal({
             </div>
             {printSettings.cardStyle === 'style1' && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">底部字体</label>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">底部字体</label>
                 <Select
                   value={printSettings.footerFontFamily}
                   onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, footerFontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif' }))}
                 >
-                  <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
+                  <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
                     <SelectValue placeholder="选择字体">
                       {printSettings.footerFontFamily === '"Noto Serif SC", "SimSun", serif'
                         ? '思源宋体 / 宋体'
@@ -291,7 +291,7 @@ export function PrintSettingsModal({
               </div>
             )}
           </div>
-          <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+          <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-700">
             {printSettings.cardStyle === 'style1' && (
               <>
                 <label className="flex items-center space-x-2 cursor-pointer">
@@ -299,9 +299,9 @@ export function PrintSettingsModal({
                     type="checkbox"
                     checked={printSettings.showMembers}
                     onChange={(e) => setPrintSettings((prev) => ({ ...prev, showMembers: e.target.checked }))}
-                    className="rounded border-zinc-200/80 dark:border-slate-600 text-blue-600 focus:ring-blue-600 dark:bg-slate-700"
+                    className="rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600 dark:bg-zinc-700"
                   />
-                  <span className="text-sm text-slate-700 dark:text-slate-300">显示成员名单</span>
+                  <span className="text-sm text-zinc-700 dark:text-zinc-300">显示成员名单</span>
                 </label>
                 {printSettings.showMembers && (
                   <div className="pl-6 space-y-2">
@@ -310,31 +310,31 @@ export function PrintSettingsModal({
                         type="checkbox"
                         checked={printSettings.showIndex}
                         onChange={(e) => setPrintSettings((prev) => ({ ...prev, showIndex: e.target.checked }))}
-                        className="rounded border-zinc-200/80 dark:border-slate-600 text-blue-600 focus:ring-blue-600 dark:bg-slate-700"
+                        className="rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600 dark:bg-zinc-700"
                       />
-                      <span className="text-sm text-slate-700 dark:text-slate-300">显示序号</span>
+                      <span className="text-sm text-zinc-700 dark:text-zinc-300">显示序号</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={printSettings.showDepartment}
                         onChange={(e) => setPrintSettings((prev) => ({ ...prev, showDepartment: e.target.checked }))}
-                        className="rounded border-zinc-200/80 dark:border-slate-600 text-blue-600 focus:ring-blue-600 dark:bg-slate-700"
+                        className="rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600 dark:bg-zinc-700"
                       />
-                      <span className="text-sm text-slate-700 dark:text-slate-300">显示部门</span>
+                      <span className="text-sm text-zinc-700 dark:text-zinc-300">显示部门</span>
                     </label>
                     <label className="flex items-center space-x-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={printSettings.showRole}
                         onChange={(e) => setPrintSettings((prev) => ({ ...prev, showRole: e.target.checked }))}
-                        className="rounded border-zinc-200/80 dark:border-slate-600 text-blue-600 focus:ring-blue-600 dark:bg-slate-700"
+                        className="rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600 dark:bg-zinc-700"
                       />
-                      <span className="text-sm text-slate-700 dark:text-slate-300">显示职位</span>
+                      <span className="text-sm text-zinc-700 dark:text-zinc-300">显示职位</span>
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+                        <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
                           内容字号 (px)
                         </label>
                         <input
@@ -343,18 +343,18 @@ export function PrintSettingsModal({
                           onChange={(e) =>
                             setPrintSettings((prev) => ({ ...prev, contentFontSize: parseInt(e.target.value) || 30 }))
                           }
-                          className="block w-full border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-1.5 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+                          className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-1.5 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+                        <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
                           内容对齐
                         </label>
                         <Select
                           value={printSettings.textAlign}
                           onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, textAlign: (val || 'left') as 'left' | 'center' | 'right' }))}
                         >
-                          <SelectTrigger className="w-full bg-white dark:bg-slate-700 border-zinc-200/80 dark:border-slate-600">
+                          <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
                             <SelectValue placeholder="选择对齐方式">
                               {printSettings.textAlign === 'left'
                                 ? '居左'
@@ -380,7 +380,7 @@ export function PrintSettingsModal({
 
             {printSettings.cardStyle === 'style2' && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                   内容字号 (px)
                 </label>
                 <input
@@ -389,7 +389,7 @@ export function PrintSettingsModal({
                   onChange={(e) =>
                     setPrintSettings((prev) => ({ ...prev, contentFontSize: parseInt(e.target.value) || 30 }))
                   }
-                  className="block w-full border border-zinc-200/80 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+                  className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
                 />
               </div>
             )}
@@ -397,15 +397,15 @@ export function PrintSettingsModal({
         </div>
 
         {/* Preview Panel */}
-        <div className="flex-1 flex flex-col items-center bg-slate-100 dark:bg-slate-900 rounded-lg p-6 overflow-y-auto relative min-h-[300px] md:min-h-0">
-          <div className="sticky top-0 self-start text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-6 -ml-6 mb-4">
+        <div className="flex-1 flex flex-col items-center bg-zinc-100 dark:bg-zinc-900 rounded-lg p-6 overflow-y-auto relative min-h-[300px] md:min-h-0">
+          <div className="sticky top-0 self-start text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-zinc-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-6 -ml-6 mb-4">
             打印预览 ({tables.length}桌)
           </div>
 
           <div className="flex flex-col gap-8 items-center w-full pt-2">
             {tables.map((table, tableIndex) => (
               <div key={table.number} className="flex flex-col items-center">
-                <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">第 {tableIndex + 1} 页</div>
+                <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">第 {tableIndex + 1} 页</div>
                 {/* Scale wrapper to maintain layout space for scaled content */}
                 <div
                   style={{
@@ -415,7 +415,7 @@ export function PrintSettingsModal({
                   className="flex-shrink-0 relative"
                 >
                   <div
-                    className="absolute top-0 left-0 flex flex-col bg-white box-border break-inside-avoid shadow-lg transition-all duration-300 origin-top-left"
+                    className="absolute top-0 left-0 flex flex-col bg-white dark:bg-zinc-800 box-border break-inside-avoid shadow-lg transition-all duration-300 origin-top-left"
                     style={{
                       width: `${printSettings.cardWidth}mm`,
                       minHeight: `${printSettings.cardHeight}mm`,
@@ -460,10 +460,10 @@ export function PrintSettingsModal({
                             style={{ fontFamily: printSettings.contentFontFamily }}
                           >
                             {table.members.map((m, idx) => (
-                              <div key={m.id} className="flex items-center p-2 bg-slate-50 rounded-lg">
+                              <div key={m.id} className="flex items-center p-2 bg-zinc-50 rounded-lg">
                                 {printSettings.showIndex && (
                                   <div
-                                    className="font-bold text-slate-400 mr-3 flex-shrink-0 text-right"
+                                    className="font-bold text-zinc-400 mr-3 flex-shrink-0 text-right"
                                     style={{
                                       fontSize: `${printSettings.contentFontSize * 1.2}px`,
                                       width: '1.5em',
@@ -474,17 +474,17 @@ export function PrintSettingsModal({
                                 )}
                                 <div
                                   className="flex-1 overflow-hidden"
-                                  style={{ textAlign: printSettings.textAlign }}
+                                  style={{ textAlign: printSettings.textAlign as React.CSSProperties['textAlign'] }}
                                 >
                                   <div
-                                    className="font-bold text-slate-900 whitespace-nowrap overflow-hidden text-ellipsis"
+                                    className="font-bold text-zinc-900 dark:text-zinc-200 whitespace-nowrap overflow-hidden text-ellipsis"
                                     style={{ fontSize: `${printSettings.contentFontSize * 1.2}px` }}
                                   >
                                     {m.name}
                                   </div>
                                   {(printSettings.showDepartment || printSettings.showRole) && (
                                     <div
-                                      className="text-slate-500 mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis"
+                                      className="text-zinc-500 mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis"
                                       style={{ fontSize: `${printSettings.contentFontSize}px` }}
                                     >
                                       {printSettings.showDepartment ? m.department : ''}
@@ -501,7 +501,7 @@ export function PrintSettingsModal({
                         )}
 
                         <div
-                          className="mt-3 text-center text-[10px] text-slate-400"
+                          className="mt-3 text-center text-[10px] text-zinc-400"
                           style={{ fontFamily: printSettings.footerFontFamily }}
                         >
                           {printSettings.footerText}

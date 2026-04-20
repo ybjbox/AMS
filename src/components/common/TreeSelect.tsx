@@ -151,8 +151,8 @@ export function TreeSelect({
               role="treeitem"
               aria-expanded={hasChildren || hasLeafContent ? isExpanded : undefined}
               aria-selected={value === displayName}
-              className={`flex items-center py-2 px-3 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-sm text-slate-700 dark:text-slate-200 outline-none ${
-                isFocused ? 'bg-blue-50 dark:bg-slate-700 ring-1 ring-inset ring-blue-500' : ''
+              className={`flex items-center py-2 px-3 hover:bg-zinc-50 dark:hover:bg-zinc-700 cursor-pointer text-sm text-zinc-700 dark:text-zinc-200 outline-none ${
+                isFocused ? 'bg-blue-50 dark:bg-zinc-700 ring-1 ring-inset ring-blue-500' : ''
               }`}
               style={{ paddingLeft: `${depth * 1.5 + 0.75}rem` }}
               onClick={(e) => onNodeClick(e, node)}
@@ -169,9 +169,9 @@ export function TreeSelect({
               >
                 {hasChildren || hasLeafContent ? (
                   isExpanded ? (
-                    <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" />
+                    <ChevronDown className="w-4 h-4 text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300" />
                   ) : (
-                    <ChevronRight className="w-4 h-4 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" />
+                    <ChevronRight className="w-4 h-4 text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300" />
                   )
                 ) : (
                   <div className="w-4 h-4" />
@@ -204,30 +204,30 @@ export function TreeSelect({
           type="text"
           value={value}
           readOnly
-          className="block w-full bg-white dark:bg-slate-800 border border-zinc-200/80 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 pr-8 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm cursor-pointer text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+          className="block w-full bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-2 px-3 pr-8 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm cursor-pointer text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500"
           placeholder={placeholder}
           required={required}
           aria-haspopup="tree"
           aria-expanded={isOpen}
         />
-        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-slate-400 dark:text-slate-500">
+        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-zinc-400 dark:text-zinc-500">
           <ChevronDown className="h-4 w-4" />
         </div>
       </div>
 
       {isOpen && (
         <div
-          className="absolute z-10 mt-1 w-full bg-white dark:bg-slate-800 shadow-lg max-h-60 rounded-md ring-1 ring-black ring-opacity-5 dark:ring-white/10 flex flex-col focus:outline-none sm:text-sm"
+          className="absolute z-10 mt-1 w-full bg-white dark:bg-zinc-800 shadow-lg max-h-60 rounded-md ring-1 ring-black ring-opacity-5 dark:ring-white/10 flex flex-col focus:outline-none sm:text-sm"
           role="tree"
           tabIndex={-1}
         >
           {nodes.length > 0 ? (
             <>
-              <div className="flex justify-end p-1 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 rounded-t-md shrink-0">
+              <div className="flex justify-end p-1 border-b border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-t-md shrink-0">
                 <button
                   type="button"
                   onClick={isAllExpanded() ? collapseAll : expandAll}
-                  className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 px-2 py-1 rounded hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors"
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 px-2 py-1 rounded hover:bg-blue-50 dark:hover:bg-zinc-700 transition-colors"
                 >
                   {isAllExpanded() ? '一键收起' : '一键展开'}
                 </button>
@@ -235,7 +235,7 @@ export function TreeSelect({
               <div className="overflow-auto py-1">{renderTree(nodes)}</div>
             </>
           ) : (
-            <div className="py-2 px-3 text-sm text-slate-500 dark:text-slate-400">暂无数据</div>
+            <div className="py-2 px-3 text-sm text-zinc-500 dark:text-zinc-400">暂无数据</div>
           )}
         </div>
       )}

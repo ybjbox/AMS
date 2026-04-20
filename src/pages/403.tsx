@@ -10,7 +10,7 @@ const Forbidden403 = React.memo(function Forbidden403() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 text-center">
         <div className="flex justify-center">
           <div className="h-24 w-24 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
@@ -19,8 +19,8 @@ const Forbidden403 = React.memo(function Forbidden403() {
         </div>
 
         <div>
-          <h2 className="mt-6 text-3xl font-extrabold text-slate-900 dark:text-white">403 - 无权限访问</h2>
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+          <h2 className="mt-6 text-3xl font-extrabold text-zinc-900 dark:text-white">403 - 无权限访问</h2>
+          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
             抱歉，您没有权限访问此页面。如果您认为这是一个错误，请联系系统管理员。
           </p>
         </div>

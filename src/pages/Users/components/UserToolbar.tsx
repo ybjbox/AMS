@@ -53,14 +53,14 @@ export function UserToolbar({
         <div className="flex items-center space-x-3">
           <button
             onClick={() => setIsAddressBookModalOpen(true)}
-            className="inline-flex items-center justify-center px-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
+            className="inline-flex items-center justify-center px-4 py-2 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-sm"
           >
             <Printer className="h-4 w-4 mr-2" />
             导出通讯录
           </button>
           <button
             onClick={() => setIsExportModalOpen(true)}
-            className="inline-flex items-center justify-center px-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
+            className="inline-flex items-center justify-center px-4 py-2 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-sm"
           >
             <Download className="h-4 w-4 mr-2" />
             导出花名册
@@ -77,7 +77,7 @@ export function UserToolbar({
         </div>
       </div>
 
-      <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-700">
+      <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-100 dark:border-zinc-700">
         <div className="relative w-full sm:w-72">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
             <Search className="h-4 w-4 text-zinc-400" />

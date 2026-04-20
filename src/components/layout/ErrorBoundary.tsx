@@ -39,14 +39,14 @@ export default class ErrorBoundary extends React.Component<Props, State> {
           <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-full mb-4">
             <AlertTriangle className="h-12 w-12 text-red-500 dark:text-red-400" />
           </div>
-          <h2 className="text-2xl font-semibold text-slate-800 dark:text-white mb-2">页面加载出错</h2>
-          <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md">
+          <h2 className="text-2xl font-semibold text-zinc-800 dark:text-white mb-2">页面加载出错</h2>
+          <p className="text-zinc-500 dark:text-zinc-400 mb-8 max-w-md">
             {this.state.error?.message || '抱歉，我们在加载此页面时遇到了一些问题。请尝试刷新页面或返回控制台。'}
           </p>
           <div className="flex space-x-4">
             <button
               onClick={this.handleRetry}
-              className="flex items-center px-4 py-2 bg-white dark:bg-slate-800 border border-zinc-200/80 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors duration-200 shadow-sm"
+              className="flex items-center px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-600 rounded-lg text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors duration-200 shadow-sm"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               重试

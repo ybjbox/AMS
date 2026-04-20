@@ -1,17 +1,7 @@
 import { create } from 'zustand';
 import { STORAGE_KEYS } from '../config/constants';
 import { hasPermission as checkPermission } from '../utils/permission';
-
-// 定义 UserInfo 接口
-export interface UserInfo {
-  id: string | number;
-  username: string;
-  email: string;
-  phone?: string;
-  avatar?: string;
-  status?: number;
-  role?: string;
-}
+import { UserInfo } from '../types';
 
 // 定义 UserStore 的状态和动作类型
 export interface UserState {
