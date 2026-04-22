@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useConfirm } from '../../hooks/useConfirm';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDepartments } from '../../store/useDepartmentStore';
@@ -20,13 +20,8 @@ export default function Users() {
   const confirm = useConfirm();
   const hasPermission = useAuthStore((state) => state.hasPermission);
   const users = useEmployeeStore((state) => state.users);
-  const fetchUsers = useEmployeeStore((state) => state.fetchUsers);
   const isLoading = useEmployeeStore((state) => state.isLoading);
   const deleteUser = useEmployeeStore((state) => state.deleteUser);
-
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
 
   const allDepartments = useDepartments((state) => state.departments);
   const roles = useDepartments((state) => state.roles);

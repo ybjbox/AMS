@@ -48,7 +48,6 @@ export function useAttendance(): UseAttendanceReturn {
   const [editingShift, setEditingShift] = useState<Partial<Shift> | null>(null);
 
   const fetchData = useAttendanceStore((state) => state.fetchData);
-  const fetchUsers = useEmployeeStore((state) => state.fetchUsers);
 
   const records = useAttendanceStore((state) => state.records);
   const schedules = useAttendanceStore((state) => state.schedules);
@@ -92,8 +91,7 @@ export function useAttendance(): UseAttendanceReturn {
 
   useEffect(() => {
     fetchData();
-    fetchUsers();
-  }, [fetchData, fetchUsers]);
+  }, [fetchData]);
 
   return {
     activeTab,

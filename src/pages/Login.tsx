@@ -166,12 +166,18 @@ export default function Login() {
               </div>
 
               <div className="text-sm">
-                <a
-                  href="#"
-                  className="font-medium text-blue-600 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                <button
+                  type="button"
+                  onClick={() => {
+                    // 功能待接入后端，暂时提示
+                    import('sonner').then(({ toast }) => {
+                      toast.info('忘记密码功能暂未开放，请联系管理员重置');
+                    });
+                  }}
+                  className="font-medium text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
                 >
                   忘记密码？
-                </a>
+                </button>
               </div>
             </div>
 

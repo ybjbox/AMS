@@ -7,6 +7,7 @@ interface UserStore {
   users: User[];
   isLoading: boolean;
   error: string | null;
+  initialized: boolean;
   fetchUsers: () => Promise<void>;
   addUser: (user: Omit<User, 'id'>) => Promise<void>;
   updateUser: (user: User) => Promise<void>;
@@ -17,11 +18,14 @@ export const useEmployeeStore = create<UserStore>()((set, get) => ({
   users: [],
   isLoading: false,
   error: null,
+  initialized: false,
 
   fetchUsers: async () => {
+    if (get().initialized && get().users.length > 0) return;
+
     return createAsyncAction(set, async () => {
       const users = await userApi.fetchUsers();
-      return { users };
+      return { users, initialized: true };
     });
   },
 

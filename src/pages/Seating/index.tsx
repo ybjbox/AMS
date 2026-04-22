@@ -19,13 +19,8 @@ import { usePrintSettings } from './hooks/usePrintSettings';
 
 export default function Seating() {
   const users = useEmployeeStore((state) => state.users);
-  const fetchUsers = useEmployeeStore((state) => state.fetchUsers);
   const departments = useDepartments((state) => state.departments);
   const roles = useDepartments((state) => state.roles);
-
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isUploadMenuOpen, setIsUploadMenuOpen] = useState(false);

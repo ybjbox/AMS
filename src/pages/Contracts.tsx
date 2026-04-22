@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useBodyOverflow } from '../hooks/useBodyOverflow';
@@ -59,13 +59,8 @@ const ContractTemplate = ({ user }: { user: User }) => {
 
 export default function Contracts() {
   const users = useEmployeeStore((state) => state.users);
-  const fetchUsers = useEmployeeStore((state) => state.fetchUsers);
   const template = useContractStore((state) => state.template);
   const setTemplate = useContractStore((state) => state.setTemplate);
-
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
