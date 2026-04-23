@@ -44,7 +44,7 @@ export default function ContractsPage() {
   return (
     <div className="absolute inset-0 w-full flex flex-col p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-6 animate-in fade-in duration-500">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shrink-0">
+        <div className="page-header shrink-0">
           <div>
             <h1 className="page-title">合同管理</h1>
             <p className="page-subtitle">劳动合同管理、生成与打印</p>

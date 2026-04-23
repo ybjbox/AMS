@@ -32,35 +32,35 @@ describe('hasPermission', () => {
   });
 
   it('如果未开启严格权限拦截，默认返回 true', () => {
-    (useAppSettings.getState as any).mockReturnValue({ enableStrictPermission: false });
+    vi.mocked(useAppSettings.getState).mockReturnValue({ enableStrictPermission: false } as ReturnType<typeof useAppSettings.getState>);
     
     expect(hasPermission('any:permission')).toBe(true);
   });
 
   describe('Strict Permission Enabled', () => {
     beforeEach(() => {
-      (useAppSettings.getState as any).mockReturnValue({ enableStrictPermission: true });
+      vi.mocked(useAppSettings.getState).mockReturnValue({ enableStrictPermission: true } as ReturnType<typeof useAppSettings.getState>);
     });
 
     it('未登录用户应返回 false', () => {
-      (useUserStore.getState as any).mockReturnValue({ userInfo: null });
+      vi.mocked(useUserStore.getState).mockReturnValue({ userInfo: null } as ReturnType<typeof useUserStore.getState>);
       
       expect(hasPermission('attendance:view')).toBe(false);
     });
 
     it('admin 角色拥有所有权限', () => {
-      (useUserStore.getState as any).mockReturnValue({
+      vi.mocked(useUserStore.getState).mockReturnValue({
         userInfo: { role: 'ADMIN' }
-      });
+      } as ReturnType<typeof useUserStore.getState>);
       
       expect(hasPermission('attendance:manage')).toBe(true);
       expect(hasPermission('some:random:permission')).toBe(true); // Should return true because it has '*'
     });
 
     it('employee 角色只有有限权限', () => {
-      (useUserStore.getState as any).mockReturnValue({
+      vi.mocked(useUserStore.getState).mockReturnValue({
         userInfo: { role: 'EMPLOYEE' }
-      });
+      } as ReturnType<typeof useUserStore.getState>);
       
       expect(hasPermission('attendance:view')).toBe(true);
       expect(hasPermission('attendance:manage')).toBe(false);

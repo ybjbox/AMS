@@ -10,8 +10,11 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between px-2">
-        <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-white">控制台</h1>
+      <div className="page-header px-2">
+        <div>
+          <h1 className="page-title">控制台</h1>
+          <p className="page-subtitle">系统运行总览与快捷入口</p>
+        </div>
         <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-800 px-4 py-2 rounded-full shadow-sm border border-zinc-100 dark:border-zinc-700/50">
           最后更新时间: {dashboardData.lastUpdated}
         </div>

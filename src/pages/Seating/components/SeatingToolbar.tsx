@@ -49,23 +49,34 @@ export function SeatingToolbar({
   handleAutoArrange,
 }: SeatingToolbarProps) {
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">自动排座模块</h1>
-        <p className="text-sm text-zinc-500 mt-1">根据部门和职位优先级自动分配桌号，支持导出 A4 台卡</p>
+    <div className="space-y-4">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">自动排座模块</h1>
+          <p className="page-subtitle">根据部门和职位优先级自动分配桌号，支持导出 A4 台卡</p>
+        </div>
+        <div>
+          <button
+            onClick={handleAutoArrange}
+            className="btn-primary"
+          >
+            <RefreshCw className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">自动排座</span>
+          </button>
+        </div>
       </div>
-      <div className="flex items-center space-x-3">
+      <div className="toolbar">
         <div className="flex items-center bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-1 shadow-sm">
           <button
             onClick={() => setViewMode('grid')}
-            className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-blue-50 text-blue-600' : 'text-zinc-400 hover:text-zinc-600'}`}
+            className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
             title="网格视图"
           >
             <LayoutGrid className="w-4 h-4" />
           </button>
           <button
             onClick={() => setViewMode('list')}
-            className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-blue-50 text-blue-600' : 'text-zinc-400 hover:text-zinc-600'}`}
+            className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
             title="列表视图"
           >
             <List className="w-4 h-4" />
@@ -74,33 +85,33 @@ export function SeatingToolbar({
         {hasTables && (
           <button
             onClick={handleClear}
-            className="flex items-center px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm font-medium shadow-sm"
+            className="btn-danger"
           >
-            <Trash2 className="w-4 h-4 mr-2" />
-            重置
+            <Trash2 className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">重置</span>
           </button>
         )}
         {hasUploadedUsers && (
           <button
             onClick={clearUploadedUsers}
-            className="flex items-center px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-amber-600 dark:text-amber-400 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors text-sm font-medium shadow-sm"
+            className="btn-secondary text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20"
             title="清除上传的名单，恢复系统人员"
           >
-            <X className="w-4 h-4 mr-2" />
-            清除名单
+            <X className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">清除名单</span>
           </button>
         )}
         <div className="relative" onMouseLeave={() => setIsUploadMenuOpen(false)}>
           <button
             onClick={() => setIsUploadMenuOpen(!isUploadMenuOpen)}
-            className="flex items-center px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors text-sm font-medium shadow-sm"
+            className="btn-secondary"
           >
-            <Upload className="w-4 h-4 mr-2" />
-            导入名单
-            <ChevronDown className="w-4 h-4 ml-1" />
+            <Upload className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">导入名单</span>
+            <ChevronDown className="w-4 h-4 ml-1 hidden sm:block" />
           </button>
           {isUploadMenuOpen && (
-            <div className="absolute right-0 mt-1 w-36 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-700 py-1 z-50">
+            <div className="absolute left-0 sm:right-0 sm:left-auto mt-1 w-36 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-700 py-1 z-50">
               <button
                 onClick={() => {
                   handleDownloadTemplate();
@@ -129,33 +140,27 @@ export function SeatingToolbar({
         </div>
         <button
           onClick={() => setIsParticipantModalOpen(true)}
-          className="flex items-center px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors text-sm font-medium shadow-sm"
+          className="btn-secondary"
         >
-          <Users className="w-4 h-4 mr-2" />
-          选择人员 ({selectedCount})
+          <Users className="w-4 h-4 sm:mr-2" />
+          <span className="hidden sm:inline">选择人员 ({selectedCount})</span>
+          <span className="sm:hidden">({selectedCount})</span>
         </button>
         <button
           onClick={() => setIsPrintModalOpen(true)}
           disabled={!hasTables}
-          className="flex items-center px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors text-sm font-medium shadow-sm disabled:opacity-50"
+          className="btn-secondary disabled:opacity-50"
         >
-          <Settings2 className="w-4 h-4 mr-2" />
-          台卡设置
+          <Settings2 className="w-4 h-4 sm:mr-2" />
+          <span className="hidden sm:inline">台卡设置</span>
         </button>
         <button
           onClick={handlePrint}
           disabled={!hasTables}
-          className="flex items-center px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors text-sm font-medium shadow-sm disabled:opacity-50"
+          className="btn-secondary disabled:opacity-50"
         >
-          <Printer className="w-4 h-4 mr-2" />
-          打印台卡
-        </button>
-        <button
-          onClick={handleAutoArrange}
-          className="flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform text-sm font-medium shadow-sm"
-        >
-          <RefreshCw className="w-4 h-4 mr-2" />
-          自动排座
+          <Printer className="w-4 h-4 sm:mr-2" />
+          <span className="hidden sm:inline">打印台卡</span>
         </button>
       </div>
     </div>

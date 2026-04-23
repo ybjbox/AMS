@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Plus, Download, Printer, Filter, Users } from 'lucide-react';
+import { Search, Plus, Download, Printer, Filter } from 'lucide-react';
 import { DepartmentNode } from '@/types';
 import { UserFilters } from './UserFilters';
 
@@ -36,42 +36,33 @@ export function UserToolbar({
 }: UserToolbarProps) {
   return (
     <>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="page-header mb-6">
         <div>
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/40 dark:to-blue-800/20 rounded-xl shadow-sm ring-1 ring-blue-200/50 dark:ring-blue-700/50 backdrop-blur-sm">
-              <Users className="w-6 h-6 text-blue-600 dark:text-blue-400 stroke-[2.5]" />
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-600 dark:from-white dark:via-zinc-100 dark:to-zinc-400">
-              员工管理
-            </h1>
-          </div>
-          <p className="mt-1.5 sm:mt-2 text-sm sm:text-base font-medium text-zinc-500 dark:text-zinc-400/80">
-            管理企业员工档案、部门分配与权限配置
-          </p>
+          <h1 className="page-title">员工管理</h1>
+          <p className="page-subtitle">管理企业员工档案、部门分配与权限配置</p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="toolbar">
           <button
             onClick={() => setIsAddressBookModalOpen(true)}
-            className="inline-flex items-center justify-center px-4 py-2 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-sm"
+            className="btn-secondary"
           >
-            <Printer className="h-4 w-4 mr-2" />
-            导出通讯录
+            <Printer className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">导出通讯录</span>
           </button>
           <button
             onClick={() => setIsExportModalOpen(true)}
-            className="inline-flex items-center justify-center px-4 py-2 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-sm"
+            className="btn-secondary"
           >
-            <Download className="h-4 w-4 mr-2" />
-            导出花名册
+            <Download className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">导出花名册</span>
           </button>
           {hasPermission('users:manage') && (
             <button
               onClick={handleAdd}
-              className="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white text-sm font-medium rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform shadow-sm"
+              className="btn-primary"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              新增员工
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">新增员工</span>
             </button>
           )}
         </div>

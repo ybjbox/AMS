@@ -18,11 +18,18 @@ export default function Departments() {
   const canManage = hasPermission('settings:manage');
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col space-y-6">
+      <div className="page-header shrink-0">
+        <div>
+          <h1 className="page-title">部门管理</h1>
+          <p className="page-subtitle">管理公司组织架构与职位设置</p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 flex-1 min-h-0">
         {/* 部门架构 */}
-        <div className="lg:col-span-2 xl:col-span-2 bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl flex flex-col min-h-0">
-          <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-800/50 rounded-t-xl">
+        <div className="lg:col-span-2 xl:col-span-2 card-base rounded-2xl flex flex-col min-h-0">
+          <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-800/50 rounded-t-2xl">
             <div className="flex items-center space-x-2">
               <Building2 className="w-5 h-5 text-zinc-500 dark:text-zinc-400" />
               <h2 className="text-base font-medium text-zinc-800 dark:text-zinc-200">
@@ -32,7 +39,7 @@ export default function Departments() {
             {canManage && (
               <button
                 onClick={logic.handleAddRoot}
-                className="inline-flex items-center justify-center px-3 py-1.5 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white text-sm font-medium rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform shadow-sm"
+                className="btn-primary"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 新增一级部门
@@ -59,10 +66,10 @@ export default function Departments() {
                   action={
                     <button
                       onClick={logic.handleAddRoot}
-                      className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform shadow-sm"
+                      className="btn-primary"
                     >
-                      <Plus className="w-4 h-4 mr-2" />
-                      立即创建
+                      <Plus className="w-4 h-4 sm:mr-2" />
+                      <span className="hidden sm:inline">立即创建</span>
                     </button>
                   }
                 />
@@ -72,8 +79,8 @@ export default function Departments() {
         </div>
 
         {/* 职位设置 */}
-        <div className="lg:col-span-2 xl:col-span-1 bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl flex flex-col min-h-0">
-          <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-800/50 rounded-t-xl">
+        <div className="lg:col-span-2 xl:col-span-1 card-base rounded-2xl flex flex-col min-h-0">
+          <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-800/50 rounded-t-2xl">
             <div className="flex items-center space-x-2">
               <Briefcase className="w-5 h-5 text-zinc-500 dark:text-zinc-400" />
               <h2 className="text-base font-medium text-zinc-800 dark:text-zinc-200">职位设置 ({logic.roles.length})</h2>

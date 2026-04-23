@@ -11,7 +11,7 @@ export default function StatCards({ stats, isLoading }: StatCardsProps) {
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="bg-white dark:bg-zinc-800 rounded-2xl p-6 shadow-sm border border-zinc-100 dark:border-zinc-700/50 h-[160px] flex flex-col justify-between animate-pulse"
+            className="card-base p-6 h-[160px] flex flex-col justify-between animate-pulse"
           >
             <div className="flex justify-between items-start">
               <div className="w-12 h-12 rounded-2xl bg-zinc-200 dark:bg-zinc-700"></div>
@@ -33,7 +33,7 @@ export default function StatCards({ stats, isLoading }: StatCardsProps) {
         return (
           <div
             key={item.name}
-            className="bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-100 dark:border-zinc-700/50 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1 flex flex-col justify-between p-6 h-[160px]"
+            className="card-base transition-all duration-300 hover:shadow-md hover:-translate-y-1 flex flex-col justify-between p-6 h-[160px]"
           >
             <div className="flex justify-between items-start">
               <div

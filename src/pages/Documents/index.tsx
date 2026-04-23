@@ -191,30 +191,22 @@ export default function Documents() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">常用文件</h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">管理公司常用文件模板，支持一键打包打印</p>
+          <h1 className="page-title">常用文件</h1>
+          <p className="page-subtitle">管理公司常用文件模板，支持一键打包打印</p>
         </div>
-        <div className="flex items-center space-x-3">
-          <div className="bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg flex">
+        <div className="toolbar">
+          <div className="tab-group">
             <button
               onClick={() => setActiveTab('sets')}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                activeTab === 'sets'
-                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-              }`}
+              className={activeTab === 'sets' ? 'tab-item-active' : 'tab-item'}
             >
               文件套件
             </button>
             <button
               onClick={() => setActiveTab('files')}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                activeTab === 'files'
-                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-              }`}
+              className={activeTab === 'files' ? 'tab-item-active' : 'tab-item'}
             >
               文件库
             </button>
@@ -224,19 +216,19 @@ export default function Documents() {
               <input type="file" multiple className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform text-sm font-medium shadow-sm"
+                className="btn-primary"
               >
-                <Upload className="w-4 h-4 mr-2" />
-                上传文件
+                <Upload className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">上传文件</span>
               </button>
             </>
           ) : (
             <button
               onClick={handleCreateSetClick}
-              className="flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform text-sm font-medium shadow-sm"
+              className="btn-primary"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              新建套件
+              <Plus className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">新建套件</span>
             </button>
           )}
         </div>

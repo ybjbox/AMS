@@ -6,7 +6,7 @@ export type SystemNoticesProps = Pick<UseDashboardReturn, 'notices' | 'isLoading
 
 export default function SystemNotices({ notices, isLoading }: SystemNoticesProps) {
   return (
-    <div className="bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700/50 shadow-sm rounded-2xl p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+    <div className="card-base p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-white tracking-tight">系统公告</h2>
         <button className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors">

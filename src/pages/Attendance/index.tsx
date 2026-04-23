@@ -14,7 +14,7 @@ export default function Attendance() {
           <Stats {...attendanceData} />
           <Filter {...attendanceData} />
         </div>
-        <div className="flex-1 bg-white dark:bg-zinc-800 shadow-sm rounded-3xl overflow-hidden flex flex-col min-h-0">
+        <div className="flex-1 card-base overflow-hidden flex flex-col min-h-0">
           <div className="flex-1 overflow-auto">
             <Table {...attendanceData} />
           </div>

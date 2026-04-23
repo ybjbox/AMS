@@ -41,11 +41,11 @@ export default function Settings() {
     <div className="absolute inset-0 w-full flex flex-col p-4 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-6 animate-in fade-in duration-500">
         <div className="shrink-0">
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">系统设置</h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">管理系统偏好、组织架构及个人信息</p>
+          <h1 className="page-title">系统设置</h1>
+          <p className="page-subtitle">管理系统偏好、组织架构及个人信息</p>
         </div>
 
-        <div className="flex-1 bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl overflow-hidden flex flex-col md:flex-row min-h-0">
+        <div className="flex-1 bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-2xl overflow-hidden flex flex-col md:flex-row min-h-0">
           {/* 移动端下拉选择（仅小屏显示） */}
           <div className="md:hidden border-b border-zinc-200 dark:border-zinc-700 p-4">
             <select

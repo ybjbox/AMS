@@ -24,7 +24,7 @@ export default function NameCards() {
   }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col bg-zinc-50 dark:bg-zinc-900 print:bg-white print:h-auto overflow-hidden rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800">
+    <div className="flex-1 min-h-0 flex flex-col bg-zinc-50 dark:bg-zinc-900 print:bg-white print:h-auto overflow-hidden rounded-2xl shadow-sm border border-zinc-200/60 dark:border-zinc-700/60">
       <NameCardToolbar
         uploadedUsers={state.uploadedUsers}
         setUploadedUsers={state.setUploadedUsers}

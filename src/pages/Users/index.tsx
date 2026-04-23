@@ -94,7 +94,7 @@ export default function Users() {
   return (
     <div className="absolute inset-0 w-full flex flex-col p-4 sm:p-6 lg:p-8">
       <div className="space-y-6 animate-in fade-in duration-500 w-full flex-1 flex flex-col min-h-0">
-        <div className="bg-white dark:bg-zinc-800 shadow-sm rounded-3xl flex flex-col flex-1 min-h-0">
+        <div className="card-base flex flex-col flex-1 min-h-0">
           <div className="shrink-0">
             <UserToolbar
               searchTerm={searchTerm}
@@ -136,7 +136,7 @@ export default function Users() {
             />
           </div>
 
-          <div className="shrink-0 px-4 py-3 border-t border-zinc-200 dark:border-zinc-700 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-800/50 rounded-b-3xl">
+          <div className="shrink-0 px-4 py-3 border-t border-zinc-200 dark:border-zinc-700 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-800/50 rounded-b-2xl">
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
               <p className="text-sm text-zinc-700 dark:text-zinc-300">

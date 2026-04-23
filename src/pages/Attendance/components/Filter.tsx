@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Clock, FileSpreadsheet, ChevronDown, Search, Plus, AlertTriangle } from 'lucide-react';
+import { FileSpreadsheet, ChevronDown, Search, Plus, AlertTriangle } from 'lucide-react';
 import { PunchRecord, EmployeeSchedule, Shift } from '@/store/useAttendanceStore';
 import { attendanceService } from '@/services/attendance';
 import { UseAttendanceReturn } from '../hooks/useAttendance';
@@ -222,62 +222,37 @@ export default function Filter({
 
   return (
     <>
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="page-header mb-8">
         <div>
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/40 dark:to-blue-800/20 rounded-xl shadow-sm ring-1 ring-blue-200/50 dark:ring-blue-700/50 backdrop-blur-sm">
-              <Clock className="w-6 h-6 text-blue-600 dark:text-blue-400 stroke-[2.5]" />
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-600 dark:from-white dark:via-zinc-100 dark:to-zinc-400">
-              考勤管理
-            </h1>
-          </div>
-          <p className="mt-1.5 sm:mt-2 text-sm sm:text-base font-medium text-zinc-500 dark:text-zinc-400/80">
-            导入打卡记录与排班字典，自动分析考勤异常
-          </p>
+          <h1 className="page-title">考勤管理</h1>
+          <p className="page-subtitle">导入打卡记录与排班字典，自动分析考勤异常</p>
         </div>
-        <div className="flex items-center space-x-2 bg-zinc-100/80 dark:bg-zinc-800/80 p-1.5 rounded-xl">
+        <div className="tab-group">
           <button
             data-tab="records"
             onClick={onTabClick}
-            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-300 ${
-              activeTab === 'records'
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50'
-            }`}
+            className={activeTab === 'records' ? 'tab-item-active' : 'tab-item'}
           >
             打卡记录
           </button>
           <button
             data-tab="schedules"
             onClick={onTabClick}
-            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-300 ${
-              activeTab === 'schedules'
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50'
-            }`}
+            className={activeTab === 'schedules' ? 'tab-item-active' : 'tab-item'}
           >
             排班字典
           </button>
           <button
             data-tab="shifts"
             onClick={onTabClick}
-            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-300 ${
-              activeTab === 'shifts'
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50'
-            }`}
+            className={activeTab === 'shifts' ? 'tab-item-active' : 'tab-item'}
           >
             班次管理
           </button>
           <button
             data-tab="anomalies"
             onClick={onTabClick}
-            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-300 ${
-              activeTab === 'anomalies'
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50'
-            }`}
+            className={activeTab === 'anomalies' ? 'tab-item-active' : 'tab-item'}
           >
             异常分析
           </button>
@@ -402,7 +377,7 @@ export default function Filter({
             <button
               onClick={handleAddManualSchedule}
               disabled={!selectedEmployeeId || selectedShiftIds.length === 0}
-              className="px-5 py-2.5 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-xl hover:from-blue-500 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-300 text-sm font-medium whitespace-nowrap flex items-center shadow-sm"
+              className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             >
               <Plus className="w-4 h-4 mr-2" />
               添加排班
@@ -449,7 +424,7 @@ export default function Filter({
               <button
                 onClick={onSaveShiftClick}
                 disabled={!editingShift || !editingShift.name}
-                className="flex-1 px-4 py-2.5 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-xl hover:from-blue-500 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-300 text-sm font-medium whitespace-nowrap flex items-center justify-center shadow-sm"
+                className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 保存
@@ -476,7 +451,7 @@ export default function Filter({
             {hasPermission('attendance:manage') && (
               <button
                 onClick={handleAnalyze}
-                className="flex items-center px-5 py-2.5 bg-success text-white rounded-xl hover:bg-success/90 transition-all duration-300 hover:-translate-y-0.5 text-sm font-medium shadow-sm"
+                className="flex items-center px-5 py-2.5 bg-success text-white rounded-lg hover:bg-success/90 transition-all duration-300 text-sm font-medium shadow-sm"
               >
                 <AlertTriangle className="w-4 h-4 mr-2" />
                 一键分析异常

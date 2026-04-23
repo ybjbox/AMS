@@ -6,7 +6,7 @@ export type QuickActionsProps = Pick<UseDashboardReturn, 'quickActions' | 'isLoa
 
 export default function QuickActions({ quickActions, isLoading }: QuickActionsProps) {
   return (
-    <div className="bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700/50 shadow-sm rounded-2xl p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+    <div className="card-base p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
       <h2 className="text-base font-semibold text-zinc-900 dark:text-white mb-6 tracking-tight">快捷操作</h2>
       
       {isLoading ? (
