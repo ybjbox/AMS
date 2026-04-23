@@ -1,6 +1,6 @@
 import React from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
-import { Folder as FolderType } from '../../../store/useDocumentStore';
+import { Folder as FolderType } from '@/store/useDocumentStore';
 
 interface FolderFormModalProps {
   isOpen: boolean;

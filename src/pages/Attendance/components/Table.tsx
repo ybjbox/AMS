@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { useConfirm } from '../../../hooks/useConfirm';
+import { useConfirm } from '@/hooks/useConfirm';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { AlertTriangle, Search } from 'lucide-react';

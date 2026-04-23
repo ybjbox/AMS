@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useAttendanceStore, PunchRecord, EmployeeSchedule, Anomaly, Shift } from '../../../store/useAttendanceStore';
-import { useEmployeeStore } from '../../../store/useEmployeeStore';
-import { User } from '../../../types';
-import { useUserStore as useAuthStore } from '../../../store/useUserStore';
+import { useAttendanceStore, PunchRecord, EmployeeSchedule, Anomaly, Shift } from '@/store/useAttendanceStore';
+import { useEmployeeStore } from '@/store/useEmployeeStore';
+import { User } from '@/types';
+import { useUserStore as useAuthStore } from '@/store/useUserStore';
 
 export type TabType = 'records' | 'schedules' | 'anomalies' | 'shifts';
 

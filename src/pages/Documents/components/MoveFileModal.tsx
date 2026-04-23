@@ -1,7 +1,7 @@
 import React from 'react';
 import { FolderOpen, Folder } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
-import { Folder as FolderType } from '../../../store/useDocumentStore';
+import { Folder as FolderType } from '@/store/useDocumentStore';
 
 interface MoveFileModalProps {
   isOpen: boolean;

@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { Printer, Check, GripVertical } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User } from '../../../types';
+import { User } from '@/types';
 import { ExportColumn, TABLE_STYLE, TD_DEPT_STYLE, DEPT_COUNT_STYLE, TD_CENTER_STYLE } from '../constants';
 import {
   DndContext,

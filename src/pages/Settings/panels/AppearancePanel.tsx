@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { toast } from 'sonner';
 import { Palette, Image as ImageIcon, Upload, Monitor, Building2 } from 'lucide-react';
-import { useAppSettings } from '../../../store/appSettings';
+import { useAppSettings } from '@/store/appSettings';
 
 export default function AppearancePanel() {
   const theme = useAppSettings((state) => state.theme);

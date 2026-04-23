@@ -3,7 +3,7 @@ import { BaseModal } from '@/components/ui/BaseModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PrintSettings } from '../hooks/usePrintSettings';
 import { Table } from '../hooks/useSeatingArrange';
-import { User } from '../../../types';
+import { User } from '@/types';
 
 interface PrintSettingsModalProps {
   isOpen: boolean;

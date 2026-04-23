@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -92,7 +93,7 @@ export const BaseModal: React.FC<BaseModalProps> = React.memo(
       }
     }, [isOpen, title, footer]);
 
-    return (
+    return createPortal(
       <AnimatePresence>
         {isOpen && (
           <div
@@ -163,7 +164,8 @@ export const BaseModal: React.FC<BaseModalProps> = React.memo(
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
     );
   }
 );

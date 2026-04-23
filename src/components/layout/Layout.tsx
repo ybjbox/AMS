@@ -1,13 +1,14 @@
 import React, { useState, useCallback } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
+import { useLocation } from 'react-router-dom';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import ErrorBoundary from './ErrorBoundary';
 
-export default function Layout({ children }: { children?: React.ReactNode }) {
+export default function Layout({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
+  const shouldReduceMotion = useReducedMotion();
 
   const handleSetIsCollapsed = useCallback((collapsed: boolean) => {
     setIsCollapsed(collapsed);
@@ -28,13 +29,13 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
             <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname}
-                initial={{ opacity: 0, y: 10 }}
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
+                exit={shouldReduceMotion ? undefined : { opacity: 0, y: -10 }}
+                transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
                 className="flex-1 flex flex-col min-h-full"
               >
-                {children || <Outlet />}
+                {children}
               </motion.div>
             </AnimatePresence>
           </ErrorBoundary>

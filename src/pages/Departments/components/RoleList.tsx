@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { ChevronRight, ChevronDown, Plus, Edit2, Trash2 } from 'lucide-react';
-import { DepartmentNode, RoleNode } from '../../../types';
+import { DepartmentNode, RoleNode } from '@/types';
 
 interface RoleTreeNodeProps {
   node: DepartmentNode;

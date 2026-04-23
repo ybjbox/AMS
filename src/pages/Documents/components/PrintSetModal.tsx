@@ -1,7 +1,7 @@
 import React from 'react';
 import { Printer, Check } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
-import { DocumentSet, Document } from '../../../store/useDocumentStore';
+import { DocumentSet, Document } from '@/store/useDocumentStore';
 
 interface PrintSetModalProps {
   isOpen: boolean;

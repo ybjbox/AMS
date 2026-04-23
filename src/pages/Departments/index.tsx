@@ -1,7 +1,7 @@
 import React from 'react';
 import { Building2, Briefcase, Plus } from 'lucide-react';
-import { useBodyOverflow } from '../../hooks/useBodyOverflow';
-import { useUserStore } from '../../store/useUserStore';
+import { useBodyOverflow } from '@/hooks/useBodyOverflow';
+import { useUserStore } from '@/store/useUserStore';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useDepartmentsLogic } from './hooks/useDepartments';
 import { DepartmentTree } from './components/DepartmentTree';

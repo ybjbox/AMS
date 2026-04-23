@@ -9,8 +9,8 @@ import {
   ColumnResizeMode,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { User } from '../../types';
-import { useUserStore } from '../../store/useUserStore';
+import { User } from '@/types';
+import { useUserStore } from '@/store/useUserStore';
 import { Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Users } from 'lucide-react';
 import { TableSkeleton } from '../ui/Skeleton';
 import { EmptyState } from '../ui/EmptyState';
@@ -123,20 +123,9 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
         id: 'genderAge',
         header: '性别/年龄',
         cell: ({ row }) => {
-          const idCard = row.original.idCard || '';
-          const gender = idCard && idCard.length === 18 ? (parseInt(idCard.charAt(16)) % 2 === 0 ? '女' : '男') : '-';
-          let age: number | string = '-';
-          if (idCard && idCard.length === 18) {
-            const year = parseInt(idCard.substring(6, 10));
-            const month = parseInt(idCard.substring(10, 12));
-            const day = parseInt(idCard.substring(12, 14));
-            const today = new Date();
-            age = today.getFullYear() - year;
-            if (today.getMonth() + 1 < month || (today.getMonth() + 1 === month && today.getDate() < day)) age--;
-          }
           return (
             <div className="text-zinc-900 dark:text-zinc-200">
-              {gender} / {age}
+              {row.original.gender} / {row.original.age}
             </div>
           );
         },
@@ -195,15 +184,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
           );
         },
         cell: ({ row }) => {
-          const contractExpiry = row.original.contractExpiry;
-          let daysToExpiry: number | string = '-';
-          if (contractExpiry) {
-            const expiry = new Date(contractExpiry);
-            const today = new Date();
-            const diffTime = expiry.getTime() - today.getTime();
-            daysToExpiry = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          }
-          return <div className="text-zinc-900 dark:text-zinc-200">{daysToExpiry}</div>;
+          return <div className="text-zinc-900 dark:text-zinc-200">{row.original.daysToExpiry}</div>;
         },
         size: 130,
         minSize: 100,

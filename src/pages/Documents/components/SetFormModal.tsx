@@ -1,7 +1,7 @@
 import React from 'react';
 import { FileText, ChevronDown, ChevronRight, Folder } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
-import { DocumentSet, Document, Folder as FolderType } from '../../../store/useDocumentStore';
+import { DocumentSet, Document, Folder as FolderType } from '@/store/useDocumentStore';
 
 interface SetFormModalProps {
   isOpen: boolean;

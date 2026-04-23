@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Plus, Upload } from 'lucide-react';
 import { toast } from 'sonner';
-import { useBodyOverflow } from '../../hooks/useBodyOverflow';
-import { useDocumentStore } from '../../store/useDocumentStore';
+import { useBodyOverflow } from '@/hooks/useBodyOverflow';
+import { useDocumentStore } from '@/store/useDocumentStore';
 
 import { FolderTree } from './components/FolderTree';
 import { FileList } from './components/FileList';

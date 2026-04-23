@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { File, FileText, ImageIcon, FileArchive, Search, ChevronRight } from 'lucide-react';
-import { Document } from '../../../store/useDocumentStore';
+import { Document } from '@/store/useDocumentStore';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 interface FileListProps {

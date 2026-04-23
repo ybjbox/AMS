@@ -1,7 +1,7 @@
 import React from 'react';
 import { Printer, Edit } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
-import { User, SystemRole } from '../../../types';
+import { User, SystemRole } from '@/types';
 
 interface UserDetailModalProps {
   isOpen: boolean;

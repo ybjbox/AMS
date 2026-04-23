@@ -5,37 +5,28 @@ export enum SystemRole {
   EMPLOYEE = 'EMPLOYEE',
 }
 
-export enum Permission {
-  VIEW_DASHBOARD = 'VIEW_DASHBOARD',
-  MANAGE_USERS = 'MANAGE_USERS',
-  VIEW_USERS = 'VIEW_USERS',
-  MANAGE_SETTINGS = 'MANAGE_SETTINGS',
-  VIEW_SETTINGS = 'VIEW_SETTINGS',
-  MANAGE_ATTENDANCE = 'MANAGE_ATTENDANCE',
-}
-
 export interface User {
   id: string;
   name: string;
   idCard: string;
-  gender: string;
-  age: number | string;
+  gender: '男' | '女';
+  age: number;
   phone: string;
   department: string;
   role: string;
-  status: string;
+  status: '在职' | '试用期' | '离职';
   joinDate: string;
   yearsOfService: string;
-  employmentType: string;
-  hasSocialSecurity: string;
+  employmentType: '全职' | '兼职' | '实习' | '外包';
+  hasSocialSecurity: boolean;
   contractYears: number;
   contractSignDate: string;
   contractExpiry: string;
-  daysToExpiry: number | string;
-  changeStatus: string;
+  daysToExpiry: number;
+  changeStatus: '无' | '晋升' | '调岗' | '降职';
   registeredAddress: string;
   currentAddress: string;
-  isVeteran: string;
+  isVeteran: boolean;
   formerUnit: string;
   militaryDates: string;
   remarks: string;

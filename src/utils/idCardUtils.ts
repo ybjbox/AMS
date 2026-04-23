@@ -5,8 +5,8 @@ export const generateIdCard = (): string => {
   return `440106${year}${month}${day}${Math.floor(Math.random() * 9000) + 1000}`;
 };
 
-export const calculateAge = (idCard: string): number | string => {
-  if (!idCard || idCard.length !== 18) return '-';
+export const calculateAge = (idCard: string): number => {
+  if (!idCard || idCard.length !== 18) return 0;
   const year = parseInt(idCard.substring(6, 10));
   const month = parseInt(idCard.substring(10, 12));
   const day = parseInt(idCard.substring(12, 14));
@@ -16,7 +16,7 @@ export const calculateAge = (idCard: string): number | string => {
   return age;
 };
 
-export const getGender = (idCard: string): string => {
-  if (!idCard || idCard.length !== 18) return '-';
+export const getGender = (idCard: string): '男' | '女' => {
+  if (!idCard || idCard.length !== 18) return '男'; // Default
   return parseInt(idCard.charAt(16)) % 2 === 0 ? '女' : '男';
 };

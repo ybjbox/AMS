@@ -1,8 +1,8 @@
 import React, { useCallback } from 'react';
 import { Check, Trash2, Bell } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useNotificationStore } from '../../../store/useNotificationStore';
-import { EmptyState } from '../../ui/EmptyState';
+import { useNotificationStore } from '@/store/useNotificationStore';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 const NotificationPanel = React.memo(function NotificationPanel() {
   const notifications = useNotificationStore((state) => state.notifications);

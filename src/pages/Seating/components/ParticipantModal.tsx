@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { CheckSquare, Square, ChevronRight } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
 
-import { User } from '../../../types';
+import { User } from '@/types';
 
 interface ParticipantModalProps {
   isOpen: boolean;

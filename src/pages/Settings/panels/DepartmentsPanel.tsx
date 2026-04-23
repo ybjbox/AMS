@@ -1,5 +1,5 @@
 import React from 'react';
-import Departments from '../../Departments/index';
+import Departments from '@/pages/Departments/index';
 
 export default function DepartmentsPanel() {
   return (

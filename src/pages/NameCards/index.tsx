@@ -1,5 +1,5 @@
 import React from 'react';
-import { useBodyOverflow } from '../../hooks/useBodyOverflow';
+import { useBodyOverflow } from '@/hooks/useBodyOverflow';
 import { useNameCards } from './hooks/useNameCards';
 import NameCardToolbar from './components/NameCardToolbar';
 import NameCardEditor from './components/NameCardEditor';

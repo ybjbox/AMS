@@ -1,7 +1,8 @@
-export const roles = ['admin', 'manager', 'employee'];
+import { SystemRole } from '../types/user';
 
 export const permissions: Record<string, string[]> = {
-  ADMIN: ['*'],
-  MANAGER: ['dashboard:view', 'users:view', 'attendance:view', 'attendance:edit', 'todos:view', 'documents:view'],
-  EMPLOYEE: ['dashboard:view', 'attendance:view', 'todos:view', 'documents:view'],
+  [SystemRole.SUPER_ADMIN]: ['*'],
+  [SystemRole.ADMIN]: ['*'],
+  [SystemRole.HR]: ['dashboard:view', 'users:view', 'attendance:view', 'attendance:edit', 'todos:view', 'documents:view'],
+  [SystemRole.EMPLOYEE]: ['dashboard:view', 'attendance:view', 'todos:view', 'documents:view'],
 };

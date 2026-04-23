@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { Printer, Download, RefreshCw, Check, GripVertical, FileCode } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User } from '../../../types';
+import { User } from '@/types';
 import { ExportColumn, ExportTheme, ExportScript } from '../constants';
 import {
   DndContext,

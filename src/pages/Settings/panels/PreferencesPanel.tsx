@@ -1,8 +1,8 @@
 import React, { useCallback } from 'react';
 import { ShieldCheck } from 'lucide-react';
-import { useAppSettings } from '../../../store/appSettings';
-import { useUserStore } from '../../../store/useUserStore';
-import { SystemRole } from '../../../types';
+import { useAppSettings } from '@/store/appSettings';
+import { useUserStore } from '@/store/useUserStore';
+import { SystemRole } from '@/types';
 
 export default function PreferencesPanel() {
   const userInfo = useUserStore((state) => state.userInfo);

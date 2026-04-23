@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { ChevronDown, ChevronRight, Check } from 'lucide-react';
-import { useTreeExpand, TreeNode } from '../../hooks/useTreeExpand';
+import { useTreeExpand, TreeNode } from '@/hooks/useTreeExpand';
 
 interface TreeFilterProps {
   nodes: TreeNode[];

@@ -2,7 +2,7 @@ import React from 'react';
 import { PrintSettings } from '../hooks/usePrintSettings';
 import { Table } from '../hooks/useSeatingArrange';
 
-import { User } from '../../../types';
+import { User } from '@/types';
 
 interface PrintPreviewProps {
   tables: Table[];

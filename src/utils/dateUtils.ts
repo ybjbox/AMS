@@ -11,8 +11,8 @@ export const calculateYearsOfService = (joinDate: string): string => {
   return `${years}年${months}个月`;
 };
 
-export const calculateDaysToExpiry = (expiryDate: string): number | string => {
-  if (!expiryDate) return '-';
+export const calculateDaysToExpiry = (expiryDate: string): number => {
+  if (!expiryDate) return 0;
   const expiry = new Date(expiryDate);
   const today = new Date();
   const diffTime = expiry.getTime() - today.getTime();

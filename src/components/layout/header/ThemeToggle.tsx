@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { Sun, Moon, Monitor } from 'lucide-react';
-import { useAppSettings } from '../../../store/appSettings';
+import { useAppSettings } from '@/store/appSettings';
 
 const ThemeToggle = React.memo(function ThemeToggle() {
   const theme = useAppSettings((state) => state.theme);

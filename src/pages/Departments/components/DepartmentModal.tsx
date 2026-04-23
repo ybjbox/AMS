@@ -1,7 +1,7 @@
 import React from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { DeptModalState } from '../hooks/useDepartments';
-import { DepartmentNode } from '../../../types';
+import { DepartmentNode } from '@/types';
 
 interface DepartmentModalProps {
   modal: DeptModalState;

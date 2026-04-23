@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { useBodyOverflow } from '../../hooks/useBodyOverflow';
-import { useEmployeeStore } from '../../store/useEmployeeStore';
-import { useDepartments } from '../../store/useDepartmentStore';
+import { useBodyOverflow } from '@/hooks/useBodyOverflow';
+import { useEmployeeStore } from '@/store/useEmployeeStore';
+import { useDepartments } from '@/store/useDepartmentStore';
 import { Armchair, Printer } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
-import { User } from '../../types';
+import { User } from '@/types';
 
 import { SeatingToolbar } from './components/SeatingToolbar';
 import { TableConfig } from './components/TableConfig';

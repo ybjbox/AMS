@@ -1,6 +1,6 @@
 import React from 'react';
 import { Search, Plus, Download, Printer, Filter, Users } from 'lucide-react';
-import { DepartmentNode } from '../../../types';
+import { DepartmentNode } from '@/types';
 import { UserFilters } from './UserFilters';
 
 interface UserToolbarProps {

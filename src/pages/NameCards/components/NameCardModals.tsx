@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { FileText, CheckSquare, Square, ChevronRight } from 'lucide-react';
-import { User } from '../../../types';
+import { User } from '@/types';
 
 interface NameCardModalsProps {
   isParticipantModalOpen: boolean;

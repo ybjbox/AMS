@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
-import { useConfirm } from '../../../hooks/useConfirm';
-import { useDocumentStore, Document, DocumentSet, Folder as FolderType } from '../../../store/useDocumentStore';
+import { useConfirm } from '@/hooks/useConfirm';
+import { useDocumentStore, Document, DocumentSet, Folder as FolderType } from '@/store/useDocumentStore';
 
 export function useDocumentActions() {
   const confirm = useConfirm();

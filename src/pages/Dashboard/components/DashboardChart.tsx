@@ -1,7 +1,7 @@
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Activity } from 'lucide-react';
-import { useAppSettings } from '../../../store/appSettings';
+import { useAppSettings } from '@/store/appSettings';
 
 export interface ChartData {
   name: string;

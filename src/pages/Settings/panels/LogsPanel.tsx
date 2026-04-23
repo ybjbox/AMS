@@ -1,5 +1,5 @@
 import React from 'react';
-import SystemLogs from '../../../components/SystemLogs';
+import SystemLogs from '@/components/SystemLogs';
 
 export default function LogsPanel() {
   return (

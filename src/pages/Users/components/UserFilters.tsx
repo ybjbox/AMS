@@ -1,7 +1,7 @@
 import React from 'react';
 import { Check } from 'lucide-react';
-import { TreeFilter } from '../../../components/common/TreeFilter';
-import { DepartmentNode } from '../../../types';
+import { TreeFilter } from '@/components/common/TreeFilter';
+import { DepartmentNode } from '@/types';
 
 interface UserFiltersProps {
   filters: { department: string[]; status: string[] };

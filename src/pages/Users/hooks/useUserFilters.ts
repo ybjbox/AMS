@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { User } from '../../../types';
+import { User } from '@/types';
 
 export function useUserFilters(users: User[]) {
   const [searchTerm, setSearchTerm] = useState('');

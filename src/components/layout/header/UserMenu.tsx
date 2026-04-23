@@ -2,11 +2,12 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useUserStore } from '../../../store/useUserStore';
+import { useUserStore } from '@/store/useUserStore';
 import ThemeToggle from './ThemeToggle';
 
 export default function UserMenu() {
-  const { userInfo, logout } = useUserStore();
+  const userInfo = useUserStore((s) => s.userInfo);
+  const logout = useUserStore((s) => s.logout);
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);

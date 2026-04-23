@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { ChevronRight, ChevronDown, Folder, FolderOpen, Plus, Edit2, Trash2, Building2 } from 'lucide-react';
-import { DepartmentNode } from '../../../types';
+import { DepartmentNode } from '@/types';
 
 interface DepartmentTreeNodeProps {
   node: DepartmentNode;

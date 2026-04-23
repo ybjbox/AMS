@@ -16,7 +16,9 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
-  const { globalLoading: loading, setLoading } = useLoadingStore();
+  const globalLoading = useLoadingStore((state) => state.globalLoading);
+  const setLoading = useLoadingStore((state) => state.setLoading);
+  const loading = globalLoading;
   const setUser = useUserStore((state) => state.setUser);
   const navigate = useNavigate();
   const loginBackground = useAppSettings((state) => state.loginBackground);
@@ -115,7 +117,7 @@ export default function Login() {
                   {...register('username')}
                   id="username"
                   type="text"
-                  className={`block w-full pl-10 py-2.5 sm:text-sm border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-lg border focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 outline-none ${errors.username ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
+                  className={`input-base pl-10 py-2.5 sm:text-sm ${errors.username ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
                   placeholder="请输入用户名 (admin)"
                 />
               </div>
@@ -134,7 +136,7 @@ export default function Login() {
                   {...register('password')}
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  className={`block w-full pl-10 pr-10 py-2.5 sm:text-sm border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-lg border focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 outline-none ${errors.password ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
+                  className={`input-base pl-10 pr-10 py-2.5 sm:text-sm ${errors.password ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
                   placeholder="请输入密码 (123456)"
                 />
                 <button
@@ -185,7 +187,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading || isSubmitting}
-                className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 disabled:opacity-70 disabled:cursor-not-allowed group"
+                className="btn-primary w-full py-2.5 sm:text-sm disabled:opacity-70 disabled:cursor-not-allowed group focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"
               >
                 {loading || isSubmitting ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

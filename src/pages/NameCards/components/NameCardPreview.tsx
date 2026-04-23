@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { IdCard } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PrintSettings, VERTICAL_CHAR_STYLE, CARD_PADDING_STYLE } from '../constants';
-import { User } from '../../../types';
+import { User } from '@/types';
 
 interface NameCardPreviewProps {
   printSettings: PrintSettings;

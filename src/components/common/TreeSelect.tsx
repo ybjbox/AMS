@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { useTreeExpand, TreeNode } from '../../hooks/useTreeExpand';
+import { useTreeExpand, TreeNode } from '@/hooks/useTreeExpand';
 
 export type { TreeNode };
 

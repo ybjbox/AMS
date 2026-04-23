@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Clock, FileSpreadsheet, ChevronDown, Search, Plus, AlertTriangle } from 'lucide-react';
-import { PunchRecord, EmployeeSchedule, Shift } from '../../../store/useAttendanceStore';
-import { attendanceService } from '../../../services/attendance';
+import { PunchRecord, EmployeeSchedule, Shift } from '@/store/useAttendanceStore';
+import { attendanceService } from '@/services/attendance';
 import { UseAttendanceReturn } from '../hooks/useAttendance';
 
 export type FilterProps = Pick<

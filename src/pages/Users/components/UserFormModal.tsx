@@ -3,9 +3,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { BaseModal } from '@/components/ui/BaseModal';
-import { TreeSelect } from '../../../components/common/TreeSelect';
+import { TreeSelect } from '@/components/common/TreeSelect';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, DepartmentNode, RoleNode, SystemRole } from '../../../types';
+import { User, DepartmentNode, RoleNode, SystemRole } from '@/types';
 
 const userSchema = z.object({
   name: z.string().min(1, '请输入姓名'),
@@ -351,7 +351,7 @@ export function UserFormModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">是否购买社保</label>
-              <Select defaultValue={editingUser?.hasSocialSecurity || '是'}>
+              <Select defaultValue={editingUser?.hasSocialSecurity ? '是' : '否'}>
                 <SelectTrigger className="w-full mt-1 bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
                   <SelectValue placeholder="选择是否购买社保" />
                 </SelectTrigger>
@@ -385,7 +385,7 @@ export function UserFormModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">是否退役军人</label>
-              <Select defaultValue={editingUser?.isVeteran || '否'}>
+              <Select defaultValue={editingUser?.isVeteran ? '是' : '否'}>
                 <SelectTrigger className="w-full mt-1 bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
                   <SelectValue placeholder="选择是否退役军人" />
                 </SelectTrigger>

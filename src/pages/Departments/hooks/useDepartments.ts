@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
-import { useConfirm } from '../../../hooks/useConfirm';
-import { useDepartments as useDepartmentStore, flattenDepartments } from '../../../store/useDepartmentStore';
-import { DepartmentNode, RoleNode } from '../../../types';
+import { useConfirm } from '@/hooks/useConfirm';
+import { useDepartments as useDepartmentStore, flattenDepartments } from '@/store/useDepartmentStore';
+import { DepartmentNode, RoleNode } from '@/types';
 
 export type DeptModalState = {
   isOpen: boolean;

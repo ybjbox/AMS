@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { User, DepartmentNode, RoleNode } from '../../../types';
+import { User, DepartmentNode, RoleNode } from '@/types';
 
 export interface Table {
   number: number;

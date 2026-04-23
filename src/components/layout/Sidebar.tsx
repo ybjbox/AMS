@@ -1,48 +1,15 @@
 import React, { useMemo, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import {
-  LayoutDashboard,
-  Users,
-  Settings,
-  Building2,
-  ListTodo,
-  Armchair,
-  IdCard,
-  FileStack,
-  Clock,
-  FileSignature,
-} from 'lucide-react';
-import { useAppSettings } from '../../store/appSettings';
-import { useUserStore } from '../../store/useUserStore';
+import { Building2 } from 'lucide-react';
+import { useAppSettings } from '@/store/appSettings';
+import { useUserStore } from '@/store/useUserStore';
+import { routeConfig } from '@/config/routes';
 
 interface SidebarProps {
   isCollapsed?: boolean;
   className?: string;
   onClose?: () => void;
 }
-
-interface NavItem {
-  name: string;
-  href: string;
-  icon: React.ElementType;
-  /**
-   * 可选的权限码。如果配置了该属性，则只有拥有对应权限的用户才能看到该菜单项；
-   * 如果未配置，则默认所有用户均可看到。
-   */
-  permission?: string;
-}
-
-const NAVIGATION_CONFIG: NavItem[] = [
-  { name: '控制台', href: '/', icon: LayoutDashboard, permission: 'dashboard:view' },
-  { name: '员工管理', href: '/users', icon: Users, permission: 'users:view' },
-  { name: '宴会排座', href: '/seating', icon: Armchair, permission: 'seating:view' },
-  { name: '会议台卡', href: '/name-cards', icon: IdCard, permission: 'name-cards:view' },
-  { name: '常用文件', href: '/documents', icon: FileStack, permission: 'documents:view' },
-  { name: '考勤管理', href: '/attendance', icon: Clock, permission: 'attendance:view' },
-  { name: '合同管理', href: '/contracts', icon: FileSignature, permission: 'contracts:view' },
-  { name: '待办事项', href: '/todos', icon: ListTodo, permission: 'todos:view' },
-  { name: '系统设置', href: '/settings', icon: Settings, permission: 'settings:view' },
-];
 
 const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '', onClose }: SidebarProps) {
   const location = useLocation();
@@ -53,7 +20,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
   const hasPermission = useUserStore((state) => state.hasPermission);
 
   const visibleNav = useMemo(() => {
-    return NAVIGATION_CONFIG.filter((item) => {
+    return routeConfig.filter((item) => {
       // 如果配置了 permission 且当前用户没有该权限，则过滤掉；否则默认显示
       if (item.permission) {
         return hasPermission(item.permission);
@@ -94,15 +61,15 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
       {/* Nav */}
       <nav aria-label="主导航" className="px-3 pb-4 space-y-1.5 flex-1 overflow-y-auto overflow-x-hidden">
         {visibleNav.map((item) => {
-          const isActive = location.pathname === item.href;
+          const isActive = location.pathname === item.path;
           return (
             <Link
-              key={item.name}
-              to={item.href}
+              key={item.label}
+              to={item.path}
               onClick={handleCloseSidebar}
-              title={isCollapsed ? item.name : undefined}
+              title={isCollapsed ? item.label : undefined}
               aria-current={isActive ? 'page' : undefined}
-              aria-label={isCollapsed ? item.name : undefined}
+              aria-label={isCollapsed ? item.label : undefined}
               className={`flex items-center py-2.5 px-3 rounded-xl transition-all duration-300 ease-in-out group ${
                 isCollapsed ? 'justify-center' : ''
               } ${
@@ -115,7 +82,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
                 className={`h-5 w-5 shrink-0 transition-colors ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-600 dark:group-hover:text-zinc-300'} ${isCollapsed ? '' : 'mr-3'}`}
               />
               {!isCollapsed && (
-                <span className="whitespace-nowrap text-sm animate-in fade-in duration-300">{item.name}</span>
+                <span className="whitespace-nowrap text-sm animate-in fade-in duration-300">{item.label}</span>
               )}
             </Link>
           );

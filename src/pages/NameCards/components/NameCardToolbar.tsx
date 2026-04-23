@@ -1,6 +1,6 @@
 import React from 'react';
 import { IdCard, X, Upload, ChevronDown, FileDown, FileText, Users, Printer } from 'lucide-react';
-import { User } from '../../../types';
+import { User } from '@/types';
 
 interface NameCardToolbarProps {
   uploadedUsers: User[] | null;

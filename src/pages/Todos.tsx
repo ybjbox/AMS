@@ -57,12 +57,12 @@ export default function Todos() {
     <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl mx-auto">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">待办事项</h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">管理您的日常任务及系统自动生成的提醒事项</p>
+          <h1 className="page-title">待办事项</h1>
+          <p className="page-subtitle">管理您的日常任务及系统自动生成的提醒事项</p>
         </div>
         <button
           onClick={() => setIsAdding(true)}
-          className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform shadow-sm"
+          className="btn-primary"
         >
           <Plus className="w-4 h-4 mr-2" />
           新建待办
@@ -75,7 +75,7 @@ export default function Todos() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="bg-white dark:bg-zinc-800 p-6 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl"
+            className="card-base p-6"
           >
             <form onSubmit={handleAdd} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -86,7 +86,7 @@ export default function Todos() {
                     required
                     value={newTodo.title}
                     onChange={(e) => setNewTodo({ ...newTodo, title: e.target.value })}
-                    className="w-full px-3 py-2 border border-zinc-200/80 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 outline-none transition-all bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
+                    className="input-base"
                     placeholder="要做什么？"
                   />
                 </div>
@@ -96,7 +96,7 @@ export default function Todos() {
                     type="date"
                     value={newTodo.dueDate}
                     onChange={(e) => setNewTodo({ ...newTodo, dueDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-zinc-200/80 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 outline-none transition-all bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
+                    className="input-base"
                   />
                 </div>
               </div>
@@ -105,7 +105,7 @@ export default function Todos() {
                 <textarea
                   value={newTodo.description}
                   onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-zinc-200/80 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 outline-none transition-all h-20 resize-none bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
+                  className="input-base h-20 resize-none"
                   placeholder="添加更多细节..."
                 />
               </div>
@@ -119,7 +119,7 @@ export default function Todos() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform"
+                  className="btn-primary"
                 >
                   保存待办
                 </button>
@@ -129,7 +129,7 @@ export default function Todos() {
         )}
       </AnimatePresence>
 
-      <div className="bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl overflow-hidden">
+      <div className="card-base overflow-hidden">
         {sortedTodos.length === 0 ? (
           <EmptyState
             title="暂无待办事项"
@@ -138,7 +138,7 @@ export default function Todos() {
             action={
               <button
                 onClick={() => setIsAdding(true)}
-                className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform shadow-sm"
+                className="btn-primary"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 立即创建

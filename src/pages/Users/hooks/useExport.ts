@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
-import { User } from '../../../types';
+import { User } from '@/types';
 import { DEFAULT_ROSTER_COLUMNS, DEFAULT_ADDRESS_BOOK_COLUMNS, ExportTheme, ExportScript } from '../constants';
 
 export function useExport(users: User[]) {

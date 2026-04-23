@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { useEmployeeStore } from '../../../store/useEmployeeStore';
-import { User } from '../../../types';
+import { useEmployeeStore } from '@/store/useEmployeeStore';
+import { User } from '@/types';
 import { PrintSettings, DEFAULT_PRINT_SETTINGS } from '../constants';
 
 export function useNameCards() {

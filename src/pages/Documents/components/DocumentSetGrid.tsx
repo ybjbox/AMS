@@ -1,6 +1,6 @@
 import React from 'react';
 import { Folder, Edit2, Trash2, FileText, Printer, Plus } from 'lucide-react';
-import { DocumentSet, Document } from '../../../store/useDocumentStore';
+import { DocumentSet, Document } from '@/store/useDocumentStore';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 interface DocumentSetGridProps {
