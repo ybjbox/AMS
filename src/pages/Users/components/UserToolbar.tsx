@@ -2,6 +2,7 @@ import React from 'react';
 import { Search, Plus, Download, Printer, Filter } from 'lucide-react';
 import { DepartmentNode } from '@/types';
 import { UserFilters } from './UserFilters';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 interface UserToolbarProps {
   searchTerm: string;
@@ -78,34 +79,65 @@ export function UserToolbar({
             placeholder="搜索姓名、工号或部门..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="block w-full pl-10 pr-3 py-2.5 border-none rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200 outline-none bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white placeholder-zinc-400"
+            className="input-base pl-10"
           />
         </div>
-        <div className="flex items-center space-x-2 relative">
-          <button
-            onClick={() => setIsFilterOpen(!isFilterOpen)}
-            className={`inline-flex items-center px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
-              activeFilterCount > 0 || isFilterOpen
-                ? 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 shadow-sm'
-                : 'text-zinc-700 dark:text-zinc-200 bg-zinc-100/50 dark:bg-zinc-800 hover:bg-zinc-200/50 dark:hover:bg-zinc-700'
-            }`}
-          >
-            <Filter
-              className={`h-4 w-4 mr-2 ${activeFilterCount > 0 || isFilterOpen ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-400'}`}
-            />
-            筛选 {activeFilterCount > 0 && `(${activeFilterCount})`}
-          </button>
+        <div className="flex items-center space-x-2 relative w-full sm:w-auto">
+          {/* 移动端：底部 Sheet（< md） */}
+          <div className="md:hidden w-full">
+            <Sheet>
+              <SheetTrigger
+                className={`w-full inline-flex justify-center items-center px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
+                  activeFilterCount > 0
+                    ? 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 shadow-sm'
+                    : 'text-zinc-700 dark:text-zinc-200 bg-zinc-100/50 dark:bg-zinc-800 hover:bg-zinc-200/50 dark:hover:bg-zinc-700'
+                }`}
+              >
+                <Filter className={`h-4 w-4 mr-2 ${activeFilterCount > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-400'}`} />
+                筛选 {activeFilterCount > 0 && `(${activeFilterCount})`}
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-auto max-h-[70vh] rounded-t-2xl overflow-y-auto">
+                <div className="py-2">
+                  <UserFilters
+                    filters={filters}
+                    handleFilterChange={handleFilterChange}
+                    departments={departments}
+                    activeFilterCount={activeFilterCount}
+                    clearFilters={clearFilters}
+                    setIsFilterOpen={() => {}}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
 
-          {isFilterOpen && (
-            <UserFilters
-              filters={filters}
-              handleFilterChange={handleFilterChange}
-              departments={departments}
-              activeFilterCount={activeFilterCount}
-              clearFilters={clearFilters}
-              setIsFilterOpen={setIsFilterOpen}
-            />
-          )}
+          {/* 桌面端：绝对定位浮层（>= md），原有逻辑保持不变 */}
+          <div className="hidden md:block relative">
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className={`inline-flex items-center px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
+                activeFilterCount > 0 || isFilterOpen
+                  ? 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 shadow-sm'
+                  : 'text-zinc-700 dark:text-zinc-200 bg-zinc-100/50 dark:bg-zinc-800 hover:bg-zinc-200/50 dark:hover:bg-zinc-700'
+              }`}
+            >
+              <Filter
+                className={`h-4 w-4 mr-2 ${activeFilterCount > 0 || isFilterOpen ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-400'}`}
+              />
+              筛选 {activeFilterCount > 0 && `(${activeFilterCount})`}
+            </button>
+
+            {isFilterOpen && (
+              <UserFilters
+                filters={filters}
+                handleFilterChange={handleFilterChange}
+                departments={departments}
+                activeFilterCount={activeFilterCount}
+                clearFilters={clearFilters}
+                setIsFilterOpen={setIsFilterOpen}
+              />
+            )}
+          </div>
         </div>
       </div>
     </>

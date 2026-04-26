@@ -54,7 +54,7 @@ export default function Todos() {
   );
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl mx-auto">
+    <div className="p-6 lg:p-8 space-y-6 animate-in fade-in duration-500 max-w-3xl">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="page-title">待办事项</h1>
@@ -113,7 +113,7 @@ export default function Todos() {
                 <button
                   type="button"
                   onClick={() => setIsAdding(false)}
-                  className="px-4 py-2 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-lg active:scale-95 transition-transform"
+                  className="btn-secondary"
                 >
                   取消
                 </button>

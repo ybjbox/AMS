@@ -52,8 +52,8 @@ export function SeatingToolbar({
     <div className="space-y-4">
       <div className="page-header">
         <div>
-          <h1 className="page-title">自动排座模块</h1>
-          <p className="page-subtitle">根据部门和职位优先级自动分配桌号，支持导出 A4 台卡</p>
+          <h1 className="page-title">宴会排座</h1>
+          <p className="page-subtitle">自动编排座位并生成可打印席卡</p>
         </div>
         <div>
           <button

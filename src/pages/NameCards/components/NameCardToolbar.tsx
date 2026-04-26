@@ -1,5 +1,5 @@
 import React from 'react';
-import { IdCard, X, Upload, ChevronDown, FileDown, FileText, Users, Printer } from 'lucide-react';
+import { X, Upload, ChevronDown, FileDown, FileText, Users, Printer } from 'lucide-react';
 import { User } from '@/types';
 
 interface NameCardToolbarProps {
@@ -29,13 +29,10 @@ export default function NameCardToolbar({
 }: NameCardToolbarProps) {
   return (
     <div className="bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700 px-6 py-4 flex items-center justify-between shrink-0 print:hidden">
-      <div className="flex items-center space-x-3">
-        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-          <IdCard className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-        </div>
+      <div className="page-header">
         <div>
-          <h1 className="text-xl font-bold text-zinc-800 dark:text-white">会议台卡制作</h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">自定义台卡尺寸、样式并打印</p>
+          <h1 className="page-title">会议台卡</h1>
+          <p className="page-subtitle">自定义台卡尺寸、样式并批量打印</p>
         </div>
       </div>
       <div className="flex items-center space-x-3">

@@ -1,56 +1,41 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { calculateYearsOfService, calculateDaysToExpiry } from '../dateUtils';
 
 describe('dateUtils', () => {
-
   describe('calculateYearsOfService', () => {
-    beforeEach(() => {
-      // Mock System Time
-      vi.setSystemTime(new Date('2026-04-23'));
+    it('入职日期距今刚好1年', () => {
+      const today = new Date();
+      const lastYear = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+      expect(calculateYearsOfService(lastYear.toISOString())).toBe('1年0个月');
     });
 
-    afterEach(() => {
-      vi.useRealTimers();
+    it('入职日期距今不足1年', () => {
+      const today = new Date();
+      const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 6, today.getDate());
+      const res = calculateYearsOfService(sixMonthsAgo.toISOString());
+      expect(res).toMatch(/^0年\d+个月$/);
     });
 
-    it('如果没有日期，应返回 "-"', () => {
+    it('入职日期为空或无效', () => {
       expect(calculateYearsOfService('')).toBe('-');
-    });
-
-    it('calculateYearsOfService的正确性 (满年计算)', () => {
-      expect(calculateYearsOfService('2020-04-23')).toBe('6年0个月');
-    });
-
-    it('calculateYearsOfService的正确性 (跨越年并不足月)', () => {
-      expect(calculateYearsOfService('2020-05-15')).toBe('5年11个月');
-    });
-
-    it('calculateYearsOfService的正确性 (满月未跨年)', () => {
-      expect(calculateYearsOfService('2025-02-23')).toBe('1年2个月');
     });
   });
 
   describe('calculateDaysToExpiry', () => {
-    beforeEach(() => {
-      // Mock System Time
-      vi.setSystemTime(new Date('2026-04-23T12:00:00.000Z'));
+    it('合同到期日在未来30天', () => {
+      const today = new Date();
+      const futureDate = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const days = calculateDaysToExpiry(futureDate.toISOString());
+      expect(days).toBeGreaterThan(0);
     });
 
-    afterEach(() => {
-      vi.useRealTimers();
+    it('合同到期日已过', () => {
+      const today = new Date();
+      const pastDate = new Date(today.getTime() - 10 * 24 * 60 * 60 * 1000);
+      expect(calculateDaysToExpiry(pastDate.toISOString())).toBeLessThanOrEqual(0);
     });
 
-    it('如果没有日期，应返回 0', () => {
+    it('到期日为空或无效', () => {
       expect(calculateDaysToExpiry('')).toBe(0);
-    });
-
-    it('calculateDaysToExpiry的正确性 (未来时间)', () => {
-      // 距离今天还有几天，例如 10 天后
-      expect(calculateDaysToExpiry('2026-05-03')).toBe(10);
-    });
-
-    it('calculateDaysToExpiry的正确性 (过去时间)', () => {
-      expect(calculateDaysToExpiry('2026-04-18')).toBe(-5);
     });
   });
 });

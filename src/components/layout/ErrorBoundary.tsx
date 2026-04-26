@@ -46,14 +46,14 @@ export default class ErrorBoundary extends React.Component<Props, State> {
           <div className="flex space-x-4">
             <button
               onClick={this.handleRetry}
-              className="flex items-center px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-600 rounded-lg text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors duration-200 shadow-sm"
+              className="btn-secondary"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               重试
             </button>
             <button
               onClick={this.handleGoHome}
-              className="flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner hover:from-blue-500 hover:to-blue-600 text-white rounded-lg transition-colors duration-200 shadow-sm"
+              className="btn-primary"
             >
               <Home className="h-4 w-4 mr-2" />
               返回控制台

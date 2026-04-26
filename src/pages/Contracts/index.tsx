@@ -69,7 +69,7 @@ export default function ContractsPage() {
                 placeholder="搜索员工姓名、工号或部门..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="input-base pl-9 pr-4"
+                className="input-base pl-10"
               />
             </div>
             <div className="flex items-center space-x-2 shrink-0">

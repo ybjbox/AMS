@@ -10,6 +10,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const shouldReduceMotion = useReducedMotion();
 
+  // 获取当前和前一个路由的索引，决定动画方向
+  const xOffset = 12; // 水平偏移量
+
   const handleSetIsCollapsed = useCallback((collapsed: boolean) => {
     setIsCollapsed(collapsed);
   }, []);
@@ -24,15 +27,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden print:overflow-visible">
         <Header isCollapsed={isCollapsed} setIsCollapsed={handleSetIsCollapsed} />
 
-        <main className="flex-1 overflow-auto p-6 lg:p-8 print:p-0 print:overflow-visible relative flex flex-col">
+        <main className="flex-1 overflow-auto print:p-0 print:overflow-visible relative flex flex-col">
           <ErrorBoundary>
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={location.pathname}
-                initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={shouldReduceMotion ? undefined : { opacity: 0, y: -10 }}
-                transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
+                initial={shouldReduceMotion ? false : { opacity: 0, x: xOffset }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={shouldReduceMotion ? undefined : { opacity: 0, x: -xOffset }}
+                transition={{ duration: shouldReduceMotion ? 0 : 0.18, ease: 'easeOut' }}
                 className="flex-1 flex flex-col min-h-full"
               >
                 {children}

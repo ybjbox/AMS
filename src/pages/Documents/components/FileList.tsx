@@ -65,7 +65,7 @@ export function FileList({
             placeholder="搜索文件名称或类型..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-4 py-1.5 text-sm border border-zinc-200 dark:border-zinc-600 rounded-md bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200 w-full sm:w-64 transition-all"
+            className="input-base pl-10 w-full sm:w-64"
           />
         </div>
       </div>

@@ -9,7 +9,7 @@ export default function Dashboard() {
   const dashboardData = useDashboard();
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 max-w-7xl mx-auto">
+    <div className="p-6 lg:p-8 space-y-8 animate-in fade-in duration-500 w-full">
       <div className="page-header px-2">
         <div>
           <h1 className="page-title">控制台</h1>
@@ -22,9 +22,13 @@ export default function Dashboard() {
 
       <StatCards stats={dashboardData.stats} isLoading={dashboardData.isLoading} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-        <DashboardChart data={dashboardData.chartData} isLoading={dashboardData.isLoading} />
-        <div className="space-y-6 md:space-y-8">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-8">
+        {/* 图表：平板占 3/5，桌面占 3/5 */}
+        <div className="md:col-span-3">
+          <DashboardChart data={dashboardData.chartData} isLoading={dashboardData.isLoading} />
+        </div>
+        {/* 快捷操作 + 公告：平板占 2/5，桌面占 2/5 */}
+        <div className="md:col-span-2 space-y-6 md:space-y-8">
           <QuickActions quickActions={dashboardData.quickActions} isLoading={dashboardData.isLoading} />
           <SystemNotices notices={dashboardData.notices} isLoading={dashboardData.isLoading} />
         </div>

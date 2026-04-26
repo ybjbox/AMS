@@ -190,7 +190,7 @@ export default function Documents() {
   }, []);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto">
       <div className="page-header">
         <div>
           <h1 className="page-title">常用文件</h1>

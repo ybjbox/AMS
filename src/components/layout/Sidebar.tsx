@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Building2 } from 'lucide-react';
+import { Building2, User as UserIcon } from 'lucide-react';
 import { useAppSettings } from '@/store/appSettings';
 import { useUserStore } from '@/store/useUserStore';
 import { routeConfig } from '@/config/routes';
@@ -16,7 +16,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
   const systemIcon = useAppSettings((state) => state.systemIcon);
 
   // 订阅 userInfo 以确保权限变化时能重新渲染
-  useUserStore((state) => state.userInfo);
+  const userInfo = useUserStore((state) => state.userInfo);
   const hasPermission = useUserStore((state) => state.hasPermission);
 
   const visibleNav = useMemo(() => {
@@ -88,6 +88,30 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
           );
         })}
       </nav>
+      {/* 用户信息底部区 */}
+      <div className={`border-t border-zinc-200/60 dark:border-zinc-700/60 p-3 shrink-0 ${isCollapsed ? 'flex justify-center' : ''}`}>
+        {isCollapsed ? (
+          // 折叠状态：仅显示头像
+          <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+            <UserIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          </div>
+        ) : (
+          // 展开状态：头像 + 姓名 + 角色
+          <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer group">
+            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0">
+              <UserIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate">
+                {userInfo?.username || '用户'}
+              </p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                {userInfo?.role === 'admin' ? '管理员' : '普通员工'}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
     </aside>
   );
 });

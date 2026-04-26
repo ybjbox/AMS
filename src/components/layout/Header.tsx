@@ -1,9 +1,11 @@
 import React, { memo, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import NotificationTrigger from './header/NotificationTrigger';
 import UserMenu from './header/UserMenu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import Sidebar from './Sidebar';
+import { routeConfig } from '@/config/routes';
 
 interface HeaderProps {
   isCollapsed: boolean;
@@ -12,6 +14,9 @@ interface HeaderProps {
 
 const Header = memo(function Header({ isCollapsed, setIsCollapsed }: HeaderProps) {
   const [sheetOpen, setSheetOpen] = React.useState(false);
+  const location = useLocation();
+  const currentRoute = routeConfig.find((r) => r.path === location.pathname);
+  const pageTitle = currentRoute?.label ?? '';
 
   const handleToggleCollapse = useCallback(() => {
     setIsCollapsed(!isCollapsed);
@@ -50,7 +55,17 @@ const Header = memo(function Header({ isCollapsed, setIsCollapsed }: HeaderProps
         </button>
       </div>
 
-      <div className="flex-1" />
+      {/* 移动端页面标题（仅小屏显示） */}
+      <div className="flex-1 flex md:hidden justify-center">
+        {pageTitle && (
+          <span className="text-sm font-semibold text-zinc-800 dark:text-white tracking-tight">
+            {pageTitle}
+          </span>
+        )}
+      </div>
+
+      {/* 桌面端中间区域保持空白 */}
+      <div className="hidden md:flex flex-1" />
 
       <div className="flex items-center space-x-4">
         <NotificationTrigger />
