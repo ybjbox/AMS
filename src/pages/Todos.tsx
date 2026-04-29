@@ -54,20 +54,21 @@ export default function Todos() {
   );
 
   return (
-    <div className="p-6 lg:p-8 space-y-6 animate-in fade-in duration-500 max-w-3xl">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="page-title">待办事项</h1>
-          <p className="page-subtitle">管理您的日常任务及系统自动生成的提醒事项</p>
+    <div className="p-6 lg:p-8 space-y-6 animate-in fade-in duration-500 w-full min-h-full">
+      <div className="max-w-3xl mx-auto space-y-6 w-full">
+        <div className="page-header shrink-0">
+          <div>
+            <h1 className="page-title">待办事项</h1>
+            <p className="page-subtitle">管理您的日常任务及系统自动生成的提醒事项</p>
+          </div>
+          <button
+            onClick={() => setIsAdding(true)}
+            className="btn-primary"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            新建待办
+          </button>
         </div>
-        <button
-          onClick={() => setIsAdding(true)}
-          className="btn-primary"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          新建待办
-        </button>
-      </div>
 
       <AnimatePresence>
         {isAdding && (
@@ -225,6 +226,7 @@ export default function Todos() {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }

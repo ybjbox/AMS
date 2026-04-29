@@ -3,8 +3,9 @@ import { toast } from 'sonner';
 import { useBodyOverflow } from '@/hooks/useBodyOverflow';
 import { useEmployeeStore } from '@/store/useEmployeeStore';
 import { useDepartments } from '@/store/useDepartmentStore';
-import { Armchair, Printer } from 'lucide-react';
+import { Armchair, Printer, RefreshCw } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { User } from '@/types';
 
 import { SeatingToolbar } from './components/SeatingToolbar';
@@ -156,6 +157,21 @@ export default function Seating() {
   return (
     <>
       <div className="p-4 sm:p-6 lg:p-8 space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto print:hidden">
+        <div className="page-header shrink-0">
+          <div>
+            <h1 className="page-title">座位安排</h1>
+            <p className="page-subtitle">自动按部门与职位优先级生成座位方案</p>
+          </div>
+          <div>
+            <button
+              onClick={handleAutoArrange}
+              className="btn-primary"
+            >
+              <RefreshCw className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">自动排座</span>
+            </button>
+          </div>
+        </div>
         <SeatingToolbar
           viewMode={viewMode}
           setViewMode={setViewMode}
@@ -171,7 +187,6 @@ export default function Seating() {
           selectedCount={selectedUserIds.size}
           setIsPrintModalOpen={setIsPrintModalOpen}
           handlePrint={handlePrint}
-          handleAutoArrange={handleAutoArrange}
         />
 
         <TableConfig
@@ -191,15 +206,16 @@ export default function Seating() {
             ))}
           </div>
         ) : (
-          <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-zinc-800 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-700">
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-full mb-4">
-              <Armchair className="w-12 h-12 text-blue-400 dark:text-blue-600" />
-            </div>
-            <h3 className="text-lg font-medium text-zinc-900 dark:text-white">准备好开始排座了吗？</h3>
-            <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1 max-w-sm text-center">
-              点击右上角的“自动排座”按钮，系统将根据员工的部门和职位优先级为您生成最佳方案。
-            </p>
-          </div>
+          <EmptyState
+            icon={Armchair}
+            title="准备好开始排座了吗？"
+            description="点击右上角的“自动排座”按钮，系统将根据员工的部门和职位优先级为您生成最佳方案。"
+            action={
+              <button onClick={handleAutoArrange} className="btn-primary">
+                自动排座
+              </button>
+            }
+          />
         )}
       </div>
 

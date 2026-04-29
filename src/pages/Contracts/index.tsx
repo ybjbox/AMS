@@ -42,20 +42,20 @@ export default function ContractsPage() {
   }, []);
 
   return (
-    <div className="absolute inset-0 w-full flex flex-col p-4 sm:p-6 lg:p-8">
+    <div className="w-full flex flex-col p-4 sm:p-6 lg:p-8 min-h-full">
       <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-6 animate-in fade-in duration-500">
         <div className="page-header shrink-0">
           <div>
             <h1 className="page-title">合同管理</h1>
             <p className="page-subtitle">劳动合同管理、生成与打印</p>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => setIsTemplateEditorOpen(true)}
               className="btn-secondary"
             >
-              <FileEdit className="w-4 h-4 mr-2" />
-              模板设置
+              <FileEdit className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">模板设置</span>
             </button>
           </div>
         </div>

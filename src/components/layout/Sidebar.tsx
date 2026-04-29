@@ -92,8 +92,15 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
       <div className={`border-t border-zinc-200/60 dark:border-zinc-700/60 p-3 shrink-0 ${isCollapsed ? 'flex justify-center' : ''}`}>
         {isCollapsed ? (
           // 折叠状态：仅显示头像
-          <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
-            <UserIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <div title={userInfo?.username || '用户'}>
+            <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+              {userInfo?.username
+                ? <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                    {userInfo.username.charAt(0).toUpperCase()}
+                  </span>
+                : <UserIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              }
+            </div>
           </div>
         ) : (
           // 展开状态：头像 + 姓名 + 角色

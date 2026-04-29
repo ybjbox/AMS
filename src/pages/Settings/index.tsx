@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Building2, User, Sliders, BellRing, Palette, Code2, TerminalSquare, Monitor } from 'lucide-react';
 import DepartmentsPanel from './panels/DepartmentsPanel';
 import ProfilePanel from './panels/ProfilePanel';
@@ -23,6 +23,17 @@ const tabs = [
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('departments');
 
+  useEffect(() => {
+    const tabItem = tabs.find(t => t.id === activeTab);
+    if (tabItem) {
+      document.title = `${tabItem.label} - AMS`;
+    }
+  }, [activeTab]);
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'departments': return <DepartmentsPanel />;
@@ -38,7 +49,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="absolute inset-0 w-full flex flex-col p-4 sm:p-6 lg:p-8">
+    <div className="w-full flex flex-col p-4 sm:p-6 lg:p-8 min-h-full">
       <div className="max-w-6xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-6 animate-in fade-in duration-500">
         <div className="shrink-0">
           <h1 className="page-title">系统设置</h1>
@@ -47,22 +58,22 @@ export default function Settings() {
 
         <div className="flex-1 bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-2xl overflow-hidden flex flex-col md:flex-row min-h-0">
           {/* 移动端下拉选择（仅小屏显示） */}
-          <div className="md:hidden border-b border-zinc-200 dark:border-zinc-700 p-4">
-            <select
-              value={activeTab}
-              onChange={(e) => setActiveTab(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              aria-label="设置分类"
-            >
-              <option value="departments">部门与职位架构</option>
-              <option value="profile">个人设置</option>
-              <option value="appearance">外观设置</option>
-              <option value="preferences">系统偏好</option>
-              <option value="reminders">提醒设置</option>
-              <option value="themes">导出主题管理</option>
-              <option value="scripts">导出脚本模板</option>
-              <option value="logs">系统日志</option>
-            </select>
+          <div className="md:hidden border-b border-zinc-200 dark:border-zinc-700 px-2 py-2">
+            <div className="tab-group">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => handleTabChange(tab.id)}
+                    className={activeTab === tab.id ? 'tab-item-active' : 'tab-item'}
+                  >
+                    <Icon className="w-4 h-4 mr-1.5 inline-block" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* 桌面端侧边导航（仅大屏显示） */}
@@ -74,7 +85,7 @@ export default function Settings() {
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
+                    onClick={() => handleTabChange(tab.id)}
                     className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
                       isActive
                         ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400'

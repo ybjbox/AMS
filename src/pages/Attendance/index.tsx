@@ -8,7 +8,7 @@ export default function Attendance() {
   const attendanceData = useAttendance();
 
   return (
-    <div className="absolute inset-0 w-full flex flex-col p-4 sm:p-6 lg:p-8">
+    <div className="w-full flex flex-col p-4 sm:p-6 lg:p-8 min-h-full">
       <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-4">
         <div className="page-header shrink-0">
           <div>

@@ -24,6 +24,14 @@ export default function Documents() {
   const [activeTab, setActiveTab] = useState<'files' | 'sets'>('sets');
   const [searchQuery, setSearchQuery] = useState('');
 
+  useEffect(() => {
+    document.title = activeTab === 'files' ? '文件库 - AMS' : '文件套件 - AMS';
+  }, [activeTab]);
+
+  const handleTabChange = useCallback((tab: 'files' | 'sets') => {
+    setActiveTab(tab);
+  }, []);
+
   const {
     currentFolderId,
     setCurrentFolderId,
@@ -190,8 +198,8 @@ export default function Documents() {
   }, []);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto">
-      <div className="page-header">
+    <div className="p-4 sm:p-6 lg:p-8 flex flex-col space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto w-full min-h-full">
+      <div className="page-header shrink-0">
         <div>
           <h1 className="page-title">常用文件</h1>
           <p className="page-subtitle">管理公司常用文件模板，支持一键打包打印</p>
@@ -199,13 +207,13 @@ export default function Documents() {
         <div className="toolbar">
           <div className="tab-group">
             <button
-              onClick={() => setActiveTab('sets')}
+              onClick={() => handleTabChange('sets')}
               className={activeTab === 'sets' ? 'tab-item-active' : 'tab-item'}
             >
               文件套件
             </button>
             <button
-              onClick={() => setActiveTab('files')}
+              onClick={() => handleTabChange('files')}
               className={activeTab === 'files' ? 'tab-item-active' : 'tab-item'}
             >
               文件库
@@ -235,7 +243,7 @@ export default function Documents() {
       </div>
 
       {activeTab === 'files' && (
-        <div className="flex flex-col md:flex-row gap-6 h-[calc(100vh-12rem)] min-h-[500px]">
+        <div className="flex flex-col md:flex-row gap-6 flex-1 min-h-[400px] md:min-h-[500px]">
           <FolderTree
             folders={folders}
             currentFolderId={currentFolderId}

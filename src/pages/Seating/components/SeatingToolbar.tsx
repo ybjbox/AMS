@@ -10,7 +10,6 @@ import {
   Users,
   Settings2,
   Printer,
-  RefreshCw,
 } from 'lucide-react';
 
 interface SeatingToolbarProps {
@@ -46,26 +45,9 @@ export function SeatingToolbar({
   selectedCount,
   setIsPrintModalOpen,
   handlePrint,
-  handleAutoArrange,
-}: SeatingToolbarProps) {
+}: Omit<SeatingToolbarProps, 'handleAutoArrange'>) {
   return (
-    <div className="space-y-4">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">宴会排座</h1>
-          <p className="page-subtitle">自动编排座位并生成可打印席卡</p>
-        </div>
-        <div>
-          <button
-            onClick={handleAutoArrange}
-            className="btn-primary"
-          >
-            <RefreshCw className="w-4 h-4 sm:mr-2" />
-            <span className="hidden sm:inline">自动排座</span>
-          </button>
-        </div>
-      </div>
-      <div className="toolbar">
+      <div className="toolbar shrink-0">
         <div className="flex items-center bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-1 shadow-sm">
           <button
             onClick={() => setViewMode('grid')}
@@ -163,6 +145,5 @@ export function SeatingToolbar({
           <span className="hidden sm:inline">打印台卡</span>
         </button>
       </div>
-    </div>
   );
 }

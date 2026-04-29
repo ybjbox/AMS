@@ -24,51 +24,53 @@ export default function NameCards() {
   }
 
   return (
-    <div className="m-4 sm:m-6 lg:m-8 flex-1 min-h-0 flex flex-col bg-zinc-50 dark:bg-zinc-900 print:bg-white print:m-0 print:h-auto overflow-hidden rounded-2xl shadow-sm border border-zinc-200/60 dark:border-zinc-700/60">
-      <NameCardToolbar
-        uploadedUsers={state.uploadedUsers}
-        setUploadedUsers={state.setUploadedUsers}
-        isUploadMenuOpen={state.isUploadMenuOpen}
-        setIsUploadMenuOpen={state.setIsUploadMenuOpen}
-        setIsManualInputOpen={state.setIsManualInputOpen}
-        handleDownloadTemplate={state.handleDownloadTemplate}
-        handleFileUpload={state.handleFileUpload}
-        setIsParticipantModalOpen={state.setIsParticipantModalOpen}
-        selectedUserIds={state.selectedUserIds}
-        handlePrint={state.handlePrint}
-      />
-      <div className="flex-1 overflow-hidden flex print:hidden">
-        <NameCardEditor
-          printSettings={state.printSettings}
-          setPrintSettings={state.setPrintSettings}
-          handlePaperSizeChange={state.handlePaperSizeChange}
-          handlePaperOrientationChange={state.handlePaperOrientationChange}
+    <div className="p-4 sm:p-6 lg:p-8 flex-1 min-h-0 flex flex-col print:p-0 print:h-auto">
+      <div className="flex-1 min-h-0 flex flex-col card-base overflow-hidden print:border-0 print:shadow-none print:bg-white">
+        <NameCardToolbar
+          uploadedUsers={state.uploadedUsers}
+          setUploadedUsers={state.setUploadedUsers}
+          isUploadMenuOpen={state.isUploadMenuOpen}
+          setIsUploadMenuOpen={state.setIsUploadMenuOpen}
+          setIsManualInputOpen={state.setIsManualInputOpen}
+          handleDownloadTemplate={state.handleDownloadTemplate}
+          handleFileUpload={state.handleFileUpload}
+          setIsParticipantModalOpen={state.setIsParticipantModalOpen}
+          selectedUserIds={state.selectedUserIds}
+          handlePrint={state.handlePrint}
         />
-        <NameCardPreview
-          printSettings={state.printSettings}
-          pages={pages}
-          cardsToPrint={state.cardsToPrint}
-          cols={cols}
-          rows={rows}
-          actualCardHeight={actualCardHeight}
+        <div className="flex-1 overflow-hidden flex print:hidden">
+          <NameCardEditor
+            printSettings={state.printSettings}
+            setPrintSettings={state.setPrintSettings}
+            handlePaperSizeChange={state.handlePaperSizeChange}
+            handlePaperOrientationChange={state.handlePaperOrientationChange}
+          />
+          <NameCardPreview
+            printSettings={state.printSettings}
+            pages={pages}
+            cardsToPrint={state.cardsToPrint}
+            cols={cols}
+            rows={rows}
+            actualCardHeight={actualCardHeight}
+          />
+        </div>
+        <NameCardModals
+          isParticipantModalOpen={state.isParticipantModalOpen}
+          setIsParticipantModalOpen={state.setIsParticipantModalOpen}
+          expandedDepts={state.expandedDepts}
+          toggleAllDeptsExpand={state.toggleAllDeptsExpand}
+          groupedUsers={state.groupedUsers}
+          selectedUserIds={state.selectedUserIds}
+          toggleDepartmentSelection={state.toggleDepartmentSelection}
+          setExpandedDepts={state.setExpandedDepts}
+          toggleUserSelection={state.toggleUserSelection}
+          isManualInputOpen={state.isManualInputOpen}
+          setIsManualInputOpen={state.setIsManualInputOpen}
+          manualInputText={state.manualInputText}
+          setManualInputText={state.setManualInputText}
+          handleManualInputSubmit={state.handleManualInputSubmit}
         />
       </div>
-      <NameCardModals
-        isParticipantModalOpen={state.isParticipantModalOpen}
-        setIsParticipantModalOpen={state.setIsParticipantModalOpen}
-        expandedDepts={state.expandedDepts}
-        toggleAllDeptsExpand={state.toggleAllDeptsExpand}
-        groupedUsers={state.groupedUsers}
-        selectedUserIds={state.selectedUserIds}
-        toggleDepartmentSelection={state.toggleDepartmentSelection}
-        setExpandedDepts={state.setExpandedDepts}
-        toggleUserSelection={state.toggleUserSelection}
-        isManualInputOpen={state.isManualInputOpen}
-        setIsManualInputOpen={state.setIsManualInputOpen}
-        manualInputText={state.manualInputText}
-        setManualInputText={state.setManualInputText}
-        handleManualInputSubmit={state.handleManualInputSubmit}
-      />
     </div>
   );
 }
