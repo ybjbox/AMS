@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { Building2, User, Sliders, BellRing, Palette, Code2, TerminalSquare, Monitor } from 'lucide-react';
 import DepartmentsPanel from './panels/DepartmentsPanel';
 import ProfilePanel from './panels/ProfilePanel';
@@ -57,18 +58,20 @@ export default function Settings() {
         </div>
 
         <div className="flex-1 bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-2xl overflow-hidden flex flex-col md:flex-row min-h-0">
-          {/* 移动端下拉选择（仅小屏显示） */}
-          <div className="md:hidden border-b border-zinc-200 dark:border-zinc-700 px-2 py-2">
+          {/* 移动端横向滚动 Tab（仅小屏显示） */}
+          <div className="md:hidden border-b border-zinc-200 dark:border-zinc-700 p-2">
             <div className="tab-group">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => handleTabChange(tab.id)}
-                    className={activeTab === tab.id ? 'tab-item-active' : 'tab-item'}
+                    className={isActive ? 'tab-item-active' : 'tab-item'}
+                    aria-current={isActive ? 'page' : undefined}
                   >
-                    <Icon className="w-4 h-4 mr-1.5 inline-block" />
+                    <Icon className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
                     {tab.label}
                   </button>
                 );
@@ -100,7 +103,18 @@ export default function Settings() {
             </nav>
           </div>
           <div className="flex-1 bg-zinc-50/30 dark:bg-zinc-900/30 min-h-0 custom-scrollbar flex flex-col overflow-hidden">
-            {renderContent()}
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+                className="flex-1 flex flex-col min-h-0 overflow-hidden"
+              >
+                {renderContent()}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
       </div>

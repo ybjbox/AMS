@@ -84,13 +84,18 @@ export const BaseModal: React.FC<BaseModalProps> = React.memo(
     }, [isOpen, onClose]);
 
     useEffect(() => {
-      if (isOpen) {
-        // Small delay to ensure DOM is rendered
-        setTimeout(() => {
-          if (headerRef.current) setHeaderHeight(headerRef.current.offsetHeight);
-          if (footerRef.current) setFooterHeight(footerRef.current.offsetHeight);
-        }, 0);
-      }
+      if (!isOpen) return;
+      const updateHeights = () => {
+        if (headerRef.current) setHeaderHeight(headerRef.current.offsetHeight);
+        if (footerRef.current) setFooterHeight(footerRef.current.offsetHeight);
+      };
+      // 使用 ResizeObserver 确保 DOM 渲染后正确测量，并响应内容高度变化
+      const observer = new ResizeObserver(updateHeights);
+      if (headerRef.current) observer.observe(headerRef.current);
+      if (footerRef.current) observer.observe(footerRef.current);
+      // 首次立即执行一次
+      updateHeights();
+      return () => observer.disconnect();
     }, [isOpen, title, footer]);
 
     return createPortal(

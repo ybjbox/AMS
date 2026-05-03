@@ -1,6 +1,7 @@
 import React from 'react';
 import { Zap } from 'lucide-react';
 import { UseDashboardReturn } from '../hooks/useDashboard';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 export type QuickActionsProps = Pick<UseDashboardReturn, 'quickActions' | 'isLoading'>;
 
@@ -19,10 +20,7 @@ export default function QuickActions({ quickActions, isLoading }: QuickActionsPr
           ))}
         </div>
       ) : quickActions.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-zinc-500 dark:text-zinc-400">
-          <Zap className="w-12 h-12 mb-4 text-zinc-300 dark:text-zinc-600" />
-          <p className="text-sm font-medium">暂无快捷操作</p>
-        </div>
+        <EmptyState icon={Zap} title="暂无快捷操作" description="管理员可在设置中配置快捷入口" className="py-12" />
       ) : (
         <div className="grid grid-cols-2 gap-4">
           {quickActions.map((action) => (

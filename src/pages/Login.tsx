@@ -39,20 +39,25 @@ export default function Login() {
   const onSubmit = useCallback(
     async (data: LoginFormValues) => {
       setLoading(true);
-
-      // 模拟登录请求延迟
-      return new Promise<void>((resolve) => {
-        setTimeout(() => {
-          setLoading(false);
-          // 临时调试：为模拟用户赋予 admin 角色，以获得所有权限
-          setUser(
-            { id: 'ADMIN001', username: data.username || 'admin', email: 'admin@example.com', role: 'admin' },
-            'mock_token_123'
-          );
-          navigate('/');
-          resolve();
-        }, 1000);
-      });
+      if (import.meta.env.DEV) {
+        // DEV ONLY: Mock 登录，生产构建会 tree-shake 掉此分支
+        return new Promise<void>((resolve) => {
+          setTimeout(() => {
+            setLoading(false);
+            setUser(
+              { id: 'ADMIN001', username: data.username || 'admin', email: 'admin@example.com', role: 'admin' },
+              'mock_token_123'
+            );
+            navigate('/');
+            resolve();
+          }, 1000);
+        });
+      }
+      // TODO(backend): 接入真实登录 API
+      // const res = await authService.login(data);
+      // setUser(res.user, res.token);
+      // navigate('/');
+      setLoading(false);
     },
     [setLoading, setUser, navigate]
   );
@@ -201,16 +206,20 @@ export default function Login() {
             </div>
           </form>
 
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">测试账号: admin / 123456</span>
+          {import.meta.env.DEV && (
+            <div className="mt-6">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 text-xs">
+                    DEV 模式 · 测试账号: admin / 123456
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,10 +1,13 @@
 import React, { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Check, Trash2, Bell } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useNotificationStore } from '@/store/useNotificationStore';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { formatNotificationTime } from '@/utils/dateUtils';
 
 const NotificationPanel = React.memo(function NotificationPanel() {
+  const navigate = useNavigate();
   const notifications = useNotificationStore((state) => state.notifications);
   const unreadCount = useNotificationStore((state) => state.unreadCount);
   const markNotificationAsRead = useNotificationStore((state) => state.markNotificationAsRead);
@@ -74,14 +77,7 @@ const NotificationPanel = React.memo(function NotificationPanel() {
                     {notification.title}
                   </h4>
                   <span className="text-xs text-zinc-400 dark:text-zinc-500 whitespace-nowrap ml-2">
-                    {(() => {
-                      const d = new Date(notification.time);
-                      const isToday = d.toDateString() === new Date().toDateString();
-                      return isToday
-                        ? d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-                        : d.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' }) + ' ' +
-                          d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-                    })()}
+                    {formatNotificationTime(notification.time)}
                   </span>
                 </div>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2">{notification.message}</p>
@@ -93,7 +89,10 @@ const NotificationPanel = React.memo(function NotificationPanel() {
 
       {notifications.length > 0 && (
         <div className="px-4 py-3 border-t border-zinc-100 dark:border-zinc-700 text-center">
-          <button className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
+          <button
+            onClick={() => navigate('/settings?tab=logs')}
+            className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors"
+          >
             查看全部通知
           </button>
         </div>

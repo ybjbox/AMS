@@ -64,8 +64,14 @@ const Header = memo(function Header({ isCollapsed, setIsCollapsed }: HeaderProps
         )}
       </div>
 
-      {/* 桌面端中间区域保持空白 */}
-      <div className="hidden md:flex flex-1" />
+      {/* 桌面端页面标题 */}
+      <div className="hidden md:flex flex-1 items-center">
+        {pageTitle && (
+          <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200 tracking-tight">
+            {pageTitle}
+          </span>
+        )}
+      </div>
 
       <div className="flex items-center space-x-4">
         <NotificationTrigger />

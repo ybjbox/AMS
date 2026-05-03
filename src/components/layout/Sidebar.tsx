@@ -1,9 +1,10 @@
 import React, { useMemo, useCallback } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Building2, User as UserIcon } from 'lucide-react';
 import { useAppSettings } from '@/store/appSettings';
 import { useUserStore } from '@/store/useUserStore';
 import { routeConfig } from '@/config/routes';
+import { getRoleDisplayName } from '@/utils/roleUtils';
 
 interface SidebarProps {
   isCollapsed?: boolean;
@@ -13,7 +14,13 @@ interface SidebarProps {
 
 const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '', onClose }: SidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const systemIcon = useAppSettings((state) => state.systemIcon);
+
+  const handleGoToProfile = useCallback(() => {
+    navigate('/settings');
+    if (onClose) onClose();
+  }, [navigate, onClose]);
 
   // 订阅 userInfo 以确保权限变化时能重新渲染
   const userInfo = useUserStore((state) => state.userInfo);
@@ -92,19 +99,26 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
       <div className={`border-t border-zinc-200/60 dark:border-zinc-700/60 p-3 shrink-0 ${isCollapsed ? 'flex justify-center' : ''}`}>
         {isCollapsed ? (
           // 折叠状态：仅显示头像
-          <div title={userInfo?.username || '用户'}>
-            <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
-              {userInfo?.username
-                ? <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
-                    {userInfo.username.charAt(0).toUpperCase()}
-                  </span>
-                : <UserIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              }
-            </div>
-          </div>
+          <button
+            onClick={handleGoToProfile}
+            title={userInfo?.username || '用户'}
+            aria-label="前往个人设置"
+            className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center hover:ring-2 hover:ring-blue-500/40 transition-all"
+          >
+            {userInfo?.username
+              ? <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                  {userInfo.username.charAt(0).toUpperCase()}
+                </span>
+              : <UserIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            }
+          </button>
         ) : (
           // 展开状态：头像 + 姓名 + 角色
-          <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer group">
+          <button
+            onClick={handleGoToProfile}
+            className="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer group text-left"
+            aria-label="前往个人设置"
+          >
             <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0">
               <UserIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </div>
@@ -113,10 +127,10 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
                 {userInfo?.username || '用户'}
               </p>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
-                {userInfo?.role === 'admin' ? '管理员' : '普通员工'}
+                {getRoleDisplayName(userInfo?.role)}
               </p>
             </div>
-          </div>
+          </button>
         )}
       </div>
     </aside>

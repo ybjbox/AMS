@@ -4,6 +4,7 @@ import { User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useUserStore } from '@/store/useUserStore';
 import ThemeToggle from './ThemeToggle';
+import { getRoleDisplayName } from '@/utils/roleUtils';
 
 export default function UserMenu() {
   const userInfo = useUserStore((s) => s.userInfo);
@@ -54,13 +55,7 @@ export default function UserMenu() {
             {userInfo?.username || '未登录'}
           </span>
           <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-none">
-            {userInfo?.role === 'SUPER_ADMIN'
-              ? '超级管理员'
-              : userInfo?.role === 'ADMIN'
-                ? '管理员'
-                : userInfo?.role === 'HR'
-                  ? '人事主管'
-                  : '普通员工'}
+            {getRoleDisplayName(userInfo?.role)}
           </span>
         </div>
       </div>

@@ -21,23 +21,28 @@ export default function AppearancePanel() {
     [setTheme]
   );
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'background' | 'icon') => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Mock backend processing
-    setTimeout(() => {
-      const mockUrl =
-        type === 'background' ? 'https://picsum.photos/seed/bg/1920/1080' : 'https://picsum.photos/seed/icon/200/200';
-
-      if (type === 'background') {
-        setLoginBackground(mockUrl);
-      } else {
-        setSystemIcon(mockUrl);
-      }
-      toast.success(`成功上传${type === 'background' ? '背景图' : '系统图标'} (Mock)`);
-    }, 500);
-  };
+  const handleImageUpload = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>, type: 'background' | 'icon') => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      // TODO(backend): 替换为真实文件上传 API，当前使用本地 FileReader 预览
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target?.result as string;
+        if (!dataUrl) return;
+        if (type === 'background') {
+          setLoginBackground(dataUrl);
+        } else {
+          setSystemIcon(dataUrl);
+        }
+        toast.success(`已预览${type === 'background' ? '背景图' : '系统图标'}，保存后生效`);
+      };
+      reader.readAsDataURL(file);
+      // 重置 input，允许重复选择同一文件
+      e.target.value = '';
+    },
+    [setLoginBackground, setSystemIcon]
+  );
 
   return (
     <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-300 space-y-6">

@@ -13,8 +13,8 @@ import { ExportModal } from './components/ExportModal';
 import { AddressBookModal } from './components/AddressBookModal';
 import { useUserFilters } from './hooks/useUserFilters';
 import { useExport } from './hooks/useExport';
-import { ExportColumn } from './constants';
-import { Pagination } from '@/components/common/Pagination';
+import { Pagination } from '@/components/ui/Pagination';
+import { RosterPrintTemplate, AddressBookPrintTemplate } from './components/PrintTemplates';
 
 export default function Users() {
   const confirm = useConfirm();
@@ -139,7 +139,7 @@ export default function Users() {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            totalCount={filteredUsers.length}
+            totalItems={filteredUsers.length}
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
           />
@@ -190,153 +190,22 @@ export default function Users() {
         setSelectedRoleName={setSelectedRoleName}
       />
 
-      {/* Hidden Printable Area for Roster */}
-      <div className="hidden">
-        <div ref={rosterPrintRef}>
-          <h1>{exportConfig.title}</h1>
-          <table>
-            <thead>
-              <tr>
-                {exportConfig.columns
-                  .filter((c: ExportColumn) => c.selected)
-                  .map((col: ExportColumn) => (
-                    <th key={col.key}>{col.label}</th>
-                  ))}
-              </tr>
-            </thead>
-            <tbody>
-              {users
-                .filter((u) => (exportConfig.includeResigned ? true : u.status !== '离职'))
-                .map((u) => (
-                  <tr key={u.id}>
-                    {exportConfig.columns
-                      .filter((c: ExportColumn) => c.selected)
-                      .map((col: ExportColumn) => (
-                        <td key={col.key}>{(u as unknown as Record<string, unknown>)[col.key] as string || '-'}</td>
-                      ))}
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Hidden Printable Area for Address Book */}
-      <div className="hidden">
-        <div ref={addressBookPrintRef}>
-          <h1>{addressBookConfig.title}</h1>
-          <div className={addressBookConfig.isTwoColumn ? 'flex gap-5 items-start' : 'block'}>
-            <div className="flex-1">
-              <table className="w-full border-collapse text-sm" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    {addressBookConfig.columns
-                      .filter((c: ExportColumn) => c.selected)
-                      .map((col: ExportColumn) => (
-                        <th key={col.key} style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'left' }}>
-                          {col.label}
-                        </th>
-                      ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {leftUsers.map((user: User & { _deptSpan?: number; _deptCount?: number }, idx: number) => (
-                    <tr key={user.id || idx}>
-                      {addressBookConfig.columns
-                        .filter((c: ExportColumn) => c.selected)
-                        .map((col: ExportColumn) => {
-                          if (col.key === 'department' && addressBookConfig.mergeDepartments) {
-                            if (user._deptSpan === 0) return null;
-                            return (
-                              <td
-                                key={col.key}
-                                rowSpan={user._deptSpan}
-                                style={{
-                                  border: '1px solid #000',
-                                  padding: '4px 6px',
-                                  textAlign: 'center',
-                                  verticalAlign: 'middle',
-                                }}
-                              >
-                                {(user as unknown as Record<string, unknown>)[col.key] as string || '-'}
-                                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
-                                  ({user._deptCount}人)
-                                </div>
-                              </td>
-                            );
-                          }
-                          return (
-                            <td
-                              key={col.key}
-                              style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center' }}
-                            >
-                              {(user as unknown as Record<string, unknown>)[col.key] as string || '-'}
-                            </td>
-                          );
-                        })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {addressBookConfig.isTwoColumn && (
-              <div className="flex-1">
-                <table className="w-full border-collapse text-sm" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr>
-                      {addressBookConfig.columns
-                        .filter((c: ExportColumn) => c.selected)
-                        .map((col: ExportColumn) => (
-                          <th key={col.key} style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'left' }}>
-                            {col.label}
-                          </th>
-                        ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rightUsers.map((user: User & { _deptSpan?: number; _deptCount?: number }, idx: number) => (
-                      <tr key={user.id || idx}>
-                        {addressBookConfig.columns
-                          .filter((c: ExportColumn) => c.selected)
-                          .map((col: ExportColumn) => {
-                            if (col.key === 'department' && addressBookConfig.mergeDepartments) {
-                              if (user._deptSpan === 0) return null;
-                              return (
-                                <td
-                                  key={col.key}
-                                  rowSpan={user._deptSpan}
-                                  style={{
-                                    border: '1px solid #000',
-                                    padding: '4px 6px',
-                                    textAlign: 'center',
-                                    verticalAlign: 'middle',
-                                  }}
-                                >
-                                  {(user as unknown as Record<string, unknown>)[col.key] as string || '-'}
-                                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
-                                    ({user._deptCount}人)
-                                  </div>
-                                </td>
-                              );
-                            }
-                            return (
-                              <td
-                                key={col.key}
-                                style={{ border: '1px solid #000', padding: '4px 6px', textAlign: 'center' }}
-                              >
-                                {(user as unknown as Record<string, unknown>)[col.key] as string || '-'}
-                              </td>
-                            );
-                          })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <RosterPrintTemplate
+        printRef={rosterPrintRef}
+        title={exportConfig.title}
+        columns={exportConfig.columns}
+        users={users}
+        includeResigned={exportConfig.includeResigned}
+      />
+      <AddressBookPrintTemplate
+        printRef={addressBookPrintRef}
+        title={addressBookConfig.title}
+        columns={addressBookConfig.columns}
+        isTwoColumn={addressBookConfig.isTwoColumn}
+        mergeDepartments={addressBookConfig.mergeDepartments}
+        leftUsers={leftUsers}
+        rightUsers={rightUsers}
+      />
       </div>
     </div>
   );

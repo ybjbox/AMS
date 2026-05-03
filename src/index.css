@@ -296,17 +296,20 @@ main,
   }
 
   .tab-item {
-    @apply px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 
-    whitespace-nowrap cursor-pointer
+    @apply tab-item-base
     text-zinc-500 dark:text-zinc-400 
     hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50;
   }
 
   .tab-item-active {
-    @apply px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 
-    whitespace-nowrap cursor-pointer
+    @apply tab-item-base
     bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm;
   }
+}
+
+/* 基础 Tab 样式（内部复用） */
+@utility tab-item-base {
+  @apply px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 whitespace-nowrap cursor-pointer;
 }
 
 @layer base {

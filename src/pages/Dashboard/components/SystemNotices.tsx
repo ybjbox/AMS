@@ -1,6 +1,8 @@
 import React from 'react';
 import { Bell } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { UseDashboardReturn } from '../hooks/useDashboard';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 export type SystemNoticesProps = Pick<UseDashboardReturn, 'notices' | 'isLoading'>;
 
@@ -9,9 +11,12 @@ export default function SystemNotices({ notices, isLoading }: SystemNoticesProps
     <div className="card-base p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-white tracking-tight">系统公告</h2>
-        <button className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors">
+        <Link
+          to="/settings"
+          className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors"
+        >
           查看全部
-        </button>
+        </Link>
       </div>
 
       {isLoading ? (
@@ -26,11 +31,12 @@ export default function SystemNotices({ notices, isLoading }: SystemNoticesProps
           ))}
         </div>
       ) : notices.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-zinc-500 dark:text-zinc-400">
-          <Bell className="w-12 h-12 mb-4 text-zinc-300 dark:text-zinc-600" />
-          <p className="text-sm font-medium">暂无系统公告</p>
-          <p className="text-xs mt-1">有新的公告时会在这里显示</p>
-        </div>
+        <EmptyState
+          icon={Bell}
+          title="暂无系统公告"
+          description="有新的公告时会在这里显示"
+          className="py-12"
+        />
       ) : (
         <div className="space-y-5">
           {notices.map((notice, i) => (
