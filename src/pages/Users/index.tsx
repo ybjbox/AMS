@@ -92,59 +92,61 @@ export default function Users() {
   }, []);
 
   return (
-    <div className="w-full flex flex-col p-4 sm:p-6 lg:p-8 min-h-full">
-      <div className="space-y-6 animate-in fade-in duration-500 w-full flex-1 flex flex-col min-h-0">
-        <div className="card-base flex flex-col flex-1 min-h-0">
-          <div className="shrink-0">
-            <UserToolbar
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              isFilterOpen={isFilterOpen}
-              setIsFilterOpen={setIsFilterOpen}
-              activeFilterCount={activeFilterCount}
-              clearFilters={clearFilters}
-              filters={filters}
-              handleFilterChange={handleFilterChange}
-              departments={departments}
-              hasPermission={hasPermission}
-              setIsAddressBookModalOpen={setIsAddressBookModalOpen}
-              setIsExportModalOpen={setIsExportModalOpen}
-              handleAdd={handleAdd}
+    <>
+      {/* ── 主内容布局 ── */}
+      <div className="w-full flex flex-col p-4 sm:p-6 lg:p-8 min-h-full">
+        <div className="space-y-6 animate-in fade-in duration-500 w-full flex-1 flex flex-col min-h-0">
+          <div className="card-base flex flex-col flex-1 min-h-0">
+            <div className="shrink-0">
+              <UserToolbar
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                isFilterOpen={isFilterOpen}
+                setIsFilterOpen={setIsFilterOpen}
+                activeFilterCount={activeFilterCount}
+                clearFilters={clearFilters}
+                filters={filters}
+                handleFilterChange={handleFilterChange}
+                departments={departments}
+                hasPermission={hasPermission}
+                setIsAddressBookModalOpen={setIsAddressBookModalOpen}
+                setIsExportModalOpen={setIsExportModalOpen}
+                handleAdd={handleAdd}
+              />
+            </div>
+            <div className="flex-1 min-h-0">
+              <UserTable
+                data={currentUsers}
+                isLoading={isLoading}
+                onEdit={handleEdit}
+                onDelete={async (user) => {
+                  if (
+                    await confirm({
+                      title: `确定要删除员工 ${user.name} 吗？`,
+                      description: '此操作不可恢复。',
+                      variant: 'danger',
+                    })
+                  ) {
+                    deleteUser(user.id);
+                  }
+                }}
+                onRowClick={(user) => {
+                  setSelectedUser(user);
+                  setIsDetailModalOpen(true);
+                }}
+              />
+            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredUsers.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
             />
           </div>
-
-          <div className="flex-1 min-h-0">
-            <UserTable
-              data={currentUsers}
-              isLoading={isLoading}
-              onEdit={handleEdit}
-              onDelete={async (user) => {
-                if (
-                  await confirm({
-                    title: `确定要删除员工 ${user.name} 吗？`,
-                    description: '此操作不可恢复。',
-                    variant: 'danger',
-                  })
-                ) {
-                  deleteUser(user.id);
-                }
-              }}
-              onRowClick={(user) => {
-                setSelectedUser(user);
-                setIsDetailModalOpen(true);
-              }}
-            />
-          </div>
-
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={filteredUsers.length}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-          />
         </div>
-
+      </div>
+      {/* ── 弹窗层（Portal 渲染，不参与布局） ── */}
       <ExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
@@ -158,7 +160,6 @@ export default function Users() {
         users={users}
         filteredUsersLength={filteredUsers.length}
       />
-
       <AddressBookModal
         isOpen={isAddressBookModalOpen}
         onClose={() => setIsAddressBookModalOpen(false)}
@@ -169,7 +170,6 @@ export default function Users() {
         previewLeft={previewLeft}
         previewRight={previewRight}
       />
-
       <UserDetailModal
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
@@ -177,7 +177,6 @@ export default function Users() {
         hasPermission={hasPermission}
         handleEdit={handleEdit}
       />
-
       <UserFormModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -189,7 +188,7 @@ export default function Users() {
         selectedRoleName={selectedRoleName}
         setSelectedRoleName={setSelectedRoleName}
       />
-
+      {/* ── 打印模板（hidden，不参与布局） ── */}
       <RosterPrintTemplate
         printRef={rosterPrintRef}
         title={exportConfig.title}
@@ -206,7 +205,6 @@ export default function Users() {
         leftUsers={leftUsers}
         rightUsers={rightUsers}
       />
-      </div>
-    </div>
+    </>
   );
 }

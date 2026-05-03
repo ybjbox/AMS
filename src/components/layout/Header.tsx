@@ -64,10 +64,10 @@ const Header = memo(function Header({ isCollapsed, setIsCollapsed }: HeaderProps
         )}
       </div>
 
-      {/* 桌面端页面标题 */}
+      {/* 桌面端面包屑辅助定位（非主标题） */}
       <div className="hidden md:flex flex-1 items-center">
         {pageTitle && (
-          <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200 tracking-tight">
+          <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500 tracking-wide select-none">
             {pageTitle}
           </span>
         )}

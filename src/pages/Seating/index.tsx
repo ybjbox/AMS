@@ -66,28 +66,31 @@ export default function Seating() {
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // TODO(backend): 接入真实的 Excel 解析 API（推荐使用已安装的 xlsx 库）
+    // 当前为演示模式：忽略文件内容，返回固定测试数据
     setTimeout(() => {
-      const newUsers = [
+      const demoUsers = [
         {
-          id: `uploaded-${Date.now()}-1`,
-          name: '张三',
+          id: `demo-${Date.now()}-1`,
+          name: '张三（演示）',
           department: '技术部',
           role: '前端工程师',
-          status: '在职',
+          status: '在职' as const,
           joinDate: new Date().toISOString(),
         },
         {
-          id: `uploaded-${Date.now()}-2`,
-          name: '李四',
+          id: `demo-${Date.now()}-2`,
+          name: '李四（演示）',
           department: '市场部',
           role: '市场总监',
-          status: '在职',
+          status: '在职' as const,
           joinDate: new Date().toISOString(),
         },
       ] as User[];
-      setUploadedUsers(newUsers);
-      setSelectedUserIds(new Set(newUsers.map((u) => u.id)));
-      toast.success('成功从后端获取到名单 (Mock)');
+      setUploadedUsers(demoUsers);
+      setSelectedUserIds(new Set(demoUsers.map((u) => u.id)));
+      // 警告用户当前为演示数据，非真实文件解析
+      toast.warning(`"${file.name}" 已上传，当前使用演示数据（文件内容未实际解析）`);
     }, 500);
     e.target.value = '';
   }, []);

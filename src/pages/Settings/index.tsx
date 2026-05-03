@@ -29,6 +29,10 @@ export default function Settings() {
     if (tabItem) {
       document.title = `${tabItem.label} - AMS`;
     }
+    // 离开 Settings 页面时恢复通用标题
+    return () => {
+      document.title = 'AMS 系统';
+    };
   }, [activeTab]);
 
   const handleTabChange = (tabId: string) => {

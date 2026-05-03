@@ -123,7 +123,7 @@ export default function Login() {
                   id="username"
                   type="text"
                   className={`input-base pl-10 py-2.5 sm:text-sm ${errors.username ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
-                  placeholder="请输入用户名 (admin)"
+                  placeholder="请输入用户名"
                 />
               </div>
               {errors.username && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.username.message}</p>}
@@ -142,7 +142,7 @@ export default function Login() {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   className={`input-base pl-10 pr-10 py-2.5 sm:text-sm ${errors.password ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
-                  placeholder="请输入密码 (123456)"
+                  placeholder="请输入密码"
                 />
                 <button
                   type="button"

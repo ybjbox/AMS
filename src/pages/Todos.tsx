@@ -227,6 +227,6 @@ export default function Todos() {
         )}
       </div>
     </div>
-    </div>
+  </div>
   );
 }

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Activity } from 'lucide-react';
-import { useAppSettings } from '@/store/appSettings';
 import { EmptyState } from '@/components/ui/EmptyState';
 export interface ChartData {
   name: string;
@@ -11,13 +10,21 @@ interface DashboardChartProps {
   data: ChartData[];
   isLoading: boolean;
 }
-/** 从 CSS 变量读取 oklch 颜色，转为 recharts 可用的字符串 */
-function useCssVar(varName: string): string {
-  const [value, setValue] = useState('');
+/** 批量读取多个 CSS 变量，共享单一 MutationObserver */
+function useCssVars<T extends readonly string[]>(
+  varNames: T
+): Record<T[number], string> {
+  const [values, setValues] = useState<Record<string, string>>(() => {
+    return Object.fromEntries(varNames.map((v) => [v, ''])) as Record<string, string>;
+  });
   useEffect(() => {
     const root = document.documentElement;
-    const read = () =>
-      setValue(getComputedStyle(root).getPropertyValue(varName).trim());
+    const read = () => {
+      const computed = getComputedStyle(root);
+      setValues(
+        Object.fromEntries(varNames.map((v) => [v, computed.getPropertyValue(v).trim()])) as Record<string, string>
+      );
+    };
     read();
     const observer = new MutationObserver(read);
     observer.observe(root, { attributes: true, attributeFilter: ['class'] });
@@ -27,20 +34,26 @@ function useCssVar(varName: string): string {
       observer.disconnect();
       mq.removeEventListener('change', read);
     };
-  }, [varName]);
-  return value;
+    // varNames 为编译期常量，不需要进入依赖数组
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return values as Record<T[number], string>;
 }
 export default function DashboardChart({ data, isLoading }: DashboardChartProps) {
-  const theme = useAppSettings((state) => state.theme);
   // 使用 CSS 变量，自动跟随深色/浅色模式
-  const primaryColor = useCssVar('--primary') || 'oklch(0.62 0.19 250)';
-  const borderColor = useCssVar('--border') || 'oklch(0.87 0 0)';
-  const mutedFgColor = useCssVar('--muted-foreground') || 'oklch(0.50 0 0)';
-  const popoverColor = useCssVar('--popover') || 'oklch(1 0 0)';
-  const fgColor = useCssVar('--foreground') || 'oklch(0.30 0 0)';
+  const cssVars = useCssVars([
+    '--primary',
+    '--border',
+    '--muted-foreground',
+    '--popover',
+    '--foreground',
+  ] as const);
+  const primaryColor  = cssVars['--primary']          || 'oklch(0.62 0.19 250)';
+  const borderColor   = cssVars['--border']            || 'oklch(0.87 0 0)';
+  const mutedFgColor  = cssVars['--muted-foreground']  || 'oklch(0.50 0 0)';
+  const popoverColor  = cssVars['--popover']           || 'oklch(1 0 0)';
+  const fgColor       = cssVars['--foreground']        || 'oklch(0.30 0 0)';
   const skeletonHeights = [60, 85, 70, 95, 75, 55, 40];
-  // theme 变量保留以备未来扩展使用
-  void theme;
   return (
     <div className="card-base p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
       <div className="flex items-center justify-between mb-6">

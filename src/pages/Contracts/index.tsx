@@ -43,7 +43,7 @@ export default function ContractsPage() {
 
   return (
     <div className="w-full flex flex-col p-4 sm:p-6 lg:p-8 min-h-full">
-      <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-6 animate-in fade-in duration-500">
+      <div className="relative max-w-7xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-6 animate-in fade-in duration-500">
         <div className="page-header shrink-0">
           <div>
             <h1 className="page-title">合同管理</h1>
@@ -107,7 +107,7 @@ export default function ContractsPage() {
           />
         </div>
         {/* 右侧渐变遮罩提示可横向滚动 */}
-        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white dark:from-zinc-800 to-transparent pointer-events-none md:hidden rounded-br-xl" />
+        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white dark:from-zinc-900 to-transparent pointer-events-none md:hidden rounded-br-xl" />
       </div>
 
       <ContractPreviewModal
