@@ -24,6 +24,7 @@ export interface QuickActionItem {
   icon: LucideIcon;
   color: string;
   bg: string;
+  href: string;
 }
 
 export interface UseDashboardReturn {
@@ -59,21 +60,30 @@ export function useDashboard(): UseDashboardReturn {
   ];
 
   const quickActions: QuickActionItem[] = [
-    { name: '添加员工', icon: Users, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/30' },
+    {
+      name: '添加员工',
+      href: '/users',
+      icon: Users,
+      color: 'text-blue-600 dark:text-blue-400',
+      bg: 'bg-blue-50 dark:bg-blue-900/30',
+    },
     {
       name: '发起审批',
+      href: '/todos',
       icon: FileText,
       color: 'text-emerald-600 dark:text-emerald-400',
       bg: 'bg-emerald-50 dark:bg-emerald-900/30',
     },
     {
       name: '部门调整',
+      href: '/settings',
       icon: Building2,
       color: 'text-indigo-600 dark:text-indigo-400',
       bg: 'bg-indigo-50 dark:bg-indigo-900/30',
     },
     {
       name: '系统设置',
+      href: '/settings',
       icon: Settings,
       color: 'text-zinc-600 dark:text-zinc-400',
       bg: 'bg-zinc-50 dark:bg-zinc-800',

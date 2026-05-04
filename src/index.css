@@ -75,8 +75,8 @@ main,
     background: white;
   }
 
-  /* Documents 打印模板 */
-  .print\:block {
+  /* Documents 文件套件打印模板 */
+  #documents-print-template {
     display: block !important;
   }
 }

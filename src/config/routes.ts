@@ -24,8 +24,9 @@ const Contracts = lazy(() => import('../pages/Contracts/index'));
 export interface RouteConfig {
   path: string;
   label: string;
+  title?: string;
   icon: React.ElementType;
-  permission: string;
+  permission?: string;
   component: React.LazyExoticComponent<React.ComponentType>;
 }
 

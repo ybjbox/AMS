@@ -211,55 +211,8 @@ export default function Filter({
     setEditingShift(null);
   }, [setEditingShift]);
 
-  const onTabClick = useCallback(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
-      const tab = e.currentTarget.dataset.tab as 'records' | 'schedules' | 'anomalies' | 'shifts';
-      if (tab) {
-        setActiveTab(tab);
-      }
-    },
-    [setActiveTab]
-  );
-
   return (
     <>
-      <div className="page-header mb-8">
-        <div>
-          <h1 className="page-title">考勤管理</h1>
-          <p className="page-subtitle">导入打卡记录与排班字典，自动分析考勤异常</p>
-        </div>
-        <div className="tab-group">
-          <button
-            data-tab="records"
-            onClick={onTabClick}
-            className={activeTab === 'records' ? 'tab-item-active' : 'tab-item'}
-          >
-            打卡记录
-          </button>
-          <button
-            data-tab="schedules"
-            onClick={onTabClick}
-            className={activeTab === 'schedules' ? 'tab-item-active' : 'tab-item'}
-          >
-            排班字典
-          </button>
-          <button
-            data-tab="shifts"
-            onClick={onTabClick}
-            className={activeTab === 'shifts' ? 'tab-item-active' : 'tab-item'}
-          >
-            班次管理
-          </button>
-          <button
-            data-tab="anomalies"
-            onClick={onTabClick}
-            className={activeTab === 'anomalies' ? 'tab-item-active' : 'tab-item'}
-          >
-            异常分析
-          </button>
-        </div>
-      </div>
-
       {activeTab === 'records' && hasPermission('attendance:manage') && (
         <div className="mb-6 bg-white dark:bg-zinc-800 p-6 rounded-2xl shadow-sm">
           <div className="w-full max-w-2xl">

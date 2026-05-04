@@ -15,6 +15,25 @@ export default function Attendance() {
             <h1 className="page-title">考勤管理</h1>
             <p className="page-subtitle">导入打卡记录与排班字典，自动分析考勤异常</p>
           </div>
+          {/* Tab 切换 */}
+          <div className="tab-group">
+            {(
+              [
+                { tab: 'records', label: '打卡记录' },
+                { tab: 'schedules', label: '排班字典' },
+                { tab: 'shifts', label: '班次管理' },
+                { tab: 'anomalies', label: '异常分析' },
+              ] as const
+            ).map(({ tab, label }) => (
+              <button
+                key={tab}
+                onClick={() => attendanceData.setActiveTab(tab)}
+                className={attendanceData.activeTab === tab ? 'tab-item-active' : 'tab-item'}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="shrink-0 space-y-4 mb-4">
           <Stats {...attendanceData} />

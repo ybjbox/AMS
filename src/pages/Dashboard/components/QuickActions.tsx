@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Zap } from 'lucide-react';
 import { UseDashboardReturn } from '../hooks/useDashboard';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -8,24 +9,34 @@ export type QuickActionsProps = Pick<UseDashboardReturn, 'quickActions' | 'isLoa
 export default function QuickActions({ quickActions, isLoading }: QuickActionsProps) {
   return (
     <div className="card-base p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
-      <h2 className="text-base font-semibold text-zinc-900 dark:text-white mb-6 tracking-tight">快捷操作</h2>
-      
+      <h2 className="text-base font-semibold text-zinc-900 dark:text-white mb-6 tracking-tight">
+        快捷操作
+      </h2>
       {isLoading ? (
         <div className="grid grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex flex-col items-center justify-center p-5 rounded-2xl border border-zinc-100 dark:border-zinc-700/50 animate-pulse">
-              <div className="w-12 h-12 rounded-xl bg-zinc-200 dark:bg-zinc-700 mb-3"></div>
-              <div className="w-16 h-4 bg-zinc-200 dark:bg-zinc-700 rounded"></div>
+            <div
+              key={i}
+              className="flex flex-col items-center justify-center p-5 rounded-2xl border border-zinc-100 dark:border-zinc-700/50 animate-pulse"
+            >
+              <div className="w-12 h-12 rounded-xl bg-zinc-200 dark:bg-zinc-700 mb-3" />
+              <div className="w-16 h-4 bg-zinc-200 dark:bg-zinc-700 rounded" />
             </div>
           ))}
         </div>
       ) : quickActions.length === 0 ? (
-        <EmptyState icon={Zap} title="暂无快捷操作" description="管理员可在设置中配置快捷入口" className="py-12" />
+        <EmptyState
+          icon={Zap}
+          title="暂无快捷操作"
+          description="管理员可在设置中配置快捷入口"
+          className="py-12"
+        />
       ) : (
         <div className="grid grid-cols-2 gap-4">
           {quickActions.map((action) => (
-            <button
+            <Link
               key={action.name}
+              to={action.href}
               aria-label={`快捷操作：${action.name}`}
               className="flex flex-col items-center justify-center p-5 rounded-2xl border border-zinc-100 dark:border-zinc-700/50 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 group bg-white dark:bg-zinc-800"
             >
@@ -34,8 +45,10 @@ export default function QuickActions({ quickActions, isLoading }: QuickActionsPr
               >
                 <action.icon className={`h-6 w-6 ${action.color}`} />
               </div>
-              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{action.name}</span>
-            </button>
+              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                {action.name}
+              </span>
+            </Link>
           ))}
         </div>
       )}

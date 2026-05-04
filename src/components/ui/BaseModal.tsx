@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -28,11 +28,7 @@ export const BaseModal: React.FC<BaseModalProps> = React.memo(
       full: 'sm:max-w-[1600px] sm:w-[95vw]',
     };
 
-    const headerRef = useRef<HTMLDivElement>(null);
-    const footerRef = useRef<HTMLDivElement>(null);
     const modalRef = useRef<HTMLDivElement>(null);
-    const [headerHeight, setHeaderHeight] = useState(0);
-    const [footerHeight, setFooterHeight] = useState(0);
 
     useEffect(() => {
       if (isOpen) {
@@ -83,21 +79,6 @@ export const BaseModal: React.FC<BaseModalProps> = React.memo(
       }
     }, [isOpen, onClose]);
 
-    useEffect(() => {
-      if (!isOpen) return;
-      const updateHeights = () => {
-        if (headerRef.current) setHeaderHeight(headerRef.current.offsetHeight);
-        if (footerRef.current) setFooterHeight(footerRef.current.offsetHeight);
-      };
-      // 使用 ResizeObserver 确保 DOM 渲染后正确测量，并响应内容高度变化
-      const observer = new ResizeObserver(updateHeights);
-      if (headerRef.current) observer.observe(headerRef.current);
-      if (footerRef.current) observer.observe(footerRef.current);
-      // 首次立即执行一次
-      updateHeights();
-      return () => observer.disconnect();
-    }, [isOpen, title, footer]);
-
     return createPortal(
       <AnimatePresence>
         {isOpen && (
@@ -126,11 +107,10 @@ export const BaseModal: React.FC<BaseModalProps> = React.memo(
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className={`relative z-10 w-full bg-white dark:bg-zinc-800 rounded-2xl text-left shadow-xl flex flex-col max-h-full outline-none ${sizeClasses[size]} ${size === 'full' ? 'h-full' : ''} ${className}`}
+              className={`relative z-10 w-full bg-white dark:bg-zinc-800 rounded-2xl text-left shadow-xl flex flex-col outline-none ${size === 'full' ? 'h-[90vh] max-h-[90vh]' : 'max-h-[90vh]'} ${sizeClasses[size]} ${className}`}
             >
               {/* Header */}
               <div
-                ref={headerRef}
                 className="px-4 py-4 sm:px-6 border-b border-zinc-100 dark:border-zinc-700 flex items-center justify-between shrink-0 bg-white dark:bg-zinc-800 rounded-t-2xl"
               >
                 <h3 className="text-lg font-semibold text-zinc-900 dark:text-white" id="modal-title">
@@ -148,11 +128,7 @@ export const BaseModal: React.FC<BaseModalProps> = React.memo(
               {/* Body (内容区域) */}
               <div
                 id="modal-description"
-                className={`flex-[1_1_auto] overflow-y-auto ${bodyClassName}`}
-                style={{
-                  maxHeight: '80vh',
-                  height: headerHeight || footerHeight ? `calc(100% - ${headerHeight}px - ${footerHeight}px)` : 'auto',
-                }}
+                className={`flex-1 overflow-y-auto min-h-0 ${bodyClassName}`}
               >
                 {children}
               </div>
@@ -160,7 +136,6 @@ export const BaseModal: React.FC<BaseModalProps> = React.memo(
               {/* Footer */}
               {footer && (
                 <div
-                  ref={footerRef}
                   className="px-4 py-3 sm:px-6 border-t border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 rounded-b-2xl"
                 >
                   {footer}

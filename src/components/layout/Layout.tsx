@@ -4,11 +4,17 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import ErrorBoundary from './ErrorBoundary';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { routeConfig } from '@/config/routes';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
   const shouldReduceMotion = useReducedMotion();
+
+  // 全局统一管理 document.title，根据当前路由自动更新
+  const currentRoute = routeConfig.find((r) => r.path === location.pathname);
+  useDocumentTitle(currentRoute?.title ?? currentRoute?.label ?? '');
 
   // 获取当前和前一个路由的索引，决定动画方向
   const xOffset = 12; // 水平偏移量

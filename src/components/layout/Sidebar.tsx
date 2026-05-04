@@ -119,8 +119,10 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
             className="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer group text-left"
             aria-label="前往个人设置"
           >
-            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0">
-              <UserIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0 text-xs font-bold text-blue-600 dark:text-blue-400 select-none">
+              {userInfo?.username
+                ? userInfo.username.charAt(0).toUpperCase()
+                : <UserIcon className="h-4 w-4" />}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate">

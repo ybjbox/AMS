@@ -54,9 +54,8 @@ export default function Todos() {
   );
 
   return (
-    <div className="p-6 lg:p-8 space-y-6 animate-in fade-in duration-500 w-full min-h-full">
-      <div className="max-w-3xl mx-auto space-y-6 w-full">
-        <div className="page-header shrink-0">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 animate-in fade-in duration-500 w-full min-h-full max-w-7xl mx-auto">
+      <div className="page-header shrink-0">
           <div>
             <h1 className="page-title">待办事项</h1>
             <p className="page-subtitle">管理您的日常任务及系统自动生成的提醒事项</p>
@@ -227,6 +226,5 @@ export default function Todos() {
         )}
       </div>
     </div>
-  </div>
   );
 }
