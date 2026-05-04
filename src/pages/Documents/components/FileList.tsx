@@ -1,7 +1,9 @@
 import React, { useCallback } from 'react';
+import { toast } from 'sonner';
 import { File, FileText, ImageIcon, FileArchive, Search, ChevronRight } from 'lucide-react';
 import { Document } from '@/store/useDocumentStore';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { formatFileSize } from '@/utils/fileUtils';
 
 interface FileListProps {
   documents: Document[];
@@ -11,9 +13,7 @@ interface FileListProps {
   breadcrumbs: { id: string | null; name: string }[];
   onBreadcrumbClick: (id: string | null) => void;
   onMoveDocClick: (id: string, folderId: string | null) => void;
-  handleDownloadDocClick: (url: string, name: string) => void;
   handleDeleteDocClick: (id: string) => void;
-  formatFileSize: (bytes: number) => string;
 }
 
 export function FileList({
@@ -24,10 +24,21 @@ export function FileList({
   breadcrumbs,
   onBreadcrumbClick,
   onMoveDocClick,
-  handleDownloadDocClick,
   handleDeleteDocClick,
-  formatFileSize,
 }: FileListProps) {
+  const handleDownloadDocClick = useCallback((url: string, name: string) => {
+    if (url !== '#') {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } else {
+      toast.error('Mock文件无法下载');
+    }
+  }, []);
+
   const getFileIcon = useCallback((type: string) => {
     if (!type) return <File className="w-8 h-8 text-zinc-500" />;
     if (type.includes('pdf')) return <FileText className="w-8 h-8 text-red-500" />;

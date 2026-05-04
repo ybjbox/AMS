@@ -214,7 +214,7 @@ export function AddressBookModal({
       }
     >
       <div className="flex-1 overflow-hidden flex flex-col md:flex-row h-full">
-        <div className="w-full md:w-1/3 p-6 space-y-6 overflow-y-auto border-r border-zinc-100 dark:border-zinc-700 custom-scrollbar h-full bg-white dark:bg-zinc-800">
+        <div className="w-full md:w-1/3 p-6 space-y-6 overflow-y-auto border-r border-zinc-100 dark:border-zinc-700 h-full bg-white dark:bg-zinc-800">
           <div>
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">通讯录大标题</label>
             <input
@@ -363,7 +363,7 @@ export function AddressBookModal({
                 items={addressBookConfig.columns.map((c: ExportColumn) => c.key as string)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
                   {addressBookConfig.columns.map((col: ExportColumn, idx: number) => {
                     return (
                       <SortableColumn
@@ -383,7 +383,7 @@ export function AddressBookModal({
           </div>
         </div>
 
-        <div className="w-full md:w-2/3 flex flex-col items-center bg-zinc-100 dark:bg-zinc-900 p-6 overflow-auto relative min-h-[400px] h-full custom-scrollbar">
+        <div className="w-full md:w-2/3 flex flex-col items-center bg-zinc-100 dark:bg-zinc-900 p-6 overflow-auto relative min-h-[400px] h-full">
           <div className="sticky top-0 self-start text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-zinc-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-6 -ml-6 mb-4">
             打印预览
           </div>

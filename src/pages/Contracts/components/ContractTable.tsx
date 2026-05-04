@@ -21,7 +21,7 @@ export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: Contr
 
   return (
     <div className="relative flex-1 rounded-b-xl border-t border-zinc-200 dark:border-zinc-700 h-full min-h-0">
-      <div ref={parentRef} className="h-full overflow-x-auto custom-scrollbar">
+      <div ref={parentRef} className="h-full overflow-x-auto">
         <table className="w-full min-w-[800px] text-left border-collapse relative" aria-label="合同列表">
           <thead className="bg-zinc-50 dark:bg-zinc-900/50 sticky top-0 z-20">
             <tr>

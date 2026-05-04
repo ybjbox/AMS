@@ -3,6 +3,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { AlertTriangle, Search } from 'lucide-react';
+import { Pagination } from '@/components/ui/Pagination';
 import { UseAttendanceReturn } from '../hooks/useAttendance';
 
 export type TableProps = Pick<
@@ -23,6 +24,11 @@ export type TableProps = Pick<
   | 'hasPermission'
   | 'filteredAnomalies'
   | 'filteredSchedules'
+  | 'recordsPage'
+  | 'setRecordsPage'
+  | 'schedulesPage'
+  | 'setSchedulesPage'
+  | 'ITEMS_PER_PAGE'
 >;
 
 export default function Table({
@@ -41,6 +47,11 @@ export default function Table({
   hasPermission,
   filteredAnomalies,
   filteredSchedules,
+  recordsPage,
+  setRecordsPage,
+  schedulesPage,
+  setSchedulesPage,
+  ITEMS_PER_PAGE,
 }: TableProps) {
   const confirm = useConfirm();
   const onEditShiftClick = useCallback(
@@ -108,7 +119,7 @@ export default function Table({
               {isLoading ? (
                 <TableSkeleton columns={4} rows={5} />
               ) : (
-                records.slice(0, 50).map((record) => (
+                records.slice((recordsPage - 1) * ITEMS_PER_PAGE, recordsPage * ITEMS_PER_PAGE).map((record) => (
                   <tr key={record.id} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-700/30 transition-colors">
                     <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-200">
                       {record.employeeId}
@@ -127,11 +138,13 @@ export default function Table({
               )}
             </tbody>
           </table>
-          {records.length > 50 && (
-            <div className="p-4 text-center text-sm text-zinc-500 dark:text-zinc-400 border-t border-zinc-100 dark:border-zinc-800">
-              仅显示前 50 条记录
-            </div>
-          )}
+          <Pagination
+            currentPage={recordsPage}
+            totalPages={Math.ceil(records.length / ITEMS_PER_PAGE)}
+            totalItems={records.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setRecordsPage}
+          />
         </div>
       </div>
     );
@@ -179,7 +192,7 @@ export default function Table({
               {isLoading ? (
                 <TableSkeleton columns={4} rows={5} />
               ) : (
-                filteredSchedules.slice(0, 50).map((schedule, idx) => (
+                filteredSchedules.slice((schedulesPage - 1) * ITEMS_PER_PAGE, schedulesPage * ITEMS_PER_PAGE).map((schedule, idx) => (
                   <tr key={idx} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-700/30 transition-colors">
                     <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-200">
                       {schedule.employeeId}
@@ -220,6 +233,13 @@ export default function Table({
               )}
             </tbody>
           </table>
+          <Pagination
+            currentPage={schedulesPage}
+            totalPages={Math.ceil(filteredSchedules.length / ITEMS_PER_PAGE)}
+            totalItems={filteredSchedules.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setSchedulesPage}
+          />
         </div>
       </div>
     );

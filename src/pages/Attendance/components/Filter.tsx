@@ -79,7 +79,8 @@ export default function Filter({
             { id: '3', employeeId: 'EMP002', employeeName: '李四', date: '2026-03-16', time: '09:15:00' },
           ];
           setRecords(mockRecords);
-          toast.success(`${response.message}\n成功从后端获取到 ${mockRecords.length} 条打卡记录 (Mock)`);
+          // TODO(backend): 接入真实的 Excel 解析 API，使用 xlsx 库读取文件内容
+          toast.warning(`文件已接收，当前返回 ${mockRecords.length} 条演示数据（文件内容未实际解析）`);
         }
       } catch (error) {
         console.error('Upload failed:', error);

@@ -268,7 +268,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
       ) : (
         <>
           {/* 移动端卡片视图（< md） */}
-          <div className="md:hidden flex-1 overflow-y-auto custom-scrollbar divide-y divide-zinc-100 dark:divide-zinc-700/50">
+          <div className="md:hidden flex-1 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-700/50">
             {data.map((user) => (
               <div
                 key={user.id}
@@ -329,7 +329,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
 
           {/* 桌面端虚拟化表格（>= md），原有代码保持不变 */}
           <div className="hidden md:flex flex-1 flex-col min-h-0">
-            <div ref={parentRef} className="w-full h-full overflow-x-auto overflow-y-auto relative custom-scrollbar">
+            <div ref={parentRef} className="w-full h-full overflow-x-auto overflow-y-auto relative">
               <table className="w-full min-w-[800px] text-left border-collapse relative" style={{ width: table.getTotalSize() }} aria-label="员工列表">
                 <caption className="sr-only">员工列表</caption>
                 <thead>

@@ -148,7 +148,7 @@ export const BaseModal: React.FC<BaseModalProps> = React.memo(
               {/* Body (内容区域) */}
               <div
                 id="modal-description"
-                className={`flex-[1_1_auto] overflow-y-auto custom-scrollbar ${bodyClassName}`}
+                className={`flex-[1_1_auto] overflow-y-auto ${bodyClassName}`}
                 style={{
                   maxHeight: '80vh',
                   height: headerHeight || footerHeight ? `calc(100% - ${headerHeight}px - ${footerHeight}px)` : 'auto',

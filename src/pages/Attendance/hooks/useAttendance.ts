@@ -39,6 +39,13 @@ export interface UseAttendanceReturn {
 
   // Auth
   hasPermission: (permission: string) => boolean;
+
+  // Pagination
+  recordsPage: number;
+  setRecordsPage: (page: number) => void;
+  schedulesPage: number;
+  setSchedulesPage: (page: number) => void;
+  ITEMS_PER_PAGE: number;
 }
 
 export function useAttendance(): UseAttendanceReturn {
@@ -46,6 +53,10 @@ export function useAttendance(): UseAttendanceReturn {
   const [searchQuery, setSearchQuery] = useState('');
   const [scheduleSearchQuery, setScheduleSearchQuery] = useState('');
   const [editingShift, setEditingShift] = useState<Partial<Shift> | null>(null);
+
+  const ITEMS_PER_PAGE = 20;
+  const [recordsPage, setRecordsPage] = useState(1);
+  const [schedulesPage, setSchedulesPage] = useState(1);
 
   const fetchData = useAttendanceStore((state) => state.fetchData);
 
@@ -121,5 +132,11 @@ export function useAttendance(): UseAttendanceReturn {
     deleteShift,
 
     hasPermission,
+
+    recordsPage,
+    setRecordsPage,
+    schedulesPage,
+    setSchedulesPage,
+    ITEMS_PER_PAGE,
   };
 }

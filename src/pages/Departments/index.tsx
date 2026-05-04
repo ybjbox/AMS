@@ -46,7 +46,7 @@ export default function Departments() {
               </button>
             )}
           </div>
-          <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
+          <div className="p-6 flex-1 overflow-y-auto">
             {logic.departments.length > 0 ? (
               <DepartmentTree
                 departments={logic.departments}
@@ -94,7 +94,7 @@ export default function Departments() {
               </button>
             )}
           </div>
-          <div className="p-4 flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+          <div className="p-4 flex-1 overflow-y-auto space-y-3">
             {logic.departments.length > 0 ? (
               <RoleList
                 departments={logic.departments}

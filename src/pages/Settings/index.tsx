@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Building2, User, Sliders, BellRing, Palette, Code2, TerminalSquare, Monitor } from 'lucide-react';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import DepartmentsPanel from './panels/DepartmentsPanel';
 import ProfilePanel from './panels/ProfilePanel';
 import AppearancePanel from './panels/AppearancePanel';
@@ -24,16 +25,8 @@ const tabs = [
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('departments');
 
-  useEffect(() => {
-    const tabItem = tabs.find(t => t.id === activeTab);
-    if (tabItem) {
-      document.title = `${tabItem.label} - AMS`;
-    }
-    // 离开 Settings 页面时恢复通用标题
-    return () => {
-      document.title = 'AMS 系统';
-    };
-  }, [activeTab]);
+  const currentTabLabel = tabs.find((t) => t.id === activeTab)?.label ?? '系统设置';
+  useDocumentTitle(currentTabLabel);
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
@@ -84,7 +77,7 @@ export default function Settings() {
           </div>
 
           {/* 桌面端侧边导航（仅大屏显示） */}
-          <div className="hidden md:block w-64 bg-zinc-50 dark:bg-zinc-900/50 border-r border-zinc-200 dark:border-zinc-700 p-4 shrink-0 overflow-y-auto custom-scrollbar">
+          <div className="hidden md:block w-64 bg-zinc-50 dark:bg-zinc-900/50 border-r border-zinc-200 dark:border-zinc-700 p-4 shrink-0 overflow-y-auto">
             <nav className="space-y-1">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
@@ -106,7 +99,7 @@ export default function Settings() {
               })}
             </nav>
           </div>
-          <div className="flex-1 bg-zinc-50/30 dark:bg-zinc-900/30 min-h-0 custom-scrollbar flex flex-col overflow-hidden">
+          <div className="flex-1 bg-zinc-50/30 dark:bg-zinc-900/30 min-h-0 flex flex-col overflow-hidden">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={activeTab}
