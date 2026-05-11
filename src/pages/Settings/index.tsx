@@ -57,16 +57,17 @@ export default function Settings() {
         <div className="flex-1 bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-2xl overflow-hidden flex flex-col md:flex-row min-h-0">
           {/* 移动端横向滚动 Tab（仅小屏显示） */}
           <div className="md:hidden border-b border-zinc-200 dark:border-zinc-700 p-2">
-            <div className="tab-group">
+            <div className="tab-group" role="tablist" aria-label="设置导航">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
+                    role="tab"
+                    aria-selected={isActive}
                     onClick={() => handleTabChange(tab.id)}
                     className={isActive ? 'tab-item-active' : 'tab-item'}
-                    aria-current={isActive ? 'page' : undefined}
                   >
                     <Icon className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
                     {tab.label}

@@ -49,7 +49,7 @@ export function TableConfig({
                   max="50"
                   value={tc.capacity}
                   onChange={(e) => updateTableCapacity(tc.id, parseInt(e.target.value) || 1)}
-                  className="w-14 border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 rounded shadow-sm py-1 px-1 text-sm focus:ring-1 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 text-center text-zinc-900 dark:text-white"
+                  className="input-base w-14 py-1 px-1 text-center"
                 />
                 {tableCapacities.length > 1 && (
                   <button

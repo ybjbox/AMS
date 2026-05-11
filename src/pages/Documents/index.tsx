@@ -126,14 +126,18 @@ export default function Documents() {
           <p className="page-subtitle">管理公司常用文件模板，支持一键打包打印</p>
         </div>
         <div className="toolbar">
-          <div className="tab-group">
+          <div className="tab-group" role="tablist" aria-label="文件管理">
             <button
+              role="tab"
+              aria-selected={activeTab === 'sets'}
               onClick={() => handleTabChange('sets')}
               className={activeTab === 'sets' ? 'tab-item-active' : 'tab-item'}
             >
               文件套件
             </button>
             <button
+              role="tab"
+              aria-selected={activeTab === 'files'}
               onClick={() => handleTabChange('files')}
               className={activeTab === 'files' ? 'tab-item-active' : 'tab-item'}
             >

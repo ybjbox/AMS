@@ -78,7 +78,7 @@ const DepartmentTreeNode = React.memo(function DepartmentTreeNode({
               <button
                 data-id={node.id}
                 onClick={onAddChild}
-                className="p-1.5 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                className="p-1.5 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors"
                 title="添加子部门"
               >
                 <Plus className="w-4 h-4" />
@@ -86,7 +86,7 @@ const DepartmentTreeNode = React.memo(function DepartmentTreeNode({
               <button
                 data-id={node.id}
                 onClick={onEdit}
-                className="p-1.5 text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
+                className="p-1.5 text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-md transition-colors"
                 title="编辑"
               >
                 <Edit2 className="w-4 h-4" />
@@ -94,7 +94,7 @@ const DepartmentTreeNode = React.memo(function DepartmentTreeNode({
               <button
                 data-id={node.id}
                 onClick={onDelete}
-                className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
                 title="删除"
               >
                 <Trash2 className="w-4 h-4" />

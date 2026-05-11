@@ -4,6 +4,7 @@ import { useDepartments } from '@/store/useDepartmentStore';
 import { useUserStore as useAuthStore } from '@/store/useUserStore';
 import { useBodyOverflow } from '@/hooks/useBodyOverflow';
 import { useEmployeeStore } from '@/store/useEmployeeStore';
+import { Download, Plus, Printer } from 'lucide-react';
 import { User } from '@/types';
 import { UserTable } from '@/components/users/UserTable';
 import { UserToolbar } from './components/UserToolbar';
@@ -95,7 +96,38 @@ export default function Users() {
     <>
       {/* ── 主内容布局 ── */}
       <div className="w-full flex flex-col p-4 sm:p-6 lg:p-8 min-h-full">
-        <div className="space-y-6 animate-in fade-in duration-500 w-full flex-1 flex flex-col min-h-0">
+        <div className="space-y-6 animate-in fade-in duration-500 w-full flex-1 flex flex-col min-h-0 max-w-7xl mx-auto">
+          <div className="page-header shrink-0">
+            <div>
+              <h1 className="page-title">员工管理</h1>
+              <p className="page-subtitle">管理企业员工档案、部门分配与权限配置</p>
+            </div>
+            <div className="toolbar">
+              <button
+                onClick={() => setIsAddressBookModalOpen(true)}
+                className="btn-secondary"
+              >
+                <Printer className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">导出通讯录</span>
+              </button>
+              <button
+                onClick={() => setIsExportModalOpen(true)}
+                className="btn-secondary"
+              >
+                <Download className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">导出花名册</span>
+              </button>
+              {hasPermission('users:manage') && (
+                <button
+                  onClick={handleAdd}
+                  className="btn-primary"
+                >
+                  <Plus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">新增员工</span>
+                </button>
+              )}
+            </div>
+          </div>
           <div className="card-base flex flex-col flex-1 min-h-0">
             <div className="shrink-0">
               <UserToolbar
@@ -108,10 +140,6 @@ export default function Users() {
                 filters={filters}
                 handleFilterChange={handleFilterChange}
                 departments={departments}
-                hasPermission={hasPermission}
-                setIsAddressBookModalOpen={setIsAddressBookModalOpen}
-                setIsExportModalOpen={setIsExportModalOpen}
-                handleAdd={handleAdd}
               />
             </div>
             <div className="flex-1 min-h-0">

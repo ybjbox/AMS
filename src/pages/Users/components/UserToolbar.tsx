@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Plus, Download, Printer, Filter } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
 import { DepartmentNode } from '@/types';
 import { UserFilters } from './UserFilters';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -14,10 +14,6 @@ interface UserToolbarProps {
   filters: { department: string[]; status: string[] };
   handleFilterChange: (key: 'department' | 'status', value: string) => void;
   departments: DepartmentNode[];
-  hasPermission: (permission: string) => boolean;
-  setIsAddressBookModalOpen: (isOpen: boolean) => void;
-  setIsExportModalOpen: (isOpen: boolean) => void;
-  handleAdd: () => void;
 }
 
 export function UserToolbar({
@@ -30,46 +26,9 @@ export function UserToolbar({
   filters,
   handleFilterChange,
   departments,
-  hasPermission,
-  setIsAddressBookModalOpen,
-  setIsExportModalOpen,
-  handleAdd,
 }: UserToolbarProps) {
   return (
-    <>
-      <div className="page-header mb-6">
-        <div>
-          <h1 className="page-title">员工管理</h1>
-          <p className="page-subtitle">管理企业员工档案、部门分配与权限配置</p>
-        </div>
-        <div className="toolbar">
-          <button
-            onClick={() => setIsAddressBookModalOpen(true)}
-            className="btn-secondary"
-          >
-            <Printer className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">导出通讯录</span>
-          </button>
-          <button
-            onClick={() => setIsExportModalOpen(true)}
-            className="btn-secondary"
-          >
-            <Download className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">导出花名册</span>
-          </button>
-          {hasPermission('users:manage') && (
-            <button
-              onClick={handleAdd}
-              className="btn-primary"
-            >
-              <Plus className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">新增员工</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-100 dark:border-zinc-700">
+    <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-100 dark:border-zinc-700">
         <div className="relative w-full sm:w-72">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
             <Search className="h-4 w-4 text-zinc-400" />
@@ -140,6 +99,5 @@ export function UserToolbar({
           </div>
         </div>
       </div>
-    </>
   );
 }

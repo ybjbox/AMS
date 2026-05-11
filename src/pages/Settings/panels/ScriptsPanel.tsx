@@ -133,7 +133,7 @@ export default async function applyTemplate(worksheet, data, config) {
                 </button>
                 <button
                   onClick={() => setEditingScript(null)}
-                  className="flex items-center px-3 py-1.5 bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-600 active:scale-95 transition-transform text-xs font-medium"
+                  className="btn-secondary text-xs py-1.5"
                 >
                   取消
                 </button>

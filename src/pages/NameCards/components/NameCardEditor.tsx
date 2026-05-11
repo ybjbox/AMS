@@ -158,7 +158,7 @@ export default function NameCardEditor({
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
               每人打印份数
             </label>
-            <div className="flex items-center border border-zinc-200/80 dark:border-zinc-600 rounded-md overflow-hidden">
+            <div className="flex items-center border border-zinc-200/80 dark:border-zinc-600 rounded-lg overflow-hidden">
               <button
                 onClick={() =>
                   setPrintSettings((prev) => ({ ...prev, copiesPerName: Math.max(1, prev.copiesPerName - 1) }))
