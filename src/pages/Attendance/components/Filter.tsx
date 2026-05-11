@@ -8,7 +8,6 @@ import { UseAttendanceReturn } from '../hooks/useAttendance';
 export type FilterProps = Pick<
   UseAttendanceReturn,
   | 'activeTab'
-  | 'setActiveTab'
   | 'searchQuery'
   | 'setSearchQuery'
   | 'scheduleSearchQuery'
@@ -29,7 +28,6 @@ export type FilterProps = Pick<
 
 export default function Filter({
   activeTab,
-  setActiveTab,
   searchQuery,
   setSearchQuery,
   editingShift,
@@ -131,14 +129,13 @@ export default function Filter({
 
       if (response.success) {
         analyzeAnomalies();
-        setActiveTab('anomalies');
         toast.success(response.message);
       }
     } catch (error) {
       console.error('Analysis failed:', error);
       toast.error('分析失败，请重试');
     }
-  }, [records.length, schedules.length, analyzeAnomalies, setActiveTab]);
+  }, [records.length, schedules.length, analyzeAnomalies]);
 
   const onEmployeeSelectClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const employeeId = e.currentTarget.dataset.employeeid;

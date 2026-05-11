@@ -12,11 +12,19 @@ export default function ConnectivityListener() {
   const checkConnection = useCallback(async () => {
     setIsChecking(true);
     try {
-      const response = await fetch('/api/health');
-      if (response.ok) {
-        setIsDisconnected(false);
+      // DEV 模式下直接依赖浏览器 navigator.onLine 判断，不发送 health check 请求
+      // TODO(backend): 后端部署后移除此分支，使用真实的 health check 端点
+      if (import.meta.env.DEV) {
+        if (navigator.onLine) {
+          setIsDisconnected(false);
+        }
       } else {
-        setIsDisconnected(true);
+        const response = await fetch('/api/health');
+        if (response.ok) {
+          setIsDisconnected(false);
+        } else {
+          setIsDisconnected(true);
+        }
       }
     } catch {
       setIsDisconnected(true);

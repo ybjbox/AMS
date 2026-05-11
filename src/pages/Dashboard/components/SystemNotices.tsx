@@ -39,9 +39,9 @@ export default function SystemNotices({ notices, isLoading }: SystemNoticesProps
         />
       ) : (
         <div className="space-y-5">
-          {notices.map((notice, i) => (
+          {notices.map((notice) => (
             <div
-              key={i}
+              key={`${notice.title}-${notice.date}`}
               className="flex items-center justify-between pb-5 border-b border-zinc-100 dark:border-zinc-700/50 last:border-0 last:pb-0 group cursor-pointer"
             >
               <div>

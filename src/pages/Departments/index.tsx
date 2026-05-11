@@ -18,7 +18,7 @@ export default function Departments() {
   const canManage = hasPermission('settings:manage');
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 h-full flex flex-col space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 w-full min-h-full flex flex-col space-y-6 max-w-7xl mx-auto">
       <div className="page-header shrink-0">
         <div>
           <h1 className="page-title">部门管理</h1>

@@ -58,6 +58,8 @@ export default function Login() {
       // setUser(res.user, res.token);
       // navigate('/');
       setLoading(false);
+      const { toast } = await import('sonner');
+      toast.warning('登录服务尚未接入，请在开发模式下使用测试账号');
     },
     [setLoading, setUser, navigate]
   );

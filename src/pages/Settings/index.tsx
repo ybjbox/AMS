@@ -78,13 +78,17 @@ export default function Settings() {
 
           {/* 桌面端侧边导航（仅大屏显示） */}
           <div className="hidden md:block w-64 bg-zinc-50 dark:bg-zinc-900/50 border-r border-zinc-200 dark:border-zinc-700 p-4 shrink-0 overflow-y-auto">
-            <nav className="space-y-1">
+            <nav className="space-y-1" role="tablist" aria-label="设置导航" aria-orientation="vertical">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-controls={`panel-${tab.id}`}
+                    id={`tab-${tab.id}`}
                     onClick={() => handleTabChange(tab.id)}
                     className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
                       isActive
@@ -103,6 +107,9 @@ export default function Settings() {
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={activeTab}
+                role="tabpanel"
+                id={`panel-${activeTab}`}
+                aria-labelledby={`tab-${activeTab}`}
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}

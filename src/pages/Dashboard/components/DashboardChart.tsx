@@ -19,13 +19,23 @@ function useCssVars<T extends readonly string[]>(
   });
   useEffect(() => {
     const root = document.documentElement;
+    let rafId: number | null = null;
     const read = () => {
-      const computed = getComputedStyle(root);
-      setValues(
-        Object.fromEntries(varNames.map((v) => [v, computed.getPropertyValue(v).trim()])) as Record<string, string>
-      );
+      // 使用 rAF 合并多次快速触发，避免同步调用 getComputedStyle 造成布局抖动
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        const computed = getComputedStyle(root);
+        setValues(
+          Object.fromEntries(varNames.map((v) => [v, computed.getPropertyValue(v).trim()])) as Record<string, string>
+        );
+      });
     };
-    read();
+    // 首次立即读取
+    const computed = getComputedStyle(root);
+    setValues(
+      Object.fromEntries(varNames.map((v) => [v, computed.getPropertyValue(v).trim()])) as Record<string, string>
+    );
     const observer = new MutationObserver(read);
     observer.observe(root, { attributes: true, attributeFilter: ['class'] });
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -33,6 +43,7 @@ function useCssVars<T extends readonly string[]>(
     return () => {
       observer.disconnect();
       mq.removeEventListener('change', read);
+      if (rafId !== null) cancelAnimationFrame(rafId);
     };
     // varNames 为编译期常量，不需要进入依赖数组
     // eslint-disable-next-line react-hooks/exhaustive-deps

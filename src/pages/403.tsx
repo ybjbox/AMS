@@ -28,7 +28,7 @@ const Forbidden403 = React.memo(function Forbidden403() {
         <div className="mt-8">
           <button
             onClick={handleGoBack}
-            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner hover:from-blue-500 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 transition-colors duration-200"
+            className="btn-primary"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             返回首页

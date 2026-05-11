@@ -103,7 +103,7 @@ export default function NameCardToolbar({
         <button
           onClick={handlePrint}
           disabled={selectedUserIds.size === 0}
-          className="flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Printer className="h-4 w-4 mr-2" />
           打印台卡

@@ -5,6 +5,7 @@ import { Search, Filter, FileEdit } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User } from '@/types';
 import { ContractTable } from './components/ContractTable';
+import { Pagination } from '@/components/ui/Pagination';
 import { ContractPreviewModal } from './components/ContractPreviewModal';
 import { ContractTemplateEditor } from './components/ContractTemplateEditor';
 import { useContractPrint } from './hooks/useContractPrint';
@@ -35,6 +36,15 @@ export default function ContractsPage() {
       return matchesSearch && matchesStatus;
     });
   }, [users, searchQuery, filterStatus]);
+
+  const ITEMS_PER_PAGE = 20;
+  const [currentPage, setCurrentPage] = useState(1);
+  // 当筛选条件变化时重置页码
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredUsers.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredUsers, currentPage]);
 
   const handlePreview = useCallback((user: User) => {
     setSelectedUser(user);
@@ -68,13 +78,19 @@ export default function ContractsPage() {
                 type="text"
                 placeholder="搜索员工姓名、工号或部门..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="input-base pl-10"
               />
             </div>
             <div className="flex items-center space-x-2 shrink-0">
               <Filter className="w-4 h-4 text-zinc-400" />
-              <Select value={filterStatus} onValueChange={(val) => setFilterStatus(val || 'ALL')}>
+              <Select value={filterStatus} onValueChange={(val) => {
+                setFilterStatus(val || 'ALL');
+                setCurrentPage(1);
+              }}>
                 <SelectTrigger className="w-[180px] text-sm border-zinc-200/80 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white">
                   <SelectValue placeholder="选择状态">
                     {(val) =>
@@ -101,13 +117,21 @@ export default function ContractsPage() {
           </div>
 
           <ContractTable
-            filteredUsers={filteredUsers}
+            filteredUsers={paginatedUsers}
             onPreview={handlePreview}
             onDirectPrint={handleDirectPrint}
           />
+          
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredUsers.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setCurrentPage}
+          />
         </div>
         {/* 右侧渐变遮罩提示可横向滚动 */}
-        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white dark:from-zinc-900 to-transparent pointer-events-none md:hidden rounded-br-xl" />
+        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-zinc-50 dark:from-zinc-900 to-transparent pointer-events-none md:hidden rounded-br-xl" />
       </div>
 
       <ContractPreviewModal

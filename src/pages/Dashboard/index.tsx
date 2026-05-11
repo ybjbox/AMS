@@ -9,7 +9,7 @@ export default function Dashboard() {
   const dashboardData = useDashboard();
 
   return (
-    <div className="p-6 lg:p-8 space-y-8 animate-in fade-in duration-500 w-full">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-8 animate-in fade-in duration-500 w-full min-h-full max-w-7xl mx-auto">
       <div className="page-header px-2">
         <div>
           <h1 className="page-title">控制台</h1>

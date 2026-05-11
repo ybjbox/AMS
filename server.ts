@@ -3,7 +3,7 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import ExcelJS from "exceljs";
-import { EXCEL_THEMES, ThemeId } from "./server/themes.js";
+import { EXCEL_THEMES } from "./server/themes.ts";
 import fs from "fs/promises";
 import { pathToFileURL } from "url";
 
