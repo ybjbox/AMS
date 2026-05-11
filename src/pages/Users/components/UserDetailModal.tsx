@@ -30,7 +30,7 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, hasPermission, 
           <button
             type="button"
             onClick={onClose}
-            className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-zinc-600 shadow-sm px-4 py-2 bg-white dark:bg-zinc-700 text-base font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
+            className="btn-secondary w-full sm:w-auto"
           >
             取消
           </button>
@@ -78,7 +78,7 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, hasPermission, 
                 }, 250);
               }
             }}
-            className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm"
+            className="btn-primary w-full sm:w-auto"
           >
             <Printer className="w-4 h-4 mr-2" />
             打印档案标签
@@ -120,7 +120,7 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, hasPermission, 
                 }
               }
             }}
-            className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm"
+            className="btn-primary w-full sm:w-auto"
           >
             <Printer className="w-4 h-4 mr-2" />
             打印联系卡
@@ -132,7 +132,7 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, hasPermission, 
                 onClose();
                 if (selectedUser) handleEdit(selectedUser);
               }}
-              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm"
+              className="btn-primary w-full sm:w-auto"
             >
               <Edit className="w-4 h-4 mr-2" />
               编辑信息
@@ -185,20 +185,16 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, hasPermission, 
                   <span className="text-sm text-zinc-500 dark:text-zinc-400">状态</span>
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                      selectedUser.status === '在职' || selectedUser.status === 'active'
+                      selectedUser.status === '在职'
                         ? 'bg-emerald-100 text-emerald-800'
                         : selectedUser.status === '试用期'
                           ? 'bg-amber-100 text-amber-800'
-                          : selectedUser.status === '离职' || selectedUser.status === 'inactive'
+                          : selectedUser.status === '离职'
                             ? 'bg-zinc-200 text-zinc-800 dark:text-zinc-200'
                             : 'bg-blue-100 text-blue-800'
                     }`}
                   >
-                    {selectedUser.status === 'active'
-                      ? '在职'
-                      : selectedUser.status === 'inactive'
-                        ? '离职'
-                        : selectedUser.status}
+                    {selectedUser.status}
                   </span>
                 </div>
                 <div className="flex justify-between">

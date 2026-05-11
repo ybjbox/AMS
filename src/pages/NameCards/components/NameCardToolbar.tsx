@@ -39,7 +39,7 @@ export default function NameCardToolbar({
         {uploadedUsers && (
           <button
             onClick={() => setUploadedUsers(null)}
-            className="flex items-center px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-600 rounded-lg text-amber-600 dark:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+            className="btn-secondary text-amber-600 dark:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20"
             title="清除上传的名单，恢复系统人员"
           >
             <X className="h-4 w-4 mr-2" />
@@ -49,7 +49,7 @@ export default function NameCardToolbar({
         <div className="relative upload-dropdown">
           <button
             onClick={() => setIsUploadMenuOpen(!isUploadMenuOpen)}
-            className="flex items-center px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-600 rounded-lg text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+            className="btn-secondary"
           >
             <Upload className="h-4 w-4 mr-2" />
             导入名单
@@ -95,7 +95,7 @@ export default function NameCardToolbar({
         </div>
         <button
           onClick={() => setIsParticipantModalOpen(true)}
-          className="flex items-center px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-600 rounded-lg text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+          className="btn-secondary"
         >
           <Users className="h-4 w-4 mr-2" />
           选择人员 ({selectedUserIds.size})

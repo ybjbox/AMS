@@ -89,7 +89,7 @@ export default function Login() {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md animate-in fade-in slide-in-from-bottom-4 duration-700">
         <div className="flex justify-center">
-          <div className="w-14 h-14 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 overflow-hidden">
+          <div className="w-14 h-14 brand-gradient rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 overflow-hidden">
             {systemIcon ? (
               <img src={systemIcon} alt="Logo" className="w-full h-full object-contain bg-white dark:bg-zinc-800" />
             ) : (

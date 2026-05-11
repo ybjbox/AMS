@@ -31,13 +31,13 @@ export function MoveFileModal({
           <button
             type="button"
             onClick={onClose}
-            className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-zinc-600 shadow-sm px-4 py-2 bg-white dark:bg-zinc-700 text-base font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
+            className="btn-secondary w-full sm:w-auto"
           >
             取消
           </button>
           <button
             onClick={handleMoveFile}
-            className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm"
+            className="btn-primary w-full sm:w-auto"
           >
             确认移动
           </button>

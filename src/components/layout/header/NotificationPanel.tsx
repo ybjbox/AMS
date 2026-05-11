@@ -6,7 +6,11 @@ import { useNotificationStore } from '@/store/useNotificationStore';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { formatNotificationTime } from '@/utils/dateUtils';
 
-const NotificationPanel = React.memo(function NotificationPanel() {
+interface NotificationPanelProps {
+  onClose?: () => void;
+}
+
+const NotificationPanel = React.memo(function NotificationPanel({ onClose }: NotificationPanelProps) {
   const navigate = useNavigate();
   const notifications = useNotificationStore((state) => state.notifications);
   const unreadCount = useNotificationStore((state) => state.unreadCount);
@@ -90,7 +94,10 @@ const NotificationPanel = React.memo(function NotificationPanel() {
       {notifications.length > 0 && (
         <div className="px-4 py-3 border-t border-zinc-100 dark:border-zinc-700 text-center">
           <button
-            onClick={() => navigate('/settings?tab=logs')}
+            onClick={() => {
+              navigate('/settings?tab=logs');
+              onClose?.();
+            }}
             className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors"
           >
             查看全部通知

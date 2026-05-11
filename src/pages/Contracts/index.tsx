@@ -70,7 +70,7 @@ export default function ContractsPage() {
           </div>
         </div>
 
-        <div className="card-base min-h-0 flex-1 overflow-hidden flex flex-col">
+        <div className="card-base min-h-0 flex-1 overflow-hidden flex flex-col relative">
           <div className="shrink-0 p-4 border-b border-zinc-200 dark:border-zinc-700 flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
@@ -121,6 +121,8 @@ export default function ContractsPage() {
             onPreview={handlePreview}
             onDirectPrint={handleDirectPrint}
           />
+          {/* 右侧渐变遮罩提示可横向滚动（仅移动端） */}
+          <div className="absolute right-0 top-[53px] bottom-0 w-8 bg-gradient-to-l from-white dark:from-zinc-800 to-transparent pointer-events-none md:hidden" />
           
           <Pagination
             currentPage={currentPage}
@@ -130,8 +132,6 @@ export default function ContractsPage() {
             onPageChange={setCurrentPage}
           />
         </div>
-        {/* 右侧渐变遮罩提示可横向滚动 */}
-        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-zinc-50 dark:from-zinc-900 to-transparent pointer-events-none md:hidden rounded-br-xl" />
       </div>
 
       <ContractPreviewModal

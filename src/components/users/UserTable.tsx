@@ -260,7 +260,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
       {isLoading ? (
-        <TableSkeleton />
+        <TableSkeleton columns={8} />
       ) : data.length === 0 ? (
         <div className="text-center py-12">
           <EmptyState title="未找到员工" description="请尝试调整搜索条件或添加新员工" icon={Users} />

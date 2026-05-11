@@ -53,17 +53,17 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 sm:flex-none inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-zinc-600 shadow-sm px-4 py-2 bg-white dark:bg-zinc-700 text-base font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-600 active:scale-95 transition-transform sm:text-sm"
+              className="btn-secondary flex-1 sm:flex-none"
             >
               {options?.cancelText || '取消'}
             </button>
             <button
               type="button"
               onClick={handleConfirm}
-              className={`flex-1 sm:flex-none inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white active:scale-95 transition-transform sm:text-sm ${
+              className={`flex-1 sm:flex-none ${
                 options?.variant === 'danger'
-                  ? 'bg-red-600 hover:bg-red-700'
-                  : 'bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner hover:from-blue-500 hover:to-blue-600'
+                  ? 'btn-primary-danger'
+                  : 'btn-primary'
               }`}
             >
               {options?.confirmText || '确认'}

@@ -16,7 +16,7 @@ export default function Attendance() {
             <p className="page-subtitle">导入打卡记录与排班字典，自动分析考勤异常</p>
           </div>
           {/* Tab 切换 */}
-          <div className="tab-group">
+          <div className="tab-group" role="tablist" aria-label="考勤管理">
             {(
               [
                 { tab: 'records', label: '打卡记录' },
@@ -27,6 +27,8 @@ export default function Attendance() {
             ).map(({ tab, label }) => (
               <button
                 key={tab}
+                role="tab"
+                aria-selected={attendanceData.activeTab === tab}
                 onClick={() => attendanceData.setActiveTab(tab)}
                 className={attendanceData.activeTab === tab ? 'tab-item-active' : 'tab-item'}
               >

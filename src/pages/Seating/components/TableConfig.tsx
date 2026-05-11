@@ -71,7 +71,7 @@ export function TableConfig({
               value={skippedNumbers}
               onChange={(e) => setSkippedNumbers(e.target.value)}
               placeholder="例如：4, 14, 24"
-              className="flex-1 max-w-xs border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-1.5 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
+              className="input-base flex-1 max-w-xs py-1.5"
             />
             <span className="text-xs text-zinc-500 dark:text-zinc-400">（用逗号分隔，如：4, 14）</span>
           </div>

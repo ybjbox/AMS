@@ -32,7 +32,7 @@ export function PrintSetModal({
             type="button"
             onClick={onClose}
             disabled={isPrinting}
-            className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-zinc-600 shadow-sm px-4 py-2 bg-white dark:bg-zinc-700 text-base font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm disabled:opacity-50"
+            className="btn-secondary w-full sm:w-auto disabled:opacity-50"
           >
             取消
           </button>
@@ -40,7 +40,7 @@ export function PrintSetModal({
             type="button"
             onClick={handlePrint}
             disabled={isPrinting}
-            className="w-full inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm disabled:opacity-50"
+            className="btn-primary w-full sm:w-auto disabled:opacity-50"
           >
             {isPrinting ? (
               <>

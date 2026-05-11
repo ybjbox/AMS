@@ -29,7 +29,7 @@ let mockUsers: User[] = Array.from({ length: 45 }).map((_, i) => {
     status: Math.random() > 0.2 ? '在职' : '试用期',
     joinDate,
     yearsOfService: calculateYearsOfService(joinDate),
-    employmentType: ['全职', '兼职', '实习', '外包'][Math.floor(Math.random() * 4)],
+    employmentType: (['全职', '兼职', '实习', '外包'] as User['employmentType'][])[Math.floor(Math.random() * 4)],
     hasSocialSecurity: Math.random() > 0.1,
     contractYears,
     contractSignDate,

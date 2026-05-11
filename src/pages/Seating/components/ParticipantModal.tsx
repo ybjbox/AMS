@@ -64,7 +64,7 @@ export function ParticipantModal({
         <button
           type="button"
           onClick={onClose}
-          className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm"
+          className="btn-primary w-full sm:w-auto"
         >
           完成
         </button>

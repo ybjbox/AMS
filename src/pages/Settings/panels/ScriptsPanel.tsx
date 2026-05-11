@@ -92,7 +92,7 @@ export default async function applyTemplate(worksheet, data, config) {
         {!editingScript && (
           <button
             onClick={handleAdd}
-            className="flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform text-sm font-medium shadow-sm"
+            className="btn-primary"
           >
             <Plus className="w-4 h-4 mr-2" />
             创建脚本
@@ -197,7 +197,7 @@ export default async function applyTemplate(worksheet, data, config) {
                   action={
                     <button
                       onClick={handleAdd}
-                      className="inline-flex items-center px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white rounded-lg hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform shadow-sm"
+                      className="btn-primary"
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       立即创建

@@ -70,7 +70,7 @@ export default function ConnectivityListener() {
           <button
             onClick={checkConnection}
             disabled={isChecking}
-            className="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-white font-semibold rounded-xl hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform shadow-lg shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed group"
+            className="btn-primary w-full py-3 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed group"
           >
             <RefreshCw
               className={`w-5 h-5 mr-2 ${isChecking ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`}

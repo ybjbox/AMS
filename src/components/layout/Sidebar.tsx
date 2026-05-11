@@ -52,7 +52,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
       <div
         className={`h-20 flex items-center transition-all duration-300 ${isCollapsed ? 'justify-center px-0' : 'px-6'}`}
       >
-        <div className="w-9 h-9 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner rounded-xl flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
+        <div className="w-9 h-9 brand-gradient rounded-xl flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
           {systemIcon ? (
             <img src={systemIcon} alt="Logo" className="w-full h-full object-contain bg-white dark:bg-zinc-800" />
           ) : (

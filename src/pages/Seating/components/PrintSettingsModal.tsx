@@ -38,14 +38,14 @@ export function PrintSettingsModal({
           <button
             type="button"
             onClick={onClose}
-            className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-zinc-600 shadow-sm px-4 py-2 bg-white dark:bg-zinc-700 text-base font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
+            className="btn-secondary w-full sm:w-auto"
           >
             取消
           </button>
           <button
             type="button"
             onClick={handlePrint}
-            className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm"
+            className="btn-primary w-full sm:w-auto"
           >
             直接打印
           </button>
@@ -92,7 +92,7 @@ export function PrintSettingsModal({
                     type="text"
                     value={printSettings.cardTitle}
                     onChange={(e) => setPrintSettings((prev) => ({ ...prev, cardTitle: e.target.value }))}
-                    className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+                    className="input-base py-1.5 px-2"
                   />
                 </div>
                 <div>
@@ -101,7 +101,7 @@ export function PrintSettingsModal({
                     type="text"
                     value={printSettings.footerText}
                     onChange={(e) => setPrintSettings((prev) => ({ ...prev, footerText: e.target.value }))}
-                    className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+                    className="input-base py-1.5 px-2"
                   />
                 </div>
               </div>
@@ -132,7 +132,7 @@ export function PrintSettingsModal({
                     cardWidth: Math.round(parseFloat(e.target.value) * 10) || 210,
                   }))
                 }
-                className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+                className="input-base py-1.5 px-2"
               />
             </div>
             <div>
@@ -147,7 +147,7 @@ export function PrintSettingsModal({
                     cardHeight: Math.round(parseFloat(e.target.value) * 10) || 297,
                   }))
                 }
-                className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+                className="input-base py-1.5 px-2"
               />
             </div>
           </div>
@@ -164,7 +164,7 @@ export function PrintSettingsModal({
                     titleFontSize: parseInt(e.target.value) || (prev.cardStyle === 'style2' ? 30 : 24),
                   }))
                 }
-                className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+                className="input-base py-1.5 px-2"
               />
             </div>
             <div>
@@ -175,7 +175,7 @@ export function PrintSettingsModal({
                 onChange={(e) =>
                   setPrintSettings((prev) => ({ ...prev, numberFontSize: parseInt(e.target.value) || 48 }))
                 }
-                className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-1.5 px-2 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+                className="input-base py-1.5 px-2"
               />
             </div>
           </div>
@@ -343,7 +343,7 @@ export function PrintSettingsModal({
                           onChange={(e) =>
                             setPrintSettings((prev) => ({ ...prev, contentFontSize: parseInt(e.target.value) || 30 }))
                           }
-                          className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-1.5 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+                          className="input-base py-1.5"
                         />
                       </div>
                       <div>
@@ -389,7 +389,7 @@ export function PrintSettingsModal({
                   onChange={(e) =>
                     setPrintSettings((prev) => ({ ...prev, contentFontSize: parseInt(e.target.value) || 30 }))
                   }
-                  className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+                  className="input-base"
                 />
               </div>
             )}

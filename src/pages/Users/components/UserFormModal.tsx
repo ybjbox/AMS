@@ -124,7 +124,7 @@ export function UserFormModal({
           <button
             type="button"
             onClick={onClose}
-            className="mt-3 w-full inline-flex justify-center rounded-md border border-zinc-200/80 dark:border-zinc-600 shadow-sm px-4 py-2 bg-white dark:bg-zinc-700 text-base font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-600 active:scale-95 transition-transform sm:mt-0 sm:w-auto sm:text-sm"
+            className="btn-secondary w-full sm:w-auto"
           >
             取消
           </button>
@@ -132,7 +132,7 @@ export function UserFormModal({
             type="submit"
             form="employee-form"
             disabled={isSubmitting}
-            className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner text-base font-medium text-white hover:from-blue-500 hover:to-blue-600 active:scale-95 transition-transform sm:ml-0 sm:w-auto sm:text-sm disabled:opacity-70 disabled:cursor-not-allowed"
+            className="btn-primary w-full sm:w-auto disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isSubmitting ? '保存中...' : '保存'}
           </button>
@@ -150,7 +150,7 @@ export function UserFormModal({
               <input
                 {...register('name')}
                 type="text"
-                className={`mt-1 block w-full border ${errors.name ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-zinc-200 dark:border-zinc-700/80'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm`}
+                className={`input-base mt-1 ${errors.name ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
               {errors.name && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.name.message}</p>}
             </div>
@@ -161,7 +161,7 @@ export function UserFormModal({
               <input
                 {...register('idCard')}
                 type="text"
-                className={`mt-1 block w-full border ${errors.idCard ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-zinc-200 dark:border-zinc-700/80'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm`}
+                className={`input-base mt-1 ${errors.idCard ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
               {errors.idCard && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.idCard.message}</p>}
             </div>
@@ -172,7 +172,7 @@ export function UserFormModal({
               <input
                 {...register('phone')}
                 type="text"
-                className={`mt-1 block w-full border ${errors.phone ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-zinc-200 dark:border-zinc-700/80'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm`}
+                className={`input-base mt-1 ${errors.phone ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
               {errors.phone && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.phone.message}</p>}
             </div>
@@ -183,7 +183,7 @@ export function UserFormModal({
               <input
                 {...register('registeredAddress')}
                 type="text"
-                className={`mt-1 block w-full border ${errors.registeredAddress ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-zinc-200 dark:border-zinc-700/80'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm`}
+                className={`input-base mt-1 ${errors.registeredAddress ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
               {errors.registeredAddress && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.registeredAddress.message}</p>}
             </div>
@@ -194,7 +194,7 @@ export function UserFormModal({
               <input
                 {...register('currentAddress')}
                 type="text"
-                className={`mt-1 block w-full border ${errors.currentAddress ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-zinc-200 dark:border-zinc-700/80'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm`}
+                className={`input-base mt-1 ${errors.currentAddress ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
               {errors.currentAddress && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.currentAddress.message}</p>}
             </div>
@@ -261,13 +261,7 @@ export function UserFormModal({
                 状态 <span className="text-red-500">*</span>
               </label>
               <Select
-                defaultValue={
-                  editingUser?.status === 'active'
-                    ? '在职'
-                    : editingUser?.status === 'inactive'
-                      ? '离职'
-                      : editingUser?.status || '在职'
-                }
+                defaultValue={editingUser?.status || '在职'}
               >
                 <SelectTrigger className="w-full mt-1 bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
                   <SelectValue placeholder="选择状态" />
@@ -286,7 +280,7 @@ export function UserFormModal({
               <input
                 {...register('joinDate')}
                 type="date"
-                className={`mt-1 block w-full border ${errors.joinDate ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-zinc-200 dark:border-zinc-700/80'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm`}
+                className={`input-base mt-1 ${errors.joinDate ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
               {errors.joinDate && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.joinDate.message}</p>}
             </div>
@@ -314,7 +308,7 @@ export function UserFormModal({
               <input
                 {...register('changeStatus')}
                 type="text"
-                className={`mt-1 block w-full border ${errors.changeStatus ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : 'border-zinc-200 dark:border-zinc-700/80'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm`}
+                className={`input-base mt-1 ${errors.changeStatus ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
             </div>
             <div>
@@ -366,7 +360,7 @@ export function UserFormModal({
               <input
                 {...register('contractYears')}
                 type="number"
-                className="mt-1 block w-full border border-zinc-200 dark:border-zinc-700/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+                className="input-base mt-1"
               />
             </div>
             <div>
@@ -374,7 +368,7 @@ export function UserFormModal({
               <input
                 {...register('contractSignDate')}
                 type="date"
-                className="mt-1 block w-full border border-zinc-200 dark:border-zinc-700/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+                className="input-base mt-1"
               />
             </div>
           </div>
@@ -400,7 +394,7 @@ export function UserFormModal({
               <input
                 {...register('formerUnit')}
                 type="text"
-                className="mt-1 block w-full border border-zinc-200 dark:border-zinc-700/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+                className="input-base mt-1"
               />
             </div>
             <div>
@@ -409,7 +403,7 @@ export function UserFormModal({
                 {...register('militaryDates')}
                 type="text"
                 placeholder="如: 2015-09 至 2017-09"
-                className="mt-1 block w-full border border-zinc-200 dark:border-zinc-700/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+                className="input-base mt-1"
               />
             </div>
           </div>
@@ -420,7 +414,7 @@ export function UserFormModal({
           <textarea
             {...register('remarks')}
             rows={2}
-            className="mt-1 block w-full border border-zinc-200 dark:border-zinc-700/80 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+            className="input-base mt-1"
           ></textarea>
         </div>
       </form>

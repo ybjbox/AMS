@@ -83,7 +83,7 @@ export default function NameCardEditor({
                       paperWidth: Math.round(parseFloat(e.target.value) * 10) || 210,
                     }))
                   }
-                  className="block w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-1.5 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
+                  className="input-base"
                 />
               </div>
               <div>
@@ -100,7 +100,7 @@ export default function NameCardEditor({
                       paperHeight: Math.round(parseFloat(e.target.value) * 10) || 297,
                     }))
                   }
-                  className="block w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-1.5 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
+                  className="input-base"
                 />
               </div>
             </div>
@@ -120,7 +120,7 @@ export default function NameCardEditor({
                     cardWidth: Math.round(parseFloat(e.target.value) * 10) || 90,
                   }))
                 }
-                className="block w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-1.5 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
+                className="input-base"
               />
             </div>
             <div>
@@ -137,7 +137,7 @@ export default function NameCardEditor({
                     cardHeight: Math.round(parseFloat(e.target.value) * 10) || 54,
                   }))
                 }
-                className="block w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-1.5 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
+                className="input-base"
               />
             </div>
           </div>
@@ -284,7 +284,7 @@ export default function NameCardEditor({
                 onChange={(e) =>
                   setPrintSettings((prev) => ({ ...prev, fontSize: parseInt(e.target.value) || 32 }))
                 }
-                className="block w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-1.5 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
+                className="input-base"
               />
             </div>
             <div>
@@ -338,7 +338,7 @@ export default function NameCardEditor({
                   onChange={(e) =>
                     setPrintSettings((prev) => ({ ...prev, departmentFontSize: parseInt(e.target.value) || 14 }))
                   }
-                  className="block w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-1.5 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
+                  className="input-base"
                 />
               </div>
             )}
@@ -363,7 +363,7 @@ export default function NameCardEditor({
                   onChange={(e) =>
                     setPrintSettings((prev) => ({ ...prev, roleFontSize: parseInt(e.target.value) || 14 }))
                   }
-                  className="block w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-1.5 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
+                  className="input-base"
                 />
               </div>
             )}
@@ -387,7 +387,7 @@ export default function NameCardEditor({
                     type="text"
                     value={printSettings.companyName}
                     onChange={(e) => setPrintSettings((prev) => ({ ...prev, companyName: e.target.value }))}
-                    className="block w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-1.5 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
+                    className="input-base"
                   />
                 </div>
                 <div>
@@ -400,7 +400,7 @@ export default function NameCardEditor({
                     onChange={(e) =>
                       setPrintSettings((prev) => ({ ...prev, companyNameFontSize: parseInt(e.target.value) || 16 }))
                     }
-                    className="block w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-1.5 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
+                    className="input-base"
                   />
                 </div>
               </div>
