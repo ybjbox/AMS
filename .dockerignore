@@ -1,0 +1,27 @@
+# 依赖与构建缓存（构建阶段会重新 install / build）
+node_modules
+dist
+
+# 运行时数据：SQLite 库、上传文件、凭据文件 —— 禁止烤进镜像
+data
+*.db
+*.sqlite
+*.sqlite3
+
+# 密钥与环境
+.env
+.env.*
+*.pem
+*.key
+
+# 版本控制与日志
+.git
+.gitignore
+*.log
+
+# 本地开发产物
+coverage
+.DS_Store
+
+# 已废弃：单容器架构下不再需要 nginx 反向代理
+nginx.conf

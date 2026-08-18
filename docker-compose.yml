@@ -1,0 +1,33 @@
+# AMS 单容器部署
+# 用法：
+#   docker compose up -d            # 启动（首次会随机生成管理员口令并打到日志）
+#   docker compose logs ams         # 查看首次管理员口令
+#   AMS_ADMIN_PASSWORD=xxxx docker compose up -d   # 用固定口令
+#   docker compose down             # 停止（数据卷 ams-data 保留）
+services:
+  ams:
+    build: .
+    image: ams:latest
+    container_name: ams
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      HOST: "0.0.0.0"
+      PORT: "3000"
+      # 留空则首启随机生成管理员口令并写入容器日志；
+      # 设置后可复现登录口令（至少 10 位，含字母与数字）。
+      AMS_ADMIN_PASSWORD: "${AMS_ADMIN_PASSWORD:-}"
+    volumes:
+      # SQLite 数据 + 凭据持久化；不挂卷则容器删除即丢数据
+      - ams-data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  ams-data:
