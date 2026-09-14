@@ -1,3 +1,4 @@
+import PageContainer from "@/components/PageContainer";
 import React from 'react';
 import { useDashboard } from './hooks/useDashboard';
 import StatCards from './components/StatCards';
@@ -9,7 +10,7 @@ export default function Dashboard() {
   const dashboardData = useDashboard();
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-8 animate-in fade-in duration-500 w-full min-h-full max-w-7xl mx-auto">
+    <PageContainer className="space-y-8 animate-in fade-in duration-500">
       <div className="page-header">
         <div>
           <h1 className="page-title">控制台</h1>
@@ -33,6 +34,6 @@ export default function Dashboard() {
           <SystemNotices notices={dashboardData.notices} isLoading={dashboardData.isLoading} />
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

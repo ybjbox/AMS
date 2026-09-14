@@ -9,6 +9,12 @@ export default function NotificationTrigger() {
   const panelRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = useNotificationStore((state) => state.unreadCount);
+  const fetchNotifications = useNotificationStore((state) => state.fetchNotifications);
+
+  // 通知改为服务端数据源：挂载时拉取未读数（Header 仅在登录后渲染）
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

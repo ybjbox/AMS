@@ -78,3 +78,14 @@ export const http = {
   put: <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> => api.put(url, data, config),
   delete: <T>(url: string, config?: AxiosRequestConfig): Promise<T> => api.delete(url, config),
 };
+
+/**
+ * 直接下载链接（审计 CSV 导出、备份文件下载）无法走 axios 拦截器，
+ * 用 access_token 查询参数携带凭据。后端 authGate 仅对文件下载类端点放行 query token。
+ */
+export function withAuthToken(url: string): string {
+  const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+  if (!token) return url;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}access_token=${encodeURIComponent(token)}`;
+}

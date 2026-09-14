@@ -5,5 +5,5 @@
     "noEmit": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["server/**/*.ts", "scripts/verify-fresh-migrate.ts"]
+  "include": ["server/**/*.ts", "server.ts", "scripts/**/*.ts"]
 }

@@ -1,3 +1,4 @@
+import PageContainer from "@/components/PageContainer";
 import React, { useState, useMemo, useCallback } from 'react';
 import { useBodyOverflow } from '@/hooks/useBodyOverflow';
 import { useEmployeeStore } from '@/store/useEmployeeStore';
@@ -52,7 +53,7 @@ export default function ContractsPage() {
   }, []);
 
   return (
-    <div className="w-full flex flex-col p-4 sm:p-6 lg:p-8 min-h-full">
+    <PageContainer width="none">
       <div className="relative max-w-7xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-6 animate-in fade-in duration-500">
         <div className="page-header shrink-0">
           <div>
@@ -152,6 +153,6 @@ export default function ContractsPage() {
       <div className="hidden">
         <div>{selectedUser && <ContractTemplate user={selectedUser} />}</div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

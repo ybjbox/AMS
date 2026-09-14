@@ -1,0 +1,101 @@
+# ===== AMS 接口联调示例（VS Code 插件 REST Client：humao.rest-client）=====
+# 用法：点击每个请求上方的 "Send Request"。先执行「登录」拿到 Token，后续请求自动引用。
+
+@base = http://localhost:3000/api
+# 本工作区调试密码（环境搭建时通过官方改密接口设置；正式使用前请再自行修改）
+@password = 请替换为你的管理员密码（首次启动控制台会打印，登录后请修改）
+
+### 0. 健康检查（公开接口，联调第一步）
+GET {{base}}/health
+
+### 1. 登录获取 Token（公开接口；响应体: { token, expiresAt, user }）
+# @name login
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "{{password}}"
+}
+
+### 2. 当前登录用户信息（Token 有效性校验）
+GET {{base}}/auth/me
+Authorization: Bearer {{login.response.body.token}}
+
+### 3. 员工列表（分页）
+GET {{base}}/users?page=1&pageSize=10
+Authorization: Bearer {{login.response.body.token}}
+
+### 4. 部门树
+GET {{base}}/departments
+Authorization: Bearer {{login.response.body.token}}
+
+### 5. 考勤班次列表
+GET {{base}}/attendance/shifts
+Authorization: Bearer {{login.response.body.token}}
+
+### 6. 待办列表
+GET {{base}}/todos
+Authorization: Bearer {{login.response.body.token}}
+
+### 7. 通知列表
+GET {{base}}/notifications
+Authorization: Bearer {{login.response.body.token}}
+
+### 7.5 提交请假申请（R1 审批流 v1，任何登录用户可自助提交）
+# @name createApproval
+POST {{base}}/approvals
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "leaveType": "年假",
+  "startDate": "2026-10-01",
+  "endDate": "2026-10-03",
+  "reason": "示例申请事由"
+}
+
+### 7.6 待审批列表（HR 及以上）
+GET {{base}}/approvals/pending
+Authorization: Bearer {{login.response.body.token}}
+
+### 7.7 审批决定（HR 及以上；把 :id 换成 7.5 返回的 id）
+PUT {{base}}/approvals/{{createApproval.response.body.id}}/decide
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "status": "approved",
+  "comment": "同意"
+}
+
+### 7.8 我的申请
+GET {{base}}/approvals/mine
+Authorization: Bearer {{login.response.body.token}}
+
+### 8. 审计日志（分页 + 筛选参数示例）
+GET {{base}}/audit-logs?page=1&pageSize=20
+Authorization: Bearer {{login.response.body.token}}
+
+### 9. 审计日志筛选面（facets）
+GET {{base}}/audit-logs/facets
+Authorization: Bearer {{login.response.body.token}}
+
+### 10. 备份列表与配置（仅 ADMIN）
+GET {{base}}/backup
+Authorization: Bearer {{login.response.body.token}}
+
+### 11. AI 助手配置（未配置 OPENAI_API_KEY 时 enabled 可能为 false，属正常）
+GET {{base}}/ai/config
+Authorization: Bearer {{login.response.body.token}}
+
+### 12. Excel 主题（旧接口，现也受登录保护）
+GET {{base}}/themes
+Authorization: Bearer {{login.response.body.token}}
+
+### 13. 未带 Token 访问受保护接口 → 预期 401（验证 authGate 生效）
+GET {{base}}/employees
+
+### 14. 不存在的接口 → 预期 404 JSON（验证 API 兜底，而不是返回 index.html）
+GET {{base}}/not-exist
+Authorization: Bearer {{login.response.body.token}}

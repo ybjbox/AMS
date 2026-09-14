@@ -1,6 +1,21 @@
+import PageContainer from "@/components/PageContainer";
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { Building2, User, Sliders, BellRing, Palette, Code2, TerminalSquare, Monitor } from 'lucide-react';
+import {
+  Building2,
+  User,
+  Sliders,
+  BellRing,
+  Palette,
+  Code2,
+  TerminalSquare,
+  Monitor,
+  DatabaseBackup,
+  Bot,
+  History,
+  ShieldCheck,
+} from 'lucide-react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import DepartmentsPanel from './panels/DepartmentsPanel';
 import ProfilePanel from './panels/ProfilePanel';
@@ -10,6 +25,10 @@ import RemindersPanel from './panels/RemindersPanel';
 import ThemesPanel from './panels/ThemesPanel';
 import ScriptsPanel from './panels/ScriptsPanel';
 import LogsPanel from './panels/LogsPanel';
+import BackupPanel from './panels/BackupPanel';
+import AiConfigPanel from './panels/AiConfigPanel';
+import AiHistoryPanel from './panels/AiHistoryPanel';
+import PermissionMatrixPanel from './panels/PermissionMatrixPanel';
 
 const tabs = [
   { id: 'departments', label: '部门与职位架构', icon: Building2 },
@@ -19,11 +38,20 @@ const tabs = [
   { id: 'reminders', label: '提醒设置', icon: BellRing },
   { id: 'themes', label: '导出主题管理', icon: Palette },
   { id: 'scripts', label: '导出脚本模板', icon: Code2 },
+  { id: 'backup', label: '数据库备份', icon: DatabaseBackup },
+  { id: 'ai', label: 'AI 管理配置', icon: Bot },
+  { id: 'ai-history', label: 'AI 会话记录', icon: History },
+  { id: 'permissions', label: '权限矩阵', icon: ShieldCheck },
   { id: 'logs', label: '系统日志', icon: TerminalSquare },
 ];
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState('departments');
+  const location = useLocation();
+  // 登录页强制改密会带 { tab: 'profile' } 跳转过来
+  const [activeTab, setActiveTab] = useState(() => {
+    const wanted = (location.state as { tab?: string } | null)?.tab;
+    return tabs.some((t) => t.id === wanted) ? (wanted as string) : 'departments';
+  });
 
   const currentTabLabel = tabs.find((t) => t.id === activeTab)?.label ?? '系统设置';
   useDocumentTitle(currentTabLabel);
@@ -41,13 +69,17 @@ export default function Settings() {
       case 'reminders': return <RemindersPanel />;
       case 'themes': return <ThemesPanel />;
       case 'scripts': return <ScriptsPanel />;
+      case 'backup': return <BackupPanel />;
+      case 'ai': return <AiConfigPanel />;
+      case 'ai-history': return <AiHistoryPanel />;
+      case 'permissions': return <PermissionMatrixPanel />;
       case 'logs': return <LogsPanel />;
       default: return null;
     }
   };
 
   return (
-    <div className="w-full flex flex-col p-4 sm:p-6 lg:p-8 min-h-full">
+    <PageContainer width="none">
       <div className="max-w-6xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-6 animate-in fade-in duration-500">
         <div className="shrink-0">
           <h1 className="page-title">系统设置</h1>
@@ -123,6 +155,6 @@ export default function Settings() {
           </div>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

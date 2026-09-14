@@ -1,4 +1,5 @@
 import { http } from './api';
+import { UserInfo } from '../types';
 
 export interface AuthUser {
   id: string;
@@ -10,6 +11,11 @@ export interface AuthUser {
   systemRole: string;
   employeeId: string | null;
   mustChangePassword: boolean;
+}
+
+/** 后端 AuthUser → 前端 UserInfo（role 统一取 systemRole 权限键） */
+export function toUserInfo(u: AuthUser): UserInfo {
+  return { id: u.id, username: u.username, email: u.email, role: u.systemRole };
 }
 
 export interface LoginResponse {

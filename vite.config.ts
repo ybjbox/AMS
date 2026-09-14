@@ -1,15 +1,11 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig, loadEnv} from 'vite';
+import { defineConfig } from 'vite';
 
-export default defineConfig(({mode}) => {
-  const env = loadEnv(mode, '.', '');
+export default defineConfig(() => {
   return {
     plugins: [react(), tailwindcss()],
-    define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src'),
@@ -17,12 +13,32 @@ export default defineConfig(({mode}) => {
     },
     test: {
       globals: true,
-      environment: 'jsdom',
-      setupFiles: './src/test/setup.ts',
+      projects: [
+        {
+          resolve: { alias: { '@': path.resolve(__dirname, 'src') } },
+          test: {
+            name: 'client',
+            globals: true,
+            environment: 'jsdom',
+            setupFiles: './src/test/setup.ts',
+            include: ['src/**/*.{test,spec}.{ts,tsx}'],
+          },
+        },
+        {
+          resolve: { alias: { '@': path.resolve(__dirname, 'src') } },
+          test: {
+            name: 'server',
+            globals: true,
+            environment: 'node',
+            include: ['server/tests/**/*.test.ts'],
+            // 独立数据目录，与开发库 data/ams.db 完全隔离
+            env: { DATA_DIR: 'data-test' },
+          },
+        },
+      ],
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
+      // 调试需要时可设 DISABLE_HMR=true 临时禁用前端 HMR（默认启用）
       hmr: process.env.DISABLE_HMR !== 'true',
     },
   };

@@ -112,15 +112,42 @@ export function replaceSchedules(schedules: any[]) {
 }
 
 /** 增量：新增或更新单个员工排班（按 employeeId 幂等 upsert，version 自增） */
-export function upsertSchedule(s: { employeeId: string; employeeName: string; shiftIds?: string[] }) {
-  db.prepare(
-    `INSERT INTO schedules (employeeId, employeeName, shiftIds, version)
-     VALUES (?, ?, ?, 1)
-     ON CONFLICT(employeeId) DO UPDATE SET
-       employeeName = excluded.employeeName,
-       shiftIds = excluded.shiftIds,
-       version = version + 1`
-  ).run(s.employeeId, s.employeeName, JSON.stringify(s.shiftIds || []));
+/** 乐观锁冲突：客户端携带的 expectedVersion 与库内当前版本不一致 */
+export class VersionConflictError extends Error {
+  constructor() {
+    super("数据已被他人修改，请刷新后重试");
+    this.name = "VersionConflictError";
+  }
+}
+
+/**
+ * 增量：新增或更新单个员工排班（按 employeeId 幂等 upsert，version 自增）。
+ * 传入 expectedVersion 时启用乐观锁：库内版本不一致则抛 VersionConflictError（路由层转 409），
+ * 防止「后提交者覆盖前提交者」的并发丢改。
+ */
+export function upsertSchedule(s: {
+  employeeId: string;
+  employeeName: string;
+  shiftIds?: string[];
+  expectedVersion?: number;
+}) {
+  const existing = db
+    .prepare("SELECT version FROM schedules WHERE employeeId = ?")
+    .get(s.employeeId) as { version: number } | undefined;
+
+  if (existing) {
+    if (s.expectedVersion !== undefined && s.expectedVersion !== existing.version) {
+      throw new VersionConflictError();
+    }
+    db.prepare(
+      `UPDATE schedules SET employeeName = ?, shiftIds = ?, version = version + 1
+       WHERE employeeId = ?`
+    ).run(s.employeeName, JSON.stringify(s.shiftIds || []), s.employeeId);
+  } else {
+    db.prepare(
+      `INSERT INTO schedules (employeeId, employeeName, shiftIds, version) VALUES (?, ?, ?, 1)`
+    ).run(s.employeeId, s.employeeName, JSON.stringify(s.shiftIds || []));
+  }
   return db.prepare("SELECT * FROM schedules WHERE employeeId = ?").get(s.employeeId);
 }
 
@@ -195,18 +222,33 @@ export function replaceRecords(records: any[]) {
 }
 
 /** 增量：新增或更新单条打卡记录（按 id 幂等 upsert，version 自增） */
-export function upsertRecord(r: { id?: string; employeeId: string; employeeName: string; date: string; time: string }) {
-  const id = r.id || crypto.randomUUID();
-  db.prepare(
-    `INSERT INTO punch_records (id, employeeId, employeeName, date, time, version)
-     VALUES (?, ?, ?, ?, ?, 1)
-     ON CONFLICT(id) DO UPDATE SET
-       employeeId = excluded.employeeId,
-       employeeName = excluded.employeeName,
-       date = excluded.date,
-       time = excluded.time,
-       version = version + 1`
-  ).run(id, r.employeeId, r.employeeName, r.date, r.time);
+/** 增量：新增或更新单条打卡记录（id 缺省自动生成；expectedVersion 启用乐观锁，见 upsertSchedule） */
+export function upsertRecord(r: {
+  id?: string;
+  employeeId: string;
+  employeeName: string;
+  date: string;
+  time: string;
+  expectedVersion?: number;
+}) {
+  const id = r.id ?? crypto.randomUUID();
+  const existing = db
+    .prepare("SELECT version FROM punch_records WHERE id = ?")
+    .get(id) as { version: number } | undefined;
+
+  if (existing) {
+    if (r.expectedVersion !== undefined && r.expectedVersion !== existing.version) {
+      throw new VersionConflictError();
+    }
+    db.prepare(
+      `UPDATE punch_records SET employeeId = ?, employeeName = ?, date = ?, time = ?, version = version + 1
+       WHERE id = ?`
+    ).run(r.employeeId, r.employeeName, r.date, r.time, id);
+  } else {
+    db.prepare(
+      `INSERT INTO punch_records (id, employeeId, employeeName, date, time, version) VALUES (?, ?, ?, ?, ?, 1)`
+    ).run(id, r.employeeId, r.employeeName, r.date, r.time);
+  }
   return db.prepare("SELECT * FROM punch_records WHERE id = ?").get(id);
 }
 
@@ -291,13 +333,20 @@ export function analyzeAnomalies() {
     }
   }
 
-  // 持久化分析结果
-  db.exec("DELETE FROM anomalies");
+  // 持久化分析结果（整表替换包在事务里，避免中途失败丢失全部历史异常）
   const insert = db.prepare(
     "INSERT INTO anomalies (id, employeeId, employeeName, date, type, minutes, description) VALUES (?, ?, ?, ?, ?, ?, ?)"
   );
-  for (const a of anomalies) {
-    insert.run(crypto.randomUUID(), a.employeeId, a.employeeName, a.date, a.type, a.minutes ?? null, a.description);
+  db.exec("BEGIN");
+  try {
+    db.exec("DELETE FROM anomalies");
+    for (const a of anomalies) {
+      insert.run(crypto.randomUUID(), a.employeeId, a.employeeName, a.date, a.type, a.minutes ?? null, a.description);
+    }
+    db.exec("COMMIT");
+  } catch (e) {
+    db.exec("ROLLBACK");
+    throw e;
   }
   return listAnomalies();
 }

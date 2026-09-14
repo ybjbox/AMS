@@ -99,7 +99,27 @@ documentsRouter.post("/upload", (req, res) => {
       settled = true;
       res.status(201).json(doc);
     } catch (error) {
-      fail(500, errMessage(error) || "failed to register document");
+      fail(500, "failed to register document");
+    }
+  });
+
+  // 磁盘耗尽防护（P1-5）：
+  // 1) 优先用 Content-Length 预检（立即 413，不读流）；
+  // 2) 无长度/分块上传走流式计数兜底。
+  const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50MB
+  const contentLength = Number(req.headers["content-length"] ?? 0);
+  if (contentLength > MAX_UPLOAD_BYTES) {
+    return res.status(413).json({ error: "uploaded file exceeds 50MB limit" });
+  }
+  let uploadedBytes = 0;
+  req.on("data", (chunk: Buffer) => {
+    uploadedBytes += chunk.length;
+    if (uploadedBytes > MAX_UPLOAD_BYTES) {
+      req.unpipe(writeStream);
+      writeStream.destroy();
+      // 暂停而不是销毁请求：保证 413 响应能完整送达客户端
+      req.pause();
+      fail(413, "uploaded file exceeds 50MB limit");
     }
   });
 
@@ -146,9 +166,11 @@ filesRouter.get("/:id", (req, res) => {
   if (!doc || !doc.storedPath || !fs.existsSync(doc.storedPath)) {
     return res.status(404).json({ error: "File not found" });
   }
+  // attachment + nosniff：HR 上传的 HTML/SVG 不允许在 API 源上内联渲染，堵存储型 XSS
+  res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader(
     "Content-Disposition",
-    `inline; filename*=UTF-8''${encodeURIComponent(doc.name)}`
+    `attachment; filename*=UTF-8''${encodeURIComponent(doc.name)}`
   );
   res.sendFile(doc.storedPath);
 });

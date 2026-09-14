@@ -1,3 +1,4 @@
+import PageContainer from "@/components/PageContainer";
 import React from 'react';
 import { Building2, Briefcase, Plus } from 'lucide-react';
 import { useBodyOverflow } from '@/hooks/useBodyOverflow';
@@ -18,7 +19,7 @@ export default function Departments() {
   const canManage = hasPermission('settings:manage');
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 w-full min-h-full flex flex-col space-y-6 max-w-7xl mx-auto">
+    <PageContainer className="space-y-6">
       <div className="page-header shrink-0">
         <div>
           <h1 className="page-title">部门管理</h1>
@@ -127,6 +128,6 @@ export default function Departments() {
         onClose={() => logic.setRoleModal((prev) => ({ ...prev, isOpen: false }))}
         onSubmit={logic.handleRoleModalSubmit}
       />
-    </div>
+    </PageContainer>
   );
 }

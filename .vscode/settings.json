@@ -1,0 +1,15 @@
+{
+  // 优先使用项目内 TypeScript 5.8（与 vite/tsx 行为一致）
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  // 排除运行期产物，减少干扰
+  "files.watcherExclude": {
+    "**/data/**": true,
+    "**/dist/**": true
+  },
+  "search.exclude": {
+    "**/data": true,
+    "**/dist": true,
+    "**/package-lock.json": true
+  }
+}

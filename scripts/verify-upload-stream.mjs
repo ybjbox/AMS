@@ -138,8 +138,9 @@ async function main() {
   })).arrayBuffer());
   ok("下载内容 sha256 与上传一致", sha256(dl1Buf) === sha256(small), `${sha256(dl1Buf)} vs ${sha256(small)}`);
 
-  // ---- 2. 超大文件（>50MB）流式上传成功：证明旧的 50MB JSON 上限已去除 ----
-  const BIG = 51 * 1024 * 1024; // 51 MiB，超过旧 json({limit:"50mb"}) 上限
+  // ---- 2. 超大文件（>50MB）流式上传：2026-09-14 起启用 50MB 磁盘占用上限（P1-5），
+  //         超限应返回 413 而不是写满磁盘；此前「无上限」断言已随安全加固更新 ----
+  const BIG = 51 * 1024 * 1024; // 51 MiB，超过 50MB 上限
   const big = crypto.randomBytes(BIG);
   const bigName = "回归-big.bin";
   const r2 = await req(
@@ -149,16 +150,16 @@ async function main() {
     TOKEN,
     { "Content-Type": "application/octet-stream" }
   );
-  ok("51MB 大文件流式上传返回 201（无 50MB 上限）", r2.status === 201, `status ${r2.status}`);
-  ok("返回 size 等于 51MiB", r2.body?.size === BIG, `got ${r2.body?.size}`);
-  ok("大文件上传后服务仍健康（未 OOM 崩溃）", (await fetch(`${BASE}/api/health`)).ok);
-  const id2 = r2.body?.id;
-
-  // 大文件下载回来比对 sha256，确认 51MB 流完整
-  const dl2Buf = Buffer.from(await (await fetch(`${BASE}/api/files/${id2}?access_token=${TOKEN}`, {
-    headers: { Authorization: `Bearer ${TOKEN}` },
-  })).arrayBuffer());
-  ok("大文件下载内容 sha256 与上传一致", sha256(dl2Buf) === sha256(big), `len ${dl2Buf.length}`);
+  ok("51MB 大文件上传返回 413（超过 50MB 上限）", r2.status === 413, `status ${r2.status}`);
+  // 413 后客户端中止的上传连接可能残留一个 ECONNRESET 的池化连接，健康检查带重试
+  let stillHealthy = false;
+  for (let i = 0; i < 3 && !stillHealthy; i++) {
+    stillHealthy = await fetch(`${BASE}/api/health`)
+      .then((r) => r.ok)
+      .catch(() => false);
+    if (!stillHealthy) await new Promise((r) => setTimeout(r, 500));
+  }
+  ok("大文件上传被拒后服务仍健康（未 OOM 崩溃）", stillHealthy);
 
   // ---- 3. 缺 name 返回 400 ----
   const r3 = await req(

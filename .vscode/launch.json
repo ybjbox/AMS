@@ -1,0 +1,44 @@
+{
+  // AMS 调试配置：架构为「单进程全栈」——Express(3000) 内嵌 Vite 中间件，
+  // 因此后端调试即全栈进程调试；前端断点通过浏览器调试器 + Vite sourcemap 命中。
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "AMS: 后端调试 (断点+热重启)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["tsx", "watch", "--inspect", "server.ts"],
+      "envFile": "${workspaceFolder}/.env.local",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "console": "integratedTerminal",
+      "restart": true
+    },
+    {
+      "name": "AMS: 前端调试 (Edge)",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/src",
+      "userDataDir": "${workspaceFolder}/.vscode/.edge-profile"
+    },
+    {
+      "name": "AMS: 前端调试 (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/src",
+      "userDataDir": "${workspaceFolder}/.vscode/.chrome-profile"
+    }
+  ],
+  "compounds": [
+    {
+      // 后端进程需先监听 3000，浏览器再打开；若页面先打开报错，等控制台出现
+      // “Server running on http://localhost:3000”后刷新即可（或重跑本复合配置）。
+      "name": "AMS: 全栈联调 (后端+Edge)",
+      "configurations": ["AMS: 后端调试 (断点+热重启)", "AMS: 前端调试 (Edge)"],
+      "stopAll": true
+    }
+  ]
+}

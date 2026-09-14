@@ -58,7 +58,7 @@ async function runFresh(): Promise<void> {
     check(`索引存在：${e.name} ON ${e.table}(${e.columns})`, idxs.includes(e.name));
   }
   const uv = (db.prepare("PRAGMA user_version").get() as any).user_version;
-  check("升级到 user_version=4", uv === 4, `uv=${uv}`);
+  check("升级到 user_version=5", uv === 5, `uv=${uv}`);
 
   // 插入足量数据，逼出查询规划器对索引的偏好（行数少时规划器可能选全表扫描）。
   db.exec("BEGIN");
@@ -125,7 +125,7 @@ async function runUpgrade(): Promise<void> {
 
   runMigrations(); // 重新迁移：current=3 < 4 → 重建索引
   const uv = (db.prepare("PRAGMA user_version").get() as any).user_version;
-  check("再次迁移升级到 user_version=4", uv === 4, `uv=${uv}`);
+  check("再次迁移升级到 user_version=5", uv === 5, `uv=${uv}`);
   for (const e of EXPECTED_INDEXES) {
     check(`升级路径重建索引：${e.name}`, existingIndexes(db).includes(e.name));
   }

@@ -54,7 +54,14 @@ const SECURITY_EVENT_LEVEL: Record<string, AuditLevel> = {
   "auth.change_password_failed": "WARN",
 };
 
-export function logSecurityEvent(event: string, username = "", ip = "", detail = ""): void {
+export function logSecurityEvent(
+  event: string,
+  username = "",
+  ip = "",
+  detail = "",
+  /** 真实 HTTP 状态码：让 auth.invalid_token / auth.forbidden 在审计里正确记为 failure */
+  status = 200
+): void {
   try {
     insertEvent.run(event, username, ip, String(detail).slice(0, 500));
   } catch (e) {
@@ -68,7 +75,7 @@ export function logSecurityEvent(event: string, username = "", ip = "", detail =
     action: event,
     category: event.startsWith("account.") ? "账号" : "安全",
     level: SECURITY_EVENT_LEVEL[event] ?? "INFO",
-    status: 200,
+    status,
     ip,
     detail,
   });
@@ -103,6 +110,9 @@ interface Policy {
  * 未命中任何一条时走 DEFAULT_POLICY。
  */
 const POLICIES: Policy[] = [
+  // 审批自助提交：任何登录用户可提交（R2 员工自助）；审批决定走默认写策略（HR+）+ 路由内 requireRole
+  { pattern: /^\/approvals\/?$/, methods: ["POST"], minRole: "EMPLOYEE" },
+
   // 自己的会话相关操作，任何登录用户都可以做
   { pattern: /^\/auth\/(me|logout|change-password)\b/, methods: "*", minRole: "EMPLOYEE" },
 
@@ -155,11 +165,14 @@ function isPublic(method: string, path: string): boolean {
 
 // ---------------------------------------------------------------- 网关
 
-function extractToken(req: Request): string {
+function extractToken(req: Request, path: string): string {
   const header = req.get("authorization") ?? "";
   const m = /^Bearer\s+(.+)$/i.exec(header.trim());
   if (m) return m[1].trim();
-  // 文件下载走 <a href> / window.open 时带不上自定义头，允许 query 兜底
+  // query 兜底仅限文件下载类端点（<a href>/window.open 带不上自定义头）。
+  // token 进 URL 会落入访问日志/代理日志，对普通接口一律拒绝，尽量收窄暴露面。
+  const DOWNLOAD_PATHS = [/^\/files\//, /^\/backup\/export\//, /^\/audit-logs\/export/];
+  if (!DOWNLOAD_PATHS.some((p) => p.test(path))) return "";
   const q = req.query?.access_token;
   return typeof q === "string" ? q : "";
 }
@@ -171,14 +184,14 @@ export const authGate: RequestHandler = (req: Request, res: Response, next: Next
 
   if (isPublic(method, path)) return next();
 
-  const token = extractToken(req);
+  const token = extractToken(req, path);
   if (!token) {
     return res.status(401).json({ error: "未登录", code: "UNAUTHENTICATED" });
   }
 
   const session = resolveSession(token);
   if (!session) {
-    logSecurityEvent("auth.invalid_token", "", clientIp(req), `${method} ${path}`);
+    logSecurityEvent("auth.invalid_token", "", clientIp(req), `${method} ${path}`, 401);
     return res.status(401).json({ error: "登录已过期，请重新登录", code: "SESSION_EXPIRED" });
   }
 
@@ -188,7 +201,8 @@ export const authGate: RequestHandler = (req: Request, res: Response, next: Next
       "auth.forbidden",
       session.username,
       clientIp(req),
-      `${method} ${path} 需要 ${required}，实际 ${session.systemRole}`
+      `${method} ${path} 需要 ${required}，实际 ${session.systemRole}`,
+      403
     );
     return res.status(403).json({
       error: `权限不足，该操作需要 ${required} 及以上角色`,

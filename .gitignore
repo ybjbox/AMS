@@ -6,3 +6,8 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# 本地调试运行期产物（SQLite 数据库/备份/上传文件）
+data/
+.vscode/*-profile/
+data-test/

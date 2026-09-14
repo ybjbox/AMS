@@ -1,0 +1,37 @@
+# AMS CI：四道闸门（类型 → lint → 前端测试 → 服务端验证脚本）
+# 说明：lint 当前对上游既有债务（193 个 error，详见 docs/DESIGN-REVIEW.md ④）设为
+# continue-on-error 非阻塞展示；债务清偿后请移除该标记，使其成为合并门槛。
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # --legacy-peer-deps：仓库内 eslint@10 与 eslint-plugin-react-hooks@7 的 peer 声明矛盾
+      - name: 安装依赖
+        run: npm ci --legacy-peer-deps --no-audit --no-fund
+
+      - name: 类型检查（client + server）
+        run: npm run typecheck
+
+      - name: Lint（历史债务，非阻塞）
+        run: npm run lint
+        continue-on-error: true
+
+      - name: 前端与服务端单元测试（含死 UI 可达性守门）
+        run: npm run test:run
+
+      - name: 服务端验证脚本（11 个自包含回归）
+        run: npm run test:server

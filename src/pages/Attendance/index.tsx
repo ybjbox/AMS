@@ -1,3 +1,4 @@
+import PageContainer from "@/components/PageContainer";
 import React from 'react';
 import Filter from './components/Filter';
 import Stats from './components/Stats';
@@ -8,7 +9,7 @@ export default function Attendance() {
   const attendanceData = useAttendance();
 
   return (
-    <div className="w-full flex flex-col p-4 sm:p-6 lg:p-8 min-h-full">
+    <PageContainer width="none">
       <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-4">
         <div className="page-header shrink-0">
           <div>
@@ -47,6 +48,6 @@ export default function Attendance() {
           </div>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

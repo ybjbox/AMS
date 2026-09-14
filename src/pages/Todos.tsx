@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import PageContainer from "@/components/PageContainer";
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTodoStore } from '../store/useTodoStore';
 import { CheckCircle2, Circle, Clock, Plus, Trash2, Calendar, ListTodo } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -9,6 +10,12 @@ export default function Todos() {
   const toggleTodo = useTodoStore((state) => state.toggleTodo);
   const deleteTodo = useTodoStore((state) => state.deleteTodo);
   const addTodo = useTodoStore((state) => state.addTodo);
+  const fetchTodos = useTodoStore((state) => state.fetchTodos);
+
+  // 待办已迁移到服务端：挂载时拉取「我创建的 + 派给我的」
+  useEffect(() => {
+    fetchTodos();
+  }, [fetchTodos]);
   const [isAdding, setIsAdding] = useState(false);
   const [newTodo, setNewTodo] = useState({ title: '', description: '', dueDate: '' });
 
@@ -54,7 +61,7 @@ export default function Todos() {
   );
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 animate-in fade-in duration-500 w-full min-h-full max-w-7xl mx-auto">
+    <PageContainer className="space-y-6 animate-in fade-in duration-500">
       <div className="page-header shrink-0">
           <div>
             <h1 className="page-title">待办事项</h1>
@@ -225,6 +232,6 @@ export default function Todos() {
           </div>
         )}
       </div>
-    </div>
+    </PageContainer>
   );
 }

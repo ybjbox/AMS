@@ -1,9 +1,13 @@
 import { create } from 'zustand';
+import { toast } from 'sonner';
 import { DepartmentNode, RoleNode } from '../types';
+import { http } from '../services/api';
 
 interface DepartmentState {
   departments: DepartmentNode[];
   roles: RoleNode[];
+  initialized: boolean;
+  fetchDepartments: () => Promise<void>;
   setDepartments: (newDepts: DepartmentNode[]) => void;
   setRoles: (newRoles: RoleNode[]) => void;
 }
@@ -67,11 +71,45 @@ const sortRoles = (rolesList: RoleNode[]): RoleNode[] => {
   return [...rolesList].sort((a, b) => (b.priority || 0) - (a.priority || 0));
 };
 
+function errText(e: unknown, fallback: string): string {
+  return (e as { error?: string })?.error || fallback;
+}
+
 export const useDepartmentStore = create<DepartmentState>((set) => ({
   departments: sortDepartments(initialDepartments),
   roles: sortRoles(initialRoles),
-  setDepartments: (newDepts) => set({ departments: sortDepartments(newDepts) }),
-  setRoles: (newRoles) => set({ roles: sortRoles(newRoles) }),
+  initialized: false,
+
+  /** 从后端加载组织架构（树 + 职位），挂载时调用一次 */
+  fetchDepartments: async () => {
+    try {
+      const res = await http.get<{ departments: DepartmentNode[]; roles: RoleNode[] }>(
+        '/departments'
+      );
+      set({
+        departments: sortDepartments(res.departments ?? []),
+        roles: sortRoles(res.roles ?? []),
+        initialized: true,
+      });
+    } catch (e) {
+      console.error('[departments] 组织架构加载失败：', e);
+    }
+  },
+
+  // 保持同步签名（调用方在编辑回调里直接用）：本地先生效，再整树持久化到后端
+  setDepartments: (newDepts) => {
+    set({ departments: sortDepartments(newDepts) });
+    http.put('/departments/tree', { departments: newDepts }).catch((e) => {
+      toast.error(errText(e, '组织架构保存失败'));
+    });
+  },
+
+  setRoles: (newRoles) => {
+    set({ roles: sortRoles(newRoles) });
+    http.put('/departments/roles', { roles: newRoles }).catch((e) => {
+      toast.error(errText(e, '职位保存失败'));
+    });
+  },
 }));
 
 // Export departmentStore for backwards compatibility with non-react code if needed

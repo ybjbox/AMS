@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAppSettings, useLoadingStore } from '../store/appSettings';
 import { useUserStore } from '../store/useUserStore';
+import { authService, toUserInfo } from '../services/auth';
 
 const loginSchema = z.object({
   username: z.string().min(1, '请输入用户名'),
@@ -39,27 +40,21 @@ export default function Login() {
   const onSubmit = useCallback(
     async (data: LoginFormValues) => {
       setLoading(true);
-      if (import.meta.env.DEV) {
-        // DEV ONLY: Mock 登录，生产构建会 tree-shake 掉此分支
-        return new Promise<void>((resolve) => {
-          setTimeout(() => {
-            setLoading(false);
-            setUser(
-              { id: 'ADMIN001', username: data.username || 'admin', email: 'admin@example.com', role: 'admin' },
-              'mock_token_123'
-            );
-            navigate('/');
-            resolve();
-          }, 1000);
-        });
+      try {
+        const res = await authService.login(data.username, data.password);
+        setUser(toUserInfo(res.user), res.token);
+        if (res.user.mustChangePassword) {
+          // 强制改密：引导到个人设置的安全页（改密前业务接口会被后端 403 拦截）
+          navigate('/settings', { state: { tab: 'profile', mustChangePassword: true } });
+        } else {
+          navigate('/');
+        }
+      } catch (err) {
+        const message = (err as { error?: string })?.error || '登录失败，请检查用户名和密码';
+        const { toast } = await import('sonner');
+        toast.error(message);
+        setLoading(false);
       }
-      // TODO(backend): 接入真实登录 API
-      // const res = await authService.login(data);
-      // setUser(res.user, res.token);
-      // navigate('/');
-      setLoading(false);
-      const { toast } = await import('sonner');
-      toast.warning('登录服务尚未接入，请在开发模式下使用测试账号');
     },
     [setLoading, setUser, navigate]
   );
@@ -216,7 +211,7 @@ export default function Login() {
                 </div>
                 <div className="relative flex justify-center text-sm">
                   <span className="px-2 bg-white dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 text-xs">
-                    DEV 模式 · 测试账号: admin / 123456
+                    开发模式 · 初始账号见服务端控制台或 data/ADMIN_CREDENTIALS.txt
                   </span>
                 </div>
               </div>

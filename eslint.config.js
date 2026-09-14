@@ -5,13 +5,18 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default tseslint.config(
-  { ignores: ['dist'] },
+  { ignores: ['dist', 'node_modules', 'data', 'data-test', 'coverage'] },
+  // 基础规则覆盖全仓（含安全最敏感的 server/ 与 scripts/）
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
-    files: ['**/*.{ts,tsx}'],
+    files: ['**/*.{ts,tsx,mjs,cjs,js}'],
     languageOptions: {
-      ecmaVersion: 2020,
+      ecmaVersion: 2022,
     },
+  },
+  // React 专属规则只作用于前端源码
+  {
+    files: ['src/**/*.{ts,tsx}'],
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,

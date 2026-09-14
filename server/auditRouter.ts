@@ -6,6 +6,7 @@
  * 前端「清空日志」按钮也一并去掉了，改为导出 CSV。
  */
 import { Router } from "express";
+import { serverErrorResponse } from "./errorHandler.ts";
 import {
   auditFacets,
   auditLogCount,
@@ -48,7 +49,7 @@ auditRouter.get("/", (req, res) => {
       retentionDays: Number(process.env.AUDIT_RETENTION_DAYS) || 180,
     });
   } catch (e: any) {
-    res.status(500).json({ error: e?.message ?? "查询审计日志失败" });
+    serverErrorResponse(res, e, "查询审计日志失败");
   }
 });
 
@@ -57,7 +58,7 @@ auditRouter.get("/facets", (_req, res) => {
   try {
     res.json({ ...auditFacets(), total: auditLogCount() });
   } catch (e: any) {
-    res.status(500).json({ error: e?.message ?? "读取过滤项失败" });
+    serverErrorResponse(res, e, "读取过滤项失败");
   }
 });
 
@@ -69,7 +70,12 @@ auditRouter.get("/export", (req, res) => {
       "时间", "等级", "分类", "操作", "操作人", "角色",
       "对象类型", "对象ID", "对象名称", "结果", "状态码", "IP", "变更字段", "详情", "耗时ms",
     ];
-    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    // 公式注入防御：以 = + - @ 开头的单元格内容前置单引号，Excel 按文本处理
+    const esc = (v: unknown) => {
+      let s = String(v ?? "");
+      if (/^[=+@-]/.test(s)) s = "'" + s;
+      return '"' + s.replace(/"/g, '""') + '"';
+    };
     const lines = [header.map(esc).join(",")];
     for (const r of rows) {
       lines.push(
@@ -90,7 +96,7 @@ auditRouter.get("/export", (req, res) => {
     );
     res.send(csv);
   } catch (e: any) {
-    res.status(500).json({ error: e?.message ?? "导出失败" });
+    serverErrorResponse(res, e, "导出失败");
   }
 });
 

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { api } from '../services/mockApi';
+import { attendanceApi } from '../services/attendanceApi';
 import { createAsyncAction } from './utils';
 
 export type Shift = {
@@ -64,10 +64,10 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
   fetchData: async () => {
     return createAsyncAction(set, async () => {
       const [shifts, schedules, records, anomalies] = await Promise.all([
-        api.fetchShifts(),
-        api.fetchSchedules(),
-        api.fetchRecords(),
-        api.fetchAnomalies(),
+        attendanceApi.fetchShifts(),
+        attendanceApi.fetchSchedules(),
+        attendanceApi.fetchRecords(),
+        attendanceApi.fetchAnomalies(),
       ]);
       return { shifts, schedules, records, anomalies };
     });
@@ -75,14 +75,14 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
 
   addShift: async (shift) => {
     return createAsyncAction(set, async () => {
-      const newShift = await api.createShift(shift);
+      const newShift = await attendanceApi.createShift(shift);
       return { shifts: [...get().shifts, newShift] };
     });
   },
 
   updateShift: async (id, shift) => {
     return createAsyncAction(set, async () => {
-      const updatedShift = await api.updateShift(id, shift);
+      const updatedShift = await attendanceApi.updateShift(id, shift);
       return {
         shifts: get().shifts.map((s) => (s.id === id ? updatedShift : s)),
       };
@@ -91,7 +91,7 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
 
   deleteShift: async (id) => {
     return createAsyncAction(set, async () => {
-      await api.deleteShift(id);
+      await attendanceApi.deleteShift(id);
       return {
         shifts: get().shifts.filter((s) => s.id !== id),
       };
@@ -100,21 +100,21 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
 
   setSchedules: async (schedules) => {
     return createAsyncAction(set, async () => {
-      const updatedSchedules = await api.updateSchedules(schedules);
+      const updatedSchedules = await attendanceApi.updateSchedules(schedules);
       return { schedules: updatedSchedules };
     });
   },
 
   setRecords: async (records) => {
     return createAsyncAction(set, async () => {
-      const updatedRecords = await api.updateRecords(records);
+      const updatedRecords = await attendanceApi.updateRecords(records);
       return { records: updatedRecords };
     });
   },
 
   analyzeAnomalies: async () => {
     return createAsyncAction(set, async () => {
-      const anomalies = await api.analyzeAnomalies();
+      const anomalies = await attendanceApi.analyzeAnomalies();
       return { anomalies };
     });
   },

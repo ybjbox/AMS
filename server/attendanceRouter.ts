@@ -14,6 +14,7 @@ import {
   listRecords, replaceRecords,
   upsertRecord, deleteRecord, clearRecords,
   listAnomalies, analyzeAnomalies,
+  VersionConflictError,
 } from "./attendanceDb.ts";
 
 export const attendanceRouter = Router();
@@ -55,20 +56,41 @@ attendanceRouter.put("/schedules", (req, res) => {
   res.json(replaceSchedules(schedules));
 });
 
-// 增量：单个员工排班 upsert
-attendanceRouter.post("/schedules", (req, res) => {
-  const { employeeId, employeeName, shiftIds } = req.body || {};
+// 增量：单个员工排班 upsert（body.expectedVersion 可选启用乐观锁）
+attendanceRouter.post("/schedules", (req, res, next) => {
+  const { employeeId, employeeName, shiftIds, expectedVersion } = req.body || {};
   if (!employeeId || !employeeName) {
     return res.status(400).json({ error: "employeeId and employeeName are required" });
   }
-  res.status(201).json(upsertSchedule({ employeeId, employeeName, shiftIds }));
+  try {
+    res.status(201).json(upsertSchedule({ employeeId, employeeName, shiftIds, expectedVersion }));
+  } catch (e) {
+    if (e instanceof VersionConflictError) {
+      return res.status(409).json({ error: e.message, code: "VERSION_CONFLICT" });
+    }
+    next(e);
+  }
 });
 
 // 增量：更新单个员工排班
-attendanceRouter.put("/schedules/:employeeId", (req, res) => {
-  const { employeeName, shiftIds } = req.body || {};
+attendanceRouter.put("/schedules/:employeeId", (req, res, next) => {
+  const { employeeName, shiftIds, expectedVersion } = req.body || {};
   if (!employeeName) return res.status(400).json({ error: "employeeName is required" });
-  res.json(upsertSchedule({ employeeId: req.params.employeeId, employeeName, shiftIds }));
+  try {
+    res.json(
+      upsertSchedule({
+        employeeId: req.params.employeeId,
+        employeeName,
+        shiftIds,
+        expectedVersion,
+      })
+    );
+  } catch (e) {
+    if (e instanceof VersionConflictError) {
+      return res.status(409).json({ error: e.message, code: "VERSION_CONFLICT" });
+    }
+    next(e);
+  }
 });
 
 // 增量：删除单个员工排班
@@ -95,22 +117,45 @@ attendanceRouter.put("/records", (req, res) => {
   res.json(replaceRecords(records));
 });
 
-// 增量：单条打卡记录 upsert
-attendanceRouter.post("/records", (req, res) => {
-  const { employeeId, employeeName, date, time } = req.body || {};
+// 增量：单条打卡记录 upsert（body.expectedVersion 可选启用乐观锁）
+attendanceRouter.post("/records", (req, res, next) => {
+  const { employeeId, employeeName, date, time, expectedVersion } = req.body || {};
   if (!employeeId || !employeeName || !date || !time) {
     return res.status(400).json({ error: "employeeId, employeeName, date, time are required" });
   }
-  res.status(201).json(upsertRecord({ id: req.body.id, employeeId, employeeName, date, time }));
+  try {
+    res.status(201).json(upsertRecord({ id: req.body.id, employeeId, employeeName, date, time, expectedVersion }));
+  } catch (e) {
+    if (e instanceof VersionConflictError) {
+      return res.status(409).json({ error: e.message, code: "VERSION_CONFLICT" });
+    }
+    next(e);
+  }
 });
 
 // 增量：更新单条打卡记录
-attendanceRouter.put("/records/:id", (req, res) => {
-  const { employeeId, employeeName, date, time } = req.body || {};
+attendanceRouter.put("/records/:id", (req, res, next) => {
+  const { employeeId, employeeName, date, time, expectedVersion } = req.body || {};
   if (!employeeId || !employeeName || !date || !time) {
     return res.status(400).json({ error: "employeeId, employeeName, date, time are required" });
   }
-  res.json(upsertRecord({ id: req.params.id, employeeId, employeeName, date, time }));
+  try {
+    res.json(
+      upsertRecord({
+        id: req.params.id,
+        employeeId,
+        employeeName,
+        date,
+        time,
+        expectedVersion,
+      })
+    );
+  } catch (e) {
+    if (e instanceof VersionConflictError) {
+      return res.status(409).json({ error: e.message, code: "VERSION_CONFLICT" });
+    }
+    next(e);
+  }
 });
 
 // 增量：删除单条打卡记录

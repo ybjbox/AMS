@@ -1,8 +1,8 @@
+import { Permission } from "@/components/Permission";
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { FileSpreadsheet, ChevronDown, Search, Plus, AlertTriangle } from 'lucide-react';
-import { PunchRecord, EmployeeSchedule, Shift } from '@/store/useAttendanceStore';
-import { attendanceService } from '@/services/attendance';
+import { EmployeeSchedule, Shift } from '@/store/useAttendanceStore';
 import { UseAttendanceReturn } from '../hooks/useAttendance';
 
 export type FilterProps = Pick<
@@ -35,7 +35,6 @@ export default function Filter({
   records,
   schedules,
   shifts,
-  setRecords,
   setSchedules,
   analyzeAnomalies,
   addShift,
@@ -43,7 +42,6 @@ export default function Filter({
   users,
   hasPermission,
 }: FilterProps) {
-  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -65,32 +63,15 @@ export default function Filter({
   const handleFileUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (!file) return;
-
-      setIsUploading(true);
-      try {
-        const response = await attendanceService.uploadFile(file, 'excel');
-        if (response.success) {
-          const mockRecords: PunchRecord[] = [
-            { id: '1', employeeId: 'EMP001', employeeName: '张三', date: '2026-03-16', time: '08:50:00' },
-            { id: '2', employeeId: 'EMP001', employeeName: '张三', date: '2026-03-16', time: '18:05:00' },
-            { id: '3', employeeId: 'EMP002', employeeName: '李四', date: '2026-03-16', time: '09:15:00' },
-          ];
-          setRecords(mockRecords);
-          // TODO(backend): 接入真实的 Excel 解析 API，使用 xlsx 库读取文件内容
-          toast.warning(`文件已接收，当前返回 ${mockRecords.length} 条演示数据（文件内容未实际解析）`);
-        }
-      } catch (error) {
-        console.error('Upload failed:', error);
-        toast.error('文件上传失败，请重试');
-      } finally {
-        setIsUploading(false);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
+      if (!file) return;
+      // 后端暂未提供 Excel 解析接口（见 docs/DESIGN-REVIEW.md 改造路线图），
+      // 为避免假数据伪装成导入成功，这里如实提示。
+      toast.info('Excel 批量导入功能即将上线：后端解析接口尚未开放，可先手动添加打卡记录');
     },
-    [setRecords]
+    []
   );
 
   const handleAddManualSchedule = useCallback(() => {
@@ -125,12 +106,9 @@ export default function Filter({
     }
 
     try {
-      const response = await attendanceService.triggerAnalysis();
-
-      if (response.success) {
-        analyzeAnomalies();
-        toast.success(response.message);
-      }
+      // store 动作内部调用 POST /attendance/analyze（真实分析并持久化）
+      await analyzeAnomalies();
+      toast.success('异常分析完成');
     } catch (error) {
       console.error('Analysis failed:', error);
       toast.error('分析失败，请重试');
@@ -218,14 +196,14 @@ export default function Filter({
               支持 .xls 和 .xlsx 格式。表头需包含：工号、姓名、日期、时间（或打卡时间）。
             </p>
             <div
-              className={`border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl p-8 text-center transition-colors ${isUploading ? 'bg-zinc-50 dark:bg-zinc-800/50 cursor-wait' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer'}`}
-              onClick={() => !isUploading && fileInputRef.current?.click()}
+              className={`border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl p-8 text-center transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer`}
+              onClick={() => fileInputRef.current?.click()}
             >
               <FileSpreadsheet
-                className={`w-10 h-10 mx-auto mb-3 ${isUploading ? 'text-blue-400 animate-pulse' : 'text-zinc-400'}`}
+                className={`w-10 h-10 mx-auto mb-3 text-zinc-400`}
               />
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                {isUploading ? '正在上传并处理...' : '点击选择 Excel 文件'}
+                点击选择 Excel 文件
               </p>
               <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">支持 .xls, .xlsx</p>
               <input
@@ -234,7 +212,7 @@ export default function Filter({
                 onChange={handleFileUpload}
                 accept=".xls,.xlsx"
                 className="hidden"
-                disabled={isUploading}
+               
               />
             </div>
           </div>
@@ -399,7 +377,7 @@ export default function Filter({
       {activeTab === 'anomalies' && (
         <div className="mb-6 bg-white dark:bg-zinc-800 p-6 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center">
-            {hasPermission('attendance:manage') && (
+            <Permission code="attendance:manage">
               <button
                 onClick={handleAnalyze}
                 className="flex items-center px-5 py-2.5 bg-success text-white rounded-lg hover:bg-success/90 transition-all duration-300 text-sm font-medium shadow-sm"
@@ -407,7 +385,7 @@ export default function Filter({
                 <AlertTriangle className="w-4 h-4 mr-2" />
                 一键分析异常
               </button>
-            )}
+            </Permission>
           </div>
 
           <div className="relative w-full sm:w-72">

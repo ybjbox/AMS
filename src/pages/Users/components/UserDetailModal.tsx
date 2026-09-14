@@ -1,3 +1,4 @@
+import { Permission } from "@/components/Permission";
 import React from 'react';
 import { Printer, Edit } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
@@ -7,11 +8,10 @@ interface UserDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedUser: User | null;
-  hasPermission: (permission: string) => boolean;
   handleEdit: (user: User) => void;
 }
 
-export function UserDetailModal({ isOpen, onClose, selectedUser, hasPermission, handleEdit }: UserDetailModalProps) {
+export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit }: UserDetailModalProps) {
   return (
     <BaseModal
       isOpen={isOpen && !!selectedUser}
@@ -125,7 +125,7 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, hasPermission, 
             <Printer className="w-4 h-4 mr-2" />
             打印联系卡
           </button>
-          {hasPermission('users:manage') && (
+          <Permission code="users:manage">
             <button
               type="button"
               onClick={() => {
@@ -137,7 +137,7 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, hasPermission, 
               <Edit className="w-4 h-4 mr-2" />
               编辑信息
             </button>
-          )}
+          </Permission>
         </>
       }
     >

@@ -3,8 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useUserStore } from '@/store/useUserStore';
+import { authService } from '@/services/auth';
 import ThemeToggle from './ThemeToggle';
 import { getRoleDisplayName } from '@/utils/roleUtils';
+
+/** 按账号隔离前会残留的本地缓存（P1-8）：登出时统一清除 */
+const LOCAL_CACHE_KEYS = ['todo-storage', 'ams-notifications', 'ams_permissions', 'contract-storage'];
 
 export default function UserMenu() {
   const userInfo = useUserStore((s) => s.userInfo);
@@ -24,9 +28,16 @@ export default function UserMenu() {
   }, []);
 
   const handleLogout = useCallback(
-    (e: React.MouseEvent) => {
+    async (e: React.MouseEvent) => {
       e.preventDefault();
       setIsOpen(false);
+      // 先吊销服务端会话；失败（如网络断开/会话已过期）也继续本地登出
+      try {
+        await authService.logout();
+      } catch {
+        /* 忽略服务端登出错误 */
+      }
+      LOCAL_CACHE_KEYS.forEach((k) => localStorage.removeItem(k));
       logout();
       navigate('/login');
     },

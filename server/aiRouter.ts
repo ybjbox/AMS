@@ -67,6 +67,8 @@ async function streamFromUpstream(
         Authorization: `Bearer ${config.apiKey}`,
       },
       body: JSON.stringify(payload),
+      // 上游无响应时释放连接，避免 SSE 挂起占住资源
+      signal: AbortSignal.timeout(60_000),
     });
   } catch {
     return false;
@@ -141,6 +143,7 @@ async function summarizeMessages(
             { role: "user", content: transcript },
           ],
         }),
+        signal: AbortSignal.timeout(30_000),
       }
     );
     if (!upstream.ok) return "";
@@ -233,6 +236,7 @@ aiRouter.get("/models", async (req: Request, res: ExpressResponse) => {
         Authorization: `Bearer ${apiKey}`,
         Accept: "application/json",
       },
+      signal: AbortSignal.timeout(15_000),
     });
     if (!r.ok) {
       const txt = await r.text().catch(() => "");

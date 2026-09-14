@@ -1,3 +1,4 @@
+import PageContainer from "@/components/PageContainer";
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Plus, Upload } from 'lucide-react';
 import { useBodyOverflow } from '@/hooks/useBodyOverflow';
@@ -119,7 +120,7 @@ export default function Documents() {
   }, [setIsPrinting, setIsPrintModalOpen]);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 flex flex-col space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto w-full min-h-full">
+    <PageContainer className="space-y-6 animate-in fade-in duration-500">
       <div className="page-header shrink-0">
         <div>
           <h1 className="page-title">常用文件</h1>
@@ -255,6 +256,6 @@ export default function Documents() {
         printingSet={printingSet}
         documents={documents}
       />
-    </div>
+    </PageContainer>
   );
 }

@@ -270,13 +270,22 @@ export function createEmployee(input: Record<string, unknown>) {
   const keys = Object.keys(data);
   const sql = `INSERT INTO employees (id${keys.map(k => `, ${k}`).join("")})
                VALUES (?${keys.map(() => ", ?").join("")})`;
-  db.prepare(sql).run(id, ...keys.map(k => data[k]));
 
-  // 维护部门外键：按名称或显式 id 解析出 departmentId，并同步缓存部门名
-  const deptId = resolveDepartmentId(input);
-  if (deptId) {
-    const deptName = (db.prepare("SELECT name FROM departments WHERE id = ?").get(deptId) as { name: string } | undefined)?.name ?? "";
-    db.prepare("UPDATE employees SET departmentId = ?, department = ? WHERE id = ?").run(deptId, deptName, id);
+  // 插入 + 部门外键维护包在事务里，避免「员工建了但 departmentId 没挂上」的半截状态
+  db.exec("BEGIN");
+  try {
+    db.prepare(sql).run(id, ...keys.map(k => data[k]));
+
+    // 维护部门外键：按名称或显式 id 解析出 departmentId，并同步缓存部门名
+    const deptId = resolveDepartmentId(input);
+    if (deptId) {
+      const deptName = (db.prepare("SELECT name FROM departments WHERE id = ?").get(deptId) as { name: string } | undefined)?.name ?? "";
+      db.prepare("UPDATE employees SET departmentId = ?, department = ? WHERE id = ?").run(deptId, deptName, id);
+    }
+    db.exec("COMMIT");
+  } catch (e) {
+    db.exec("ROLLBACK");
+    throw e;
   }
   return getEmployee(id);
 }
@@ -284,21 +293,29 @@ export function createEmployee(input: Record<string, unknown>) {
 export function updateEmployee(id: string, input: Record<string, unknown>) {
   const data = normalize(input);
   const keys = Object.keys(data);
-  if (keys.length > 0) {
-    const sql = `UPDATE employees SET ${keys.map(k => `${k} = ?`).join(", ")},
-                 updatedAt = datetime('now', 'localtime') WHERE id = ?`;
-    db.prepare(sql).run(...keys.map(k => data[k]), id);
-  }
 
-  // 部门变更：显式 id 或部门名变动时，重新解析并维护 departmentId / 部门名
-  if (input.departmentId !== undefined || input.department !== undefined) {
-    const deptId = resolveDepartmentId(input);
-    if (deptId) {
-      const deptName = (db.prepare("SELECT name FROM departments WHERE id = ?").get(deptId) as { name: string } | undefined)?.name ?? "";
-      db.prepare("UPDATE employees SET departmentId = ?, department = ? WHERE id = ?").run(deptId, deptName, id);
-    } else {
-      db.prepare("UPDATE employees SET departmentId = NULL, department = '' WHERE id = ?").run(id);
+  db.exec("BEGIN");
+  try {
+    if (keys.length > 0) {
+      const sql = `UPDATE employees SET ${keys.map(k => `${k} = ?`).join(", ")},
+                   updatedAt = datetime('now', 'localtime') WHERE id = ?`;
+      db.prepare(sql).run(...keys.map(k => data[k]), id);
     }
+
+    // 部门变更：显式 id 或部门名变动时，重新解析并维护 departmentId / 部门名
+    if (input.departmentId !== undefined || input.department !== undefined) {
+      const deptId = resolveDepartmentId(input);
+      if (deptId) {
+        const deptName = (db.prepare("SELECT name FROM departments WHERE id = ?").get(deptId) as { name: string } | undefined)?.name ?? "";
+        db.prepare("UPDATE employees SET departmentId = ?, department = ? WHERE id = ?").run(deptId, deptName, id);
+      } else {
+        db.prepare("UPDATE employees SET departmentId = NULL, department = '' WHERE id = ?").run(id);
+      }
+    }
+    db.exec("COMMIT");
+  } catch (e) {
+    db.exec("ROLLBACK");
+    throw e;
   }
   return getEmployee(id);
 }

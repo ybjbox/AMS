@@ -1,3 +1,4 @@
+import { Permission } from "@/components/Permission";
 import React, { useCallback } from 'react';
 import { useConfirm } from '@/hooks/useConfirm';
 import { TableSkeleton } from '@/components/ui/Skeleton';
@@ -218,7 +219,7 @@ export default function Table({
                         : 'shiftId' in schedule ? String((schedule as { shiftId?: string }).shiftId) : ''}
                     </td>
                     <td className="px-6 py-2 whitespace-nowrap text-right text-sm font-medium">
-                      {hasPermission('attendance:manage') && (
+                      <Permission code="attendance:manage">
                         <button
                           data-index={idx}
                           onClick={onRemoveScheduleClick}
@@ -226,7 +227,7 @@ export default function Table({
                         >
                           删除
                         </button>
-                      )}
+                      </Permission>
                     </td>
                   </tr>
                 ))

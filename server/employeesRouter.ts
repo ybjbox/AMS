@@ -10,7 +10,8 @@ import {
   updateEmployee,
   deleteEmployee,
 } from "./db.ts";
-import { validateBody, employeeCreateSchema, employeeUpdateSchema, errMessage } from "./validation.ts";
+import { validateBody, employeeCreateSchema, employeeUpdateSchema } from "./validation.ts";
+import { serverErrorResponse } from "./errorHandler.ts";
 
 export const employeesRouter = Router();
 employeesRouter.use(json());
@@ -20,7 +21,7 @@ employeesRouter.get("/", (req, res) => {
   try {
     res.json(listEmployees(req.query));
   } catch (error) {
-    res.status(500).json({ error: errMessage(error) });
+    serverErrorResponse(res, error);
   }
 });
 
@@ -36,7 +37,7 @@ employeesRouter.post("/", validateBody(employeeCreateSchema), (req, res) => {
   try {
     res.status(201).json(createEmployee(req.body));
   } catch (error) {
-    res.status(500).json({ error: errMessage(error) });
+    serverErrorResponse(res, error);
   }
 });
 
@@ -46,7 +47,7 @@ employeesRouter.put("/:id", validateBody(employeeUpdateSchema), (req, res) => {
     if (!getEmployee(req.params.id)) return res.status(404).json({ error: "User not found" });
     res.json(updateEmployee(req.params.id, req.body || {}));
   } catch (error) {
-    res.status(500).json({ error: errMessage(error) });
+    serverErrorResponse(res, error);
   }
 });
 

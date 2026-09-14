@@ -10,12 +10,14 @@ import {
   Clock,
   FileSignature,
   Building2,
+  FileCheck2,
 } from 'lucide-react';
 
 const Dashboard = lazy(() => import('../pages/Dashboard/index'));
 const UsersPage = lazy(() => import('../pages/Users'));
 const SettingsPage = lazy(() => import('../pages/Settings/index'));
 const Todos = lazy(() => import('../pages/Todos'));
+const Approvals = lazy(() => import('../pages/Approvals/index'));
 const Seating = lazy(() => import('../pages/Seating'));
 const NameCards = lazy(() => import('../pages/NameCards/index'));
 const Documents = lazy(() => import('../pages/Documents'));
@@ -42,5 +44,6 @@ export const routeConfig: RouteConfig[] = [
   { path: '/contracts', label: '合同管理', icon: FileSignature, permission: 'contracts:view', component: Contracts },
   { path: '/departments', label: '部门管理', icon: Building2, permission: 'settings:view', component: DepartmentsPage },
   { path: '/todos', label: '待办事项', icon: ListTodo, permission: 'todos:view', component: Todos },
+  { path: '/approvals', label: '审批中心', icon: FileCheck2, permission: 'approvals:view', component: Approvals },
   { path: '/settings', label: '系统设置', icon: Settings, permission: 'settings:view', component: SettingsPage },
 ];

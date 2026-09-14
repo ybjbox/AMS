@@ -1,82 +1,46 @@
-import { api } from './mockApi';
 import { http } from './api';
-import { User, UserInfo } from '../types';
+import { User } from '../types';
 
-// 获取用户列表的请求参数接口
-export interface GetUserListParams {
+/**
+ * 员工 CRUD API — 对接后端 employeesRouter（挂载于 /api/users，作者原始约定）。
+ *
+ * 列表接口双模式：
+ * - 不传分页参数：返回完整 User[]（前端 store 全量持有的现有约定）
+ * - 传 ?page&pageSize&keyword：返回 { items, total, page, pageSize, totalPages } 服务端分页信封
+ */
+
+export interface EmployeePageParams {
   page?: number;
   pageSize?: number;
   keyword?: string;
-  status?: number;
 }
 
-// 列表返回结构
-export interface UserListResponse {
-  list: UserInfo[];
+export interface EmployeePageResponse {
+  items: User[];
   total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
-/**
- * 获取用户列表 (Axios)
- * @param params 请求参数
- * @returns 用户列表数据
- */
-export const getUserList = (params?: GetUserListParams): Promise<UserListResponse> => {
-  return http.get('/users', { params });
-};
+/** 全量拉取（store 现有约定；数据量大时建议切 fetchUsersPage 服务端分页） */
+export const fetchUsers = (): Promise<User[]> => http.get<User[]>('/users');
 
-/**
- * 获取用户详情 (Axios)
- * @param userId 用户 ID
- * @returns 用户详情数据
- */
-export const getUserInfo = (userId: string | number): Promise<UserInfo> => {
-  return http.get(`/users/${userId}`);
-};
+/** 服务端分页 + 关键字搜索（name/phone/department） */
+export const fetchUsersPage = (params: EmployeePageParams): Promise<EmployeePageResponse> =>
+  http.get<EmployeePageResponse>('/users', { params });
 
-/**
- * 获取所有员工列表 (Mock)
- * @returns 员工列表
- */
-export const fetchUsers = async (): Promise<User[]> => {
-  return api.fetchUsers();
-};
+/** 获取单个员工详情 */
+export const getUserById = (id: string): Promise<User> => http.get<User>(`/users/${id}`);
 
-/**
- * 获取单个员工详情
- * @param id 员工 ID
- * @returns 员工详情
- */
-export const getUserById = async (id: string): Promise<User> => {
-  const users = await api.fetchUsers();
-  const user = users.find((u) => u.id === id);
-  if (!user) throw new Error('User not found');
-  return user;
-};
+/** 新增员工（后端 zod 校验：name 必填 + 字段类型；id 由后端按 EMP 序号生成） */
+export const createUser = (user: Omit<User, 'id'>): Promise<User> =>
+  http.post<User>('/users', user);
 
-/**
- * 新增员工
- * @param user 员工信息（不包含 ID）
- * @returns 创建后的员工信息
- */
-export const createUser = async (user: Omit<User, 'id'>): Promise<User> => {
-  return api.createUser(user as User);
-};
+/** 更新员工（全字段可选） */
+export const updateUser = (id: string, user: Partial<User>): Promise<User> =>
+  http.put<User>(`/users/${id}`, user);
 
-/**
- * 更新员工信息
- * @param id 员工 ID
- * @param user 员工信息
- * @returns 更新后的员工信息
- */
-export const updateUser = async (id: string, user: Partial<User>): Promise<User> => {
-  return api.updateUser({ id, ...user } as User);
-};
-
-/**
- * 删除员工
- * @param id 员工 ID
- */
-export const deleteUser = async (id: string): Promise<void> => {
-  return api.deleteUser(id);
-};
+/** 删除员工（考勤等关联数据由后端外键级联清理） */
+export const deleteUser = (id: string): Promise<{ success: boolean }> =>
+  http.delete<{ success: boolean }>(`/users/${id}`);

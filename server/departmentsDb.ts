@@ -63,25 +63,33 @@ export function replaceDepartmentsTree(tree: DeptNode[]): DeptNode[] {
   const incomingIds = new Set(incoming.map((d) => d.id));
   const toDelete = [...existingIds].filter((id) => !incomingIds.has(id));
 
-  // 1) upsert 传入的整棵树（保证被重新挂到其它部门的子节点先改好父级）
+  // 1) upsert 传入的整树 + 2) 删除被移除部门 + 3) 清理陈旧部门名 —— 包在事务里，
+  //    避免中途失败留下「树改了一半」的悬空状态
   const upsert = db.prepare(
     `INSERT INTO departments (id, name, priority, parentId) VALUES (?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET name = excluded.name, priority = excluded.priority, parentId = excluded.parentId`
   );
-  for (const d of incoming) {
-    upsert.run(d.id, d.name, d.priority ?? 0, d.parentId ?? null);
-  }
+  db.exec("BEGIN");
+  try {
+    for (const d of incoming) {
+      upsert.run(d.id, d.name, d.priority ?? 0, d.parentId ?? null);
+    }
 
-  // 2) 删除真正被移除的部门（外键会把相关员工/职位的引用置空）
-  if (toDelete.length > 0) {
-    const ph = toDelete.map(() => "?").join(", ");
-    db.prepare(`DELETE FROM departments WHERE id IN (${ph})`).run(...toDelete);
-  }
+    // 删除真正被移除的部门（外键会把相关员工/职位的引用置空）
+    if (toDelete.length > 0) {
+      const ph = toDelete.map(() => "?").join(", ");
+      db.prepare(`DELETE FROM departments WHERE id IN (${ph})`).run(...toDelete);
+    }
 
-  // 3) 清理「已无有效部门引用」员工的陈旧部门名（FK 已把 departmentId 置空）
-  db.prepare(
-    "UPDATE employees SET department = '' WHERE departmentId IS NULL AND department != ''"
-  ).run();
+    // 清理「已无有效部门引用」员工的陈旧部门名（FK 已把 departmentId 置空）
+    db.prepare(
+      "UPDATE employees SET department = '' WHERE departmentId IS NULL AND department != ''"
+    ).run();
+    db.exec("COMMIT");
+  } catch (e) {
+    db.exec("ROLLBACK");
+    throw e;
+  }
 
   return listDepartmentsTree();
 }
@@ -104,10 +112,17 @@ export function listRoles() {
 }
 
 export function replaceRoles(roles: any[]) {
-  db.exec("DELETE FROM roles");
   const insert = db.prepare("INSERT INTO roles (id, name, departmentId, priority) VALUES (?, ?, ?, ?)");
-  for (const r of roles || []) {
-    insert.run(r.id, r.name, r.departmentId, r.priority ?? 0);
+  db.exec("BEGIN");
+  try {
+    db.exec("DELETE FROM roles");
+    for (const r of roles || []) {
+      insert.run(r.id, r.name, r.departmentId, r.priority ?? 0);
+    }
+    db.exec("COMMIT");
+  } catch (e) {
+    db.exec("ROLLBACK");
+    throw e;
   }
   return listRoles();
 }

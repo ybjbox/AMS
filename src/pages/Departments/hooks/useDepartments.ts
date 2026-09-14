@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useDepartments as useDepartmentStore, flattenDepartments } from '@/store/useDepartmentStore';
 import { DepartmentNode, RoleNode } from '@/types';
@@ -27,6 +27,12 @@ export function useDepartmentsLogic() {
   const setDepartments = useDepartmentStore((state) => state.setDepartments);
   const roles = useDepartmentStore((state) => state.roles);
   const setRoles = useDepartmentStore((state) => state.setRoles);
+  const fetchDepartments = useDepartmentStore((state) => state.fetchDepartments);
+
+  // 组织架构改为服务端数据源：挂载时拉取
+  useEffect(() => {
+    fetchDepartments();
+  }, [fetchDepartments]);
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [expandedRoleDepts, setExpandedRoleDepts] = useState<Set<string>>(new Set());

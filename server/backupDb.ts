@@ -158,9 +158,20 @@ export function restoreBackup(name: string, safetyLabel = "pre-restore"): Restor
     /* ignore */
   }
 
-  // 3) 关旧连接 → 拷贝 → 清 WAL/SHM → 重开新连接
+  // 3) 关旧连接 → 拷贝到临时文件 → 原子 rename → 清 WAL/SHM → 重开新连接
+  //    （直接覆盖主库时若进程中断会留下损坏的半个文件；rename 保证主库要么是旧的、要么是完整的）
   closeDb();
-  fs.copyFileSync(src, DB_PATH);
+  const tmpPath = `${DB_PATH}.restore-tmp`;
+  try {
+    fs.copyFileSync(src, tmpPath);
+    fs.renameSync(tmpPath, DB_PATH);
+  } finally {
+    try {
+      fs.rmSync(tmpPath, { force: true });
+    } catch {
+      /* ignore */
+    }
+  }
   for (const ext of ["-wal", "-shm"]) {
     try {
       fs.rmSync(DB_PATH + ext, { force: true });

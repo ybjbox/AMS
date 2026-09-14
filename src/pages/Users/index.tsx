@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import { Permission } from "@/components/Permission";
+import PageContainer from "@/components/PageContainer";
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useDepartments } from '@/store/useDepartmentStore';
-import { useUserStore as useAuthStore } from '@/store/useUserStore';
 import { useBodyOverflow } from '@/hooks/useBodyOverflow';
 import { useEmployeeStore } from '@/store/useEmployeeStore';
 import { Download, Plus, Printer } from 'lucide-react';
@@ -19,10 +20,17 @@ import { RosterPrintTemplate, AddressBookPrintTemplate } from './components/Prin
 
 export default function Users() {
   const confirm = useConfirm();
-  const hasPermission = useAuthStore((state) => state.hasPermission);
   const users = useEmployeeStore((state) => state.users);
   const isLoading = useEmployeeStore((state) => state.isLoading);
   const deleteUser = useEmployeeStore((state) => state.deleteUser);
+  const fetchUsers = useEmployeeStore((state) => state.fetchUsers);
+  const fetchDepartments = useDepartments((state) => state.fetchDepartments);
+
+  // 服务端数据源：挂载时拉取员工与组织架构（store 内有 initialized 去重）
+  useEffect(() => {
+    fetchUsers();
+    fetchDepartments();
+  }, [fetchUsers, fetchDepartments]);
 
   const allDepartments = useDepartments((state) => state.departments);
   const roles = useDepartments((state) => state.roles);
@@ -95,7 +103,7 @@ export default function Users() {
   return (
     <>
       {/* ── 主内容布局 ── */}
-      <div className="w-full flex flex-col p-4 sm:p-6 lg:p-8 min-h-full">
+      <PageContainer width="none">
         <div className="space-y-6 animate-in fade-in duration-500 w-full flex-1 flex flex-col min-h-0 max-w-7xl mx-auto">
           <div className="page-header shrink-0">
             <div>
@@ -117,7 +125,7 @@ export default function Users() {
                 <Download className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">导出花名册</span>
               </button>
-              {hasPermission('users:manage') && (
+              <Permission code="users:manage">
                 <button
                   onClick={handleAdd}
                   className="btn-primary"
@@ -125,7 +133,7 @@ export default function Users() {
                   <Plus className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">新增员工</span>
                 </button>
-              )}
+              </Permission>
             </div>
           </div>
           <div className="card-base flex flex-col flex-1 min-h-0">
@@ -173,7 +181,7 @@ export default function Users() {
             />
           </div>
         </div>
-      </div>
+      </PageContainer>
       {/* ── 弹窗层（Portal 渲染，不参与布局） ── */}
       <ExportModal
         isOpen={isExportModalOpen}
@@ -202,7 +210,6 @@ export default function Users() {
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
         selectedUser={selectedUser}
-        hasPermission={hasPermission}
         handleEdit={handleEdit}
       />
       <UserFormModal

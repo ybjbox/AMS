@@ -9,6 +9,7 @@
  *   DELETE /:name       删除某份备份文件
  */
 import { Router } from "express";
+import { serverErrorResponse } from "./errorHandler.ts";
 import { createReadStream } from "fs";
 import {
   createBackup,
@@ -29,7 +30,7 @@ backupRopter.get("/", (_req, res) => {
   try {
     res.json({ config: getBackupConfig(), backups: listBackups() });
   } catch (e: any) {
-    res.status(500).json({ error: e?.message ?? "读取备份列表失败" });
+    serverErrorResponse(res, e, "读取备份列表失败");
   }
 });
 
@@ -40,7 +41,7 @@ backupRopter.post("/create", (req, res) => {
     const backup = createBackup(label);
     res.json({ success: true, backup });
   } catch (e: any) {
-    res.status(500).json({ error: e?.message ?? "创建备份失败" });
+    serverErrorResponse(res, e, "创建备份失败");
   }
 });
 
@@ -63,7 +64,7 @@ backupRopter.get("/export/:name", (req, res) => {
     );
     createReadStream(filePath).pipe(res);
   } catch (e: any) {
-    res.status(500).json({ error: e?.message ?? "下载备份失败" });
+    serverErrorResponse(res, e, "下载备份失败");
   }
 });
 
@@ -92,6 +93,6 @@ backupRopter.delete("/:name", (req, res) => {
     if (!ok) return res.status(404).json({ error: "备份不存在" });
     res.json({ success: true });
   } catch (e: any) {
-    res.status(500).json({ error: e?.message ?? "删除备份失败" });
+    serverErrorResponse(res, e, "删除备份失败");
   }
 });

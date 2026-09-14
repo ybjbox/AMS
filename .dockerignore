@@ -25,3 +25,4 @@ coverage
 
 # 已废弃：单容器架构下不再需要 nginx 反向代理
 nginx.conf
+data-test

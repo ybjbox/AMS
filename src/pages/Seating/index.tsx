@@ -1,3 +1,4 @@
+import PageContainer from "@/components/PageContainer";
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useBodyOverflow } from '@/hooks/useBodyOverflow';
@@ -158,8 +159,7 @@ export default function Seating() {
   }, []);
 
   return (
-    <div className="w-full flex flex-col min-h-full">
-      <div className="p-4 sm:p-6 lg:p-8 space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto w-full print:hidden">
+    <PageContainer className="space-y-6 animate-in fade-in duration-500 print:hidden">
         <div className="page-header shrink-0">
           <div>
             <h1 className="page-title">座位安排</h1>
@@ -220,7 +220,6 @@ export default function Seating() {
             }
           />
         )}
-      </div>
 
       <ParticipantModal
         isOpen={isParticipantModalOpen}
@@ -293,6 +292,6 @@ export default function Seating() {
         getTableDepartments={getTableDepartments}
         renderJustifiedName={renderJustifiedName}
       />
-    </div>
+    </PageContainer>
   );
 }

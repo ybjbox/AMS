@@ -17,9 +17,10 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     (err as { status?: number; statusCode?: number })?.status ||
     (err as { status?: number; statusCode?: number })?.statusCode ||
     500;
-  const message = errMessage(err) || "服务器内部错误";
 
-  // 5xx 一律落日志，便于排查；4xx（如校验/zod 透传）通常无需堆栈。
+  // 5xx 细节只落服务端日志，响应一律通用文案，避免 SQL/内部错误串外泄；4xx 保留可读原因。
+  const message =
+    status >= 500 ? "服务器内部错误" : errMessage(err) || "请求处理失败";
   if (status >= 500) {
     console.error("[error-handler] 未捕获异常：", err);
   }
@@ -28,6 +29,21 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     res.status(status).json({ error: message });
   }
 };
+
+/**
+ * 5xx 统一出口：供各 router 的 try/catch 使用。细节落服务端日志，
+ * 响应只给调用方传入的通用文案，杜绝把 e.message（含 SQL 报错）直接回给前端。
+ */
+export function serverErrorResponse(
+  res: import("express").Response,
+  error: unknown,
+  message = "服务器内部错误"
+): void {
+  console.error("[server-error]", error);
+  if (!res.headersSent) {
+    res.status(500).json({ error: message });
+  }
+}
 
 /**
  * 包装 async 路由处理器，使 Promise rejection 也能流入 errorHandler。

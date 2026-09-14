@@ -4,6 +4,8 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import ErrorBoundary from './ErrorBoundary';
+import AiAssistant from '@/components/AiAssistant';
+import BackendStatusIndicator from '@/components/BackendStatusIndicator';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { routeConfig } from '@/config/routes';
 
@@ -49,6 +51,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </AnimatePresence>
           </ErrorBoundary>
         </main>
+
+        {/* AI 助手（自带悬浮按钮）与后端连通性状态（P1-7 死 UI 挂载） */}
+        <AiAssistant />
+        <div className="fixed bottom-6 left-6 z-40 print:hidden">
+          <BackendStatusIndicator variant="pill" />
+        </div>
       </div>
     </div>
   );
