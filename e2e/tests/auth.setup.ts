@@ -10,8 +10,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const authFile = path.join(__dirname, '../.auth/user.json');
 
 setup('登录并保存会话', async ({ page }) => {
-  await page.goto('/login');
-  await page.waitForLoadState('networkidle');
+  await page.goto('/login', { timeout: 60000 });
+  await page.waitForLoadState('networkidle', { timeout: 60000 });
 
   // 填写凭据（调试环境的固定账号）
   await page.locator('input').nth(0).fill('admin');

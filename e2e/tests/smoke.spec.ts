@@ -27,11 +27,12 @@ test.describe('全站页面冒烟', () => {
       });
       page.on('pageerror', (err) => errors.push('PAGEERROR: ' + err.message.slice(0, 200)));
 
-      await page.goto(p.path);
-      await page.waitForLoadState('networkidle');
+      // 冷启动（CI 首次 Vite 编译）较慢：给 goto 与渲染更宽容的时间
+      await page.goto(p.path, { timeout: 60000 });
+      await page.waitForLoadState('networkidle', { timeout: 60000 });
 
       // 页面渲染出 h1（不是白屏）
-      await expect(page.locator('h1').first()).toBeVisible({ timeout: 15000 });
+      await expect(page.locator('h1').first()).toBeVisible({ timeout: 30000 });
 
       // 无横向滚动（响应式基线）
       const hasHScroll = await page.evaluate(

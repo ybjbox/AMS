@@ -55,14 +55,20 @@ export default defineConfig({
     },
   ],
 
-  // 服务器：本地复用常驻实例；CI 自动启动（含种子管理员密码）
+  // 服务器：
+  // - 本地：复用常驻 dev 实例（有 HMR，随时调试）
+  // - CI：先生产构建再用静态产物启动——dev 模式（Vite 按需编译）在
+  //   CI 冷启动时过慢（2 核无缓存），是 E2E 超时的主要根因；
+  //   生产模式启动快、无编译期、确定性高（这也是 CI 惯例）。
   webServer: {
-    command: 'npm run dev',
+    command: isCI ? 'npm run build && npx tsx server.ts' : 'npm run dev',
     url: 'http://127.0.0.1:3000/api/health',
     reuseExistingServer: !isCI,
-    timeout: 180 * 1000, // CI 冷启动（vite 首次编译 + tsx 加载）可能较慢
+    timeout: 240 * 1000, // 构建 + 启动的余量
     env: {
       ...process.env,
+      // CI 用生产模式（静态服务 + 无 Vite middleware）
+      ...(isCI ? { NODE_ENV: 'production' } : {}),
       // CI 首启种子管理员口令（本地由 .env.local 提供，无影响）
       AMS_ADMIN_PASSWORD: process.env.AMS_ADMIN_PASSWORD || 'Ams-Debug#2026',
     },
