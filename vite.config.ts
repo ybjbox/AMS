@@ -11,6 +11,22 @@ export default defineConfig(() => {
         '@': path.resolve(__dirname, 'src'),
       },
     },
+    build: {
+      // 构建产物分包策略：vendor 与业务代码分离。
+      // 目的：浏览缓存命中率——业务代码频繁发版（hash 变化），
+      // 而 react 等框架/库不常变，分离后可长期命中缓存（配合 assets immutable 头）。
+      // 同时避免单 chunk 过大（>500KB）导致的首屏加载阻塞。
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // React 核心（全局依赖，最长命中）
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            // 动画库（体积较大）
+            'vendor-motion': ['motion'],
+          },
+        },
+      },
+    },
     test: {
       globals: true,
       projects: [

@@ -11,3 +11,8 @@ coverage/
 data/
 .vscode/*-profile/
 data-test/
+
+# E2E 运行产物（会话状态/报告）
+e2e/.auth/
+playwright-report/
+test-results/
