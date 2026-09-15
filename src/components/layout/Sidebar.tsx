@@ -137,7 +137,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
         {groupedNav.map(({ group, items }) => (
           <div key={group} className="pt-2 first:pt-0">
             {!isCollapsed ? (
-              <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 select-none">
+              <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 select-none">
                 {group}
               </p>
             ) : (

@@ -158,19 +158,19 @@ export default function PermissionMatrixPanel() {
 
       {/* 页面可见性 */}
       <div className="space-y-3">
-        <h3 className="subsection-title flex items-center gap-2">
+        <h2 className="subsection-title flex items-center gap-2">
           <Eye className="size-4 text-muted-foreground" />
           页面可见性
-        </h3>
+        </h2>
         <MatrixTable rows={pageRows} scopeLabel="页面" renderCell={renderCell} />
       </div>
 
       {/* 操作权限 */}
       <div className="space-y-3">
-        <h3 className="subsection-title flex items-center gap-2">
+        <h2 className="subsection-title flex items-center gap-2">
           <KeyRound className="size-4 text-muted-foreground" />
           操作权限（按钮级）
-        </h3>
+        </h2>
         <MatrixTable rows={OPERATIONS} scopeLabel="操作" renderCell={renderCell} />
       </div>
 

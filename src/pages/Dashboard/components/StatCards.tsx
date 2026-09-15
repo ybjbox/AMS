@@ -61,7 +61,7 @@ export default function StatCards({ stats, isLoading }: StatCardsProps) {
             </div>
 
             <div className="mt-auto">
-              <h3 className="text-zinc-600 dark:text-zinc-400 font-medium text-sm mb-1">{item.name}</h3>
+              <div className="text-zinc-600 dark:text-zinc-400 font-medium text-sm mb-1">{item.name}</div>
               <div className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-white [font-variant-numeric:tabular-nums]">
                 {item.value}
               </div>

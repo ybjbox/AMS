@@ -191,7 +191,7 @@ export default function Filter({
       {activeTab === 'records' && hasPermission('attendance:manage') && (
         <div className="mb-6 bg-white dark:bg-zinc-800 p-6 rounded-2xl shadow-sm">
           <div className="w-full max-w-2xl">
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">上传 Excel 文件</h3>
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">上传 Excel 文件</h2>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
               支持 .xls 和 .xlsx 格式。表头需包含：工号、姓名、日期、时间（或打卡时间）。
             </p>
@@ -221,7 +221,7 @@ export default function Filter({
 
       {activeTab === 'schedules' && hasPermission('attendance:manage') && (
         <div className="mb-6 p-6 bg-white dark:bg-zinc-800 rounded-2xl shadow-sm">
-          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">手动分配班次</h3>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">手动分配班次</h2>
           <div className="flex flex-col sm:flex-row gap-4 items-end">
             <div className="flex-1 relative" ref={dropdownRef}>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">选择员工</label>
@@ -317,9 +317,9 @@ export default function Filter({
 
       {activeTab === 'shifts' && hasPermission('attendance:manage') && (
         <div className="mb-6 bg-white dark:bg-zinc-800 p-6 rounded-2xl shadow-sm">
-          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">
             {editingShift ? '编辑班次' : '添加新班次'}
-          </h3>
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">班次名称</label>

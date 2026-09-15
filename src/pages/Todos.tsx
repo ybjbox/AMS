@@ -188,7 +188,7 @@ export default function Todos() {
                   </button>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2">
-                      <h3
+                      <div
                         className={`text-sm font-medium truncate ${
                           todo.completed
                             ? 'line-through text-zinc-500 dark:text-zinc-400'
@@ -196,7 +196,7 @@ export default function Todos() {
                         }`}
                       >
                         {todo.title}
-                      </h3>
+                      </div>
                       {todo.type !== 'manual' && (
                         <span
                           className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${

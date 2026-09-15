@@ -60,7 +60,7 @@ export default function Login() {
   );
 
   return (
-    <div
+    <main
       className="min-h-screen bg-zinc-50 dark:bg-zinc-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden"
       style={
         loginBackground
@@ -92,11 +92,11 @@ export default function Login() {
             )}
           </div>
         </div>
-        <h2
+        <h1
           className={`mt-6 text-center text-2xl font-bold tracking-tight ${loginBackground ? 'text-white' : 'text-zinc-900 dark:text-white'}`}
         >
           登录行政管理系统
-        </h2>
+        </h1>
         <p
           className={`mt-2 text-center text-sm ${loginBackground ? 'text-zinc-200' : 'text-zinc-500 dark:text-zinc-400'}`}
         >
@@ -222,6 +222,6 @@ export default function Login() {
           )}
         </div>
       </div>
-    </div>
+    </main>
   );
 }

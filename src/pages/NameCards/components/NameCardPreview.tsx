@@ -178,7 +178,12 @@ export default function NameCardPreview({
 
   return (
     <>
-      <div className="w-full md:flex-1 bg-zinc-100 dark:bg-zinc-900 p-8 flex flex-col items-center space-y-8 md:min-h-0 md:overflow-auto relative print:hidden">
+      <div
+        className="w-full md:flex-1 bg-zinc-100 dark:bg-zinc-900 p-8 flex flex-col items-center space-y-8 md:min-h-0 md:overflow-auto relative print:hidden"
+        tabIndex={0}
+        role="region"
+        aria-label="台卡预览区"
+      >
         <div className="sticky top-0 self-start text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-zinc-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-8 -ml-8 mb-4">
           打印预览 ({pages.length}页)
         </div>
@@ -191,7 +196,7 @@ export default function NameCardPreview({
           <div className="flex flex-col gap-8 items-center w-full pt-2">
             {pages.map((pageCards, pageIdx) => (
               <div key={`page-${pageIdx}`} className="flex flex-col items-center">
-                <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">
+                <div className="text-sm text-zinc-600 dark:text-zinc-400 mb-2">
                   预览纸张: {printSettings.paperSize} ({printSettings.paperWidth}x{printSettings.paperHeight}mm) - 第{' '}
                   {pageIdx + 1} 页
                 </div>

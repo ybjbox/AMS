@@ -5,7 +5,7 @@
 
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import Layout from './components/layout/Layout';
+const Layout = lazy(() => import('./components/layout/Layout'));
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import { useLoadingStore } from './store/appSettings';
 import ConnectivityListener from './components/ConnectivityListener';

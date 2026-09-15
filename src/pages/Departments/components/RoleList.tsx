@@ -46,7 +46,7 @@ const RoleTreeNode = React.memo(function RoleTreeNode({
               <ChevronRight className="w-4 h-4 text-zinc-400 shrink-0" />
             )}
             <span className="text-sm text-zinc-700 dark:text-zinc-300 truncate">{node.name}</span>
-            <span className="text-xs text-zinc-400 shrink-0">({deptRoles.length})</span>
+            <span className="text-xs text-zinc-500 shrink-0">({deptRoles.length})</span>
           </div>
           {canManage && (
             <button

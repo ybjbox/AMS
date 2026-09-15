@@ -132,7 +132,7 @@ export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: Contr
                           <button
                             data-userid={user.id}
                             onClick={() => onDirectPrint(user)}
-                            className="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300 flex items-center px-1.5 py-1 -my-1 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+                            className="text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300 flex items-center px-1.5 py-1 -my-1 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
                           >
                             <Printer className="w-4 h-4 mr-1" />
                             打印

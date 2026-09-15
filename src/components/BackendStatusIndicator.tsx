@@ -24,7 +24,7 @@ const CONFIG: Record<BackendStatus, IndicatorConfig> = {
   online: {
     label: '后端在线',
     dot: 'bg-emerald-500',
-    text: 'text-emerald-600 dark:text-emerald-400',
+    text: 'text-emerald-700 dark:text-emerald-400',
     ring: 'bg-emerald-500/20',
     pulse: false,
     title: '后端服务正常',

@@ -19,16 +19,16 @@ export default function NameCardEditor({
   return (
     <div className="w-full md:w-80 shrink-0 bg-white dark:bg-zinc-800 border-b md:border-b-0 md:border-r border-zinc-200 dark:border-zinc-700 p-6 space-y-6 md:min-h-0 md:overflow-y-auto">
       <div>
-        <h3 className="text-sm font-semibold text-zinc-800 dark:text-white mb-4 flex items-center">
+        <div className="text-sm font-semibold text-zinc-800 dark:text-white mb-4 flex items-center">
           <Settings2 className="h-4 w-4 mr-2" />
           打印设置
-        </h3>
+        </div>
 
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">纸张尺寸</label>
             <Select value={printSettings.paperSize} onValueChange={(val) => handlePaperSizeChange(val as 'A4' | 'A5' | 'custom')}>
-              <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
+              <SelectTrigger aria-label="纸张尺寸" className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
                 <SelectValue placeholder="选择尺寸">
                   {(val) =>
                     val === 'A4'
@@ -55,7 +55,7 @@ export default function NameCardEditor({
               value={printSettings.paperOrientation}
               onValueChange={(val) => handlePaperOrientationChange(val as 'portrait' | 'landscape')}
             >
-              <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
+              <SelectTrigger aria-label="纸张方向" className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
                 <SelectValue placeholder="选择方向">
                   {(val) => (val === 'portrait' ? '纵向' : val === 'landscape' ? '横向' : '选择方向')}
                 </SelectValue>
@@ -167,6 +167,7 @@ export default function NameCardEditor({
                 onClick={() =>
                   setPrintSettings((prev) => ({ ...prev, copiesPerName: Math.max(1, prev.copiesPerName - 1) }))
                 }
+                aria-label="减少打印份数"
                 className="px-3 py-2 bg-zinc-50 dark:bg-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-600 text-zinc-600 dark:text-zinc-300 transition-colors"
               >
                 <Minus className="h-4 w-4" />
@@ -185,6 +186,7 @@ export default function NameCardEditor({
               />
               <button
                 onClick={() => setPrintSettings((prev) => ({ ...prev, copiesPerName: prev.copiesPerName + 1 }))}
+                aria-label="增加打印份数"
                 className="px-3 py-2 bg-zinc-50 dark:bg-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-600 text-zinc-600 dark:text-zinc-300 transition-colors"
               >
                 <Plus className="h-4 w-4" />
@@ -195,7 +197,7 @@ export default function NameCardEditor({
       </div>
 
       <div className="pt-6 border-t border-zinc-200 dark:border-zinc-700">
-        <h3 className="text-sm font-semibold text-zinc-800 dark:text-white mb-4">样式设置</h3>
+        <div className="text-sm font-semibold text-zinc-800 dark:text-white mb-4">样式设置</div>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">字体</label>
@@ -204,7 +206,7 @@ export default function NameCardEditor({
                 value={printSettings.fontFamily}
                 onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, fontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif' }))}
               >
-                <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
+                <SelectTrigger aria-label="字体" className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
                   <SelectValue placeholder="选择字体">
                     {(val) => {
                       if (val === '"Microsoft YaHei", "SimHei", sans-serif') return '微软雅黑 / 黑体';
@@ -240,7 +242,7 @@ export default function NameCardEditor({
                 value={printSettings.layout}
                 onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, layout: val as 'horizontal' | 'vertical' }))}
               >
-                <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
+                <SelectTrigger aria-label="排版方向" className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
                   <SelectValue placeholder="选择排版方向">
                     {(val) => (val === 'horizontal' ? '横排' : val === 'vertical' ? '竖排' : '选择排版方向')}
                   </SelectValue>
@@ -257,7 +259,7 @@ export default function NameCardEditor({
                 value={printSettings.textAlign}
                 onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, textAlign: val as 'left' | 'center' | 'right' }))}
               >
-                <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
+                <SelectTrigger aria-label="对齐方式" className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
                   <SelectValue placeholder="选择对齐方式">
                     {(val) =>
                       val === 'left'

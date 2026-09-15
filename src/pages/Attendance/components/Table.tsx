@@ -96,7 +96,7 @@ export default function Table({
     return (
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">已导入记录 ({records.length})</h3>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">已导入记录 ({records.length})</h2>
           {records.length > 0 && hasPermission('attendance:manage') && (
             <button
               onClick={() => setRecords([])}
@@ -155,7 +155,7 @@ export default function Table({
     return (
       <div className="p-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">已导入排班 ({schedules.length})</h3>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">已导入排班 ({schedules.length})</h2>
           <div className="flex items-center space-x-4 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-72">
               <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-zinc-400" />

@@ -19,6 +19,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏢</text></svg>" />
+    <!-- 打印字体（思源宋体）：非阻塞加载。该字体仅用于台卡/排座打印排版，
+         通过 media=print + onload 切换避免阻塞首屏渲染；加载前后均不影响屏幕阅读，
+         打印时若无网络字体则回退系统宋体（SimSun / Songti SC）。 -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&display=swap" />
+    </noscript>
     <title>AMS 行政管理系统</title>
     <meta name="description" content="企业行政管理系统，支持员工管理、考勤、合同、文件等一站式管理。" />
     <meta name="theme-color" content="#2563eb" />

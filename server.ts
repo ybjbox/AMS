@@ -1,5 +1,6 @@
 import "./server/env.ts";
 import express from "express";
+import compression from "compression";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -56,6 +57,9 @@ function sendTemplateError(res: express.Response, e: unknown): boolean {
 
 async function startServer() {
   const app = express();
+
+  // gzip/br 压缩（无依赖注入，默认配置）：大幅降低 CSS/JS/JSON 的传输体积
+  app.use(compression());
   const PORT = Number(process.env.PORT) || 3000;
   // 安全默认只绑本机回环（AUDIT P0-2）；Docker/局域网部署显式设 HOST=0.0.0.0
   const HOST = process.env.HOST || "127.0.0.1";
@@ -287,9 +291,28 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
+    // robots.txt：SPA fallback 会把未知路径返回 index.html，导致爬虫读到 HTML。
+    // 内部系统策略：显式 Disallow（避免员工/合同数据被搜索引擎索引）。
+    app.get('/robots.txt', (req, res) => {
+      res.type('text/plain').send('User-agent: *\nDisallow: /\n');
+    });
+    // 静态资源缓存策略：Vite 构建产物带内容哈希（index-XXXX.js），可长缓存 immutable；
+    // 根路径落盘的其它静态文件（如未来 public/ 资源）用保守的 1 天缓存。
+    app.use(
+      express.static(distPath, {
+        setHeaders(res, filePath) {
+          if (/[/\\]assets[/\\]/.test(filePath)) {
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+          } else if (!filePath.endsWith('index.html')) {
+            res.setHeader('Cache-Control', 'public, max-age=86400');
+          }
+        },
+      })
+    );
     app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+      res.sendFile(path.join(distPath, 'index.html'), {
+        headers: { 'Cache-Control': 'no-cache' },
+      });
     });
   }
 

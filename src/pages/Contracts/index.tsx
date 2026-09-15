@@ -108,7 +108,7 @@ export default function ContractsPage() {
               <Select value={filterStatus} onValueChange={(val) => {
                 setFilterStatus(val || 'ALL');
               }}>
-                <SelectTrigger className="w-[180px] text-sm border-zinc-200/80 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white">
+                <SelectTrigger aria-label="筛选员工状态" className="w-[180px] text-sm border-zinc-200/80 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white">
                   <SelectValue placeholder="选择状态">
                     {(val) =>
                       val === 'ALL'

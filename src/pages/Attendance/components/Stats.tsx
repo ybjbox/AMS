@@ -20,7 +20,7 @@ export default function Stats({ records, schedules, anomalies, shifts }: StatsPr
             <item.icon className={`h-6 w-6 ${item.color}`} />
           </div>
           <div>
-            <h3 className="text-zinc-600 dark:text-zinc-400 font-medium text-sm mb-1">{item.label}</h3>
+            <div className="text-zinc-600 dark:text-zinc-400 font-medium text-sm mb-1">{item.label}</div>
             <div className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white [font-variant-numeric:tabular-nums]">
               {item.value}
             </div>

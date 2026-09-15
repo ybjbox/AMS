@@ -217,7 +217,7 @@ export default function AiConfigPanel() {
 
       {/* 可用范围 */}
       <div className="bg-card p-6 rounded-xl border border-border shadow-sm space-y-4">
-        <h3 className="subsection-title">可用范围</h3>
+        <h2 className="subsection-title">可用范围</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <SwitchRow
             label="启用 AI 助手"
@@ -242,7 +242,7 @@ export default function AiConfigPanel() {
 
       {/* AI 助手外观（名称 + 图标） */}
       <div className="bg-card p-6 rounded-xl border border-border shadow-sm space-y-4">
-        <h3 className="subsection-title">助手外观</h3>
+        <h2 className="subsection-title">助手外观</h2>
           <p className="text-xs text-muted-foreground">
             自定义右下角悬浮入口的图标与名称，保存后所有用户立即生效。
           </p>
@@ -357,7 +357,7 @@ export default function AiConfigPanel() {
 
       {/* 大模型连接 */}
       <div className="bg-card p-6 rounded-xl border border-border shadow-sm space-y-5">
-        <h3 className="subsection-title">大模型连接（OpenAI 兼容）</h3>
+        <h2 className="subsection-title">大模型连接（OpenAI 兼容）</h2>
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-foreground">
@@ -461,7 +461,7 @@ export default function AiConfigPanel() {
 
       {/* 大模型提示 */}
       <div className="bg-card p-6 rounded-xl border border-border shadow-sm space-y-2">
-        <h3 className="subsection-title">大模型提示（System Prompt）</h3>
+        <h2 className="subsection-title">大模型提示（System Prompt）</h2>
         <p className="text-xs text-muted-foreground">
           自定义发给大模型的系统提示词，用于约束 AI 的角色、语气与回答范围。留空则使用内置默认提示。
         </p>
@@ -488,7 +488,7 @@ export default function AiConfigPanel() {
 
       {/* 对话历史自动清理 */}
       <div className="bg-card p-6 rounded-xl border border-border shadow-sm space-y-3">
-        <h3 className="subsection-title">对话历史自动清理</h3>
+        <h2 className="subsection-title">对话历史自动清理</h2>
         <p className="text-xs text-muted-foreground">
           设置保留天数后，系统每天自动删除超过该天数的 AI 对话记录（全员生效）。设为 0 表示不自动清理。
         </p>

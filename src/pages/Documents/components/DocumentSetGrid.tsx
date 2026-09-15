@@ -56,7 +56,7 @@ export function DocumentSetGrid({
           >
             <div className="p-5 border-b border-zinc-100 dark:border-zinc-700">
               <div className="flex justify-between items-start mb-2">
-                <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">{set.name}</h3>
+                <div className="text-lg font-semibold text-zinc-900 dark:text-white">{set.name}</div>
                 <div className="flex space-x-1">
                   <button
                     onClick={() => onEditSetClick(set)}
