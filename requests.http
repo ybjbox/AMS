@@ -3,7 +3,7 @@
 
 @base = http://localhost:3000/api
 # 本工作区调试密码（环境搭建时通过官方改密接口设置；正式使用前请再自行修改）
-@password = 请替换为你的管理员密码（首次启动控制台会打印，登录后请修改）
+@password = Ams-Debug#2026
 
 ### 0. 健康检查（公开接口，联调第一步）
 GET {{base}}/health
