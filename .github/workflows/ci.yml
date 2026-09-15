@@ -63,6 +63,7 @@ jobs:
         env:
           CI: true
           AMS_ADMIN_PASSWORD: Ams-Debug#2026
+          TZ: Asia/Shanghai
 
       - name: 上传测试报告（失败时）
         if: failure()
