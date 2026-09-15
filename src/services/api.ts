@@ -73,10 +73,14 @@ api.interceptors.response.use(
 );
 
 export const http = {
-  get: <T>(url: string, config?: AxiosRequestConfig): Promise<T> => api.get(url, config),
-  post: <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> => api.post(url, data, config),
-  put: <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> => api.put(url, data, config),
-  delete: <T>(url: string, config?: AxiosRequestConfig): Promise<T> => api.delete(url, config),
+  // 拦截器已把 AxiosResponse 解包为 response.data（下层类型系统无法自动推断），
+  // 因此这里显式断言为 T（axios 1.18+ 的返回类型变更引入）。
+  get: <T>(url: string, config?: AxiosRequestConfig): Promise<T> => api.get(url, config) as Promise<T>,
+  post: <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> =>
+    api.post(url, data, config) as Promise<T>,
+  put: <T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> =>
+    api.put(url, data, config) as Promise<T>,
+  delete: <T>(url: string, config?: AxiosRequestConfig): Promise<T> => api.delete(url, config) as Promise<T>,
 };
 
 /**

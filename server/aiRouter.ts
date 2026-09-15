@@ -182,6 +182,45 @@ function isSuperAdmin(req: Request): boolean {
   return req.auth?.systemRole === "SUPER_ADMIN";
 }
 
+/**
+ * SSRF 防护（OWASP ssrf-attacks）：校验出站 baseUrl。
+ * 策略：https 优先；阻止指向内网/回环/元数据地址的请求（即使管理员误配也不至于
+ * 让服务器变成内网探针）。允许 http:// 仅为兼容局域网自建 AI 服务（如 ollama），
+ * 但仅当显式允许时——目前策略：非 https 一律检查主机名，禁止回环/内网段/元数据。
+ */
+function validateOutboundBaseUrl(raw: string): { ok: true; url: URL } | { ok: false; reason: string } {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return { ok: false, reason: "Base URL 格式无效" };
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    return { ok: false, reason: "仅支持 http/https 协议" };
+  }
+  const host = url.hostname.toLowerCase();
+  // 云元数据地址（AWS/GCP/Azure 通用）
+  if (host === "169.254.169.254" || host === "metadata.google.internal") {
+    return { ok: false, reason: "不允许访问云元数据地址" };
+  }
+  // 回环与私有网段（含 IPv6 回环）
+  const privatePatterns: RegExp[] = [
+    /^localhost$/,
+    /^127\./,
+    /^10\./,
+    /^192\.168\./,
+    /^172\.(1[6-9]|2\d|3[01])\./,
+    /^0\./,
+    /^\[?::1\]?$/,
+    /^\[?fc00:/i,
+    /^\[?fe80:/i,
+  ];
+  if (privatePatterns.some((p) => p.test(host))) {
+    return { ok: false, reason: "不允许访问内网或本机地址" };
+  }
+  return { ok: true, url };
+}
+
 aiRouter.get("/config", (req: Request, res: ExpressResponse) => {
   if (!isSuperAdmin(req)) {
     return res.status(403).json({ error: "仅超级管理员可访问" });
@@ -229,8 +268,12 @@ aiRouter.get("/models", async (req: Request, res: ExpressResponse) => {
       .status(400)
       .json({ error: "请先填写 API Key（或在配置中已保存密钥）" });
   }
+  const validated = validateOutboundBaseUrl(baseUrl);
+  if (!validated.ok) {
+    return res.status(400).json({ error: validated.reason });
+  }
   try {
-    const r = await fetch(`${baseUrl.replace(/\/$/, "")}/models`, {
+    const r = await fetch(`${validated.url.toString().replace(/\/$/, "")}/models`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -265,6 +308,13 @@ aiRouter.put("/config", (req: Request, res: ExpressResponse) => {
     return res.status(403).json({ error: "仅超级管理员可访问" });
   }
   const b = (req.body ?? {}) as Partial<AiConfig>;
+  // SSRF 纵深防御：保存 baseUrl 时校验（非空时才验）
+  if (typeof b.baseUrl === "string" && b.baseUrl.trim()) {
+    const v = validateOutboundBaseUrl(b.baseUrl.trim());
+    if (!v.ok) {
+      return res.status(400).json({ error: `Base URL 不合法：${v.reason}` });
+    }
+  }
   // 校验自定义 Logo（base64 data URL），避免非法/超大内容入库
   if (b.assistantLogo !== undefined) {
     if (typeof b.assistantLogo !== "string") {

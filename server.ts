@@ -7,6 +7,7 @@ import { fileURLToPath } from "url";
 import ExcelJS from "exceljs";
 import { EXCEL_THEMES } from "./server/themes.ts";
 import { runMigrations } from "./server/migrate.ts";
+import { optimizeDb } from "./server/db.ts";
 import { authGate } from "./server/authMiddleware.ts";
 import { auditGate } from "./server/auditMiddleware.ts";
 import { errorHandler } from "./server/errorHandler.ts";
@@ -60,6 +61,37 @@ async function startServer() {
 
   // gzip/br 压缩（无依赖注入，默认配置）：大幅降低 CSS/JS/JSON 的传输体积
   app.use(compression());
+
+  // 安全响应头（OWASP security-headers）：
+  // - nosniff：阻止 MIME 嗅探引发的脚本执行
+  // - X-Frame-Options: DENY：防点击劫持（内部系统无需被 iframe 嵌套）
+  // - Referrer-Policy：限制 referrer 泄露
+  // - CSP：同源策略（允许内联样式/脚本以兼容现有构建产物与主题注入）
+  //   注意：Vite 开发模式需要 inline script（HMR 客户端），故 CSP 仅在语义上宽松；
+  //   若未来需要严格 CSP，可用 nonce 方案逐步收紧。
+  app.use((req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Referrer-Policy", "same-origin");
+    // CSP 说明：
+    // - style-src 放行 fonts.googleapis.com：打印字体（仅打印场景）
+    // - connect-src 开发模式放行 ws:（Vite HMR）；生产模式收紧为 self
+    const isDev = process.env.NODE_ENV !== "production";
+    const connectSrc = isDev ? "connect-src 'self' ws: wss:" : "connect-src 'self'";
+    res.setHeader(
+      "Content-Security-Policy",
+      [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline'",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "img-src 'self' data: blob:",
+        "font-src 'self' data: https://fonts.gstatic.com",
+        connectSrc,
+        "frame-ancestors 'none'",
+      ].join("; ")
+    );
+    next();
+  });
   const PORT = Number(process.env.PORT) || 3000;
   // 安全默认只绑本机回环（AUDIT P0-2）；Docker/局域网部署显式设 HOST=0.0.0.0
   const HOST = process.env.HOST || "127.0.0.1";
@@ -334,6 +366,13 @@ async function startServer() {
   startBackupScheduler();
   pruneAuditLogs();
   startOrphanUploadScan();
+
+  // PRAGMA optimize（sqlite-best-practices）：定期更新查询规划器统计。
+  // 轻量（无变更时 no-op），每小时一次足够；退出时再跑一次收尾。
+  const optimizeTimer = setInterval(optimizeDb, 60 * 60 * 1000);
+  if (typeof optimizeTimer.unref === "function") optimizeTimer.unref();
+  process.on("SIGINT", () => { optimizeDb(); process.exit(0); });
+  process.on("SIGTERM", () => { optimizeDb(); process.exit(0); });
 }
 
 startServer();

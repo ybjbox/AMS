@@ -20,10 +20,42 @@ export const DB_PATH = path.join(DATA_DIR, "ams.db");
  */
 export let db = new DatabaseSync(DB_PATH);
 
+/**
+ * 连接级 PRAGMA 配置（sqlite-best-practices）：
+ * - busy_timeout=5000：写入冲突时等待而非直接 "database is locked"（连接级设置，每次开连接都要设）
+ * - synchronous=NORMAL：WAL 模式下事务安全且减少磁盘同步（可选 FULL 换取更严格耐久性）
+ * - cache_size=-20000：20MB 页缓存（负数=KB 单位），提升读性能
+ * - temp_store=MEMORY：临时表/排序走内存，排序操作提速
+ */
+function applyConnectionPragmas(conn: DatabaseSync): void {
+  conn.exec(`
+    PRAGMA journal_mode = WAL;
+    PRAGMA busy_timeout = 5000;
+    PRAGMA synchronous = NORMAL;
+    PRAGMA cache_size = -20000;
+    PRAGMA temp_store = MEMORY;
+  `);
+}
+
+applyConnectionPragmas(db);
+
 /** 重开连接后需要重新 prepare 缓存语句的钩子（由审计/安全等模块注册） */
 const reloadHooks: Array<() => void> = [];
 export function onDbReload(hook: () => void): void {
   reloadHooks.push(hook);
+}
+
+/**
+ * 运行 PRAGMA optimize（sqlite-best-practices）：
+ * 按需更新查询规划器统计（sqlite_stat1），无变更时是快速 no-op。
+ * 建议：应用退出前 / 周期性（如每小时）执行。
+ */
+export function optimizeDb(): void {
+  try {
+    db.exec("PRAGMA optimize;");
+  } catch (e) {
+    console.warn("[db] PRAGMA optimize 失败：", e);
+  }
 }
 
 /** 关闭当前连接（不抛错）。恢复备份前调用。 */
@@ -39,7 +71,7 @@ export function closeDb(): void {
 export function reloadDb(): void {
   closeDb();
   db = new DatabaseSync(DB_PATH);
-  db.exec("PRAGMA journal_mode = WAL;");
+  applyConnectionPragmas(db);
   for (const hook of reloadHooks) {
     try {
       hook();
