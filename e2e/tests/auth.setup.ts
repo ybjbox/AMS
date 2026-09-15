@@ -19,7 +19,7 @@ setup('登录并保存会话', async ({ page }) => {
   await page.locator('button[type="submit"]').first().click();
 
   // 等待跳转到控制台（登录成功的标志）
-  await page.waitForURL('**/', { timeout: 20000 });
+  await page.waitForURL('**/', { timeout: 30000 }); // CI 冷启动更慢
   await expect(page.locator('h1')).toContainText('控制台', { timeout: 10000 });
 
   // 保存登录态

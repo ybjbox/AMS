@@ -18,12 +18,15 @@ export default defineConfig({
   testDir: './e2e/tests',
   fullyParallel: false, // 涉及同一后端数据库，串行更稳
   forbidOnly: isCI,
-  retries: isCI ? 1 : 0,
+  // CI runner 性能波动较大（冷启动接近超时边缘）：重试 2 次
+  retries: isCI ? 2 : 0,
   workers: 1,
   reporter: isCI ? [['list'], ['html', { open: 'never' }]] : [['list']],
 
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    // 统一 127.0.0.1：CI runner 上 localhost 可能解析为 IPv6 ::1，
+    // 而服务器默认绑定 IPv4 127.0.0.1，导致连接失败（本地/CI 表现不一致）。
+    baseURL: process.env.BASE_URL || 'http://127.0.0.1:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'off',
@@ -55,9 +58,9 @@ export default defineConfig({
   // 服务器：本地复用常驻实例；CI 自动启动（含种子管理员密码）
   webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:3000/api/health',
+    url: 'http://127.0.0.1:3000/api/health',
     reuseExistingServer: !isCI,
-    timeout: 120 * 1000,
+    timeout: 180 * 1000, // CI 冷启动（vite 首次编译 + tsx 加载）可能较慢
     env: {
       ...process.env,
       // CI 首启种子管理员口令（本地由 .env.local 提供，无影响）
