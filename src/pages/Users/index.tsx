@@ -5,7 +5,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { useDepartments } from '@/store/useDepartmentStore';
 import { useBodyOverflow } from '@/hooks/useBodyOverflow';
 import { useEmployeeStore } from '@/store/useEmployeeStore';
-import { Download, Plus, Printer } from 'lucide-react';
+import { Download, Plus, Printer, ChevronDown } from 'lucide-react';
 import { User } from '@/types';
 import { UserTable } from '@/components/users/UserTable';
 import { UserToolbar } from './components/UserToolbar';
@@ -16,6 +16,7 @@ import { AddressBookModal } from './components/AddressBookModal';
 import { useUserFilters } from './hooks/useUserFilters';
 import { useExport } from './hooks/useExport';
 import { Pagination } from '@/components/ui/Pagination';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { RosterPrintTemplate, AddressBookPrintTemplate } from './components/PrintTemplates';
 
 export default function Users() {
@@ -58,6 +59,7 @@ export default function Users() {
     filteredUsers,
     totalPages,
     itemsPerPage,
+    setItemsPerPage,
   } = useUserFilters(users);
 
   const {
@@ -111,20 +113,24 @@ export default function Users() {
               <p className="page-subtitle">管理企业员工档案、部门分配与权限配置</p>
             </div>
             <div className="toolbar">
-              <button
-                onClick={() => setIsAddressBookModalOpen(true)}
-                className="btn-secondary"
-              >
-                <Printer className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">导出通讯录</span>
-              </button>
-              <button
-                onClick={() => setIsExportModalOpen(true)}
-                className="btn-secondary"
-              >
-                <Download className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">导出花名册</span>
-              </button>
+              {/* 导出入口合并：通讯录 / 花名册收进一个下拉，减少顶部按钮数量 */}
+              <DropdownMenu>
+                <DropdownMenuTrigger className="btn-secondary">
+                  <Download className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">导出</span>
+                  <ChevronDown className="h-4 w-4 ml-1 hidden sm:block" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setIsExportModalOpen(true)}>
+                    <Download className="h-4 w-4 mr-2" />
+                    导出花名册
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsAddressBookModalOpen(true)}>
+                    <Printer className="h-4 w-4 mr-2" />
+                    导出通讯录
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Permission code="users:manage">
                 <button
                   onClick={handleAdd}
@@ -150,7 +156,7 @@ export default function Users() {
                 departments={departments}
               />
             </div>
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 flex flex-col">
               <UserTable
                 data={currentUsers}
                 isLoading={isLoading}
@@ -178,6 +184,7 @@ export default function Users() {
               totalItems={filteredUsers.length}
               itemsPerPage={itemsPerPage}
               onPageChange={setCurrentPage}
+              onItemsPerPageChange={setItemsPerPage}
             />
           </div>
         </div>

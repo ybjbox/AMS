@@ -35,7 +35,8 @@ export function UserToolbar({
           </div>
           <input
             type="text"
-            placeholder="搜索姓名、工号或部门..."
+            placeholder="搜索姓名、工号或部门…"
+            aria-label="搜索姓名、工号或部门"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="input-base pl-10"
@@ -46,7 +47,7 @@ export function UserToolbar({
           <div className="md:hidden w-full">
             <Sheet>
               <SheetTrigger
-                className={`w-full inline-flex justify-center items-center px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
+                className={`w-full inline-flex justify-center items-center px-4 py-2.5 rounded-xl text-sm font-medium transition duration-300 ${
                   activeFilterCount > 0
                     ? 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 shadow-sm'
                     : 'text-zinc-700 dark:text-zinc-200 bg-zinc-100/50 dark:bg-zinc-800 hover:bg-zinc-200/50 dark:hover:bg-zinc-700'
@@ -74,7 +75,7 @@ export function UserToolbar({
           <div className="hidden md:block relative">
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className={`inline-flex items-center px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
+              className={`inline-flex items-center px-4 py-2.5 rounded-xl text-sm font-medium transition duration-300 ${
                 activeFilterCount > 0 || isFilterOpen
                   ? 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 shadow-sm'
                   : 'text-zinc-700 dark:text-zinc-200 bg-zinc-100/50 dark:bg-zinc-800 hover:bg-zinc-200/50 dark:hover:bg-zinc-700'

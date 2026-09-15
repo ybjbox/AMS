@@ -47,7 +47,7 @@ export function FolderFormModal({ isOpen, onClose, editingFolder, handleSaveFold
             type="text"
             defaultValue={editingFolder?.name}
             placeholder="如：人事文件"
-            className="block w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm"
+            className="block w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition duration-200 sm:text-sm"
           />
         </div>
       </form>

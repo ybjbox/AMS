@@ -51,9 +51,18 @@ export function listDepartmentsTree(): DeptNode[] {
  * 因此这里不能用「DELETE FROM departments 再全量 INSERT」——那会把所有员工的
  * departmentId 级联置空。改为差量更新：
  *   1. 先把传入的整棵树 upsert 进去（新增/改名/改父级一次性搞定）；
- *   2. 再删除「数据库里有、但新树里没有」的部门（被真正删除的部门）。
- * 第 2 步会触发外键：被删部门的员工 departmentId 置空，随后把那些
- * 已无有效部门引用的员工的陈旧部门名清空，避免显示已不存在的部门。
+ *   2. 再删除「数据库里有、但新树里没有」的部门（被真正删除的部门）；
+ *   3. 清理「部门名在树中已不存在」的陈旧部门名（避免显示幽灵部门）；
+ *   4. 按名称回填：把「有合法部门名但还没挂上 departmentId」的员工接上外键。
+ *      这一步专门覆盖首次种子的时序问题（db.ts 先于本模块加载，播种员工时
+ *      departments 表还不存在，departmentId 必然为空），也兼容旧数据迁移后的补挂。
+ * 第 2 步会触发外键：被删部门的员工 departmentId 置空，随后第 3 步把那些
+ * 已无有效部门引用的员工的陈旧部门名清空。
+ *
+ * 【修复记录 2026-09-15】此前第 3 步的条件是「departmentId IS NULL 且 department
+ * 非空即清空」，会把「部门名合法、只是尚未回填外键」的员工一并误清（首次启动全部
+ * 45 名员工的部门信息就是这样被清掉的）。现改为按名称存在性判断——只有名称确实
+ * 不在当前部门树里的才清空，并在其后补一次回填。
  */
 export function replaceDepartmentsTree(tree: DeptNode[]): DeptNode[] {
   const incoming = flattenTree(tree);
@@ -81,9 +90,22 @@ export function replaceDepartmentsTree(tree: DeptNode[]): DeptNode[] {
       db.prepare(`DELETE FROM departments WHERE id IN (${ph})`).run(...toDelete);
     }
 
-    // 清理「已无有效部门引用」员工的陈旧部门名（FK 已把 departmentId 置空）
+    // 3) 清理「部门名在树中已不存在」的陈旧部门名（FK 已把被删部门的departmentId置空）
     db.prepare(
-      "UPDATE employees SET department = '' WHERE departmentId IS NULL AND department != ''"
+      `UPDATE employees SET department = ''
+        WHERE departmentId IS NULL AND department != ''
+          AND NOT EXISTS (SELECT 1 FROM departments d WHERE d.name = employees.department)`
+    ).run();
+
+    // 4) 按名称回填：有合法部门名但缺 departmentId 的员工补挂外键
+    //    （首次种子时 db.ts 先于本模块加载，播种的员工没有 departmentId；
+    //     这里在部门树就绪后统一补挂，保证部门列可读且外键完整）
+    db.prepare(
+      `UPDATE employees
+          SET departmentId = (SELECT d.id FROM departments d WHERE d.name = employees.department)
+        WHERE (departmentId IS NULL OR departmentId = '')
+          AND department != ''
+          AND EXISTS (SELECT 1 FROM departments d WHERE d.name = employees.department)`
     ).run();
     db.exec("COMMIT");
   } catch (e) {
@@ -172,4 +194,27 @@ export function replaceRoles(roles: any[]) {
     { id: "7", name: "销售总监", departmentId: "13", priority: 10 },
   ]);
   console.log("[db] Seeded departments & roles into SQLite");
+})();
+
+// ---------- 启动时数据自修复（幂等，只补不删） ----------
+// 覆盖场景：departments 表已有数据，但员工因历史时序问题（播种早于部门表建立）
+// 未挂上 departmentId（部门名尚在）。每次启动执行一次；只做「补齐外键」，绝不删除数据。
+(function backfillEmployeeDepartmentIds() {
+  try {
+    const res = db
+      .prepare(
+        `UPDATE employees
+            SET departmentId = (SELECT d.id FROM departments d WHERE d.name = employees.department)
+          WHERE (departmentId IS NULL OR departmentId = '')
+            AND department != ''
+            AND EXISTS (SELECT 1 FROM departments d WHERE d.name = employees.department)`
+      )
+      .run();
+    if (res.changes > 0) {
+      console.log(`[db] 启动自修复：已回填 ${res.changes} 名员工的部门外键`);
+    }
+  } catch (e) {
+    // 自修复失败不应阻断启动（例如表结构尚处迁移中间态）
+    console.error("[db] 部门外键回填失败（不影响启动）：", e);
+  }
 })();

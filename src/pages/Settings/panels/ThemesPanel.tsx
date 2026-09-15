@@ -89,7 +89,7 @@ export default function ThemesPanel() {
     handleSave();
   };
 
-  if (loading) return <div className="flex items-center justify-center h-full text-zinc-400">加载中...</div>;
+  if (loading) return <div className="flex items-center justify-center h-full text-zinc-400">加载中…</div>;
 
   return (
     <div className="h-full overflow-y-auto p-6">
@@ -116,7 +116,7 @@ export default function ThemesPanel() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
-              className={`bg-white dark:bg-zinc-800 rounded-xl border transition-all overflow-hidden ${
+              className={`bg-white dark:bg-zinc-800 rounded-xl border transition overflow-hidden ${
                 editingId === theme.id ? 'border-blue-400 ring-4 ring-blue-600/5' : 'border-zinc-200 dark:border-zinc-700 shadow-sm'
               }`}
             >
@@ -131,7 +131,7 @@ export default function ThemesPanel() {
                       type="text"
                       value={theme.name}
                       onChange={(e) => handleUpdateTheme(theme.id, 'name', e.target.value)}
-                      className="px-2 py-1 bg-transparent border border-blue-300 rounded text-sm font-semibold outline-none focus:outline-none focus:ring-4 focus:ring-blue-600/20 text-zinc-900 dark:text-white transition-all duration-200"
+                      className="px-2 py-1 bg-transparent border border-blue-300 rounded text-sm font-semibold outline-none focus:outline-none focus:ring-4 focus:ring-blue-600/20 text-zinc-900 dark:text-white transition duration-200"
                     />
                   ) : (
                     <h3 className="font-semibold text-zinc-900 dark:text-white">{theme.name}</h3>

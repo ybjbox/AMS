@@ -186,7 +186,7 @@ export default function Approvals() {
           </h2>
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">类型</span>
+              <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">类型 <span className="text-red-500" aria-hidden="true">*</span></span>
               <select
                 value={form.leaveType}
                 onChange={(e) => setForm({ ...form, leaveType: e.target.value })}
@@ -198,7 +198,7 @@ export default function Approvals() {
               </select>
             </label>
             <label className="block">
-              <span className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">开始日期</span>
+              <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">开始日期 <span className="text-red-500" aria-hidden="true">*</span></span>
               <input
                 type="date"
                 required
@@ -208,7 +208,7 @@ export default function Approvals() {
               />
             </label>
             <label className="block col-span-2">
-              <span className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">结束日期（可选）</span>
+              <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">结束日期（可选）</span>
               <input
                 type="date"
                 value={form.endDate}
@@ -219,14 +219,14 @@ export default function Approvals() {
             </label>
           </div>
           <label className="block">
-            <span className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">事由</span>
+            <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">事由 <span className="text-red-500" aria-hidden="true">*</span></span>
             <textarea
               required
               rows={3}
               value={form.reason}
               onChange={(e) => setForm({ ...form, reason: e.target.value })}
               placeholder="请简要说明申请原因"
-              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white"
+              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white resize-y md:resize-y"
             />
           </label>
           <button

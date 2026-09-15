@@ -38,7 +38,7 @@ const DepartmentTreeNode = React.memo(function DepartmentTreeNode({
         data-haschildren={hasChildren}
         onClick={onToggleExpand}
       >
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 min-w-0 flex-1">
           <span className="w-5 h-5 flex items-center justify-center text-zinc-400 shrink-0">
             {hasChildren ? (
               isExpanded ? (
@@ -60,19 +60,19 @@ const DepartmentTreeNode = React.memo(function DepartmentTreeNode({
           )}
 
           <span
-            className={`text-sm ${level === 0 ? 'font-semibold text-zinc-800 dark:text-zinc-200' : 'font-medium text-zinc-700 dark:text-zinc-300'}`}
+            className={`text-sm truncate ${level === 0 ? 'font-semibold text-zinc-800 dark:text-zinc-200' : 'font-medium text-zinc-700 dark:text-zinc-300'}`}
           >
             {node.name}
           </span>
 
           {hasChildren && (
-            <span className="ml-2 px-2 py-0.5 text-[10px] font-medium bg-zinc-200 text-zinc-600 rounded-full">
+            <span className="ml-2 shrink-0 px-2 py-0.5 text-[10px] font-medium bg-zinc-200 text-zinc-600 rounded-full">
               {node.children!.length}
             </span>
           )}
         </div>
 
-        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center space-x-1 shrink-0 ml-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           {canManage && (
             <>
               <button
@@ -80,6 +80,7 @@ const DepartmentTreeNode = React.memo(function DepartmentTreeNode({
                 onClick={onAddChild}
                 className="p-1.5 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors"
                 title="添加子部门"
+                aria-label={`添加子部门：${node.name}`}
               >
                 <Plus className="w-4 h-4" />
               </button>

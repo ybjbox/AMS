@@ -15,13 +15,13 @@ export default function Stats({ records, schedules, anomalies, shifts }: StatsPr
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
       {items.map((item) => (
-        <div key={item.label} className="card-base p-6 flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 min-h-[120px]">
+        <div key={item.label} className="card-base p-6 flex flex-col justify-between transition duration-300 hover:shadow-md hover:-translate-y-0.5 min-h-[120px]">
           <div className={`rounded-2xl flex items-center justify-center w-12 h-12 ${item.bg} mb-3`}>
             <item.icon className={`h-6 w-6 ${item.color}`} />
           </div>
           <div>
-            <h3 className="text-zinc-500 dark:text-zinc-400 font-medium text-sm mb-1">{item.label}</h3>
-            <div className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+            <h3 className="text-zinc-600 dark:text-zinc-400 font-medium text-sm mb-1">{item.label}</h3>
+            <div className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white [font-variant-numeric:tabular-nums]">
               {item.value}
             </div>
           </div>

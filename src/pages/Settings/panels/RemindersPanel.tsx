@@ -11,7 +11,7 @@ export default function RemindersPanel() {
       <div className="bg-white dark:bg-zinc-800 p-6 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm flex items-center justify-center h-32">
         <div className="text-zinc-500 text-sm flex items-center">
           <BellRing className="w-5 h-5 mr-3 text-zinc-400" />
-          <p>功能即将开发...</p>
+          <p>功能即将开发…</p>
         </div>
       </div>
     </div>

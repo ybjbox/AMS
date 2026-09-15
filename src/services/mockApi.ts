@@ -24,7 +24,7 @@ let mockUsers: User[] = Array.from({ length: 45 }).map((_, i) => {
     gender: getGender(idCard),
     age: calculateAge(idCard),
     phone: `13${Math.floor(Math.random() * 900000000) + 100000000}`,
-    department: ['研发部', '产品部', '设计部', '市场部', '人事部'][Math.floor(Math.random() * 5)],
+    department: ['研发部', '产品部', '设计部', '市场部', '人力资源中心'][Math.floor(Math.random() * 5)],
     role: ['前端工程师', '后端工程师', '产品经理', 'UI设计师', 'HR'][Math.floor(Math.random() * 5)],
     status: Math.random() > 0.2 ? '在职' : '试用期',
     joinDate,

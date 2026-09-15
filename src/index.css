@@ -8,6 +8,17 @@
 
 @variant dark (&:where(.dark, .dark *));
 
+/* ===== 可访问性：表单占位符对比度（默认过浅，不达 WCAG AA） ===== */
+input::placeholder,
+textarea::placeholder {
+  color: #6b7280; /* zinc-500 级，白底 ≈4.6:1 */
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #9ca3af; /* dark 下 zinc-400 级 */
+}
+
 /* Smooth Theme Transitions */
 body,
 aside,
@@ -272,7 +283,7 @@ main,
   }
   
   .page-subtitle {
-    @apply text-sm text-zinc-500 dark:text-zinc-400 mt-1;
+    @apply text-sm text-zinc-600 dark:text-zinc-400 mt-1;
   }
 
   .toolbar {
@@ -290,8 +301,8 @@ main,
 
   .tab-item {
     @apply tab-item-base
-    text-zinc-500 dark:text-zinc-400 
-    hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50;
+    text-zinc-600 dark:text-zinc-400
+    hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50;
   }
 
   .tab-item-active {
@@ -311,6 +322,11 @@ main,
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* 数值对齐：表格/统计数字使用等宽字形，保证纵向扫读时列宽稳定 */
+  table {
+    font-variant-numeric: tabular-nums;
   }
   html {
     @apply font-sans;

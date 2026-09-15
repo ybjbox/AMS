@@ -134,7 +134,7 @@ export function UserFormModal({
             disabled={isSubmitting}
             className="btn-primary w-full sm:w-auto disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? '保存中...' : '保存'}
+            {isSubmitting ? '保存中…' : '保存'}
           </button>
         </>
       }

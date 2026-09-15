@@ -146,6 +146,8 @@ export default function NameCardModals({
                     data-dept={dept}
                     onClick={onToggleDeptExpandClick}
                     className="p-1 text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                    aria-label={isExpanded ? `收起部门：${dept}` : `展开部门：${dept}`}
+                    aria-expanded={isExpanded}
                   >
                     <ChevronRight className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                   </button>
@@ -153,13 +155,13 @@ export default function NameCardModals({
                 {isExpanded && (
                   <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-white dark:bg-zinc-800 border-t border-zinc-200 dark:border-zinc-700">
                     {deptUsers.map((u) => (
-                      <label key={u.id} className="flex items-center space-x-2 cursor-pointer group">
+                      <label key={u.id} className="flex items-center space-x-2.5 cursor-pointer group min-h-11 -my-1 py-1">
                         <input
                           type="checkbox"
                           data-id={u.id}
                           checked={selectedUserIds.has(u.id)}
                           onChange={onToggleUserSelectionChange}
-                          className="rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600 bg-white dark:bg-zinc-700"
+                          className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600 bg-white dark:bg-zinc-700"
                         />
                         <span className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white">
                           {u.name}
@@ -211,7 +213,7 @@ export default function NameCardModals({
               </p>
               <textarea
                 rows={10}
-                className="w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm font-mono bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
+                className="w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition duration-200 sm:text-sm font-mono bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
                 placeholder="张三 技术部 工程师&#10;李四 市场部 总监"
                 value={manualInputText}
                 onChange={(e) => setManualInputText(e.target.value)}

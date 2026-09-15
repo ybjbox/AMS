@@ -27,7 +27,7 @@ const WIDTH_CLASS: Record<NonNullable<PageContainerProps['width']>, string> = {
 export function PageContainer({ children, className = '', width = '7xl' }: PageContainerProps) {
   return (
     <div
-      className={`w-full min-h-full mx-auto ${WIDTH_CLASS[width]} px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 flex flex-col ${className}`}
+      className={`w-full min-h-full mx-auto ${WIDTH_CLASS[width]} px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8 pb-24 print:pb-8 flex flex-col ${className}`}
     >
       {children}
     </div>

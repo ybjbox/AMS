@@ -28,7 +28,7 @@ export function DocumentSetGrid({
         <div className="col-span-full text-center py-16 bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl">
           <div className="flex flex-col items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-            <p className="text-zinc-500 dark:text-zinc-400">加载中...</p>
+            <p className="text-zinc-500 dark:text-zinc-400">加载中…</p>
           </div>
         </div>
       ) : documentSets.length === 0 ? (
@@ -93,7 +93,7 @@ export function DocumentSetGrid({
                 })}
                 {set.documentIds.length > 3 && (
                   <li className="text-xs text-zinc-500 dark:text-zinc-400 pt-1">
-                    ... 等共 {set.documentIds.length} 份文件
+                    … 等共 {set.documentIds.length} 份文件
                   </li>
                 )}
                 {set.documentIds.length === 0 && (

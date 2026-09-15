@@ -68,7 +68,7 @@ export default function AppearancePanel() {
                 key={t.id}
                 data-themeid={t.id}
                 onClick={onThemeClick}
-                className={`flex flex-col items-center p-4 rounded-xl border transition-all ${
+                className={`flex flex-col items-center p-4 rounded-xl border transition ${
                   theme === t.id
                     ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-600/20'
                     : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-200/80 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
@@ -94,7 +94,7 @@ export default function AppearancePanel() {
           <div className="flex items-start space-x-6">
             <div className="w-24 h-24 rounded-xl border-2 border-dashed border-zinc-200/80 dark:border-zinc-600 flex items-center justify-center bg-zinc-50 dark:bg-zinc-800/50 overflow-hidden shrink-0">
               {systemIcon ? (
-                <img src={systemIcon} alt="System Icon" className="w-full h-full object-contain" />
+                <img src={systemIcon} alt="System Icon" width={96} height={96} className="w-full h-full object-contain" />
               ) : (
                 <Building2 className="w-8 h-8 text-zinc-400 dark:text-zinc-500" />
               )}
@@ -136,7 +136,7 @@ export default function AppearancePanel() {
           <div className="flex items-start space-x-6">
             <div className="w-48 h-32 rounded-xl border-2 border-dashed border-zinc-200/80 dark:border-zinc-600 flex items-center justify-center bg-zinc-50 dark:bg-zinc-800/50 overflow-hidden shrink-0">
               {loginBackground ? (
-                <img src={loginBackground} alt="Login Background" className="w-full h-full object-cover" />
+                <img src={loginBackground} alt="Login Background" width={192} height={128} className="w-full h-full object-cover" />
               ) : (
                 <ImageIcon className="w-8 h-8 text-zinc-400 dark:text-zinc-500" />
               )}

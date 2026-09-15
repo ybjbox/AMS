@@ -47,6 +47,7 @@ export function TableConfig({
                   type="number"
                   min="1"
                   max="50"
+                  aria-label={`第 ${tc.tableNumber} 桌人数`}
                   value={tc.capacity}
                   onChange={(e) => updateTableCapacity(tc.id, parseInt(e.target.value) || 1)}
                   className="input-base w-14 py-1 px-1 text-center"
@@ -71,6 +72,7 @@ export function TableConfig({
               value={skippedNumbers}
               onChange={(e) => setSkippedNumbers(e.target.value)}
               placeholder="例如：4, 14, 24"
+              aria-label="跳过桌号（用逗号分隔）"
               className="input-base flex-1 max-w-xs py-1.5"
             />
             <span className="text-xs text-zinc-500 dark:text-zinc-400">（用逗号分隔，如：4, 14）</span>

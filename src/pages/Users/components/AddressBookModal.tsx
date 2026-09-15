@@ -44,7 +44,7 @@ const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: Sor
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center p-3 rounded-xl border transition-all ${
+      className={`flex items-center p-3 rounded-xl border transition ${
         col.selected
           ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 shadow-sm'
           : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
@@ -221,7 +221,7 @@ export function AddressBookModal({
               type="text"
               value={addressBookConfig.title}
               onChange={(e) => setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 border border-zinc-200/80 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200 outline-none bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500"
+              className="w-full px-3 py-2 border border-zinc-200/80 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition duration-200 outline-none bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500"
               placeholder="请输入通讯录标题"
             />
           </div>
@@ -399,7 +399,7 @@ export function AddressBookModal({
             </div>
             {processedAddressBookUsers.length > 20 && (
               <div className="text-center py-4 text-sm text-zinc-500 dark:text-zinc-400">
-                ... 仅显示前 20 条预览数据，共 {processedAddressBookUsers.length} 条 ...
+                … 仅显示前 20 条预览数据，共 {processedAddressBookUsers.length} 条 …
               </div>
             )}
           </div>

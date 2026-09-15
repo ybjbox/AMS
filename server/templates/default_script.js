@@ -38,8 +38,8 @@ export default async function applyTemplate(worksheet, data, config) {
   data.forEach((item, index) => {
     const row = worksheet.addRow(item);
     
-    // 逻辑：如果是人事部，背景设为浅绿色
-    if (item.department === '人事部') {
+    // 逻辑：如果是人力资源中心，背景设为浅绿色
+    if (item.department === '人力资源中心') {
       row.eachCell(cell => {
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0FDF4' } };
       });

@@ -12,6 +12,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { User } from '@/types';
 import { useUserStore } from '@/store/useUserStore';
 import { Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Users, Phone, Briefcase, Building2 } from 'lucide-react';
+import { formatPhone, maskPhone } from '@/utils/dateUtils';
 import { TableSkeleton } from '../ui/Skeleton';
 import { EmptyState } from '../ui/EmptyState';
 
@@ -99,9 +100,9 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
             <span
               className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
                 status === '在职'
-                  ? 'bg-success/10 text-success'
+                  ? 'bg-emerald-50 text-emerald-700 dark:bg-success/10 dark:text-success'
                   : status === '试用期'
-                    ? 'bg-warning/10 text-warning'
+                    ? 'bg-amber-50 text-amber-700 dark:bg-warning/10 dark:text-warning'
                     : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
               }`}
             >
@@ -115,7 +116,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
       {
         accessorKey: 'phone',
         header: '联系电话',
-        cell: ({ row }) => <div className="text-zinc-900 dark:text-zinc-200">{row.original.phone || '-'}</div>,
+        cell: ({ row }) => <div className="text-zinc-900 dark:text-zinc-200 tabular-nums">{row.original.phone ? maskPhone(row.original.phone) : '-'}</div>,
         size: 130,
         minSize: 100,
       },
@@ -147,12 +148,12 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
               years--;
               months += 12;
             }
-            yearsOfService = `${years}年${months}个月`;
+            yearsOfService = years >= 0 ? `${years}年${months}个月` : '-';
           }
           return (
             <div>
-              <div className="text-zinc-900 dark:text-zinc-200">{joinDate || '-'}</div>
-              <div className="text-zinc-500 dark:text-zinc-400 text-xs mt-0.5">{yearsOfService}</div>
+              <div className="text-zinc-900 dark:text-zinc-200 tabular-nums">{joinDate || '-'}</div>
+              <div className="text-zinc-500 dark:text-zinc-400 text-xs mt-0.5 tabular-nums">{yearsOfService}</div>
             </div>
           );
         },
@@ -184,7 +185,15 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
           );
         },
         cell: ({ row }) => {
-          return <div className="text-zinc-900 dark:text-zinc-200">{row.original.daysToExpiry}</div>;
+          const days = row.original.daysToExpiry;
+          // 合同到期天数着色：≤30 红（紧迫）、≤90 橙（关注）、其他中性灰；仅数值着色，保持列可扫读
+          const tone =
+            typeof days === 'number' && days <= 30
+              ? 'text-red-600 dark:text-red-400 font-medium'
+              : typeof days === 'number' && days <= 90
+                ? 'text-amber-600 dark:text-amber-400 font-medium'
+                : 'text-zinc-900 dark:text-zinc-200';
+          return <div className={`tabular-nums ${tone}`}>{days}{typeof days === 'number' ? ' 天' : ''}</div>;
         },
         size: 130,
         minSize: 100,
@@ -202,8 +211,9 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                 e.stopPropagation();
                 onEdit(row.original);
               }}
-              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+              className="p-2 -m-1 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors"
               title="编辑"
+              aria-label={`编辑：${row.original.name}`}
             >
               <Edit className="h-4 w-4" />
             </button>
@@ -212,8 +222,9 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                 e.stopPropagation();
                 onDelete(row.original);
               }}
-              className="text-destructive hover:text-destructive/80 transition-colors"
+              className="p-2 -m-1 text-destructive hover:text-destructive/80 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
               title="删除"
+              aria-label={`删除：${row.original.name}`}
             >
               <Trash2 className="h-4 w-4" />
             </button>
@@ -302,8 +313,8 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                     </span>
                   )}
                   {user.phone && (
-                    <span className="flex items-center gap-1">
-                      <Phone className="w-3 h-3" />{user.phone}
+                    <span className="flex items-center gap-1 tabular-nums">
+                      <Phone className="w-3 h-3" />{maskPhone(user.phone)}
                     </span>
                   )}
                 </div>
@@ -330,7 +341,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
           {/* 桌面端虚拟化表格（>= md），原有代码保持不变 */}
           <div className="hidden md:flex flex-1 flex-col min-h-0">
             <div ref={parentRef} className="w-full h-full overflow-x-auto overflow-y-auto relative">
-              <table className="w-full min-w-[800px] text-left border-collapse relative" style={{ width: table.getTotalSize() }} aria-label="员工列表">
+              <table className="w-full min-w-[800px] text-left border-collapse relative [&_th]:whitespace-nowrap" style={{ width: table.getTotalSize() }} aria-label="员工列表">
                 <caption className="sr-only">员工列表</caption>
                 <thead>
                   {table.getHeaderGroups().map((headerGroup) => (

@@ -3,6 +3,7 @@ import React from 'react';
 import { Printer, Edit } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { User, SystemRole } from '@/types';
+import { formatPhone } from '@/utils/dateUtils';
 
 interface UserDetailModalProps {
   isOpen: boolean;
@@ -165,7 +166,7 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit }: U
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-zinc-500 dark:text-zinc-400">联系电话</span>
-                  <span className="text-sm font-medium text-zinc-900 dark:text-white">{selectedUser.phone}</span>
+                  <span className="text-sm font-medium text-zinc-900 dark:text-white tabular-nums">{formatPhone(selectedUser.phone)}</span>
                 </div>
               </div>
             </div>

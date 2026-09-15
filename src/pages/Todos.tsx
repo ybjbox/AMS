@@ -4,8 +4,11 @@ import { useTodoStore } from '../store/useTodoStore';
 import { CheckCircle2, Circle, Clock, Plus, Trash2, Calendar, ListTodo } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { formatDateTime } from '@/utils/dateUtils';
+import { useConfirm } from '@/hooks/useConfirm';
 
 export default function Todos() {
+  const confirm = useConfirm();
   const todos = useTodoStore((state) => state.todos);
   const toggleTodo = useTodoStore((state) => state.toggleTodo);
   const deleteTodo = useTodoStore((state) => state.deleteTodo);
@@ -51,13 +54,18 @@ export default function Todos() {
   );
 
   const onDeleteTodoClick = useCallback(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
+    async (e: React.MouseEvent<HTMLButtonElement>) => {
       const todoId = e.currentTarget.dataset.todoid;
-      if (todoId) {
-        deleteTodo(todoId);
-      }
+      const todoTitle = e.currentTarget.dataset.todotitle;
+      if (!todoId) return;
+      const ok = await confirm({
+        title: '确定要删除这条待办吗？',
+        description: todoTitle ? `“${todoTitle}” 删除后不可恢复。` : '删除后不可恢复。',
+        variant: 'danger',
+      });
+      if (ok) deleteTodo(todoId);
     },
-    [deleteTodo]
+    [deleteTodo, confirm]
   );
 
   return (
@@ -113,7 +121,7 @@ export default function Todos() {
                   value={newTodo.description}
                   onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
                   className="input-base h-20 resize-none"
-                  placeholder="添加更多细节..."
+                  placeholder="添加更多细节…"
                 />
               </div>
               <div className="flex justify-end space-x-3 pt-2">
@@ -208,21 +216,24 @@ export default function Todos() {
                     </p>
                     <div className="flex items-center space-x-4 mt-2">
                       {todo.dueDate && (
-                        <div className="flex items-center text-xs text-zinc-400 dark:text-zinc-500">
+                        <div className="flex items-center text-xs text-zinc-500 dark:text-zinc-500 tabular-nums">
                           <Calendar className="w-3.5 h-3.5 mr-1.5" />
                           截止日期: {todo.dueDate}
                         </div>
                       )}
-                      <div className="flex items-center text-xs text-zinc-400 dark:text-zinc-500">
+                      <div className="flex items-center text-xs text-zinc-500 dark:text-zinc-500">
                         <Clock className="w-3.5 h-3.5 mr-1.5" />
-                        创建于: {new Date(todo.createdAt).toLocaleDateString()}
+                        创建于: {formatDateTime(todo.createdAt)}
                       </div>
                     </div>
                   </div>
                   <button
                     data-todoid={todo.id}
+                    data-todotitle={todo.title}
                     onClick={onDeleteTodoClick}
-                    className="p-2 text-zinc-300 dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                    className="p-2 text-zinc-400 dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition shrink-0"
+                    aria-label={`删除待办：${todo.title}`}
+                    title="删除"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

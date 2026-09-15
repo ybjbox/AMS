@@ -73,7 +73,7 @@ export function FileList({
           <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400" />
           <input
             type="text"
-            placeholder="搜索文件名称或类型..."
+            placeholder="搜索文件名称或类型…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="input-base pl-10 w-full sm:w-64"
@@ -125,7 +125,7 @@ export function FileList({
                     <td colSpan={4} className="px-6 py-12 text-center text-zinc-500 dark:text-zinc-400">
                       <div className="flex flex-col items-center justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-                        <p>加载中...</p>
+                        <p>加载中…</p>
                       </div>
                     </td>
                   </tr>
@@ -137,8 +137,8 @@ export function FileList({
                           <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-zinc-100 dark:bg-zinc-700 rounded-lg">
                             {getFileIcon(doc.type)}
                           </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-zinc-900 dark:text-zinc-200">{doc.name}</div>
+                          <div className="ml-4 min-w-0">
+                            <div className="text-sm font-medium text-zinc-900 dark:text-zinc-200 truncate max-w-[180px] sm:max-w-[420px]">{doc.name}</div>
                             <div className="text-xs text-zinc-500 dark:text-zinc-400">{doc.type.toUpperCase()}</div>
                           </div>
                         </div>

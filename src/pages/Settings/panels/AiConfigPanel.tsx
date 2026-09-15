@@ -58,7 +58,7 @@ function authHeaders(): Record<string, string> {
 }
 
 const inputCls =
-  'w-full px-3 py-2 text-sm border border-border/80 dark:border-border rounded-lg bg-muted dark:bg-background text-foreground focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all duration-200';
+  'w-full px-3 py-2 text-sm border border-border/80 dark:border-border rounded-lg bg-muted dark:bg-background text-foreground focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary transition duration-200';
 
 export default function AiConfigPanel() {
   const [form, setForm] = useState<ConfigForm>(EMPTY);
@@ -311,6 +311,8 @@ export default function AiConfigPanel() {
                 <img
                   src={form.assistantLogo}
                   alt="自定义 Logo 预览"
+                  width={56}
+                  height={56}
                   className="size-14 object-cover"
                 />
               ) : (

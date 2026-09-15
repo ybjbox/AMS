@@ -78,7 +78,7 @@ export default async function applyTemplate(worksheet, data, config) {
     });
   };
 
-  if (loading) return <div className="flex items-center justify-center h-full text-zinc-400">加载中...</div>;
+  if (loading) return <div className="flex items-center justify-center h-full text-zinc-400">加载中…</div>;
 
   return (
     <div className="h-full overflow-y-auto p-6">
@@ -129,7 +129,7 @@ export default async function applyTemplate(worksheet, data, config) {
                   className="flex items-center px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 active:scale-95 transition-transform text-xs font-medium"
                 >
                   <Save className="w-3.5 h-3.5 mr-1.5" />
-                  {saving ? '保存中...' : '保存脚本'}
+                  {saving ? '保存中…' : '保存脚本'}
                 </button>
                 <button
                   onClick={() => setEditingScript(null)}
@@ -163,7 +163,7 @@ export default async function applyTemplate(worksheet, data, config) {
             {scripts.map((script) => (
               <div
                 key={script.name}
-                className="bg-white dark:bg-zinc-800 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm hover:shadow-md transition-all group"
+                className="bg-white dark:bg-zinc-800 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm hover:shadow-md transition group"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
@@ -185,7 +185,7 @@ export default async function applyTemplate(worksheet, data, config) {
                   </div>
                 </div>
                 <h3 className="font-semibold text-zinc-900 dark:text-white truncate">{script.name}.js</h3>
-                <p className="text-xs text-zinc-500 mt-1 line-clamp-2 font-mono">{script.code.substring(0, 100)}...</p>
+                <p className="text-xs text-zinc-500 mt-1 line-clamp-2 font-mono">{script.code.substring(0, 100)}…</p>
               </div>
             ))}
             {scripts.length === 0 && (

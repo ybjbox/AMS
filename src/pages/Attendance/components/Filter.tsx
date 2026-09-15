@@ -211,8 +211,8 @@ export default function Filter({
                 ref={fileInputRef}
                 onChange={handleFileUpload}
                 accept=".xls,.xlsx"
+                aria-label="上传 Excel 打卡记录"
                 className="hidden"
-               
               />
             </div>
           </div>
@@ -226,7 +226,7 @@ export default function Filter({
             <div className="flex-1 relative" ref={dropdownRef}>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">选择员工</label>
               <div
-                className="w-full p-2.5 border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white cursor-pointer flex justify-between items-center focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200"
+                className="w-full p-2.5 border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white cursor-pointer flex justify-between items-center focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition duration-200"
                 onClick={() => setIsEmployeeDropdownOpen(!isEmployeeDropdownOpen)}
                 tabIndex={0}
               >
@@ -245,10 +245,10 @@ export default function Filter({
                       <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
                       <input
                         type="text"
-                        placeholder="搜索姓名或工号..."
+                        placeholder="搜索姓名或工号…"
                         value={employeeSearchQuery}
                         onChange={(e) => setEmployeeSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 text-sm border-none rounded-lg bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200"
+                        className="w-full pl-9 pr-3 py-2 text-sm border-none rounded-lg bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition duration-200"
                         onClick={(e) => e.stopPropagation()}
                         autoFocus
                       />
@@ -328,7 +328,7 @@ export default function Filter({
                 value={editingShift ? editingShift.name : ''}
                 onChange={onShiftNameChange}
                 placeholder="如: 早班, 晚班"
-                className="w-full p-2.5 border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200"
+                className="w-full p-2.5 border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition duration-200"
               />
             </div>
             <div>
@@ -337,7 +337,7 @@ export default function Filter({
                 type="time"
                 value={editingShift ? editingShift.startTime : '09:00'}
                 onChange={onShiftStartTimeChange}
-                className="w-full p-2.5 border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200"
+                className="w-full p-2.5 border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition duration-200"
               />
             </div>
             <div>
@@ -346,7 +346,7 @@ export default function Filter({
                 type="time"
                 value={editingShift ? editingShift.endTime : '18:00'}
                 onChange={onShiftEndTimeChange}
-                className="w-full p-2.5 border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200"
+                className="w-full p-2.5 border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition duration-200"
               />
             </div>
             <div className="flex space-x-3">
@@ -361,7 +361,7 @@ export default function Filter({
               {editingShift && (
                 <button
                   onClick={onCancelEditShiftClick}
-                  className="px-4 py-2.5 bg-zinc-100 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-600 active:scale-95 transition-all duration-300 text-sm font-medium whitespace-nowrap"
+                  className="px-4 py-2.5 bg-zinc-100 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-600 active:scale-95 transition duration-300 text-sm font-medium whitespace-nowrap"
                 >
                   取消
                 </button>
@@ -380,7 +380,7 @@ export default function Filter({
             <Permission code="attendance:manage">
               <button
                 onClick={handleAnalyze}
-                className="flex items-center px-5 py-2.5 bg-success text-white rounded-lg hover:bg-success/90 transition-all duration-300 text-sm font-medium shadow-sm"
+                className="flex items-center px-5 py-2.5 bg-success text-white rounded-lg hover:bg-success/90 transition duration-300 text-sm font-medium shadow-sm"
               >
                 <AlertTriangle className="w-4 h-4 mr-2" />
                 一键分析异常
@@ -392,10 +392,10 @@ export default function Filter({
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 transform -translate-y-1/2 text-zinc-400" />
             <input
               type="text"
-              placeholder="搜索姓名或工号..."
+              placeholder="搜索姓名或工号…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2.5 w-full text-sm border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200"
+              className="pl-10 pr-4 py-2.5 w-full text-sm border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition duration-200"
             />
           </div>
         </div>

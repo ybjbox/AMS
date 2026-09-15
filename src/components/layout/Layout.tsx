@@ -5,7 +5,6 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import ErrorBoundary from './ErrorBoundary';
 import AiAssistant from '@/components/AiAssistant';
-import BackendStatusIndicator from '@/components/BackendStatusIndicator';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { routeConfig } from '@/config/routes';
 
@@ -27,6 +26,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="h-screen overflow-hidden bg-zinc-50 dark:bg-zinc-900 transition-colors duration-300 flex">
+      {/* 键盘用户跳转链接（Tab 首次聚焦可见） */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[9999] focus:rounded-lg focus:bg-blue-600 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus:shadow-lg"
+      >
+        跳到主内容
+      </a>
       <Sidebar
         isCollapsed={isCollapsed}
         className="hidden md:flex m-4 md:my-6 md:ml-6 md:mr-0 h-[calc(100vh-2rem)] md:h-[calc(100vh-3rem)]"
@@ -35,7 +41,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden print:overflow-visible">
         <Header isCollapsed={isCollapsed} setIsCollapsed={handleSetIsCollapsed} />
 
-        <main className="flex-1 overflow-auto print:p-0 print:overflow-visible relative flex flex-col">
+        <main id="main-content" className="flex-1 overflow-auto print:p-0 print:overflow-visible relative flex flex-col">
           <ErrorBoundary>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
@@ -52,11 +58,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </ErrorBoundary>
         </main>
 
-        {/* AI 助手（自带悬浮按钮）与后端连通性状态（P1-7 死 UI 挂载） */}
+        {/* AI 助手（自带悬浮按钮）。后端连通性状态已移入侧边栏底部（原固定左下角胶囊会与分页/内容抢位）。 */}
         <AiAssistant />
-        <div className="fixed bottom-6 left-6 z-40 print:hidden">
-          <BackendStatusIndicator variant="pill" />
-        </div>
       </div>
     </div>
   );

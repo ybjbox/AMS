@@ -17,7 +17,7 @@ export default function NameCardEditor({
   handlePaperOrientationChange
 }: NameCardEditorProps) {
   return (
-    <div className="w-80 bg-white dark:bg-zinc-800 border-r border-zinc-200 dark:border-zinc-700 overflow-y-auto p-6 space-y-6">
+    <div className="w-full md:w-80 shrink-0 bg-white dark:bg-zinc-800 border-b md:border-b-0 md:border-r border-zinc-200 dark:border-zinc-700 p-6 space-y-6 md:min-h-0 md:overflow-y-auto">
       <div>
         <h3 className="text-sm font-semibold text-zinc-800 dark:text-white mb-4 flex items-center">
           <Settings2 className="h-4 w-4 mr-2" />
@@ -76,6 +76,7 @@ export default function NameCardEditor({
                 <input
                   type="number"
                   step="0.1"
+                  aria-label="纸张宽 (cm)"
                   value={printSettings.paperWidth / 10}
                   onChange={(e) =>
                     setPrintSettings((prev) => ({
@@ -93,6 +94,7 @@ export default function NameCardEditor({
                 <input
                   type="number"
                   step="0.1"
+                  aria-label="纸张高 (cm)"
                   value={printSettings.paperHeight / 10}
                   onChange={(e) =>
                     setPrintSettings((prev) => ({
@@ -113,6 +115,7 @@ export default function NameCardEditor({
               <input
                 type="number"
                 step="0.1"
+                aria-label="台卡宽 (cm)"
                 value={printSettings.cardWidth / 10}
                 onChange={(e) =>
                   setPrintSettings((prev) => ({
@@ -130,6 +133,7 @@ export default function NameCardEditor({
               <input
                 type="number"
                 step="0.1"
+                aria-label="台卡高 (cm)"
                 value={printSettings.cardHeight / 10}
                 onChange={(e) =>
                   setPrintSettings((prev) => ({
@@ -148,7 +152,7 @@ export default function NameCardEditor({
                 type="checkbox"
                 checked={printSettings.isDoubleSided}
                 onChange={(e) => setPrintSettings((prev) => ({ ...prev, isDoubleSided: e.target.checked }))}
-                className="rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600 bg-white dark:bg-zinc-700"
+                className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600 bg-white dark:bg-zinc-700"
               />
               <span className="text-sm text-zinc-700 dark:text-zinc-300">双面帐篷式折叠 (高度翻倍)</span>
             </label>
@@ -169,6 +173,7 @@ export default function NameCardEditor({
               </button>
               <input
                 type="number"
+                aria-label="每人打印份数"
                 value={printSettings.copiesPerName}
                 onChange={(e) =>
                   setPrintSettings((prev) => ({
@@ -222,7 +227,7 @@ export default function NameCardEditor({
                   type="checkbox"
                   checked={printSettings.isBold}
                   onChange={(e) => setPrintSettings((prev) => ({ ...prev, isBold: e.target.checked }))}
-                  className="rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600 bg-white dark:bg-zinc-700"
+                  className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600 bg-white dark:bg-zinc-700"
                 />
                 <span className="text-sm text-zinc-700 dark:text-zinc-300">加粗</span>
               </label>
@@ -280,6 +285,7 @@ export default function NameCardEditor({
               </label>
               <input
                 type="number"
+                aria-label="姓名大小 (px)"
                 value={printSettings.fontSize}
                 onChange={(e) =>
                   setPrintSettings((prev) => ({ ...prev, fontSize: parseInt(e.target.value) || 32 }))
@@ -292,6 +298,7 @@ export default function NameCardEditor({
               <div className="flex items-center space-x-2">
                 <input
                   type="color"
+                  aria-label="字体颜色"
                   value={printSettings.fontColor}
                   onChange={(e) => setPrintSettings((prev) => ({ ...prev, fontColor: e.target.value }))}
                   className="h-8 w-12 rounded border border-zinc-200/80 dark:border-zinc-600 cursor-pointer p-0.5 bg-white dark:bg-zinc-700"
@@ -306,6 +313,7 @@ export default function NameCardEditor({
               <div className="flex items-center space-x-2">
                 <input
                   type="color"
+                  aria-label="背景颜色"
                   value={printSettings.backgroundColor}
                   onChange={(e) => setPrintSettings((prev) => ({ ...prev, backgroundColor: e.target.value }))}
                   className="h-8 w-12 rounded border border-zinc-200/80 dark:border-zinc-600 cursor-pointer p-0.5 bg-white dark:bg-zinc-700"
@@ -323,7 +331,7 @@ export default function NameCardEditor({
                 type="checkbox"
                 checked={printSettings.showDepartment}
                 onChange={(e) => setPrintSettings((prev) => ({ ...prev, showDepartment: e.target.checked }))}
-                className="rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600 bg-white dark:bg-zinc-700"
+                className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600 bg-white dark:bg-zinc-700"
               />
               <span className="text-sm text-zinc-700 dark:text-zinc-300">显示部门</span>
             </label>
@@ -334,6 +342,7 @@ export default function NameCardEditor({
                 </label>
                 <input
                   type="number"
+                  aria-label="部门字号 (px)"
                   value={printSettings.departmentFontSize}
                   onChange={(e) =>
                     setPrintSettings((prev) => ({ ...prev, departmentFontSize: parseInt(e.target.value) || 14 }))
@@ -348,7 +357,7 @@ export default function NameCardEditor({
                 type="checkbox"
                 checked={printSettings.showRole}
                 onChange={(e) => setPrintSettings((prev) => ({ ...prev, showRole: e.target.checked }))}
-                className="rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600 bg-white dark:bg-zinc-700"
+                className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600 bg-white dark:bg-zinc-700"
               />
               <span className="text-sm text-zinc-700 dark:text-zinc-300">显示职位</span>
             </label>
@@ -359,6 +368,7 @@ export default function NameCardEditor({
                 </label>
                 <input
                   type="number"
+                  aria-label="职位字号 (px)"
                   value={printSettings.roleFontSize}
                   onChange={(e) =>
                     setPrintSettings((prev) => ({ ...prev, roleFontSize: parseInt(e.target.value) || 14 }))
@@ -373,7 +383,7 @@ export default function NameCardEditor({
                 type="checkbox"
                 checked={printSettings.showCompanyName}
                 onChange={(e) => setPrintSettings((prev) => ({ ...prev, showCompanyName: e.target.checked }))}
-                className="rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600 bg-white dark:bg-zinc-700"
+                className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600 bg-white dark:bg-zinc-700"
               />
               <span className="text-sm text-zinc-700 dark:text-zinc-300">显示公司名称</span>
             </label>
@@ -385,6 +395,7 @@ export default function NameCardEditor({
                   </label>
                   <input
                     type="text"
+                    aria-label="公司名称"
                     value={printSettings.companyName}
                     onChange={(e) => setPrintSettings((prev) => ({ ...prev, companyName: e.target.value }))}
                     className="input-base"
@@ -396,6 +407,7 @@ export default function NameCardEditor({
                   </label>
                   <input
                     type="number"
+                    aria-label="公司名称字号 (px)"
                     value={printSettings.companyNameFontSize}
                     onChange={(e) =>
                       setPrintSettings((prev) => ({ ...prev, companyNameFontSize: parseInt(e.target.value) || 16 }))

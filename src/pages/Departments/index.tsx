@@ -40,7 +40,7 @@ export default function Departments() {
             {canManage && (
               <button
                 onClick={logic.handleAddRoot}
-                className="btn-primary"
+                className="btn-primary whitespace-nowrap shrink-0"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 新增一级部门

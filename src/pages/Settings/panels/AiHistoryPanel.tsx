@@ -140,7 +140,7 @@ export default function AiHistoryPanel() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="按用户名或对话标题筛选…"
-            className="w-full pl-9 pr-3 py-2 text-sm border border-border/80 dark:border-border rounded-lg bg-muted dark:bg-background text-foreground focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-border/80 dark:border-border rounded-lg bg-muted dark:bg-background text-foreground focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary transition duration-200"
           />
         </div>
         <div className="text-xs text-muted-foreground whitespace-nowrap">

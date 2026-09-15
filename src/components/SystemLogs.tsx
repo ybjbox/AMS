@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EmptyState } from './ui/EmptyState';
+import { formatDateTime } from '@/utils/dateUtils';
 
 export default function SystemLogs() {
   const logs = useLogStore((state) => state.logs);
@@ -88,16 +89,16 @@ export default function SystemLogs() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
             <input
               type="text"
-              placeholder="搜索日志内容、来源或详情..."
+              placeholder="搜索日志内容、来源或详情…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-zinc-200/80 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200"
+              className="w-full pl-9 pr-4 py-2 text-sm border border-zinc-200/80 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition duration-200"
             />
           </div>
           <div className="flex items-center space-x-2">
             <Filter className="w-4 h-4 text-zinc-400" />
             <Select value={filterLevel} onValueChange={(value) => setFilterLevel(value as LogLevel | 'ALL')}>
-              <SelectTrigger className="w-[180px] text-sm border border-zinc-200/80 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200">
+              <SelectTrigger className="w-[180px] text-sm border border-zinc-200/80 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition duration-200">
                 <SelectValue placeholder="所有等级">
                   {(val) =>
                     val === 'ALL'
@@ -160,8 +161,8 @@ export default function SystemLogs() {
               <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
                 {filteredLogs.map((log) => (
                   <tr key={log.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400 font-mono">
-                      {new Date(log.timestamp).toLocaleString()}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400 font-mono tabular-nums">
+                      {formatDateTime(log.timestamp)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span

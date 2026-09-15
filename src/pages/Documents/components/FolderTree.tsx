@@ -114,6 +114,7 @@ export function FolderTree({
           onClick={handleCreateRootFolderClick}
           className="p-1.5 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-zinc-700 rounded-md transition-colors"
           title="新建根目录文件夹"
+          aria-label="新建根目录文件夹"
         >
           <FolderPlus className="w-4 h-4" />
         </button>

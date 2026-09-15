@@ -24,7 +24,7 @@ export default function NameCards() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 flex-1 min-h-0 flex flex-col print:p-0 print:h-auto">
+    <div className="px-4 pt-4 pb-24 sm:px-6 sm:pt-6 lg:px-8 lg:pt-8 print:p-0 print:h-auto flex-1 min-h-0 flex flex-col">
       <div className="flex-1 min-h-0 flex flex-col card-base overflow-hidden print:border-0 print:shadow-none print:bg-white">
         <NameCardToolbar
           uploadedUsers={state.uploadedUsers}
@@ -38,7 +38,7 @@ export default function NameCards() {
           selectedUserIds={state.selectedUserIds}
           handlePrint={state.handlePrint}
         />
-        <div className="flex-1 overflow-hidden flex print:hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto md:overflow-hidden flex flex-col md:flex-row print:hidden">
           <NameCardEditor
             printSettings={state.printSettings}
             setPrintSettings={state.setPrintSettings}

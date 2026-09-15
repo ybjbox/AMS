@@ -31,7 +31,9 @@ export function useEmployeeReminders() {
 
           if (diffDays > 0 && diffDays <= contractExpiryDays) {
             const title = '合同到期提醒';
-            const message = `员工 ${emp.name} (${emp.id}) 的合同将于 ${emp.contractExpiry} 到期（剩余 ${diffDays} 天）`;
+            // 种子数据的姓名形如“员工 33”，直接拼接会出现“员工 员工 33”，故按需补前缀
+            const nameLabel = emp.name.startsWith('员工') ? emp.name : `员工 ${emp.name}`;
+            const message = `${nameLabel} (${emp.id}) 的合同将于 ${emp.contractExpiry} 到期（剩余 ${diffDays} 天）`;
 
             addTodo({
               title,
@@ -56,7 +58,8 @@ export function useEmployeeReminders() {
           if (diffDays > 0 && diffDays <= probationConversionDays) {
             const dateStr = conversionDate.toISOString().split('T')[0];
             const title = '试用期转正提醒';
-            const message = `员工 ${emp.name} (${emp.id}) 的试用期将于 ${dateStr} 结束（剩余 ${diffDays} 天）`;
+            const nameLabel = emp.name.startsWith('员工') ? emp.name : `员工 ${emp.name}`;
+            const message = `${nameLabel} (${emp.id}) 的试用期将于 ${dateStr} 结束（剩余 ${diffDays} 天）`;
 
             addTodo({
               title,

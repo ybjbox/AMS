@@ -66,7 +66,7 @@ export default function DashboardChart({ data, isLoading }: DashboardChartProps)
   const fgColor       = cssVars['--foreground']        || 'oklch(0.30 0 0)';
   const skeletonHeights = [60, 85, 70, 95, 75, 55, 40];
   return (
-    <div className="card-base p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
+    <div className="card-base p-6 transition duration-300 hover:shadow-md hover:-translate-y-0.5">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-white tracking-tight">数据趋势</h2>
       </div>

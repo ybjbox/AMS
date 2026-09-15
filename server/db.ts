@@ -345,7 +345,7 @@ function seedIfEmpty() {
     remarks, systemRole
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
 
-  const departments = ["研发部", "产品部", "设计部", "市场部", "人事部"];
+  const departments = ["研发部", "产品部", "设计部", "市场部", "人力资源中心"];
   const roles = ["前端工程师", "后端工程师", "产品经理", "UI设计师", "HR"];
   const systemRoles = ["ADMIN", "HR", "EMPLOYEE"];
 

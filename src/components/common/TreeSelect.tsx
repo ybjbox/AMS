@@ -204,7 +204,7 @@ export function TreeSelect({
           type="text"
           value={value}
           readOnly
-          className="block w-full bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-2 px-3 pr-8 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200 sm:text-sm cursor-pointer text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500"
+          className="block w-full bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-2 px-3 pr-8 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition duration-200 sm:text-sm cursor-pointer text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500"
           placeholder={placeholder}
           required={required}
           aria-haspopup="tree"

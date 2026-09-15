@@ -96,7 +96,7 @@ export default function PreferencesPanel() {
               key={item.role}
               data-role={item.role}
               onClick={onRoleChangeClick}
-              className={`flex flex-col p-4 rounded-xl border text-left transition-all ${
+              className={`flex flex-col p-4 rounded-xl border text-left transition ${
                 userInfo?.role === item.role
                   ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-900/20 ring-2 ring-blue-600/20'
                   : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-200/80 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'

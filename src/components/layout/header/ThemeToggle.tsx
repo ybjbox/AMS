@@ -18,6 +18,8 @@ const ThemeToggle = React.memo(function ThemeToggle() {
           onClick={handleSetLight}
           className={`p-1.5 rounded-md transition-colors ${theme === 'light' ? 'bg-white dark:bg-zinc-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
           title="浅色模式"
+          aria-label="浅色模式"
+          aria-pressed={theme === 'light'}
         >
           <Sun className="w-4 h-4" />
         </button>
@@ -25,6 +27,8 @@ const ThemeToggle = React.memo(function ThemeToggle() {
           onClick={handleSetDark}
           className={`p-1.5 rounded-md transition-colors ${theme === 'dark' ? 'bg-white dark:bg-zinc-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
           title="深色模式"
+          aria-label="深色模式"
+          aria-pressed={theme === 'dark'}
         >
           <Moon className="w-4 h-4" />
         </button>
@@ -32,6 +36,8 @@ const ThemeToggle = React.memo(function ThemeToggle() {
           onClick={handleSetSystem}
           className={`p-1.5 rounded-md transition-colors ${theme === 'system' ? 'bg-white dark:bg-zinc-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
           title="跟随系统"
+          aria-label="跟随系统"
+          aria-pressed={theme === 'system'}
         >
           <Monitor className="w-4 h-4" />
         </button>

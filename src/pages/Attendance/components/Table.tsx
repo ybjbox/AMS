@@ -161,10 +161,10 @@ export default function Table({
               <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-zinc-400" />
               <input
                 type="text"
-                placeholder="搜索姓名或工号..."
+                placeholder="搜索姓名或工号…"
                 value={scheduleSearchQuery}
                 onChange={(e) => setScheduleSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 text-sm border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200"
+                className="w-full pl-10 pr-3 py-2 text-sm border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition duration-200"
               />
             </div>
             {schedules.length > 0 && hasPermission('attendance:manage') && (

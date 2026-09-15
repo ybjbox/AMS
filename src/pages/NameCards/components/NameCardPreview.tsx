@@ -178,7 +178,7 @@ export default function NameCardPreview({
 
   return (
     <>
-      <div className="flex-1 bg-zinc-100 dark:bg-zinc-900 overflow-auto p-8 flex flex-col items-center space-y-8 min-h-0 relative print:hidden">
+      <div className="w-full md:flex-1 bg-zinc-100 dark:bg-zinc-900 p-8 flex flex-col items-center space-y-8 md:min-h-0 md:overflow-auto relative print:hidden">
         <div className="sticky top-0 self-start text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-zinc-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-8 -ml-8 mb-4">
           打印预览 ({pages.length}页)
         </div>

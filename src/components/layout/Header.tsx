@@ -28,7 +28,7 @@ const Header = memo(function Header({ isCollapsed, setIsCollapsed }: HeaderProps
         {/* Mobile menu button */}
         <div className="md:hidden">
           <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-            <SheetTrigger className="p-2 -ml-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300 hover:-translate-y-0.5">
+            <SheetTrigger className="p-2 -ml-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 rounded-xl transition duration-300 hover:-translate-y-0.5">
               <Menu className="h-5 w-5" />
             </SheetTrigger>
             <SheetContent
@@ -48,7 +48,7 @@ const Header = memo(function Header({ isCollapsed, setIsCollapsed }: HeaderProps
         {/* Desktop collapse button */}
         <button
           onClick={handleToggleCollapse}
-          className="hidden md:block p-2 -ml-2 text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 rounded-xl transition-all duration-300 hover:-translate-y-0.5"
+          className="hidden md:block p-2 -ml-2 text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 rounded-xl transition duration-300 hover:-translate-y-0.5"
           title={isCollapsed ? '展开菜单' : '收起菜单'}
         >
           {isCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
@@ -64,14 +64,8 @@ const Header = memo(function Header({ isCollapsed, setIsCollapsed }: HeaderProps
         )}
       </div>
 
-      {/* 桌面端面包屑辅助定位（非主标题） */}
-      <div className="hidden md:flex flex-1 items-center">
-        {pageTitle && (
-          <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500 tracking-wide select-none">
-            {pageTitle}
-          </span>
-        )}
-      </div>
+      {/* 桌面端：导航定位统一由侧边栏激活态与页面 H1 承担，此处不再重复页面名称 */}
+      <div className="hidden md:block flex-1" />
 
       <div className="flex items-center space-x-4">
         <NotificationTrigger />

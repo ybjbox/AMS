@@ -86,7 +86,7 @@ export default function Login() {
         <div className="flex justify-center">
           <div className="w-14 h-14 brand-gradient rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 overflow-hidden">
             {systemIcon ? (
-              <img src={systemIcon} alt="Logo" className="w-full h-full object-contain bg-white dark:bg-zinc-800" />
+              <img src={systemIcon} alt="Logo" width={96} height={96} className="w-full h-full object-contain bg-white dark:bg-zinc-800" />
             ) : (
               <Building2 className="h-8 w-8 text-white" />
             )}
@@ -119,6 +119,8 @@ export default function Login() {
                   {...register('username')}
                   id="username"
                   type="text"
+                  autoComplete="username"
+                  spellCheck={false}
                   className={`input-base pl-10 py-2.5 sm:text-sm ${errors.username ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
                   placeholder="请输入用户名"
                 />
@@ -138,6 +140,7 @@ export default function Login() {
                   {...register('password')}
                   id="password"
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
                   className={`input-base pl-10 pr-10 py-2.5 sm:text-sm ${errors.password ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
                   placeholder="请输入密码"
                 />
@@ -163,7 +166,7 @@ export default function Login() {
                 />
                 <label
                   htmlFor="remember-me"
-                  className="ml-2 block text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer"
+                  className="ml-2 flex items-center min-h-11 -my-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer"
                 >
                   记住我
                 </label>
@@ -210,8 +213,8 @@ export default function Login() {
                   <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 text-xs">
-                    开发模式 · 初始账号见服务端控制台或 data/ADMIN_CREDENTIALS.txt
+                  <span className="px-2 bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 text-xs">
+                    开发模式 · 初始凭据见服务端启动日志
                   </span>
                 </div>
               </div>

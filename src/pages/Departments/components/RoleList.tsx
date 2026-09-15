@@ -39,14 +39,14 @@ const RoleTreeNode = React.memo(function RoleTreeNode({
           data-id={node.id}
           onClick={onToggleRoleDept}
         >
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 min-w-0">
             {isExpanded ? (
               <ChevronDown className="w-4 h-4 text-zinc-400 shrink-0" />
             ) : (
               <ChevronRight className="w-4 h-4 text-zinc-400 shrink-0" />
             )}
-            <span className="text-sm text-zinc-700 dark:text-zinc-300">{node.name}</span>
-            <span className="text-xs text-zinc-400">({deptRoles.length})</span>
+            <span className="text-sm text-zinc-700 dark:text-zinc-300 truncate">{node.name}</span>
+            <span className="text-xs text-zinc-400 shrink-0">({deptRoles.length})</span>
           </div>
           {canManage && (
             <button
@@ -54,6 +54,7 @@ const RoleTreeNode = React.memo(function RoleTreeNode({
               onClick={onAddRole}
               className="p-1 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors shrink-0"
               title="新增职位"
+              aria-label={`新增职位：${node.name}`}
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -71,7 +72,7 @@ const RoleTreeNode = React.memo(function RoleTreeNode({
                   >
                     <span className="text-sm text-zinc-600 dark:text-zinc-300">{role.name}</span>
                     {canManage && (
-                      <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center space-x-1 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                         <button
                           data-id={role.id}
                           onClick={onEditRole}

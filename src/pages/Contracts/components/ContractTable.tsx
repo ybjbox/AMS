@@ -21,8 +21,8 @@ export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: Contr
 
   return (
     <div className="relative flex-1 rounded-b-xl border-t border-zinc-200 dark:border-zinc-700 h-full min-h-0">
-      <div ref={parentRef} className="h-full overflow-x-auto">
-        <table className="w-full min-w-[800px] text-left border-collapse relative" aria-label="合同列表">
+      <div ref={parentRef} className="h-full overflow-x-auto overflow-y-auto">
+        <table className="w-full min-w-[800px] text-left border-collapse relative [&_th]:whitespace-nowrap" aria-label="合同列表">
           <thead className="bg-zinc-50 dark:bg-zinc-900/50 sticky top-0 z-20">
             <tr>
               <th
@@ -124,7 +124,7 @@ export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: Contr
                           <button
                             data-userid={user.id}
                             onClick={() => onPreview(user)}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 flex items-center"
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 flex items-center px-1.5 py-1 -my-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                           >
                             <Eye className="w-4 h-4 mr-1" />
                             预览
@@ -132,7 +132,7 @@ export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: Contr
                           <button
                             data-userid={user.id}
                             onClick={() => onDirectPrint(user)}
-                            className="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300 flex items-center"
+                            className="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300 flex items-center px-1.5 py-1 -my-1 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
                           >
                             <Printer className="w-4 h-4 mr-1" />
                             打印

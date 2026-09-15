@@ -33,7 +33,7 @@ export default function StatCards({ stats, isLoading }: StatCardsProps) {
         return (
           <div
             key={item.name}
-            className="card-base transition-all duration-300 cursor-default hover:shadow-md hover:-translate-y-0.5 flex flex-col justify-between p-6 min-h-[120px] sm:min-h-[140px]"
+            className="card-base transition duration-300 cursor-default hover:shadow-md hover:-translate-y-0.5 flex flex-col justify-between p-6 min-h-[120px] sm:min-h-[140px]"
           >
             <div className="flex justify-between items-start">
               <div
@@ -61,8 +61,8 @@ export default function StatCards({ stats, isLoading }: StatCardsProps) {
             </div>
 
             <div className="mt-auto">
-              <h3 className="text-zinc-500 dark:text-zinc-400 font-medium text-sm mb-1">{item.name}</h3>
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
+              <h3 className="text-zinc-600 dark:text-zinc-400 font-medium text-sm mb-1">{item.name}</h3>
+              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-white [font-variant-numeric:tabular-nums]">
                 {item.value}
               </div>
             </div>

@@ -1,12 +1,18 @@
 import React, { useState, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+/** 可选的每页条数（全站统一） */
+export const PER_PAGE_OPTIONS = [10, 20, 50] as const;
+
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
   totalItems: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
+  /** 传入后显示「每页条数」选择器（可选） */
+  onItemsPerPageChange?: (n: number) => void;
   className?: string;
 }
 export function Pagination({
@@ -15,6 +21,7 @@ export function Pagination({
   totalItems,
   itemsPerPage,
   onPageChange,
+  onItemsPerPageChange,
   className,
 }: PaginationProps) {
   const [jumpValue, setJumpValue] = useState('');
@@ -36,18 +43,35 @@ export function Pagination({
   return (
     <div
       className={cn(
-        'px-4 py-3 border-t border-zinc-200 dark:border-zinc-700 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-800/50 rounded-b-2xl',
+        'px-4 py-3 border-t border-zinc-200 dark:border-zinc-700 flex items-center justify-between bg-zinc-50 dark:bg-zinc-800 rounded-b-2xl shrink-0',
         className
       )}
     >
       {/* 桌面端 */}
       <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-        <p className="text-sm text-zinc-700 dark:text-zinc-300">
+        <p className="text-sm text-zinc-600 dark:text-zinc-300 tabular-nums">
           显示第 <span className="font-medium">{start}</span> 到{' '}
           <span className="font-medium">{end}</span> 条，共{' '}
           <span className="font-medium">{totalItems}</span> 条记录
         </p>
         <div className="flex items-center gap-3">
+          {/* 每页条数选择器（传了回调才显示） */}
+          {onItemsPerPageChange && (
+            <label className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
+              每页
+              <select
+                value={itemsPerPage}
+                onChange={(e) => onItemsPerPageChange(parseInt(e.target.value, 10))}
+                aria-label="每页显示条数"
+                className="rounded-md border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 px-1.5 py-1 text-sm text-zinc-700 dark:text-zinc-200 tabular-nums"
+              >
+                {PER_PAGE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+              条
+            </label>
+          )}
           {/* 分页按钮组 */}
           <nav
             className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
@@ -61,7 +85,7 @@ export function Pagination({
               <span className="sr-only">上一页</span>
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <span className="relative inline-flex items-center px-4 py-2 border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <span className="relative inline-flex items-center px-4 py-2 border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-sm font-medium text-zinc-700 dark:text-zinc-300 tabular-nums">
               {currentPage} / {totalPages || 1}
             </span>
             <button
@@ -102,17 +126,17 @@ export function Pagination({
           <button
             onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
             disabled={currentPage === 1}
-            className="inline-flex items-center px-4 py-2 border border-zinc-200/80 dark:border-zinc-600 text-sm font-medium rounded-md text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-600 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center px-4 py-2 border border-zinc-200/80 dark:border-zinc-600 text-sm font-medium rounded-md text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-600 disabled:opacity-50 transition-colors shrink-0 whitespace-nowrap"
           >
             上一页
           </button>
-          <span className="text-sm text-zinc-700 dark:text-zinc-300">
+          <span className="text-sm text-zinc-700 dark:text-zinc-300 shrink-0 tabular-nums">
             {currentPage} / {totalPages || 1}
           </span>
           <button
             onClick={() => onPageChange(Math.min(currentPage + 1, totalPages))}
             disabled={currentPage === totalPages || totalPages === 0}
-            className="inline-flex items-center px-4 py-2 border border-zinc-200/80 dark:border-zinc-600 text-sm font-medium rounded-md text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-600 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center px-4 py-2 border border-zinc-200/80 dark:border-zinc-600 text-sm font-medium rounded-md text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-600 disabled:opacity-50 transition-colors shrink-0 whitespace-nowrap"
           >
             下一页
           </button>

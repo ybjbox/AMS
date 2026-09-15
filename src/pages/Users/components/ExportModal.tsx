@@ -44,7 +44,7 @@ const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: Sor
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center p-3 rounded-xl border transition-all ${
+      className={`flex items-center p-3 rounded-xl border transition ${
         col.selected
           ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 shadow-sm'
           : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
@@ -176,7 +176,7 @@ export function ExportModal({
           <button
             onClick={handlePrintRoster}
             disabled={exportConfig.columns.filter((c: ExportColumn) => c.selected).length === 0}
-            className="inline-flex items-center justify-center px-6 py-2 bg-white dark:bg-zinc-700 border border-zinc-200/80 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-600 transition-all shadow-sm disabled:opacity-50"
+            className="inline-flex items-center justify-center px-6 py-2 bg-white dark:bg-zinc-700 border border-zinc-200/80 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-600 transition shadow-sm disabled:opacity-50"
           >
             <Printer className="h-4 w-4 mr-2" />
             打印
@@ -189,7 +189,7 @@ export function ExportModal({
             {isExporting ? (
               <>
                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                导出中...
+                导出中…
               </>
             ) : (
               <>
@@ -209,7 +209,7 @@ export function ExportModal({
               type="text"
               value={exportConfig.title}
               onChange={(e) => setExportConfig((prev: ExportConfig) => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 border border-zinc-200/80 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition-all duration-200 outline-none bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500"
+              className="w-full px-3 py-2 border border-zinc-200/80 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition duration-200 outline-none bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500"
               placeholder="请输入表格标题"
             />
           </div>
@@ -297,7 +297,7 @@ export function ExportModal({
           <div className="flex p-1 bg-zinc-100 dark:bg-zinc-700 rounded-lg">
             <button
               onClick={() => setExportConfig((prev: ExportConfig) => ({ ...prev, mode: 'theme' }))}
-              className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
+              className={`flex-1 py-1.5 text-xs font-medium rounded-md transition ${
                 exportConfig.mode === 'theme'
                   ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-sm'
                   : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
@@ -307,7 +307,7 @@ export function ExportModal({
             </button>
             <button
               onClick={() => setExportConfig((prev: ExportConfig) => ({ ...prev, mode: 'script' }))}
-              className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${
+              className={`flex-1 py-1.5 text-xs font-medium rounded-md transition ${
                 exportConfig.mode === 'script'
                   ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-sm'
                   : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
@@ -326,7 +326,7 @@ export function ExportModal({
                     key={theme.id}
                     data-id={theme.id}
                     onClick={onThemeSelect}
-                    className={`flex flex-col items-center p-2 rounded-xl border transition-all ${
+                    className={`flex flex-col items-center p-2 rounded-xl border transition ${
                       exportConfig.themeId === theme.id
                         ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-600/20'
                         : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-200/80 dark:hover:border-zinc-600'
@@ -354,7 +354,7 @@ export function ExportModal({
                     key={script.name}
                     data-name={script.name}
                     onClick={onScriptSelect}
-                    className={`w-full flex items-center p-3 rounded-xl border transition-all ${
+                    className={`w-full flex items-center p-3 rounded-xl border transition ${
                       exportConfig.templateName === script.name
                         ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-600/20'
                         : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-200/80 dark:hover:border-zinc-600'
@@ -465,8 +465,8 @@ export function ExportModal({
             </table>
             {users.filter((u) => (exportConfig.includeResigned ? true : u.status !== '离职')).length > 10 && (
               <div className="text-center py-4 text-sm text-zinc-500 dark:text-zinc-400">
-                ... 仅显示前 10 条预览数据，共{' '}
-                {users.filter((u) => (exportConfig.includeResigned ? true : u.status !== '离职')).length} 条 ...
+                … 仅显示前 10 条预览数据，共{' '}
+                {users.filter((u) => (exportConfig.includeResigned ? true : u.status !== '离职')).length} 条 …
               </div>
             )}
           </div>

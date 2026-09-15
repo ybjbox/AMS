@@ -7,6 +7,7 @@ import { todoApi } from '@/services/todoApi';
 import { notificationApi } from '@/services/notificationApi';
 import { http } from '@/services/api';
 import { flattenDepartments } from '@/store/useDepartmentStore';
+import { formatDateTime } from '@/utils/dateUtils';
 import { DepartmentNode } from '@/types';
 
 export interface StatItem {
@@ -135,13 +136,7 @@ export function useDashboard(): UseDashboardReturn {
         );
 
         setLastUpdated(
-          new Date().toLocaleString('zh-CN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-          })
+          formatDateTime(new Date())
         );
       } catch {
         // 保持空态（加载失败时由全局错误提示兜底）

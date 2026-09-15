@@ -1,5 +1,6 @@
 import PageContainer from "@/components/PageContainer";
 import React, { useState, useMemo, useCallback } from 'react';
+import { useUrlState } from '@/hooks/useUrlState';
 import { useBodyOverflow } from '@/hooks/useBodyOverflow';
 import { useEmployeeStore } from '@/store/useEmployeeStore';
 import { Search, Filter, FileEdit } from 'lucide-react';
@@ -15,8 +16,24 @@ import { ContractTemplate } from './components/ContractTemplate';
 export default function ContractsPage() {
   const users = useEmployeeStore((state) => state.users);
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  // 搜索/筛选/分页状态与 URL 同步（刷新保持、可深链）
+  const urlState = useUrlState();
+  const searchQuery = urlState.get('q');
+  const filterStatus = urlState.get('status', 'ALL');
+  const currentPage = urlState.getNumber('page', 1);
+  const setSearchQuery = useCallback(
+    (q: string) => urlState.set({ q, page: null }),
+    [urlState]
+  );
+  const setFilterStatus = useCallback(
+    (s: string) => urlState.set({ status: s === 'ALL' ? null : s, page: null }),
+    [urlState]
+  );
+  const setCurrentPage = useCallback(
+    (p: number) => urlState.set({ page: p <= 1 ? null : p }),
+    [urlState]
+  );
+
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isTemplateEditorOpen, setIsTemplateEditorOpen] = useState(false);
@@ -39,13 +56,13 @@ export default function ContractsPage() {
   }, [users, searchQuery, filterStatus]);
 
   const ITEMS_PER_PAGE = 20;
-  const [currentPage, setCurrentPage] = useState(1);
   // 当筛选条件变化时重置页码
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+  const safePage = Math.min(Math.max(currentPage, 1), Math.max(totalPages, 1));
   const paginatedUsers = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const start = (safePage - 1) * ITEMS_PER_PAGE;
     return filteredUsers.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredUsers, currentPage]);
+  }, [filteredUsers, safePage]);
 
   const handlePreview = useCallback((user: User) => {
     setSelectedUser(user);
@@ -77,11 +94,11 @@ export default function ContractsPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
               <input
                 type="text"
-                placeholder="搜索员工姓名、工号或部门..."
+                placeholder="搜索员工姓名、工号或部门…"
+                aria-label="搜索员工姓名、工号或部门"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  setCurrentPage(1);
                 }}
                 className="input-base pl-10"
               />
@@ -90,7 +107,6 @@ export default function ContractsPage() {
               <Filter className="w-4 h-4 text-zinc-400" />
               <Select value={filterStatus} onValueChange={(val) => {
                 setFilterStatus(val || 'ALL');
-                setCurrentPage(1);
               }}>
                 <SelectTrigger className="w-[180px] text-sm border-zinc-200/80 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white">
                   <SelectValue placeholder="选择状态">
@@ -126,7 +142,7 @@ export default function ContractsPage() {
           <div className="absolute right-0 top-[53px] bottom-0 w-8 bg-gradient-to-l from-white dark:from-zinc-800 to-transparent pointer-events-none md:hidden" />
           
           <Pagination
-            currentPage={currentPage}
+            currentPage={safePage}
             totalPages={totalPages}
             totalItems={filteredUsers.length}
             itemsPerPage={ITEMS_PER_PAGE}

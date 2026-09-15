@@ -127,6 +127,8 @@ export default function AiAssistant() {
       <img
         src="/api/ai/logo"
         alt={assistantLabel}
+        width={40}
+        height={40}
         className={`${sizeClass} rounded-full object-cover`}
       />
     ) : (
