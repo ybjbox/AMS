@@ -1,6 +1,8 @@
-# AMS CI：四道闸门（类型 → lint → 前端测试 → 服务端验证脚本）
-# 说明：lint 当前对上游既有债务（193 个 error，详见 docs/DESIGN-REVIEW.md ④）设为
-# continue-on-error 非阻塞展示；债务清偿后请移除该标记，使其成为合并门槛。
+# AMS CI：六道闸门（类型 → lint → 单元测试 → 服务端验证 → 构建 → E2E）
+# 说明：
+#  - lint 当前对上游既有债务（193 个 error，详见 docs/DESIGN-REVIEW.md ④）设为
+#    continue-on-error 非阻塞展示；债务清偿后请移除该标记，使其成为合并门槛。
+#  - E2E 使用 Playwright：CI 环境自动安装 chromium 并自动启动服务器（含种子管理员）。
 name: CI
 
 on:
@@ -35,3 +37,37 @@ jobs:
 
       - name: 服务端验证脚本（11 个自包含回归）
         run: npm run test:server
+
+      - name: 生产构建（含分包验证）
+        run: npm run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: verify   # 快速闸门通过后才跑较慢的 E2E
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci --legacy-peer-deps --no-audit --no-fund
+
+      - name: 安装 Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: 运行 E2E 测试（自动启动服务器 + 种子管理员）
+        run: npx playwright test --reporter=list
+        env:
+          CI: true
+          AMS_ADMIN_PASSWORD: Ams-Debug#2026
+
+      - name: 上传测试报告（失败时）
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
