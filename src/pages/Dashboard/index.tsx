@@ -1,10 +1,13 @@
 import PageContainer from "@/components/PageContainer";
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { useDashboard } from './hooks/useDashboard';
 import StatCards from './components/StatCards';
 import SystemNotices from './components/SystemNotices';
 import QuickActions from './components/QuickActions';
-import DashboardChart from './components/DashboardChart';
+
+// recharts 体积较大（~350KB）：懒加载使图表代码仅在控制台页进入时加载，
+// 不拖累登录页与其它页面的首屏
+const DashboardChart = lazy(() => import('./components/DashboardChart'));
 
 export default function Dashboard() {
   const dashboardData = useDashboard();
@@ -24,9 +27,11 @@ export default function Dashboard() {
       <StatCards stats={dashboardData.stats} isLoading={dashboardData.isLoading} />
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-8">
-        {/* 图表：平板占 3/5，桌面占 3/5 */}
+        {/* 图表：平板占 3/5，桌面占 3/5（recharts 懒加载） */}
         <div className="md:col-span-3">
-          <DashboardChart data={dashboardData.chartData} isLoading={dashboardData.isLoading} />
+          <Suspense fallback={<div className="card-base p-6 min-h-[300px] flex items-center justify-center text-sm text-zinc-500">图表加载中…</div>}>
+            <DashboardChart data={dashboardData.chartData} isLoading={dashboardData.isLoading} />
+          </Suspense>
         </div>
         {/* 快捷操作 + 公告：平板占 2/5，桌面占 2/5 */}
         <div className="md:col-span-2 space-y-6 md:space-y-8">

@@ -22,21 +22,31 @@ function withUnread(notifications: Notification[]) {
   return { notifications, unreadCount: notifications.filter((n) => !n.read).length };
 }
 
+// 并发去重：同一时刻只允许一个 notifications 请求在途
+let notificationsInflight: Promise<void> | null = null;
+
 export const useNotificationStore = create<NotificationState>()((set, get) => ({
   notifications: [],
   unreadCount: 0,
   isLoading: false,
 
-  /** 从后端拉取我的通知（recipient = 当前登录用户） */
+  /** 从后端拉取我的通知（recipient = 当前登录用户）。
+   *  inflight 去重：并发调用复用同一 Promise（Header 挂载/路由切换场景常见）。 */
   fetchNotifications: async () => {
-    set({ isLoading: true });
-    try {
-      const notifications = await notificationApi.list();
-      set({ ...withUnread(notifications), isLoading: false });
-    } catch (e) {
-      set({ isLoading: false });
-      toast.error(errText(e, '通知加载失败'));
-    }
+    if (notificationsInflight) return notificationsInflight;
+    notificationsInflight = (async () => {
+      set({ isLoading: true });
+      try {
+        const notifications = await notificationApi.list();
+        set({ ...withUnread(notifications), isLoading: false });
+      } catch (e) {
+        set({ isLoading: false });
+        toast.error(errText(e, '通知加载失败'));
+      } finally {
+        notificationsInflight = null;
+      }
+    })();
+    return notificationsInflight;
   },
 
   /** 创建通知（本地触发如保存失败提醒也会落库，跨设备可见） */

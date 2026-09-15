@@ -3,6 +3,9 @@ import { toast } from 'sonner';
 import { DepartmentNode, RoleNode } from '../types';
 import { http } from '../services/api';
 
+// 并发去重：同一时刻只允许一个 departments 请求在途（多组件同时 mount 时避免重复请求）
+let departmentsInflight: Promise<void> | null = null;
+
 interface DepartmentState {
   departments: DepartmentNode[];
   roles: RoleNode[];
@@ -75,25 +78,34 @@ function errText(e: unknown, fallback: string): string {
   return (e as { error?: string })?.error || fallback;
 }
 
-export const useDepartmentStore = create<DepartmentState>((set) => ({
+export const useDepartmentStore = create<DepartmentState>((set, get) => ({
   departments: sortDepartments(initialDepartments),
   roles: sortRoles(initialRoles),
   initialized: false,
 
-  /** 从后端加载组织架构（树 + 职位），挂载时调用一次 */
+  /** 从后端加载组织架构（树 + 职位）。
+   *  - initialized 去重：已加载过直接跳过（编辑后由 setDepartments/setRoles 增量同步，无需重拉）；
+   *  - inflight 去重：并发调用复用同一个 Promise，避免多组件同时 mount 时重复请求。 */
   fetchDepartments: async () => {
-    try {
-      const res = await http.get<{ departments: DepartmentNode[]; roles: RoleNode[] }>(
-        '/departments'
-      );
-      set({
-        departments: sortDepartments(res.departments ?? []),
-        roles: sortRoles(res.roles ?? []),
-        initialized: true,
-      });
-    } catch (e) {
-      console.error('[departments] 组织架构加载失败：', e);
-    }
+    if (get().initialized) return;
+    if (departmentsInflight) return departmentsInflight;
+    departmentsInflight = (async () => {
+      try {
+        const res = await http.get<{ departments: DepartmentNode[]; roles: RoleNode[] }>(
+          '/departments'
+        );
+        set({
+          departments: sortDepartments(res.departments ?? []),
+          roles: sortRoles(res.roles ?? []),
+          initialized: true,
+        });
+      } catch (e) {
+        console.error('[departments] 组织架构加载失败：', e);
+      } finally {
+        departmentsInflight = null;
+      }
+    })();
+    return departmentsInflight;
   },
 
   // 保持同步签名（调用方在编辑回调里直接用）：本地先生效，再整树持久化到后端

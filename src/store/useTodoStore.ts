@@ -19,6 +19,9 @@ function errText(e: unknown, fallback: string): string {
   return (e as { error?: string })?.error || fallback;
 }
 
+// 并发去重：同一时刻只允许一个 todos 请求在途
+let todosInflight: Promise<void> | null = null;
+
 export const useTodoStore = create<TodoState>()(
   persist(
     (set, get) => ({
@@ -29,16 +32,23 @@ export const useTodoStore = create<TodoState>()(
       },
       isLoading: false,
 
-      /** 从后端拉取「我创建的 + 派给我的」待办（挂载时调用） */
+      /** 从后端拉取「我创建的 + 派给我的」待办（挂载时调用）。
+       *  inflight 去重：并发调用复用同一 Promise，避免多组件同时 mount 重复请求。 */
       fetchTodos: async () => {
-        set({ isLoading: true });
-        try {
-          const todos = await todoApi.list();
-          set({ todos, isLoading: false });
-        } catch (e) {
-          set({ isLoading: false });
-          toast.error(errText(e, '待办加载失败'));
-        }
+        if (todosInflight) return todosInflight;
+        todosInflight = (async () => {
+          set({ isLoading: true });
+          try {
+            const todos = await todoApi.list();
+            set({ todos, isLoading: false });
+          } catch (e) {
+            set({ isLoading: false });
+            toast.error(errText(e, '待办加载失败'));
+          } finally {
+            todosInflight = null;
+          }
+        })();
+        return todosInflight;
       },
 
       addTodo: (todo) => {

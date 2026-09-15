@@ -1,7 +1,6 @@
 import PageContainer from "@/components/PageContainer";
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'motion/react';
 import {
   Building2,
   User,
@@ -137,21 +136,17 @@ export default function Settings() {
             </nav>
           </div>
           <div className="flex-1 bg-zinc-50/30 dark:bg-zinc-900/30 min-h-0 flex flex-col overflow-hidden">
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={activeTab}
-                role="tabpanel"
-                id={`panel-${activeTab}`}
-                aria-labelledby={`tab-${activeTab}`}
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.18, ease: 'easeOut' }}
-                className="flex-1 flex flex-col min-h-0 overflow-hidden"
-              >
-                {renderContent()}
-              </motion.div>
-            </AnimatePresence>
+            {/* 面板切换动画：CSS 动画替代 AnimatePresence（避免面板组件因 exit 动画双挂载、
+                重复发起面板内数据请求）。prefers-reduced-motion 由全局媒体查询降级。 */}
+            <div
+              key={activeTab}
+              role="tabpanel"
+              id={`panel-${activeTab}`}
+              aria-labelledby={`tab-${activeTab}`}
+              className="flex-1 flex flex-col min-h-0 overflow-hidden animate-in fade-in slide-in-from-right-2 duration-200 ease-out"
+            >
+              {renderContent()}
+            </div>
           </div>
         </div>
       </div>

@@ -1,6 +1,5 @@
 import React, { useState, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import ErrorBoundary from './ErrorBoundary';
@@ -11,14 +10,10 @@ import { routeConfig } from '@/config/routes';
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
-  const shouldReduceMotion = useReducedMotion();
 
   // 全局统一管理 document.title，根据当前路由自动更新
   const currentRoute = routeConfig.find((r) => r.path === location.pathname);
   useDocumentTitle(currentRoute?.title ?? currentRoute?.label ?? '');
-
-  // 获取当前和前一个路由的索引，决定动画方向
-  const xOffset = 12; // 水平偏移量
 
   const handleSetIsCollapsed = useCallback((collapsed: boolean) => {
     setIsCollapsed(collapsed);
@@ -43,18 +38,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         <main id="main-content" className="flex-1 overflow-auto print:p-0 print:overflow-visible relative flex flex-col">
           <ErrorBoundary>
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={location.pathname}
-                initial={shouldReduceMotion ? false : { opacity: 0, x: xOffset }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={shouldReduceMotion ? undefined : { opacity: 0, x: -xOffset }}
-                transition={{ duration: shouldReduceMotion ? 0 : 0.18, ease: 'easeOut' }}
-                className="flex-1 flex flex-col min-h-full"
-              >
-                {children}
-              </motion.div>
-            </AnimatePresence>
+            {/* 路由切换动画：用 CSS 动画（tw-animate-css）替代 motion 的 AnimatePresence。
+                AnimatePresence + keyed motion.div 会导致页面组件双挂载（unmount→mount 两次，
+                每个页面的挂载副作用执行两遍 → API 请求翻倍、初始化逻辑重复）。
+                CSS 方案：key 变化时新页面直接挂载一次并播放一次入场动画；
+                prefers-reduced-motion 由 index.css 的全局媒体查询统一降级。 */}
+            <div
+              key={location.pathname}
+              className="flex-1 flex flex-col min-h-full animate-in fade-in slide-in-from-right-2 duration-200 ease-out"
+            >
+              {children}
+            </div>
           </ErrorBoundary>
         </main>
 
