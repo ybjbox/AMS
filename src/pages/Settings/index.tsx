@@ -14,6 +14,7 @@ import {
   Bot,
   History,
   ShieldCheck,
+  Activity,
 } from 'lucide-react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import DepartmentsPanel from './panels/DepartmentsPanel';
@@ -28,6 +29,7 @@ import BackupPanel from './panels/BackupPanel';
 import AiConfigPanel from './panels/AiConfigPanel';
 import AiHistoryPanel from './panels/AiHistoryPanel';
 import PermissionMatrixPanel from './panels/PermissionMatrixPanel';
+import DiagnosticsPanel from './panels/DiagnosticsPanel';
 
 const tabs = [
   { id: 'departments', label: '部门与职位架构', icon: Building2 },
@@ -41,6 +43,7 @@ const tabs = [
   { id: 'ai', label: 'AI 管理配置', icon: Bot },
   { id: 'ai-history', label: 'AI 会话记录', icon: History },
   { id: 'permissions', label: '权限矩阵', icon: ShieldCheck },
+  { id: 'diagnostics', label: '运行诊断', icon: Activity },
   { id: 'logs', label: '系统日志', icon: TerminalSquare },
 ];
 
@@ -72,6 +75,7 @@ export default function Settings() {
       case 'ai': return <AiConfigPanel />;
       case 'ai-history': return <AiHistoryPanel />;
       case 'permissions': return <PermissionMatrixPanel />;
+      case 'diagnostics': return <DiagnosticsPanel />;
       case 'logs': return <LogsPanel />;
       default: return null;
     }

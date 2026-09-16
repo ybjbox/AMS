@@ -21,6 +21,7 @@ import {
   deleteTemplate,
   TemplateError,
 } from "./server/templateStore.ts";
+import { systemRouter } from "./server/systemRouter.ts";
 import { runTemplateSandbox } from "./server/scriptSandbox.ts";
 import { applyTemplateOps } from "./server/excelReplay.ts";
 import { startBackupScheduler } from "./server/backupDb.ts";
@@ -139,6 +140,7 @@ async function startServer() {
   app.use("/api/audit-logs", auditRouter);
   app.use("/api/backup", backupRopter);
   app.use("/api/ai", aiRouter);
+  app.use("/api/system", systemRouter);
   // ===== 接线结束 =====
 
   // API routes

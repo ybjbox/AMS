@@ -123,6 +123,9 @@ const POLICIES: Policy[] = [
   // 审计日志含全量操作留痕（谁改了谁的薪资），只对管理员开放，且没有任何删除入口
   { pattern: /^\/audit-logs\b/, methods: "*", minRole: "ADMIN" },
 
+  // 运行诊断（进程健康/访问日志/表行数）：运维信息，仅管理员
+  { pattern: /^\/system\b/, methods: "*", minRole: "ADMIN" },
+
   // 导出脚本模板 = 可执行代码，读写都必须是管理员
   { pattern: /^\/export-templates\b/, methods: "*", minRole: "ADMIN" },
   // 主题写入

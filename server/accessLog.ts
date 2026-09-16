@@ -11,7 +11,7 @@ import type { Request, Response, NextFunction } from "express";
 /** 超过该耗时的请求记为慢请求（毫秒） */
 const SLOW_MS = Number(process.env.LOG_SLOW_MS) || 1000;
 
-interface AccessLogEntry {
+export interface AccessLogEntry {
   ts: string;
   method: string;
   path: string;
@@ -23,10 +23,33 @@ interface AccessLogEntry {
   error?: string;
 }
 
-/** 结构化输出（单行 JSON，便于 grep/jq/Loki 采集） */
+/** 内存环形缓冲：保留最近 N 条（供运行诊断面板读取；进程重启即清空，属预期） */
+const RING_CAPACITY = Number(process.env.LOG_RING_SIZE) || 200;
+const ring: AccessLogEntry[] = [];
+
+/** 读取最近的访问日志条目（新→旧）。供 /api/system/diagnostics 使用。 */
+export function recentAccessLogs(limit = 50): AccessLogEntry[] {
+  const n = Math.min(Math.max(limit, 1), RING_CAPACITY);
+  return ring.slice(-n).reverse();
+}
+
+/** 汇总统计：最近窗口内的慢请求数与错误数 */
+export function accessLogSummary(): { total: number; slow: number; errors: number } {
+  let slow = 0;
+  let errors = 0;
+  for (const e of ring) {
+    if (e.slow) slow++;
+    if (e.status >= 400) errors++;
+  }
+  return { total: ring.length, slow, errors };
+}
+
+/** 结构化输出（单行 JSON，便于 grep/jq/Loki 采集）+ 写入环形缓冲 */
 function emit(entry: AccessLogEntry): void {
   // JSON.stringify 顺序稳定，便于阅读与采集
   process.stdout.write(JSON.stringify(entry) + "\n");
+  ring.push(entry);
+  if (ring.length > RING_CAPACITY) ring.splice(0, ring.length - RING_CAPACITY);
 }
 
 /** 挂载于所有路由之后（含错误处理之前的响应监听）。 */

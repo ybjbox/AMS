@@ -217,6 +217,26 @@ test.describe.serial('角色权限矩阵', () => {
       'GET /audit-logs as ADMIN 应 200');
   });
 
+  // ---- 运行诊断：仅 ADMIN ----
+  test('运行诊断：EMPLOYEE / HR 被拒（403），ADMIN 可读且响应结构完整', async ({ request }) => {
+    await expectStatus(request, tokens['e2e-employee'].token, 'GET', '/api/system/diagnostics', 403,
+      'GET /system/diagnostics as EMPLOYEE 应 403');
+    await expectStatus(request, tokens['e2e-hr'].token, 'GET', '/api/system/diagnostics', 403,
+      'GET /system/diagnostics as HR 应 403');
+    const res = await expectStatus(request, adminToken, 'GET', '/api/system/diagnostics', 200,
+      'GET /system/diagnostics as ADMIN 应 200');
+    const body = await res.json();
+    expect(body.health?.status, 'health.status').toBe('ok');
+    expect(body.health?.db, 'health.db').toBe('up');
+    expect(typeof body.health?.uptimeSec, 'uptimeSec 应为数字').toBe('number');
+    expect(typeof body.health?.version, 'version 应为字符串').toBe('string');
+    expect(body.accessLog, '应含访问日志汇总').toBeTruthy();
+    expect(typeof body.accessLog.total, 'accessLog.total').toBe('number');
+    expect(Array.isArray(body.recent), 'recent 应为数组').toBe(true);
+    expect(body.tableCounts, '应含表行数').toBeTruthy();
+    expect(typeof body.tableCounts.employees, 'employees 行数').toBe('number');
+  });
+
   // ---- 账号管理：仅 ADMIN ----
   test('账号管理：EMPLOYEE / HR 被拒（403）', async ({ request }) => {
     await expectStatus(request, tokens['e2e-employee'].token, 'GET', '/api/auth/accounts', 403,
