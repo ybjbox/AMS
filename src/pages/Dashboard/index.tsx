@@ -10,6 +10,8 @@ import QuickActions from './components/QuickActions';
 const DashboardChart = lazy(() => import('./components/DashboardChart'));
 import WorkforceTrend from './components/WorkforceTrend';
 import DepartmentDistribution from './components/DepartmentDistribution';
+import AttendanceHeatmap from './components/AttendanceHeatmap';
+import DepartmentAttendance from './components/DepartmentAttendance';
 
 export default function Dashboard() {
   const dashboardData = useDashboard();
@@ -49,6 +51,16 @@ export default function Dashboard() {
         </div>
         <div className="md:col-span-2">
           <DepartmentDistribution stats={dashboardData.workforce} isLoading={dashboardData.isLoading} />
+        </div>
+      </div>
+
+      {/* 第三行：考勤热力 + 部门出勤率（P2 看板增强） */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+        <div className="md:col-span-3">
+          <AttendanceHeatmap stats={dashboardData.attendance} isLoading={dashboardData.isLoading} />
+        </div>
+        <div className="md:col-span-2">
+          <DepartmentAttendance stats={dashboardData.attendance} isLoading={dashboardData.isLoading} />
         </div>
       </div>
     </PageContainer>

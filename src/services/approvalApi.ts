@@ -5,7 +5,7 @@ export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
 export interface Approval {
   id: string;
   applicant: string;
-  /** 'leave' 请假 | 'makeup' 补卡 */
+  /** 'leave' 请假 | 'makeup' 补卡 | 'conversion' 转正 | 'resign' 离职 | 'overtime' 加班 */
   type: string;
   leaveType: string;
   startDate: string;
@@ -20,6 +20,10 @@ export interface Approval {
   punchDate: string;
   punchTime: string;
   punchKind: string;
+  /** P2 多级审批：需要的最低角色（leave ≥3 天自动升 ADMIN） */
+  requiredRole: 'EMPLOYEE' | 'HR' | 'ADMIN' | 'SUPER_ADMIN';
+  /** P2 加班时长（小时，type='overtime' 时有效） */
+  hours: number;
 }
 
 export interface LeaveCreateInput {
@@ -50,11 +54,21 @@ export interface ResignCreateInput {
   reason: string;
 }
 
+export interface OvertimeCreateInput {
+  type: 'overtime';
+  /** 加班日期 */
+  startDate: string;
+  /** 时长（小时，0~24） */
+  hours: number;
+  reason: string;
+}
+
 export type ApprovalCreateInput =
   | LeaveCreateInput
   | MakeupCreateInput
   | ConversionCreateInput
-  | ResignCreateInput;
+  | ResignCreateInput
+  | OvertimeCreateInput;
 
 /** 审批 API（R1 v1：请假 + 补卡申请闭环 + R2 员工自助提交） */
 export const approvalApi = {

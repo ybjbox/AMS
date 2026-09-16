@@ -2,7 +2,7 @@ import PageContainer from "@/components/PageContainer";
 import React, { useCallback, useEffect, useState } from 'react';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useUserStore } from '@/store/useUserStore';
-import { CheckCircle2, Clock, FileCheck2, Send, XCircle, CalendarClock } from 'lucide-react';
+import { CheckCircle2, Clock, FileCheck2, Send, XCircle, CalendarClock, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { approvalApi, Approval, ApprovalStatus } from '@/services/approvalApi';
@@ -40,12 +40,15 @@ function approvalSummary(item: Approval): string {
   if (item.type === 'conversion') {
     return '试用期转正申请';
   }
+  if (item.type === 'overtime') {
+    return `${item.startDate} · ${item.hours} 小时`;
+  }
   return `${item.startDate}${item.endDate && item.endDate !== item.startDate ? ` ~ ${item.endDate}` : ''}`;
 }
 
-/** 条目主标题：补卡/转正/离职显示类型名，请假显示假别 */
+/** 条目主标题：补卡/转正/离职/加班显示类型名，请假显示假别 */
 function approvalTitle(item: Approval): string {
-  const map: Record<string, string> = { makeup: '补卡', conversion: '转正', resign: '离职' };
+  const map: Record<string, string> = { makeup: '补卡', conversion: '转正', resign: '离职', overtime: '加班' };
   return map[item.type] ?? item.leaveType;
 }
 
@@ -59,7 +62,7 @@ export default function Approvals() {
   const [pending, setPending] = useState<Approval[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [formType, setFormType] = useState<'leave' | 'makeup' | 'conversion' | 'resign'>('leave');
+  const [formType, setFormType] = useState<'leave' | 'makeup' | 'conversion' | 'resign' | 'overtime'>('leave');
   const [form, setForm] = useState({
     leaveType: '事假',
     startDate: '',
@@ -68,6 +71,7 @@ export default function Approvals() {
     punchTime: '',
     punchKind: '上班卡' as (typeof PUNCH_KINDS)[number],
     resignDate: '',
+    overtimeHours: '2',
     reason: '',
   });
 
@@ -115,6 +119,15 @@ export default function Approvals() {
             startDate: form.resignDate,
             reason: form.reason.trim(),
           });
+        } else if (formType === 'overtime') {
+          const hours = Number(form.overtimeHours);
+          if (!form.startDate || !Number.isFinite(hours) || hours <= 0 || hours > 24 || !form.reason.trim()) return;
+          await approvalApi.create({
+            type: 'overtime',
+            startDate: form.startDate,
+            hours: Math.round(hours * 2) / 2,
+            reason: form.reason.trim(),
+          });
         } else {
           if (!form.startDate || !form.reason.trim()) return;
           await approvalApi.create({
@@ -126,7 +139,7 @@ export default function Approvals() {
           });
         }
         toast.success('申请已提交');
-        setForm({ ...form, startDate: '', endDate: '', punchDate: '', punchTime: '', resignDate: '', reason: '' });
+        setForm({ ...form, startDate: '', endDate: '', punchDate: '', punchTime: '', resignDate: '', overtimeHours: '2', reason: '' });
         await refresh();
         setTab('mine');
       } catch (err) {
@@ -145,7 +158,9 @@ export default function Approvals() {
         description:
           item.type === 'makeup'
             ? `${item.applicant} 的补卡申请（${item.punchDate} ${item.punchTime}）`
-            : `${item.applicant} 的${item.leaveType}申请（${item.startDate}）`,
+            : item.type === 'overtime'
+              ? `${item.applicant} 的加班申请（${item.startDate}，${item.hours} 小时）`
+              : `${item.applicant} 的${item.leaveType}申请（${item.startDate}）`,
       });
       if (!ok) return;
       try {
@@ -193,6 +208,11 @@ export default function Approvals() {
                 {approvalSummary(item)}
                 · 事由：{item.reason}
               </p>
+              {item.type === 'leave' && item.requiredRole === 'ADMIN' && item.status === 'pending' && (
+                <p className="text-[11px] mt-0.5 inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                  <ShieldCheck className="w-3 h-3" aria-hidden="true" /> ≥3 天假期，需管理员终审
+                </p>
+              )}
               {item.status !== 'pending' && (
                 <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
                   审批人：{item.approver ?? '-'}
@@ -227,7 +247,7 @@ export default function Approvals() {
       <div className="page-header shrink-0">
         <div>
           <h1 className="page-title">审批中心</h1>
-          <p className="page-subtitle">请假与补卡申请的提交与审批（员工自助）</p>
+          <p className="page-subtitle">请假 / 补卡 / 转正 / 离职 / 加班的提交与审批（员工自助，长假需管理员终审）</p>
         </div>
       </div>
 
@@ -241,14 +261,15 @@ export default function Approvals() {
             <Send className="w-4 h-4 text-zinc-400" /> 提交申请
           </h2>
 
-          {/* 类型切换：请假 / 补卡 / 转正 / 离职 */}
-          <div className="flex rounded-lg bg-zinc-100 dark:bg-zinc-700/50 p-0.5" role="tablist" aria-label="申请类型">
+          {/* 类型切换：请假 / 补卡 / 转正 / 离职 / 加班 */}
+          <div className="flex rounded-lg bg-zinc-100 dark:bg-zinc-700/50 p-0.5 flex-wrap gap-y-1" role="tablist" aria-label="申请类型">
             {(
               [
                 { id: 'leave', label: '请假' },
                 { id: 'makeup', label: '补卡' },
                 { id: 'conversion', label: '转正' },
                 { id: 'resign', label: '离职' },
+                { id: 'overtime', label: '加班' },
               ] as const
             ).map((t) => (
               <button
@@ -372,6 +393,37 @@ export default function Approvals() {
             </div>
           )}
 
+          {formType === 'overtime' && (
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block">
+                <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">加班日期 <span className="text-red-500" aria-hidden="true">*</span></span>
+                <input
+                  type="date"
+                  required
+                  value={form.startDate}
+                  onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white"
+                />
+              </label>
+              <label className="block">
+                <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">时长（小时） <span className="text-red-500" aria-hidden="true">*</span></span>
+                <input
+                  type="number"
+                  required
+                  min={0.5}
+                  max={24}
+                  step={0.5}
+                  value={form.overtimeHours}
+                  onChange={(e) => setForm({ ...form, overtimeHours: e.target.value })}
+                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white"
+                />
+              </label>
+              <p className="col-span-2 text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                加班审批通过后，时长将自动计入你的调休额度（8 小时 = 1 天）；申请「调休」假时将校验余额。
+              </p>
+            </div>
+          )}
+
 
           <label className="block">
             <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
@@ -389,7 +441,9 @@ export default function Approvals() {
                     ? '请简要说明转正理由或试用期工作成果'
                     : formType === 'resign'
                       ? '请说明离职原因'
-                      : '请简要说明申请原因'
+                      : formType === 'overtime'
+                        ? '请说明加班事由（如：项目上线支援）'
+                        : '请简要说明申请原因'
               }
               className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white resize-y md:resize-y"
             />

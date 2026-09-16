@@ -5,7 +5,7 @@ import { fetchUsersPage } from '@/services/userApi';
 import { attendanceApi } from '@/services/attendanceApi';
 import { notificationApi } from '@/services/notificationApi';
 import { announcementApi, type Announcement } from '@/services/announcementApi';
-import { fetchWorkforceStats, type WorkforceStats } from '@/services/statsApi';
+import { fetchWorkforceStats, fetchAttendanceStats, type WorkforceStats, type AttendanceStats } from '@/services/statsApi';
 import { flattenDepartments, useDepartments } from '@/store/useDepartmentStore';
 import { useTodoStore } from '@/store/useTodoStore';
 import { formatDateTime } from '@/utils/dateUtils';
@@ -41,6 +41,7 @@ export interface UseDashboardReturn {
   quickActions: QuickActionItem[];
   chartData: ChartData[];
   workforce: WorkforceStats | null;
+  attendance: AttendanceStats | null;
   lastUpdated: string;
   isLoading: boolean;
 }
@@ -88,6 +89,7 @@ export function useDashboard(): UseDashboardReturn {
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [workforce, setWorkforce] = useState<WorkforceStats | null>(null);
+  const [attendance, setAttendance] = useState<AttendanceStats | null>(null);
 
   // 部门数据复用全局 store（避免绕过 store 直连 http 导致的重复请求）
   const departments = useDepartments((state) => state.departments);
@@ -100,7 +102,7 @@ export function useDashboard(): UseDashboardReturn {
     fetchDepartments();
   }, [fetchDepartments]);
 
-  // 人员流动统计（独立加载，失败不阻断仪表盘）
+  // 人员流动 + 考勤看板统计（独立加载，失败不阻断仪表盘）
   useEffect(() => {
     let cancelled = false;
     fetchWorkforceStats()
@@ -109,6 +111,13 @@ export function useDashboard(): UseDashboardReturn {
       })
       .catch(() => {
         /* 统计不可用时该区块静默隐藏 */
+      });
+    fetchAttendanceStats()
+      .then((a) => {
+        if (!cancelled) setAttendance(a);
+      })
+      .catch(() => {
+        /* 同上 */
       });
     return () => {
       cancelled = true;
@@ -196,6 +205,7 @@ export function useDashboard(): UseDashboardReturn {
     quickActions: QUICK_ACTIONS,
     chartData: raw?.chartData ?? [],
     workforce,
+    attendance,
     lastUpdated: raw?.lastUpdated ?? '',
     isLoading,
   };

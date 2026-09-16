@@ -10,13 +10,16 @@
  *  - 补卡（type='makeup'）：通过后自动补写打卡记录并刷新异常分析，
  *    打通「异常发现 → 补卡申请 → 审批 → 异常消除」链路。
  *
- * 演进方向（ROADMAP R1 完整版）：多级审批链、审批模板、抄送、撤回。
+ * P2 增强：
+ *  - 多级审批：leave ≥3 天 requiredRole 升 ADMIN（HR 决定被拦截，提示须 ADMIN 终审）；
+ *  - 加班（type='overtime'）：通过后按小时累计进 overtime_ledger（调休额度来源）。
  */
 import { db } from "./db.ts";
-import { type DbRow, asString, asNullableString } from "./sqliteUtil.ts";
+import { type DbRow, asString, asNullableString, asNumber } from "./sqliteUtil.ts";
 import { randomUUID } from "node:crypto";
 import { createNotification } from "./notificationsDb.ts";
 import { upsertRecord, analyzeAnomalies } from "./attendanceDb.ts";
+import { ROLE_LEVEL, type SystemRole } from "./authDb.ts";
 
 export type ApprovalStatus = "pending" | "approved" | "rejected";
 
@@ -38,6 +41,10 @@ export interface ApprovalRow {
   punchDate: string;
   punchTime: string;
   punchKind: string;
+  /** 多级审批：决定该申请需要的最低角色（leave ≥3 天自动升 ADMIN） */
+  requiredRole: SystemRole;
+  /** 加班时长（小时，type='overtime' 时有效） */
+  hours: number;
 }
 
 /** 幂等建表，供模块加载时调用。 */
@@ -75,6 +82,23 @@ export function ensureApprovalsTable(): void {
   if (!cols.includes("punchKind")) {
     db.exec("ALTER TABLE approvals ADD COLUMN punchKind TEXT DEFAULT ''");
   }
+  // P2：多级审批门槛 + 加班时长
+  if (!cols.includes("requiredRole")) {
+    db.exec("ALTER TABLE approvals ADD COLUMN requiredRole TEXT DEFAULT 'HR'");
+  }
+  if (!cols.includes("hours")) {
+    db.exec("ALTER TABLE approvals ADD COLUMN hours REAL DEFAULT 0");
+  }
+
+  // P2：加班调休台账（审批通过的小时数按员工累计）
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS overtime_ledger (
+      employeeId TEXT PRIMARY KEY,
+      employeeName TEXT DEFAULT '',
+      hours REAL DEFAULT 0,
+      updatedAt TEXT
+    )
+  `);
 }
 ensureApprovalsTable();
 
@@ -95,6 +119,8 @@ function rowToApproval(row: DbRow): ApprovalRow {
     punchDate: asString(row.punchDate),
     punchTime: asString(row.punchTime),
     punchKind: asString(row.punchKind),
+    requiredRole: (asString(row.requiredRole) || "HR") as SystemRole,
+    hours: asNumber(row.hours),
   };
 }
 
@@ -113,11 +139,20 @@ export function createApproval(input: {
   punchDate?: string;
   punchTime?: string;
   punchKind?: string;
+  hours?: number;
 }): ApprovalRow {
   const id = randomUUID();
+  // P2 多级审批：请假的结束日期 ≥3 天 → 需要 ADMIN 终审
+  let requiredRole: SystemRole = "HR";
+  if ((input.type ?? "leave") === "leave" && input.endDate) {
+    const days = Math.round(
+      (new Date(input.endDate).getTime() - new Date(input.startDate).getTime()) / 86_400_000
+    ) + 1;
+    if (days >= 3) requiredRole = "ADMIN";
+  }
   db.prepare(
-    `INSERT INTO approvals (id, applicant, type, leaveType, startDate, endDate, reason, punchDate, punchTime, punchKind)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO approvals (id, applicant, type, leaveType, startDate, endDate, reason, punchDate, punchTime, punchKind, hours, requiredRole)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     id,
     input.applicant,
@@ -128,7 +163,9 @@ export function createApproval(input: {
     input.reason,
     input.punchDate ?? "",
     input.punchTime ?? "",
-    input.punchKind ?? ""
+    input.punchKind ?? "",
+    input.hours ?? 0,
+    requiredRole
   );
   return getApproval(id)!;
 }
@@ -153,6 +190,9 @@ export interface DecideResult {
   row?: ApprovalRow;
   notFound?: boolean;
   conflict?: boolean;
+  /** P2：自审拦截 / 多级审批门槛拦截 */
+  forbidden?: boolean;
+  reason?: string;
 }
 
 /** 审批决定：仅 pending 可决定（并发下用 status='pending' 条件防双审） */
@@ -160,10 +200,24 @@ export function decideApproval(
   id: string,
   decision: Exclude<ApprovalStatus, "pending">,
   approver: string,
-  comment = ""
+  comment = "",
+  approverRole?: SystemRole
 ): DecideResult {
   const row = getApproval(id);
   if (!row) return { notFound: true };
+
+  // P2 多级审批：申请人不能自审；低于门槛角色的决定被拦截（HR 提交的长假须 ADMIN 终审）
+  if (row.status === "pending") {
+    if (row.applicant === approver) return { forbidden: true, row, reason: "不能审批自己的申请" };
+    const level = ROLE_LEVEL[approverRole ?? "HR"] ?? ROLE_LEVEL.HR;
+    if (level < (ROLE_LEVEL[row.requiredRole] ?? ROLE_LEVEL.HR)) {
+      return {
+        forbidden: true,
+        row,
+        reason: `该申请需要 ${row.requiredRole} 及以上角色终审`,
+      };
+    }
+  }
 
   const info = db
     .prepare(
@@ -185,6 +239,8 @@ export function decideApproval(
         applyConversion(updated);
       } else if (updated.type === "resign") {
         applyResign(updated);
+      } else if (updated.type === "overtime") {
+        applyOvertime(updated);
       }
     } catch (e) {
       // 领域动作失败不回滚审批（审批决定本身有效），但必须留下告警
@@ -197,17 +253,22 @@ export function decideApproval(
     makeup: "补卡",
     conversion: "转正",
     resign: "离职",
+    overtime: "加班",
   };
   const subject =
     updated.type === "makeup"
       ? `你的${updated.punchKind || "补卡"}申请`
-      : `你的${typeLabel[updated.type] ?? updated.leaveType}申请`;
+      : updated.type === "overtime"
+        ? `你的加班申请（${updated.hours} 小时）`
+        : `你的${typeLabel[updated.type] ?? updated.leaveType}申请`;
   const detail =
     updated.type === "makeup"
       ? `${updated.punchDate} ${updated.punchTime} 的补卡`
       : updated.type === "resign"
         ? `最后工作日 ${updated.startDate}`
-        : `${updated.startDate} 提交的申请`;
+        : updated.type === "overtime"
+          ? `${updated.startDate} 共 ${updated.hours} 小时，已计入调休额度`
+          : `${updated.startDate} 提交的申请`;
   createNotification({
     title: `${subject}已${decision === "approved" ? "通过" : "被驳回"}`,
     message: `${detail}，审批人：${approver}${comment ? `，意见：${comment}` : ""}`,
@@ -228,6 +289,43 @@ function findApplicantEmployee(applicant: string): { employeeId: string; employe
   const emp = db.prepare("SELECT id, name FROM employees WHERE id = ?").get(employeeId);
   if (!emp) return null;
   return { employeeId: asString(emp.id), employeeName: asString(emp.name) };
+}
+
+/**
+ * P2 加班领域动作：通过后把加班小时数计入调休台账（overtime_ledger）。
+ * 调休额度按员工累计，请假类型「调休」在提交时校验余额（见 approvalsRouter）。
+ */
+function applyOvertime(approval: ApprovalRow): void {
+  const hours = approval.hours;
+  if (!hours || hours <= 0) return;
+  const emp = findApplicantEmployee(approval.applicant);
+  if (!emp) {
+    createNotification({
+      title: "加班时长未计入调休",
+      message: "你的账号未关联员工档案，加班时长无法累计，请联系管理员完成关联。",
+      type: "warning",
+      recipient: approval.applicant,
+    });
+    return;
+  }
+  db.prepare(
+    `INSERT INTO overtime_ledger (employeeId, employeeName, hours, updatedAt)
+     VALUES (?, ?, ?, datetime('now', 'localtime'))
+     ON CONFLICT(employeeId) DO UPDATE SET
+       hours = hours + excluded.hours,
+       employeeName = excluded.employeeName,
+       updatedAt = excluded.updatedAt`
+  ).run(emp.employeeId, emp.employeeName, hours);
+}
+
+/** 调休余额（小时） */
+export function getCompBalance(employeeId: string): number {
+  try {
+    const row = db.prepare("SELECT hours FROM overtime_ledger WHERE employeeId = ?").get(employeeId);
+    return asNumber(row?.hours);
+  } catch {
+    return 0;
+  }
 }
 
 /**

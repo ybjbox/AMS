@@ -15,6 +15,39 @@ import {
   upsertRecord, deleteRecord, clearRecords,
   listAnomalies, analyzeAnomalies,
   VersionConflictError, monthlySummary } from "./attendanceDb.ts";
+import { db } from "./db.ts";
+import { asString } from "./sqliteUtil.ts";
+import { createNotification } from "./notificationsDb.ts";
+
+/**
+ * P2 考勤异常通知：分析完成后按员工汇总当日异常，发给已关联账号的当事员工。
+ * 幂等性由 notificationsDb 的未读去重保证（同标题+同内容不重复发）。
+ * 仅通知当日异常，避免历史异常反复打扰。
+ */
+function notifyTodayAnomalies(anomalies: ReturnType<typeof analyzeAnomalies>): number {
+  const today = new Date().toISOString().slice(0, 10);
+  const byEmployee = new Map<string, string[]>();
+  for (const a of anomalies) {
+    if (a.date !== today) continue;
+    const list = byEmployee.get(a.employeeId) ?? [];
+    list.push(a.description);
+    byEmployee.set(a.employeeId, list);
+  }
+  let sent = 0;
+  for (const [employeeId, descriptions] of byEmployee) {
+    const acc = db.prepare("SELECT username FROM accounts WHERE employeeId = ? AND enabled = 1").get(employeeId);
+    const username = asString(acc?.username);
+    if (!username) continue; // 未关联账号的员工无法接收通知，跳过
+    createNotification({
+      title: `考勤异常提醒（${today}）`,
+      message: `今日发现 ${descriptions.length} 条考勤异常：${descriptions.join("；")}。如有疑问请申请补卡或联系 HR。`,
+      type: "warning",
+      recipient: username,
+    });
+    sent += 1;
+  }
+  return sent;
+}
 
 export const attendanceRouter = Router();
 attendanceRouter.use(json({ limit: "20mb" }));
@@ -185,5 +218,6 @@ attendanceRouter.get("/anomalies", (_req, res) => {
 
 attendanceRouter.post("/analyze", (_req, res) => {
   const anomalies = analyzeAnomalies();
-  res.json({ success: true, message: `分析完成，共发现 ${anomalies.length} 条异常`, anomalies });
+  const notified = notifyTodayAnomalies(anomalies);
+  res.json({ success: true, message: `分析完成，共发现 ${anomalies.length} 条异常`, anomalies, notified });
 });

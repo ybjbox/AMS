@@ -17,6 +17,7 @@ import {
   listMine,
   listPending,
   decideApproval,
+  getCompBalance,
 } from "./approvalsDb.ts";
 
 export const approvalsRouter = Router();
@@ -27,7 +28,7 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const createSchema = z
   .object({
     /** 'leave' 请假（默认） | 'makeup' 补卡 | 'conversion' 转正 | 'resign' 离职 */
-    type: z.enum(["leave", "makeup", "conversion", "resign"]).optional(),
+    type: z.enum(["leave", "makeup", "conversion", "resign", "overtime"]).optional(),
     leaveType: z.enum(["事假", "病假", "年假", "调休"]).optional(),
     startDate: z
       .string()
@@ -45,6 +46,8 @@ const createSchema = z
       .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "补卡时间格式应为 HH:mm")
       .optional(),
     punchKind: z.enum(["上班卡", "下班卡"]).optional(),
+    // 加班时长（小时，type='overtime' 时必填）
+    hours: z.number().optional(),
   })
   .loose();
 
@@ -117,9 +120,45 @@ approvalsRouter.post("/", validateBody(createSchema), (req, res, next) => {
       return res.status(201).json(row);
     }
 
+    // P2 加班分支：日期 + 时长必填，时长 0.5~24h；startDate 复用为加班日期
+    if (req.body.type === "overtime") {
+      const hours = Number(req.body.hours);
+      if (!req.body.startDate) return res.status(400).json({ error: "请填写加班日期" });
+      if (!Number.isFinite(hours) || hours <= 0 || hours > 24) {
+        return res.status(400).json({ error: "加班时长需为 0~24 之间的数字（小时）" });
+      }
+      const row = createApproval({
+        applicant: req.auth!.username,
+        type: "overtime",
+        leaveType: "加班",
+        startDate: req.body.startDate,
+        endDate: null,
+        reason: req.body.reason,
+        hours: Math.round(hours * 2) / 2,
+      });
+      return res.status(201).json(row);
+    }
+
     // 请假分支（默认）
     if (!req.body.startDate) {
       return res.status(400).json({ error: "开始日期不能为空" });
+    }
+    // P2：调休假需校验余额（overtime_ledger 累计的加班时长，8h=1 天）
+    if (req.body.leaveType === "调休") {
+      const accountRow = db
+        .prepare("SELECT employeeId FROM accounts WHERE username = ?")
+        .get(req.auth!.username);
+      const employeeId = asString(accountRow?.employeeId);
+      const start = new Date(req.body.startDate);
+      const end = req.body.endDate ? new Date(req.body.endDate) : start;
+      const days = Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1;
+      const balance = employeeId ? getCompBalance(employeeId) : 0;
+      if (days * 8 > balance) {
+        return res.status(400).json({
+          error: `调休余额不足：需 ${days} 天（${days * 8}h），当前余额 ${balance}h`,
+          code: "COMP_BALANCE_INSUFFICIENT",
+        });
+      }
     }
     const row = createApproval({
       applicant: req.auth!.username,
@@ -157,9 +196,15 @@ approvalsRouter.put("/:id/decide", requireRole("HR"), validateBody(decideSchema)
       req.params.id,
       req.body.status,
       req.auth!.username,
-      typeof req.body.comment === "string" ? req.body.comment : ""
+      typeof req.body.comment === "string" ? req.body.comment : "",
+      req.auth!.systemRole
     );
     if (result.notFound) return res.status(404).json({ error: "申请不存在" });
+    if (result.forbidden) {
+      return res
+        .status(403)
+        .json({ error: result.reason ?? "无权审批该申请", code: "APPROVAL_FORBIDDEN" });
+    }
     if (result.conflict) {
       return res
         .status(409)
