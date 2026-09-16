@@ -49,11 +49,11 @@ export function UserToolbar({
               <SheetTrigger
                 className={`w-full inline-flex justify-center items-center px-4 py-2.5 rounded-xl text-sm font-medium transition duration-300 ${
                   activeFilterCount > 0
-                    ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 shadow-sm'
+                    ? 'text-brand-700 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/20 shadow-sm'
                     : 'text-zinc-700 dark:text-zinc-200 bg-zinc-100/50 dark:bg-zinc-800 hover:bg-zinc-200/50 dark:hover:bg-zinc-700'
                 }`}
               >
-                <Filter className={`h-4 w-4 mr-2 ${activeFilterCount > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400'}`} />
+                <Filter className={`h-4 w-4 mr-2 ${activeFilterCount > 0 ? 'text-brand-600 dark:text-brand-400' : 'text-zinc-400'}`} />
                 筛选 {activeFilterCount > 0 && `(${activeFilterCount})`}
               </SheetTrigger>
               <SheetContent side="bottom" className="h-auto max-h-[70vh] rounded-t-2xl overflow-y-auto">
@@ -77,12 +77,12 @@ export function UserToolbar({
               onClick={() => setIsFilterOpen(!isFilterOpen)}
               className={`inline-flex items-center px-4 py-2.5 rounded-xl text-sm font-medium transition duration-300 ${
                 activeFilterCount > 0 || isFilterOpen
-                  ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 shadow-sm'
+                  ? 'text-brand-700 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/20 shadow-sm'
                   : 'text-zinc-700 dark:text-zinc-200 bg-zinc-100/50 dark:bg-zinc-800 hover:bg-zinc-200/50 dark:hover:bg-zinc-700'
               }`}
             >
               <Filter
-                className={`h-4 w-4 mr-2 ${activeFilterCount > 0 || isFilterOpen ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400'}`}
+                className={`h-4 w-4 mr-2 ${activeFilterCount > 0 || isFilterOpen ? 'text-brand-600 dark:text-brand-400' : 'text-zinc-400'}`}
               />
               筛选 {activeFilterCount > 0 && `(${activeFilterCount})`}
             </button>

@@ -26,7 +26,7 @@ function AppLifecycleManager() {
 function GlobalLoadingFallback() {
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-900">
-      <div className="animate-spin rounded-full h-12 w-12 border-4 border-zinc-200 border-t-emerald-600 dark:border-zinc-700 dark:border-t-emerald-500"></div>
+      <div className="animate-spin rounded-full h-12 w-12 border-4 border-zinc-200 border-t-brand-600 dark:border-zinc-700 dark:border-t-brand-500"></div>
       <p className="mt-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">系统加载中…</p>
     </div>
   );
@@ -40,7 +40,7 @@ function GlobalLoadingOverlay() {
   return (
     <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-zinc-900/50 backdrop-blur-sm">
       <div className="bg-white dark:bg-zinc-800 p-6 rounded-2xl shadow-xl flex flex-col items-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-4 border-zinc-200 border-t-emerald-600 dark:border-zinc-700 dark:border-t-emerald-500"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-4 border-zinc-200 border-t-brand-600 dark:border-zinc-700 dark:border-t-brand-500"></div>
         <p className="mt-4 text-sm font-medium text-zinc-700 dark:text-zinc-300">处理中，请稍候…</p>
       </div>
     </div>

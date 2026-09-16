@@ -52,7 +52,7 @@ const RoleTreeNode = React.memo(function RoleTreeNode({
             <button
               data-id={node.id}
               onClick={onAddRole}
-              className="p-1 text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-md transition-colors shrink-0"
+              className="p-1 text-zinc-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-md transition-colors shrink-0"
               title="新增职位"
               aria-label={`新增职位：${node.name}`}
             >
@@ -76,7 +76,7 @@ const RoleTreeNode = React.memo(function RoleTreeNode({
                         <button
                           data-id={role.id}
                           onClick={onEditRole}
-                          className="p-1.5 text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-md transition-colors"
+                          className="p-1.5 text-zinc-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-md transition-colors"
                           title="编辑"
                         >
                           <Edit2 className="w-3 h-3" />

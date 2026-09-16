@@ -152,7 +152,7 @@ export function TreeSelect({
               aria-expanded={hasChildren || hasLeafContent ? isExpanded : undefined}
               aria-selected={value === displayName}
               className={`flex items-center py-2 px-3 hover:bg-zinc-50 dark:hover:bg-zinc-700 cursor-pointer text-sm text-zinc-700 dark:text-zinc-200 outline-none ${
-                isFocused ? 'bg-emerald-50 dark:bg-zinc-700 ring-1 ring-inset ring-emerald-500' : ''
+                isFocused ? 'bg-brand-50 dark:bg-zinc-700 ring-1 ring-inset ring-brand-500' : ''
               }`}
               style={{ paddingLeft: `${depth * 1.5 + 0.75}rem` }}
               onClick={(e) => onNodeClick(e, node)}
@@ -178,7 +178,7 @@ export function TreeSelect({
                 )}
               </div>
               <span
-                className={value === displayName ? 'font-semibold text-emerald-600 dark:text-emerald-400' : 'font-medium'}
+                className={value === displayName ? 'font-semibold text-brand-600 dark:text-brand-400' : 'font-medium'}
               >
                 {displayName}
               </span>
@@ -204,7 +204,7 @@ export function TreeSelect({
           type="text"
           value={value}
           readOnly
-          className="block w-full bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-2 px-3 pr-8 focus:outline-none focus:ring-4 focus:ring-emerald-600/20 focus:border-emerald-600 transition duration-200 sm:text-sm cursor-pointer text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500"
+          className="block w-full bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-2 px-3 pr-8 focus:outline-none focus:ring-4 focus:ring-brand-600/20 focus:border-brand-600 transition duration-200 sm:text-sm cursor-pointer text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500"
           placeholder={placeholder}
           required={required}
           aria-haspopup="tree"
@@ -227,7 +227,7 @@ export function TreeSelect({
                 <button
                   type="button"
                   onClick={isAllExpanded() ? collapseAll : expandAll}
-                  className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 px-2 py-1 rounded hover:bg-emerald-50 dark:hover:bg-zinc-700 transition-colors"
+                  className="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 px-2 py-1 rounded hover:bg-brand-50 dark:hover:bg-zinc-700 transition-colors"
                 >
                   {isAllExpanded() ? '一键收起' : '一键展开'}
                 </button>

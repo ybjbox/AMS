@@ -52,11 +52,11 @@ const DepartmentTreeNode = React.memo(function DepartmentTreeNode({
           </span>
 
           {level === 0 ? (
-            <Building2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            <Building2 className="w-5 h-5 text-brand-600 shrink-0" />
           ) : isExpanded && hasChildren ? (
-            <FolderOpen className="w-4 h-4 text-emerald-600 shrink-0" />
+            <FolderOpen className="w-4 h-4 text-brand-600 shrink-0" />
           ) : (
-            <Folder className="w-4 h-4 text-emerald-600 shrink-0" />
+            <Folder className="w-4 h-4 text-brand-600 shrink-0" />
           )}
 
           <span
@@ -78,7 +78,7 @@ const DepartmentTreeNode = React.memo(function DepartmentTreeNode({
               <button
                 data-id={node.id}
                 onClick={onAddChild}
-                className="p-1.5 text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-md transition-colors"
+                className="p-1.5 text-zinc-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-md transition-colors"
                 title="添加子部门"
                 aria-label={`添加子部门：${node.name}`}
               >
@@ -87,7 +87,7 @@ const DepartmentTreeNode = React.memo(function DepartmentTreeNode({
               <button
                 data-id={node.id}
                 onClick={onEdit}
-                className="p-1.5 text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-md transition-colors"
+                className="p-1.5 text-zinc-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-md transition-colors"
                 title="编辑"
               >
                 <Edit2 className="w-4 h-4" />

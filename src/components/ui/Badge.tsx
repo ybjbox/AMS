@@ -10,7 +10,7 @@ export type BadgeVariant =
 
 const variantClasses: Record<BadgeVariant, string> = {
   // 对比度对齐：浅色模式下用深色文字（≈600 级），保证 12px 徽章达 WCAG AA
-  success: 'bg-emerald-50 text-emerald-700 dark:bg-success/10 dark:text-success',
+  success: 'bg-brand-50 text-brand-700 dark:bg-success/10 dark:text-success',
   warning: 'bg-amber-50 text-amber-700 dark:bg-warning/10 dark:text-warning',
   destructive: 'bg-red-50 text-red-700 dark:bg-destructive/10 dark:text-destructive',
   neutral: 'bg-muted text-muted-foreground',

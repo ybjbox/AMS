@@ -16,7 +16,7 @@ const ThemeToggle = React.memo(function ThemeToggle() {
       <div className="flex items-center justify-between bg-zinc-50 dark:bg-zinc-900/50 rounded-lg p-1">
         <button
           onClick={handleSetLight}
-          className={`p-1.5 rounded-md transition-colors ${theme === 'light' ? 'bg-white dark:bg-zinc-700 shadow-sm text-emerald-600 dark:text-emerald-400' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
+          className={`p-1.5 rounded-md transition-colors ${theme === 'light' ? 'bg-white dark:bg-zinc-700 shadow-sm text-brand-600 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
           title="浅色模式"
           aria-label="浅色模式"
           aria-pressed={theme === 'light'}
@@ -25,7 +25,7 @@ const ThemeToggle = React.memo(function ThemeToggle() {
         </button>
         <button
           onClick={handleSetDark}
-          className={`p-1.5 rounded-md transition-colors ${theme === 'dark' ? 'bg-white dark:bg-zinc-700 shadow-sm text-emerald-600 dark:text-emerald-400' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
+          className={`p-1.5 rounded-md transition-colors ${theme === 'dark' ? 'bg-white dark:bg-zinc-700 shadow-sm text-brand-600 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
           title="深色模式"
           aria-label="深色模式"
           aria-pressed={theme === 'dark'}
@@ -34,7 +34,7 @@ const ThemeToggle = React.memo(function ThemeToggle() {
         </button>
         <button
           onClick={handleSetSystem}
-          className={`p-1.5 rounded-md transition-colors ${theme === 'system' ? 'bg-white dark:bg-zinc-700 shadow-sm text-emerald-600 dark:text-emerald-400' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
+          className={`p-1.5 rounded-md transition-colors ${theme === 'system' ? 'bg-white dark:bg-zinc-700 shadow-sm text-brand-600 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
           title="跟随系统"
           aria-label="跟随系统"
           aria-pressed={theme === 'system'}

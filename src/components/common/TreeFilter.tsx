@@ -47,10 +47,10 @@ export function TreeFilter({ nodes, selectedValues, onToggle, getDisplayName = (
                 )}
               </div>
               <div
-                className={`flex items-center space-x-2 ${isSelected ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-zinc-700 dark:text-zinc-200'}`}
+                className={`flex items-center space-x-2 ${isSelected ? 'text-brand-600 dark:text-brand-400 font-medium' : 'text-zinc-700 dark:text-zinc-200'}`}
               >
                 <div
-                  className={`w-4 h-4 rounded border flex items-center justify-center ${isSelected ? 'bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-inner border-emerald-600' : 'border-zinc-200/80 dark:border-zinc-600'}`}
+                  className={`w-4 h-4 rounded border flex items-center justify-center ${isSelected ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner border-brand-600' : 'border-zinc-200/80 dark:border-zinc-600'}`}
                 >
                   {isSelected && <Check className="w-3 h-3 text-white" />}
                 </div>
@@ -70,7 +70,7 @@ export function TreeFilter({ nodes, selectedValues, onToggle, getDisplayName = (
       <div className="flex justify-end p-1 border-b border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-t-md">
         <button
           onClick={isAllExpanded() ? collapseAll : expandAll}
-          className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 px-2 py-1 rounded hover:bg-emerald-50 dark:hover:bg-zinc-700 transition-colors"
+          className="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 px-2 py-1 rounded hover:bg-brand-50 dark:hover:bg-zinc-700 transition-colors"
         >
           {isAllExpanded() ? '一键收起' : '一键展开'}
         </button>

@@ -46,7 +46,7 @@ const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: Sor
       style={style}
       className={`flex items-center p-3 rounded-xl border transition ${
         col.selected
-          ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 shadow-sm'
+          ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-200 dark:border-brand-800 text-brand-700 dark:text-brand-400 shadow-sm'
           : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
       }`}
     >
@@ -62,7 +62,7 @@ const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: Sor
         <div
           className={`w-4 h-4 rounded border mr-3 flex items-center justify-center transition-colors ${
             col.selected
-              ? 'bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-inner border-emerald-600'
+              ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner border-brand-600'
               : 'bg-white dark:bg-zinc-800 border-zinc-200/80 dark:border-zinc-600'
           }`}
         >
@@ -209,7 +209,7 @@ export function ExportModal({
               type="text"
               value={exportConfig.title}
               onChange={(e) => setExportConfig((prev: ExportConfig) => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 border border-zinc-200/80 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-emerald-600/20 transition duration-200 outline-none bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500"
+              className="w-full px-3 py-2 border border-zinc-200/80 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-brand-600/20 transition duration-200 outline-none bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500"
               placeholder="请输入表格标题"
             />
           </div>
@@ -225,7 +225,7 @@ export function ExportModal({
                     onChange={(e) => setExportConfig((prev: ExportConfig) => ({ ...prev, includeResigned: e.target.checked }))}
                   />
                   <div
-                    className={`block w-10 h-6 rounded-full transition-colors ${exportConfig.includeResigned ? 'bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-inner' : 'bg-zinc-300 dark:bg-zinc-600'}`}
+                    className={`block w-10 h-6 rounded-full transition-colors ${exportConfig.includeResigned ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner' : 'bg-zinc-300 dark:bg-zinc-600'}`}
                   ></div>
                   <div
                     className={`absolute left-1 top-1 bg-white dark:bg-zinc-800 w-4 h-4 rounded-full transition-transform ${exportConfig.includeResigned ? 'translate-x-4' : ''}`}
@@ -283,7 +283,7 @@ export function ExportModal({
                     onChange={(e) => setExportConfig((prev: ExportConfig) => ({ ...prev, isDoubleSided: e.target.checked }))}
                   />
                   <div
-                    className={`block w-8 h-5 rounded-full transition-colors ${exportConfig.isDoubleSided ? 'bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-inner' : 'bg-zinc-300 dark:bg-zinc-600'}`}
+                    className={`block w-8 h-5 rounded-full transition-colors ${exportConfig.isDoubleSided ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner' : 'bg-zinc-300 dark:bg-zinc-600'}`}
                   ></div>
                   <div
                     className={`absolute left-0.5 top-0.5 bg-white dark:bg-zinc-800 w-4 h-4 rounded-full transition-transform ${exportConfig.isDoubleSided ? 'translate-x-3' : ''}`}
@@ -299,7 +299,7 @@ export function ExportModal({
               onClick={() => setExportConfig((prev: ExportConfig) => ({ ...prev, mode: 'theme' }))}
               className={`flex-1 py-1.5 text-xs font-medium rounded-md transition ${
                 exportConfig.mode === 'theme'
-                  ? 'bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                  ? 'bg-white dark:bg-zinc-800 text-brand-600 dark:text-brand-400 shadow-sm'
                   : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
               }`}
             >
@@ -309,7 +309,7 @@ export function ExportModal({
               onClick={() => setExportConfig((prev: ExportConfig) => ({ ...prev, mode: 'script' }))}
               className={`flex-1 py-1.5 text-xs font-medium rounded-md transition ${
                 exportConfig.mode === 'script'
-                  ? 'bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                  ? 'bg-white dark:bg-zinc-800 text-brand-600 dark:text-brand-400 shadow-sm'
                   : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
               }`}
             >
@@ -328,7 +328,7 @@ export function ExportModal({
                     onClick={onThemeSelect}
                     className={`flex flex-col items-center p-2 rounded-xl border transition ${
                       exportConfig.themeId === theme.id
-                        ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 ring-2 ring-emerald-600/20'
+                        ? 'border-brand-600 bg-brand-50 dark:bg-brand-900/20 ring-2 ring-brand-600/20'
                         : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-200/80 dark:hover:border-zinc-600'
                     }`}
                   >
@@ -337,7 +337,7 @@ export function ExportModal({
                       style={{ backgroundColor: `#${theme.headerFill.substring(2)}` }}
                     ></div>
                     <span
-                      className={`text-[10px] font-medium truncate w-full text-center ${exportConfig.themeId === theme.id ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-600 dark:text-zinc-400'}`}
+                      className={`text-[10px] font-medium truncate w-full text-center ${exportConfig.themeId === theme.id ? 'text-brand-700 dark:text-brand-400' : 'text-zinc-600 dark:text-zinc-400'}`}
                     >
                       {theme.name}
                     </span>
@@ -356,16 +356,16 @@ export function ExportModal({
                     onClick={onScriptSelect}
                     className={`w-full flex items-center p-3 rounded-xl border transition ${
                       exportConfig.templateName === script.name
-                        ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 ring-2 ring-emerald-600/20'
+                        ? 'border-brand-600 bg-brand-50 dark:bg-brand-900/20 ring-2 ring-brand-600/20'
                         : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-200/80 dark:hover:border-zinc-600'
                     }`}
                   >
-                    <div className="p-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg mr-3">
-                      <FileCode className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <div className="p-1.5 bg-brand-100 dark:bg-brand-900/30 rounded-lg mr-3">
+                      <FileCode className="w-4 h-4 text-brand-600 dark:text-brand-400" />
                     </div>
                     <div className="text-left">
                       <div
-                        className={`text-sm font-semibold ${exportConfig.templateName === script.name ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-900 dark:text-white'}`}
+                        className={`text-sm font-semibold ${exportConfig.templateName === script.name ? 'text-brand-700 dark:text-brand-400' : 'text-zinc-900 dark:text-white'}`}
                       >
                         {script.name}.js
                       </div>
@@ -374,7 +374,7 @@ export function ExportModal({
                       </div>
                     </div>
                     {exportConfig.templateName === script.name && (
-                      <div className="ml-auto w-2 h-2 bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-inner rounded-full"></div>
+                      <div className="ml-auto w-2 h-2 bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner rounded-full"></div>
                     )}
                   </button>
                 ))}

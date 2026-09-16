@@ -51,15 +51,15 @@ const QUICK_ACTIONS: QuickActionItem[] = [
     name: '添加员工',
     href: '/users',
     icon: Users,
-    color: 'text-emerald-600 dark:text-emerald-400',
-    bg: 'bg-emerald-50 dark:bg-emerald-900/30',
+    color: 'text-brand-600 dark:text-brand-400',
+    bg: 'bg-brand-50 dark:bg-brand-900/30',
   },
   {
     name: '待办事项',
     href: '/todos',
     icon: FileText,
-    color: 'text-emerald-600 dark:text-emerald-400',
-    bg: 'bg-emerald-50 dark:bg-emerald-900/30',
+    color: 'text-brand-600 dark:text-brand-400',
+    bg: 'bg-brand-50 dark:bg-brand-900/30',
   },
   {
     name: '部门调整',
@@ -192,8 +192,8 @@ export function useDashboard(): UseDashboardReturn {
   const stats = useMemo<StatItem[]>(() => {
     const deptCount = flattenDepartments(departments).length;
     return [
-      { name: '总员工数', value: String(raw?.totalEmployees ?? 0), change: '—', trend: 'neutral', icon: Users, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/30' },
-      { name: '今日打卡', value: String(raw?.todayPunchers ?? 0), change: '—', trend: 'neutral', icon: Activity, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/30' },
+      { name: '总员工数', value: String(raw?.totalEmployees ?? 0), change: '—', trend: 'neutral', icon: Users, color: 'text-brand-600 dark:text-brand-400', bg: 'bg-brand-50 dark:bg-brand-900/30' },
+      { name: '今日打卡', value: String(raw?.todayPunchers ?? 0), change: '—', trend: 'neutral', icon: Activity, color: 'text-brand-600 dark:text-brand-400', bg: 'bg-brand-50 dark:bg-brand-900/30' },
       { name: '待办事项', value: String(pendingTodos), change: '—', trend: 'neutral', icon: FileText, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/30' },
       { name: '部门数量', value: String(deptCount), change: '—', trend: 'neutral', icon: Briefcase, color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-900/30' },
     ];

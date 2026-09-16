@@ -20,7 +20,7 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit, onR
       onClose={onClose}
       title={
         <div className="flex items-center">
-          <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-lg mr-4">
+          <div className="h-10 w-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 font-bold text-lg mr-4">
             {selectedUser?.name.charAt(0)}
           </div>
           员工详细信息
@@ -193,7 +193,7 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit, onR
                           ? 'bg-amber-100 text-amber-800'
                           : selectedUser.status === '离职'
                             ? 'bg-zinc-200 text-zinc-800 dark:text-zinc-200'
-                            : 'bg-emerald-100 text-emerald-800'
+                            : 'bg-zinc-100 text-zinc-800'
                     }`}
                   >
                     {selectedUser.status}

@@ -151,7 +151,7 @@ export function PrintSettingsModal({
               />
             </div>
           </div>
-          <div className="text-xs text-emerald-600 mt-1">默认使用A4纸的尺寸</div>
+          <div className="text-xs text-brand-600 mt-1">默认使用A4纸的尺寸</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">标题字号 (px)</label>
@@ -299,7 +299,7 @@ export function PrintSettingsModal({
                     type="checkbox"
                     checked={printSettings.showMembers}
                     onChange={(e) => setPrintSettings((prev) => ({ ...prev, showMembers: e.target.checked }))}
-                    className="rounded border-zinc-200/80 dark:border-zinc-600 text-emerald-600 focus:ring-emerald-600 dark:bg-zinc-700"
+                    className="rounded border-zinc-200/80 dark:border-zinc-600 text-brand-600 focus:ring-brand-600 dark:bg-zinc-700"
                   />
                   <span className="text-sm text-zinc-700 dark:text-zinc-300">显示成员名单</span>
                 </label>
@@ -310,7 +310,7 @@ export function PrintSettingsModal({
                         type="checkbox"
                         checked={printSettings.showIndex}
                         onChange={(e) => setPrintSettings((prev) => ({ ...prev, showIndex: e.target.checked }))}
-                        className="rounded border-zinc-200/80 dark:border-zinc-600 text-emerald-600 focus:ring-emerald-600 dark:bg-zinc-700"
+                        className="rounded border-zinc-200/80 dark:border-zinc-600 text-brand-600 focus:ring-brand-600 dark:bg-zinc-700"
                       />
                       <span className="text-sm text-zinc-700 dark:text-zinc-300">显示序号</span>
                     </label>
@@ -319,7 +319,7 @@ export function PrintSettingsModal({
                         type="checkbox"
                         checked={printSettings.showDepartment}
                         onChange={(e) => setPrintSettings((prev) => ({ ...prev, showDepartment: e.target.checked }))}
-                        className="rounded border-zinc-200/80 dark:border-zinc-600 text-emerald-600 focus:ring-emerald-600 dark:bg-zinc-700"
+                        className="rounded border-zinc-200/80 dark:border-zinc-600 text-brand-600 focus:ring-brand-600 dark:bg-zinc-700"
                       />
                       <span className="text-sm text-zinc-700 dark:text-zinc-300">显示部门</span>
                     </label>
@@ -328,7 +328,7 @@ export function PrintSettingsModal({
                         type="checkbox"
                         checked={printSettings.showRole}
                         onChange={(e) => setPrintSettings((prev) => ({ ...prev, showRole: e.target.checked }))}
-                        className="rounded border-zinc-200/80 dark:border-zinc-600 text-emerald-600 focus:ring-emerald-600 dark:bg-zinc-700"
+                        className="rounded border-zinc-200/80 dark:border-zinc-600 text-brand-600 focus:ring-brand-600 dark:bg-zinc-700"
                       />
                       <span className="text-sm text-zinc-700 dark:text-zinc-300">显示职位</span>
                     </label>

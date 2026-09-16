@@ -134,11 +134,11 @@ export default function Settings() {
                     onClick={() => handleTabChange(tab.id)}
                     className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
                       isActive
-                        ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400'
+                        ? 'bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-400'
                         : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white'
                     }`}
                   >
-                    <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-400 dark:text-zinc-500'}`} />
+                    <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-brand-700 dark:text-brand-400' : 'text-zinc-400 dark:text-zinc-500'}`} />
                     {tab.label}
                   </button>
                 );

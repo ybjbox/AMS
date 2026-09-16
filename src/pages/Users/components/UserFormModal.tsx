@@ -141,7 +141,7 @@ export function UserFormModal({
     >
       <form id="employee-form" className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
         <div>
-          <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-emerald-600 pl-2">基本信息</h4>
+          <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-brand-600 pl-2">基本信息</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
@@ -202,7 +202,7 @@ export function UserFormModal({
         </div>
 
         <div>
-          <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-emerald-600 pl-2">工作信息</h4>
+          <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-brand-600 pl-2">工作信息</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
@@ -232,7 +232,7 @@ export function UserFormModal({
                   return deptRoles.map((role) => (
                     <div
                       key={`role-${role.id}`}
-                      className="flex items-center py-2 px-3 hover:bg-emerald-50 dark:hover:bg-zinc-700 cursor-pointer text-sm text-zinc-600 dark:text-zinc-300"
+                      className="flex items-center py-2 px-3 hover:bg-brand-50 dark:hover:bg-zinc-700 cursor-pointer text-sm text-zinc-600 dark:text-zinc-300"
                       style={{ paddingLeft: `${(depth + 1) * 1.5 + 0.75}rem` }}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -246,7 +246,7 @@ export function UserFormModal({
                       </div>
                       <span
                         className={
-                          selectedRoleName === role.name ? 'font-semibold text-emerald-600 dark:text-emerald-400' : ''
+                          selectedRoleName === role.name ? 'font-semibold text-brand-600 dark:text-brand-400' : ''
                         }
                       >
                         {role.name}
@@ -341,7 +341,7 @@ export function UserFormModal({
         </div>
 
         <div>
-          <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-emerald-600 pl-2">合同与社保</h4>
+          <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-brand-600 pl-2">合同与社保</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">是否购买社保</label>
@@ -375,7 +375,7 @@ export function UserFormModal({
         </div>
 
         <div>
-          <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-emerald-600 pl-2">退役军人信息</h4>
+          <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-brand-600 pl-2">退役军人信息</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">是否退役军人</label>

@@ -39,7 +39,7 @@ function ToggleCell({
       aria-label={label}
       onClick={onToggle}
       className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 ${
-        checked ? 'bg-emerald-500 dark:bg-emerald-500' : 'bg-muted'
+        checked ? 'bg-brand-500 dark:bg-brand-500' : 'bg-muted'
       }`}
     >
       <span
@@ -112,7 +112,7 @@ export default function PermissionMatrixPanel() {
 
   const renderCell: CellRenderer = (role, code) => {
     if (!isEditable(role)) {
-      return <Check className="size-4 text-emerald-600 dark:text-emerald-400" strokeWidth={2.5} />;
+      return <Check className="size-4 text-brand-600 dark:text-brand-400" strokeWidth={2.5} />;
     }
     return (
       <ToggleCell
@@ -179,7 +179,7 @@ export default function PermissionMatrixPanel() {
         <Info className="size-5 text-muted-foreground mt-0.5 shrink-0" />
         <div className="text-xs text-muted-foreground space-y-1.5 leading-relaxed">
           <p>
-            <span className="inline-flex h-5 w-9 items-center rounded-full bg-emerald-500 mr-1 align-middle" />
+            <span className="inline-flex h-5 w-9 items-center rounded-full bg-brand-500 mr-1 align-middle" />
             绿色开关表示已授予；灰色表示未授予。
           </p>
           <p>

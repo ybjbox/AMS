@@ -104,7 +104,7 @@ export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: Contr
                               ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                               : isExpiringSoon
                                 ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
-                                : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                : 'bg-brand-100 text-brand-800 dark:bg-brand-900/30 dark:text-brand-400'
                           }`}
                         >
                           {isExpired ? '已过期' : isExpiringSoon ? '即将到期' : '正常'}
@@ -124,7 +124,7 @@ export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: Contr
                           <button
                             data-userid={user.id}
                             onClick={() => onPreview(user)}
-                            className="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300 flex items-center px-1.5 py-1 -my-1 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+                            className="text-brand-600 hover:text-brand-900 dark:text-brand-400 dark:hover:text-brand-300 flex items-center px-1.5 py-1 -my-1 rounded hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors"
                           >
                             <Eye className="w-4 h-4 mr-1" />
                             预览
@@ -132,7 +132,7 @@ export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: Contr
                           <button
                             data-userid={user.id}
                             onClick={() => onDirectPrint(user)}
-                            className="text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300 flex items-center px-1.5 py-1 -my-1 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+                            className="text-brand-700 hover:text-brand-900 dark:text-brand-400 dark:hover:text-brand-300 flex items-center px-1.5 py-1 -my-1 rounded hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors"
                           >
                             <Printer className="w-4 h-4 mr-1" />
                             打印

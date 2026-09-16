@@ -106,6 +106,20 @@ main,
   --font-heading: 'Fira Code', 'Geist Variable', ui-monospace, 'PingFang SC', 'Microsoft YaHei', monospace;
   --font-sans: 'Fira Sans', 'Geist Variable', -apple-system, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
   --font-mono: 'Fira Code', ui-monospace, 'SFMono-Regular', monospace;
+
+  /* ===== 公司品牌色阶（Logo #005BA8 锚定，亮度对齐生成） =====
+     brand-600 = 精确 Logo 色；白字 6.9:1，暗色模式用 brand-300/400 */
+  --color-brand-50: oklch(0.9660 0.0220 252.6);
+  --color-brand-100: oklch(0.9300 0.0420 252.6);
+  --color-brand-200: oklch(0.8780 0.0700 252.6);
+  --color-brand-300: oklch(0.7900 0.1000 252.6);
+  --color-brand-400: oklch(0.7000 0.1250 252.6);
+  --color-brand-500: oklch(0.5450 0.1450 252.6);
+  --color-brand-600: oklch(0.4706 0.1434 252.62);
+  --color-brand-700: oklch(0.4150 0.1250 252.6);
+  --color-brand-800: oklch(0.3600 0.1050 252.6);
+  --color-brand-900: oklch(0.3100 0.0850 252.6);
+  --color-brand-950: oklch(0.2300 0.0650 252.6);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -151,104 +165,105 @@ main,
 }
 
 :root {
-  /* ===== 设计基准 · 亮色主题（ MASTER.md 色板的日间协调版） =====
-     品牌绿 #22C55E 作为唯一强调色（CTA/激活/焦点），slate 结构色，
-     避免与状态语义（success/warning/destructive）混滑 */
+  /* ===== 设计基准 · 亮色主题（v2 品牌蓝版） =====
+     品牌主色 = Logo #005BA8（唯一品牌锚点）；绿退为纯语义 success 色；
+     结构灰阶沿用 slate 家族 */
   --background: oklch(0.975 0.005 240);
   --foreground: oklch(0.25 0.02 260);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.25 0.02 260);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.25 0.02 260);
-  --primary: oklch(0.723 0.192 149.6);
-  --primary-foreground: oklch(0.98 0.01 155);
+  --primary: oklch(0.4706 0.1434 252.62);
+  --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.96 0.005 240);
   --secondary-foreground: oklch(0.25 0.02 260);
   --muted: oklch(0.96 0.005 240);
   --muted-foreground: oklch(0.51 0.02 255);
-  --accent: oklch(0.955 0.02 155);
-  --accent-foreground: oklch(0.32 0.07 152);
+  --accent: oklch(0.945 0.025 252.6);
+  --accent-foreground: oklch(0.35 0.10 252.6);
   --success: oklch(0.72 0.20 142);
   --warning: oklch(0.80 0.16 85);
   --destructive: oklch(0.55 0.24 27);
   --border: oklch(0.90 0.008 240);
   --input: oklch(0.90 0.008 240);
-  --ring: oklch(0.723 0.192 149.6);
-  --chart-1: oklch(0.723 0.192 149.6);  /* 品牌绿（基准 Accent） */
-  --chart-2: oklch(0.55 0.15 250);      /* slate 蓝 */
-  --chart-3: oklch(0.65 0.20 80);       /* 琥珀 */
-  --chart-4: oklch(0.45 0.09 260);      /* 深板岩 */
-  --chart-5: oklch(0.62 0.20 27);       /* 珊瑚 */
-  --radius: 0.5rem; /* 8px mapping for border radius token */
+  --ring: oklch(0.4706 0.1434 252.62);
+  --chart-1: oklch(0.4706 0.1434 252.62);  /* 品牌蓝（Logo #005BA8） */
+  --chart-2: oklch(0.723 0.192 149.6);     /* 语义绿 */
+  --chart-3: oklch(0.65 0.20 80);          /* 琥珀 */
+  --chart-4: oklch(0.62 0.125 215);        /* 青蓝（品牌同族辅助） */
+  --chart-5: oklch(0.62 0.20 27);          /* 珊瑚 */
+  --radius: 0.5rem;
   --sidebar: oklch(0.985 0.003 240);
   --sidebar-foreground: oklch(0.30 0.02 260);
-  --sidebar-primary: oklch(0.723 0.192 149.6);
-  --sidebar-primary-foreground: oklch(0.98 0.01 155);
-  --sidebar-accent: oklch(0.955 0.02 155);
-  --sidebar-accent-foreground: oklch(0.32 0.07 152);
+  --sidebar-primary: oklch(0.4706 0.1434 252.62);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.945 0.025 252.6);
+  --sidebar-accent-foreground: oklch(0.35 0.10 252.6);
   --sidebar-border: oklch(0.90 0.008 240);
-  --sidebar-ring: oklch(0.723 0.192 149.6);
+  --sidebar-ring: oklch(0.4706 0.1434 252.62);
 }
 
 .dark {
-  /* ===== 设计基准 · 暗色主题（ MASTER.md 原色板） =====
-     Background #0F172A · Card #1B2336 · Border #475569 · Muted FG #94A3B8 · Accent #22C55E */
+  /* ===== 设计基准 · 暗色主题（v2 品牌蓝版） =====
+     底色维持基准 #0F172A 家族；品牌蓝在暗色下提亮至 300/400 档保证对比；
+     CTA 底色仍用品牌 500/600（白字 ≥5:1） */
   --background: oklch(0.21 0.03 262);
   --foreground: oklch(0.973 0.005 247.9);
   --card: oklch(0.24 0.03 262);
   --card-foreground: oklch(0.973 0.005 247.9);
   --popover: oklch(0.24 0.03 262);
   --popover-foreground: oklch(0.973 0.005 247.9);
-  --primary: oklch(0.723 0.192 149.6);
-  --primary-foreground: oklch(0.98 0.01 155);
+  --primary: oklch(0.7000 0.1250 252.6);
+  --primary-foreground: oklch(0.16 0.03 252.6);
   --secondary: oklch(0.28 0.03 262);
   --secondary-foreground: oklch(0.973 0.005 247.9);
   --muted: oklch(0.28 0.03 262);
   --muted-foreground: oklch(0.70 0.025 250);
-  --accent: oklch(0.30 0.04 155);
-  --accent-foreground: oklch(0.85 0.17 152);
+  --accent: oklch(0.30 0.055 252.6);
+  --accent-foreground: oklch(0.83 0.09 252.6);
   --success: oklch(0.72 0.20 142);
   --warning: oklch(0.80 0.16 85);
   --destructive: oklch(0.55 0.24 27);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.723 0.192 149.6);
-  --chart-1: oklch(0.75 0.18 149.6);  /* 品牌绿（暗色提亮） */
-  --chart-2: oklch(0.70 0.14 250);    /* slate 蓝 */
-  --chart-3: oklch(0.72 0.17 80);     /* 琥珀 */
-  --chart-4: oklch(0.62 0.10 260);    /* 板岩 */
-  --chart-5: oklch(0.70 0.16 27);     /* 珊瑚 */
+  --ring: oklch(0.7000 0.1250 252.6);
+  --chart-1: oklch(0.7000 0.1250 252.6);  /* 品牌蓝（暗色提亮） */
+  --chart-2: oklch(0.72 0.18 149.6);      /* 语义绿 */
+  --chart-3: oklch(0.72 0.17 80);         /* 琥珀 */
+  --chart-4: oklch(0.72 0.115 215);       /* 青蓝 */
+  --chart-5: oklch(0.70 0.16 27);         /* 珊瑚 */
   --sidebar: oklch(0.23 0.03 262);
   --sidebar-foreground: oklch(0.973 0.005 247.9);
-  --sidebar-primary: oklch(0.723 0.192 149.6);
-  --sidebar-primary-foreground: oklch(0.98 0.01 155);
-  --sidebar-accent: oklch(0.30 0.04 155);
-  --sidebar-accent-foreground: oklch(0.85 0.17 152);
+  --sidebar-primary: oklch(0.7000 0.1250 252.6);
+  --sidebar-primary-foreground: oklch(0.16 0.03 252.6);
+  --sidebar-accent: oklch(0.30 0.055 252.6);
+  --sidebar-accent-foreground: oklch(0.83 0.09 252.6);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.723 0.192 149.6);
+  --sidebar-ring: oklch(0.7000 0.1250 252.6);
 }
 
 @layer components {
   .input-base {
     @apply w-full px-3 py-2 text-sm border border-zinc-200/80 dark:border-zinc-600 
     rounded-lg bg-white dark:bg-zinc-700/60 text-zinc-900 dark:text-white 
-    focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500
+    focus:outline-none focus:ring-4 focus:ring-brand-500/25 focus:border-brand-500
     transition-all duration-200;
   }
   
   .btn-primary {
-    /* 基准 Accent/CTA：#22C55E 品牌绿，On-Accent 用深色文字（基准规范）保证对比度 */
+    /* 品牌 CTA：Logo 蓝 #005BA8（brand-600），白字对比 6.9:1 */
     @apply inline-flex items-center justify-center px-4 py-2 text-sm
-    bg-gradient-to-b from-emerald-500 to-emerald-600 shadow-inner 
-    text-emerald-950 font-semibold rounded-lg 
-    hover:from-emerald-400 hover:to-emerald-500 
+    bg-gradient-to-b from-brand-500 to-brand-700 shadow-inner 
+    text-white font-semibold rounded-lg 
+    hover:from-brand-400 hover:to-brand-600 
     active:scale-95 transition-transform shadow-sm;
   }
   
   .btn-secondary {
     @apply inline-flex items-center justify-center px-4 py-2 shadow-sm
     text-sm font-semibold text-zinc-700 bg-white border border-zinc-200/80 
-    rounded-lg hover:bg-zinc-50 hover:border-emerald-500/40
+    rounded-lg hover:bg-zinc-50 hover:border-brand-500/40
     dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-600 dark:hover:bg-zinc-700 
     transition-colors;
   }
@@ -284,7 +299,7 @@ main,
   }
 
   .brand-gradient {
-    @apply bg-gradient-to-b from-emerald-500 to-emerald-600 shadow-inner;
+    @apply bg-gradient-to-b from-brand-500 to-brand-700 shadow-inner;
   }
 
   .stat-card {
@@ -327,7 +342,7 @@ main,
   .tab-item-active {
     @apply tab-item-base
     bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm
-    ring-1 ring-emerald-500/30;
+    ring-1 ring-brand-500/40;
   }
 }
 

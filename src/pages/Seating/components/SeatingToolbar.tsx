@@ -51,14 +51,14 @@ export function SeatingToolbar({
         <div className="flex items-center bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-1 shadow-sm">
           <button
             onClick={() => setViewMode('grid')}
-            className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
+            className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
             title="网格视图"
           >
             <LayoutGrid className="w-4 h-4" />
           </button>
           <button
             onClick={() => setViewMode('list')}
-            className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
+            className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
             title="列表视图"
           >
             <List className="w-4 h-4" />

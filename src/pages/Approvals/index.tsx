@@ -224,7 +224,7 @@ export default function Approvals() {
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => handleDecide(item, 'approved')}
-                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white transition-colors"
+                  className="inline-flex items-center gap-1 rounded-lg bg-brand-600 hover:bg-brand-700 px-3 py-1.5 text-xs font-medium text-white transition-colors"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" /> 通过
                 </button>
@@ -280,7 +280,7 @@ export default function Approvals() {
                 onClick={() => setFormType(t.id)}
                 className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                   formType === t.id
-                    ? 'bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                    ? 'bg-white dark:bg-zinc-800 text-brand-600 dark:text-brand-400 shadow-sm'
                     : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
                 }`}
               >
@@ -451,7 +451,7 @@ export default function Approvals() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2 text-sm font-medium text-white transition-colors"
+            className="w-full rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2 text-sm font-medium text-white transition-colors"
           >
             {submitting ? '提交中…' : '提交申请'}
           </button>
@@ -471,7 +471,7 @@ export default function Approvals() {
                 onClick={() => setTab(t.id)}
                 className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors ${
                   tab === t.id
-                    ? 'text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-600 dark:border-emerald-400'
+                    ? 'text-brand-600 dark:text-brand-400 border-b-2 border-brand-600 dark:border-brand-400'
                     : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
                 }`}
               >

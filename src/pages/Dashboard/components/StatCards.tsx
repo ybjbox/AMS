@@ -46,7 +46,7 @@ export default function StatCards({ stats, isLoading }: StatCardsProps) {
                 <div
                   className={`flex items-center text-sm font-bold px-3 py-1 rounded-full ${
                     item.trend === 'up'
-                      ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400'
+                      ? 'bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400'
                       : 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400'
                   }`}
                 >

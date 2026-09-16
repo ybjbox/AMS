@@ -104,7 +104,7 @@ export default function ProfilePanel() {
               type="password"
               autoComplete="current-password"
               {...register('currentPassword')}
-              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/40"
             />
             {errors.currentPassword && (
               <p className="text-xs text-red-500 mt-1">{errors.currentPassword.message}</p>
@@ -119,7 +119,7 @@ export default function ProfilePanel() {
               type="password"
               autoComplete="new-password"
               {...register('newPassword')}
-              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/40"
             />
             {errors.newPassword && (
               <p className="text-xs text-red-500 mt-1">{errors.newPassword.message}</p>
@@ -134,7 +134,7 @@ export default function ProfilePanel() {
               type="password"
               autoComplete="new-password"
               {...register('confirmPassword')}
-              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/40"
             />
             {errors.confirmPassword && (
               <p className="text-xs text-red-500 mt-1">{errors.confirmPassword.message}</p>
@@ -147,7 +147,7 @@ export default function ProfilePanel() {
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2 text-sm font-medium text-white transition-colors"
+              className="rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2 text-sm font-medium text-white transition-colors"
             >
               {submitting ? '提交中…' : '修改密码'}
             </button>

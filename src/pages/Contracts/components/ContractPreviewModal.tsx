@@ -27,7 +27,7 @@ export const ContractPreviewModal = ({
       onClose={onClose}
       title={
         <div className="flex items-center">
-          <FileSignature className="w-5 h-5 mr-2 text-emerald-600 dark:text-emerald-400" />
+          <FileSignature className="w-5 h-5 mr-2 text-brand-600 dark:text-brand-400" />
           劳动合同预览 - {selectedUser?.name}
         </div>
       }

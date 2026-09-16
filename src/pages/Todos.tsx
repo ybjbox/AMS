@@ -180,8 +180,8 @@ export default function Todos() {
                     onClick={onToggleTodoClick}
                     className={`mt-1 transition-colors ${
                       todo.completed
-                        ? 'text-emerald-500'
-                        : 'text-zinc-300 dark:text-zinc-500 hover:text-emerald-600 dark:hover:text-emerald-400'
+                        ? 'text-brand-500'
+                        : 'text-zinc-300 dark:text-zinc-500 hover:text-brand-600 dark:hover:text-brand-400'
                     }`}
                   >
                     {todo.completed ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
@@ -200,7 +200,7 @@ export default function Todos() {
                       {todo.type !== 'manual' && (
                         <span
                           className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                            todo.type === 'contract' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                            todo.type === 'contract' ? 'bg-amber-100 text-amber-700' : 'bg-brand-100 text-brand-700'
                           }`}
                         >
                           系统生成

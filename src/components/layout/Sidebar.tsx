@@ -79,12 +79,12 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
           isCollapsed ? 'justify-center' : ''
         } ${
           isActive
-            ? 'bg-emerald-50 dark:bg-emerald-900/25 text-emerald-700 dark:text-emerald-300 font-semibold shadow-sm ring-1 ring-emerald-500/20'
+            ? 'bg-brand-50 dark:bg-brand-900/25 text-brand-700 dark:text-brand-300 font-semibold shadow-sm ring-1 ring-brand-500/20'
             : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white hover:shadow-sm hover:-translate-y-0.5'
         }`}
       >
         <item.icon
-          className={`h-5 w-5 shrink-0 transition-colors ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-600 dark:group-hover:text-zinc-300'} ${isCollapsed ? '' : 'mr-3'}`}
+          className={`h-5 w-5 shrink-0 transition-colors ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-600 dark:group-hover:text-zinc-300'} ${isCollapsed ? '' : 'mr-3'}`}
         />
         {!isCollapsed && (
           <span className="whitespace-nowrap text-sm animate-in fade-in duration-300 flex-1">{item.label}</span>
@@ -93,7 +93,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
           <span
             className={`ml-2 shrink-0 min-w-[20px] px-1.5 py-0.5 rounded-full text-[11px] font-medium text-center ${
               isActive
-                ? 'bg-emerald-600 text-white dark:bg-emerald-500'
+                ? 'bg-brand-600 text-white dark:bg-brand-500'
                 : 'bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300'
             }`}
             aria-hidden="true"
@@ -155,13 +155,13 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
             onClick={handleGoToProfile}
             title={userInfo?.username || '用户'}
             aria-label="前往个人设置"
-            className="w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center hover:ring-2 hover:ring-emerald-500/40 transition"
+            className="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-900/50 flex items-center justify-center hover:ring-2 hover:ring-brand-500/40 transition"
           >
             {userInfo?.username
-              ? <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+              ? <span className="text-xs font-bold text-brand-600 dark:text-brand-400">
                   {userInfo.username.charAt(0).toUpperCase()}
                 </span>
-              : <UserIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              : <UserIcon className="h-4 w-4 text-brand-600 dark:text-brand-400" />
             }
           </button>
         ) : (
@@ -172,7 +172,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
               className="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer group text-left"
               aria-label="前往个人设置"
             >
-              <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center shrink-0 text-xs font-bold text-emerald-600 dark:text-emerald-400 select-none">
+              <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/50 flex items-center justify-center shrink-0 text-xs font-bold text-brand-600 dark:text-brand-400 select-none">
                 {userInfo?.username
                   ? userInfo.username.charAt(0).toUpperCase()
                   : <UserIcon className="h-4 w-4" />}

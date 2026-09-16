@@ -42,7 +42,7 @@ export default function DiagnosticsPanel() {
 
   const statusColor =
     data?.health.status === 'ok'
-      ? 'text-emerald-700 dark:text-emerald-400'
+      ? 'text-brand-700 dark:text-brand-400'
       : 'text-red-600 dark:text-red-400';
 
   return (
@@ -51,7 +51,7 @@ export default function DiagnosticsPanel() {
       <div className="flex items-center justify-between shrink-0">
         <div>
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-white flex items-center">
-            <Activity className="w-4 h-4 mr-2 text-emerald-600 dark:text-emerald-400" />
+            <Activity className="w-4 h-4 mr-2 text-brand-600 dark:text-brand-400" />
             运行诊断
           </h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
@@ -87,7 +87,7 @@ export default function DiagnosticsPanel() {
           <div className="flex items-center text-xs text-zinc-500 dark:text-zinc-400 mb-1">
             <Database className="w-3.5 h-3.5 mr-1.5" /> 数据库
           </div>
-          <div className={`text-lg font-bold ${data?.health.db === 'up' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600'}`} data-testid="diag-db">
+          <div className={`text-lg font-bold ${data?.health.db === 'up' ? 'text-brand-700 dark:text-brand-400' : 'text-red-600'}`} data-testid="diag-db">
             {data ? (data.health.db === 'up' ? '在线' : '离线') : '—'}
           </div>
           <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">

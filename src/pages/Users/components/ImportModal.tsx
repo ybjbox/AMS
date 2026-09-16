@@ -91,7 +91,7 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
       {/* ---------- 第一步：上传 ---------- */}
       {step === 'upload' && (
         <div className="space-y-5">
-          <div className="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-900/10 p-4">
+          <div className="rounded-xl border border-brand-100 dark:border-brand-900/40 bg-brand-50/50 dark:bg-brand-900/10 p-4">
             <p className="text-sm text-zinc-700 dark:text-zinc-300">
               导入前请先下载模板，按模板格式填写员工数据（
               <span className="font-medium">姓名、身份证号、电话、部门、入职日期为必填</span>
@@ -114,11 +114,11 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={isParsing}
-            className="w-full rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-600 hover:border-emerald-400 dark:hover:border-emerald-500 py-10 flex flex-col items-center justify-center gap-2 transition-colors disabled:opacity-60"
+            className="w-full rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-600 hover:border-brand-400 dark:hover:border-brand-500 py-10 flex flex-col items-center justify-center gap-2 transition-colors disabled:opacity-60"
           >
             {isParsing ? (
               <>
-                <RotateCcw className="w-8 h-8 text-emerald-500 animate-spin" aria-hidden="true" />
+                <RotateCcw className="w-8 h-8 text-brand-500 animate-spin" aria-hidden="true" />
                 <span className="text-sm text-zinc-600 dark:text-zinc-300">解析中…</span>
               </>
             ) : (
@@ -155,7 +155,7 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
             <span className="px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 font-medium">
               共 {preview.total} 行
             </span>
-            <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 font-medium">
+            <span className="px-2.5 py-1 rounded-full bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 font-medium">
               可导入 {preview.valid}
             </span>
             {preview.invalid > 0 && (
@@ -207,7 +207,7 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
                       <td className="px-3 py-2 text-zinc-600 dark:text-zinc-300 tabular-nums">{String(row.data.joinDate ?? '—')}</td>
                       <td className="px-3 py-2">
                         {ok ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400">
+                          <span className="inline-flex items-center gap-1 text-xs text-brand-700 dark:text-brand-400">
                             <CheckCircle2 className="w-3.5 h-3.5" /> 可导入
                           </span>
                         ) : (
@@ -243,10 +243,10 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
       {/* ---------- 第三步：完成 ---------- */}
       {step === 'done' && result && (
         <div className="py-8 flex flex-col items-center text-center">
-          <CheckCircle2 className="w-12 h-12 text-emerald-500 mb-4" aria-hidden="true" />
+          <CheckCircle2 className="w-12 h-12 text-brand-500 mb-4" aria-hidden="true" />
           <h4 className="text-base font-semibold text-zinc-900 dark:text-white mb-1">导入完成</h4>
           <p className="text-sm text-zinc-600 dark:text-zinc-300">
-            成功导入 <span className="font-semibold text-emerald-700 dark:text-emerald-400">{result.created}</span> 名员工
+            成功导入 <span className="font-semibold text-brand-700 dark:text-brand-400">{result.created}</span> 名员工
             {result.skipped > 0 && <span>（{result.skipped} 条被跳过）</span>}
           </p>
           <div className="mt-6 flex gap-3">

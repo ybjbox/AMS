@@ -29,7 +29,7 @@ export function TableConfig({
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">各桌人数设置</label>
             <button
               onClick={addTableCapacity}
-              className="text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium flex items-center"
+              className="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 font-medium flex items-center"
             >
               + 添加一桌
             </button>

@@ -46,7 +46,7 @@ const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: Sor
       style={style}
       className={`flex items-center p-3 rounded-xl border transition ${
         col.selected
-          ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 shadow-sm'
+          ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-200 dark:border-brand-800 text-brand-700 dark:text-brand-400 shadow-sm'
           : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
       }`}
     >
@@ -62,7 +62,7 @@ const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: Sor
         <div
           className={`w-4 h-4 rounded border mr-3 flex items-center justify-center transition-colors ${
             col.selected
-              ? 'bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-inner border-emerald-600'
+              ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner border-brand-600'
               : 'bg-white dark:bg-zinc-800 border-zinc-200/80 dark:border-zinc-600'
           }`}
         >
@@ -221,7 +221,7 @@ export function AddressBookModal({
               type="text"
               value={addressBookConfig.title}
               onChange={(e) => setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 border border-zinc-200/80 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-emerald-600/20 transition duration-200 outline-none bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500"
+              className="w-full px-3 py-2 border border-zinc-200/80 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-brand-600/20 transition duration-200 outline-none bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500"
               placeholder="请输入通讯录标题"
             />
           </div>
@@ -239,7 +239,7 @@ export function AddressBookModal({
                     }
                   />
                   <div
-                    className={`block w-10 h-6 rounded-full transition-colors ${addressBookConfig.includeResigned ? 'bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-inner' : 'bg-zinc-300 dark:bg-zinc-600'}`}
+                    className={`block w-10 h-6 rounded-full transition-colors ${addressBookConfig.includeResigned ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner' : 'bg-zinc-300 dark:bg-zinc-600'}`}
                   ></div>
                   <div
                     className={`absolute left-1 top-1 bg-white dark:bg-zinc-800 w-4 h-4 rounded-full transition-transform ${addressBookConfig.includeResigned ? 'translate-x-4' : ''}`}
@@ -299,7 +299,7 @@ export function AddressBookModal({
                     }
                   />
                   <div
-                    className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.isDoubleSided ? 'bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-inner' : 'bg-zinc-300 dark:bg-zinc-600'}`}
+                    className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.isDoubleSided ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner' : 'bg-zinc-300 dark:bg-zinc-600'}`}
                   ></div>
                   <div
                     className={`absolute left-0.5 top-0.5 bg-white dark:bg-zinc-800 w-4 h-4 rounded-full transition-transform ${addressBookConfig.isDoubleSided ? 'translate-x-3' : ''}`}
@@ -318,7 +318,7 @@ export function AddressBookModal({
                     onChange={(e) => setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, isTwoColumn: e.target.checked }))}
                   />
                   <div
-                    className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.isTwoColumn ? 'bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-inner' : 'bg-zinc-300 dark:bg-zinc-600'}`}
+                    className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.isTwoColumn ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner' : 'bg-zinc-300 dark:bg-zinc-600'}`}
                   ></div>
                   <div
                     className={`absolute left-0.5 top-0.5 bg-white dark:bg-zinc-800 w-4 h-4 rounded-full transition-transform ${addressBookConfig.isTwoColumn ? 'translate-x-3' : ''}`}
@@ -339,7 +339,7 @@ export function AddressBookModal({
                     }
                   />
                   <div
-                    className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.mergeDepartments ? 'bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-inner' : 'bg-zinc-300 dark:bg-zinc-600'}`}
+                    className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.mergeDepartments ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner' : 'bg-zinc-300 dark:bg-zinc-600'}`}
                   ></div>
                   <div
                     className={`absolute left-0.5 top-0.5 bg-white dark:bg-zinc-800 w-4 h-4 rounded-full transition-transform ${addressBookConfig.mergeDepartments ? 'translate-x-3' : ''}`}

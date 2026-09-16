@@ -17,7 +17,7 @@ export default function SystemNotices({ notices, isLoading }: SystemNoticesProps
         {canManage && (
           <Link
             to="/settings?tab=announcements"
-            className="text-sm text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium transition-colors"
+            className="text-sm text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 font-medium transition-colors"
           >
             查看全部
           </Link>
@@ -50,7 +50,7 @@ export default function SystemNotices({ notices, isLoading }: SystemNoticesProps
               className="flex items-center justify-between pb-5 border-b border-zinc-100 dark:border-zinc-700/50 last:border-0 last:pb-0 group cursor-pointer"
             >
               <div>
-                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
                   {notice.title}
                 </p>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1.5">
@@ -58,7 +58,7 @@ export default function SystemNotices({ notices, isLoading }: SystemNoticesProps
                 </p>
               </div>
               {notice.isNew && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400">
                   最新
                 </span>
               )}

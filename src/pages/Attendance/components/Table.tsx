@@ -164,7 +164,7 @@ export default function Table({
                 placeholder="搜索姓名或工号…"
                 value={scheduleSearchQuery}
                 onChange={(e) => setScheduleSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 text-sm border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-emerald-600/20 transition duration-200"
+                className="w-full pl-10 pr-3 py-2 text-sm border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-600/20 transition duration-200"
               />
             </div>
             {schedules.length > 0 && hasPermission('attendance:manage') && (
@@ -368,7 +368,7 @@ export default function Table({
                         <button
                           data-shiftid={shift.id}
                           onClick={onEditShiftClick}
-                          className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 mr-4 transition-colors"
+                          className="text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 mr-4 transition-colors"
                         >
                           编辑
                         </button>

@@ -7,8 +7,8 @@
 ---
 
 **Project:** AMS
-**Generated:** 2026-09-16 10:27:16
-**Category:** Smart Home/IoT Dashboard
+**Generated:** 2026-09-16 10:27:16 ｜ **v2 修订:** 2026-09-17（品牌主色改定 Logo 蓝 #005BA8）
+**Category:** Enterprise Admin Console
 
 ---
 
@@ -18,12 +18,12 @@
 
 | Role | Hex | CSS Variable |
 |------|-----|--------------|
-| Primary | `#1E293B` | `--color-primary` |
+| Primary | `#005BA8`（Logo 蓝） | `--color-primary` |
 | On Primary | `#FFFFFF` | `--color-on-primary` |
 | Secondary | `#334155` | `--color-secondary` |
 | On Secondary | `#FFFFFF` | `--color-on-secondary` |
-| Accent/CTA | `#22C55E` | `--color-accent` |
-| On Accent/CTA | `#0F172A` | `--color-on-accent` |
+| Accent/CTA | `#005BA8` | `--color-accent` |
+| On Accent/CTA | `#FFFFFF`（白字 6.9:1） | `--color-on-accent` |
 | Background | `#0F172A` | `--color-background` |
 | Foreground | `#F8FAFC` | `--color-foreground` |
 | Card | `#1B2336` | `--color-card` |
@@ -35,7 +35,10 @@
 | On Destructive | `#000000` | `--color-on-destructive` |
 | Ring | `#FFFFFF` | `--color-ring` |
 
-**Color Notes:** Dark tech + status green
+**Color Notes (v2):** 企业品牌蓝 #005BA8 为唯一品牌锚点（CTA/激活/焦点/图表主色）；绿 #22C55E 降级为纯语义 success（在职/通过/全勤），不作品牌色
+
+**品牌色阶（brand，锚点 = brand-600 精确 Logo 色）：**
+`brand-50 #eaf5ff` · `100 #d5eaff` · `200 #b6daff` · `300 #8cbff9`（暗色正文/图标）· `400 #62a2ea`（暗色主强调）· `500 #2371c1` · `600 #005ba8` ★ · `700 #024c8d` · `800 #053d72` · `900 #08315a` · `950 #021d3a`
 
 ### Typography
 
@@ -79,7 +82,7 @@
 ```css
 /* Primary Button */
 .btn-primary {
-  background: #22C55E;
+  background: #005BA8;
   color: white;
   padding: 12px 24px;
   border-radius: 8px;

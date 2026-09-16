@@ -46,7 +46,7 @@ export function RoleModal({ modal, onClose, onSubmit }: RoleModalProps) {
             type="text"
             defaultValue={modal.defaultName}
             placeholder="请输入职位名称"
-            className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-emerald-600/20 focus:border-emerald-600 transition duration-200 sm:text-sm"
+            className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-brand-600/20 focus:border-brand-600 transition duration-200 sm:text-sm"
           />
         </div>
         <div>
@@ -56,7 +56,7 @@ export function RoleModal({ modal, onClose, onSubmit }: RoleModalProps) {
             type="number"
             defaultValue={modal.defaultPriority}
             placeholder="数字越大越靠前"
-            className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-emerald-600/20 focus:border-emerald-600 transition duration-200 sm:text-sm"
+            className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-brand-600/20 focus:border-brand-600 transition duration-200 sm:text-sm"
           />
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">数字越大，在列表中的排序越靠前</p>
         </div>

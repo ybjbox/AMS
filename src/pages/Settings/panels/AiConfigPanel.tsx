@@ -511,7 +511,7 @@ export default function AiConfigPanel() {
         <div
           className={`rounded-lg px-3 py-2 text-sm ${
             msg.type === 'ok'
-              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+              ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400'
               : 'bg-destructive/10 text-destructive'
           }`}
         >
@@ -559,7 +559,7 @@ function Switch({
       aria-label={label}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 ${
-        checked ? 'bg-emerald-500 dark:bg-emerald-500' : 'bg-muted'
+        checked ? 'bg-brand-500 dark:bg-brand-500' : 'bg-muted'
       }`}
     >
       <span

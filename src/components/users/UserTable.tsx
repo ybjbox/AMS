@@ -211,7 +211,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                 e.stopPropagation();
                 onEdit(row.original);
               }}
-              className="p-2 -m-1 text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-md transition-colors"
+              className="p-2 -m-1 text-brand-600 hover:text-brand-900 dark:text-brand-400 dark:hover:text-brand-300 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-md transition-colors"
               title="编辑"
               aria-label={`编辑：${row.original.name}`}
             >
@@ -379,7 +379,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                                 onMouseDown={header.getResizeHandler()}
                                 onTouchStart={header.getResizeHandler()}
                                 className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none bg-zinc-300 dark:bg-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity ${
-                                  header.column.getIsResizing() ? 'opacity-100 bg-emerald-600' : ''
+                                  header.column.getIsResizing() ? 'opacity-100 bg-brand-600' : ''
                                 }`}
                               />
                             )}

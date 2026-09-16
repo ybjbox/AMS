@@ -54,9 +54,9 @@ export default function PreferencesPanel() {
           </div>
           <button
             onClick={() => setEnableStrictPermission(!enableStrictPermission)}
-            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 ${
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2 ${
               enableStrictPermission
-                ? 'bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-inner'
+                ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner'
                 : 'bg-zinc-200 dark:bg-zinc-700'
             }`}
             role="switch"
@@ -74,8 +74,8 @@ export default function PreferencesPanel() {
 
       <div className="bg-white dark:bg-zinc-800 p-6 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
-            <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <div className="p-2 bg-brand-50 dark:bg-brand-900/20 rounded-lg">
+            <ShieldCheck className="w-5 h-5 text-brand-600 dark:text-brand-400" />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">权限测试 (演示用)</h3>
@@ -98,12 +98,12 @@ export default function PreferencesPanel() {
               onClick={onRoleChangeClick}
               className={`flex flex-col p-4 rounded-xl border text-left transition ${
                 userInfo?.role === item.role
-                  ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-900/20 ring-2 ring-emerald-600/20'
+                  ? 'border-brand-600 bg-brand-50/50 dark:bg-brand-900/20 ring-2 ring-brand-600/20'
                   : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-200/80 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
               }`}
             >
               <span
-                className={`text-sm font-bold ${userInfo?.role === item.role ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-900 dark:text-white'}`}
+                className={`text-sm font-bold ${userInfo?.role === item.role ? 'text-brand-700 dark:text-brand-400' : 'text-zinc-900 dark:text-white'}`}
               >
                 {item.label}
               </span>

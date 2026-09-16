@@ -57,8 +57,8 @@ export function PrintSetModal({
         </>
       }
     >
-      <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 mb-4">
-        <Printer className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+      <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-brand-100 dark:bg-brand-900/30 mb-4">
+        <Printer className="h-6 w-6 text-brand-600 dark:text-brand-400" />
       </div>
       <div className="text-center">
         <div className="mt-2">
@@ -77,7 +77,7 @@ export function PrintSetModal({
                     className="flex flex-col sm:flex-row sm:items-center justify-between text-sm text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 p-2 rounded border border-zinc-200 dark:border-zinc-700 gap-2"
                   >
                     <div className="flex items-center overflow-hidden">
-                      <Check className="w-4 h-4 mr-2 text-emerald-500 shrink-0" />
+                      <Check className="w-4 h-4 mr-2 text-brand-500 shrink-0" />
                       <span className="truncate">{doc.name}</span>
                     </div>
                     <div className="flex items-center space-x-2 shrink-0 text-xs">

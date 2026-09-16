@@ -6,8 +6,8 @@ export type StatsProps = Pick<UseAttendanceReturn, 'records' | 'schedules' | 'an
 
 export default function Stats({ records, schedules, anomalies, shifts }: StatsProps) {
   const items = [
-    { label: '打卡记录', value: records.length, icon: Clock, bg: 'bg-emerald-50 dark:bg-emerald-900/30', color: 'text-emerald-600 dark:text-emerald-400' },
-    { label: '排班记录', value: schedules.length, icon: Calendar, bg: 'bg-emerald-50 dark:bg-emerald-900/30', color: 'text-emerald-600 dark:text-emerald-400' },
+    { label: '打卡记录', value: records.length, icon: Clock, bg: 'bg-brand-50 dark:bg-brand-900/30', color: 'text-brand-600 dark:text-brand-400' },
+    { label: '排班记录', value: schedules.length, icon: Calendar, bg: 'bg-brand-50 dark:bg-brand-900/30', color: 'text-brand-600 dark:text-brand-400' },
     { label: '班次数量', value: shifts.length, icon: Users, bg: 'bg-amber-50 dark:bg-amber-900/30', color: 'text-amber-600 dark:text-amber-400' },
     { label: '异常考勤', value: anomalies.length, icon: AlertTriangle, bg: 'bg-red-50 dark:bg-red-900/30', color: 'text-red-600 dark:text-red-400' },
   ];

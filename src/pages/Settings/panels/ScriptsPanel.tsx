@@ -108,17 +108,17 @@ export default async function applyTemplate(worksheet, data, config) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -10 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="bg-white dark:bg-zinc-800 rounded-xl border border-emerald-200 dark:border-emerald-900 shadow-md overflow-hidden"
+            className="bg-white dark:bg-zinc-800 rounded-xl border border-brand-200 dark:border-brand-900 shadow-md overflow-hidden"
           >
             <div className="p-4 border-b border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <FileCode className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                <FileCode className="w-5 h-5 text-brand-600 dark:text-brand-400" />
                 <input
                   type="text"
                   value={editingScript.name}
                   onChange={(e) => setEditingScript({ ...editingScript, name: e.target.value })}
                   placeholder="脚本名称 (如: monthly_report)"
-                  className="bg-transparent border-b border-emerald-300 dark:border-emerald-700 focus:border-emerald-600 dark:focus:border-emerald-400 outline-none px-1 font-semibold text-zinc-900 dark:text-white"
+                  className="bg-transparent border-b border-brand-300 dark:border-brand-700 focus:border-brand-600 dark:focus:border-brand-400 outline-none px-1 font-semibold text-zinc-900 dark:text-white"
                 />
                 <span className="text-zinc-400 font-mono text-sm">.js</span>
               </div>
@@ -126,7 +126,7 @@ export default async function applyTemplate(worksheet, data, config) {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex items-center px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 active:scale-95 transition-transform text-xs font-medium"
+                  className="flex items-center px-3 py-1.5 bg-brand-600 text-white rounded-lg hover:bg-brand-700 active:scale-95 transition-transform text-xs font-medium"
                 >
                   <Save className="w-3.5 h-3.5 mr-1.5" />
                   {saving ? '保存中…' : '保存脚本'}
@@ -143,7 +143,7 @@ export default async function applyTemplate(worksheet, data, config) {
               <textarea
                 value={editingScript.code}
                 onChange={(e) => setEditingScript({ ...editingScript, code: e.target.value })}
-                className="w-full h-[500px] p-4 font-mono text-sm bg-zinc-900 text-emerald-400 outline-none resize-none"
+                className="w-full h-[500px] p-4 font-mono text-sm bg-zinc-900 text-brand-400 outline-none resize-none"
                 spellCheck={false}
               />
             </div>
@@ -166,13 +166,13 @@ export default async function applyTemplate(worksheet, data, config) {
                 className="bg-white dark:bg-zinc-800 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm hover:shadow-md transition group"
               >
                 <div className="flex items-start justify-between mb-3">
-                  <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
-                    <FileCode className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                  <div className="p-2 bg-brand-50 dark:bg-brand-900/20 rounded-lg">
+                    <FileCode className="w-6 h-6 text-brand-600 dark:text-brand-400" />
                   </div>
                   <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => setEditingScript(script)}
-                      className="p-1.5 text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-md transition-colors"
+                      className="p-1.5 text-zinc-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-md transition-colors"
                     >
                       <Palette className="w-4 h-4" />
                     </button>

@@ -55,7 +55,7 @@ export default function AppearancePanel() {
         {/* Theme Selection */}
         <div>
           <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-4 flex items-center">
-            <Palette className="w-5 h-5 mr-2 text-emerald-600 dark:text-emerald-400" />
+            <Palette className="w-5 h-5 mr-2 text-brand-600 dark:text-brand-400" />
             主题模式
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -70,13 +70,13 @@ export default function AppearancePanel() {
                 onClick={onThemeClick}
                 className={`flex flex-col items-center p-4 rounded-xl border transition ${
                   theme === t.id
-                    ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 ring-2 ring-emerald-600/20'
+                    ? 'border-brand-600 bg-brand-50 dark:bg-brand-900/20 ring-2 ring-brand-600/20'
                     : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-200/80 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
                 }`}
               >
                 <t.Icon className="w-6 h-6 mb-2" aria-hidden="true" />
                 <span
-                  className={`text-sm font-medium ${theme === t.id ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-700 dark:text-zinc-300'}`}
+                  className={`text-sm font-medium ${theme === t.id ? 'text-brand-700 dark:text-brand-400' : 'text-zinc-700 dark:text-zinc-300'}`}
                 >
                   {t.label}
                 </span>
@@ -88,7 +88,7 @@ export default function AppearancePanel() {
         {/* System Icon */}
         <div>
           <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-4 flex items-center">
-            <ImageIcon className="w-5 h-5 mr-2 text-emerald-600 dark:text-emerald-400" />
+            <ImageIcon className="w-5 h-5 mr-2 text-brand-600 dark:text-brand-400" />
             系统图标
           </h3>
           <div className="flex items-start space-x-6">
@@ -130,7 +130,7 @@ export default function AppearancePanel() {
         {/* Login Background */}
         <div>
           <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-4 flex items-center">
-            <Monitor className="w-5 h-5 mr-2 text-emerald-600 dark:text-emerald-400" />
+            <Monitor className="w-5 h-5 mr-2 text-brand-600 dark:text-brand-400" />
             登录页背景
           </h3>
           <div className="flex items-start space-x-6">

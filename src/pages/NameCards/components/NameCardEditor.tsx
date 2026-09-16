@@ -152,7 +152,7 @@ export default function NameCardEditor({
                 type="checkbox"
                 checked={printSettings.isDoubleSided}
                 onChange={(e) => setPrintSettings((prev) => ({ ...prev, isDoubleSided: e.target.checked }))}
-                className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-emerald-600 focus:ring-emerald-600 bg-white dark:bg-zinc-700"
+                className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-brand-600 focus:ring-brand-600 bg-white dark:bg-zinc-700"
               />
               <span className="text-sm text-zinc-700 dark:text-zinc-300">双面帐篷式折叠 (高度翻倍)</span>
             </label>
@@ -229,7 +229,7 @@ export default function NameCardEditor({
                   type="checkbox"
                   checked={printSettings.isBold}
                   onChange={(e) => setPrintSettings((prev) => ({ ...prev, isBold: e.target.checked }))}
-                  className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-emerald-600 focus:ring-emerald-600 bg-white dark:bg-zinc-700"
+                  className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-brand-600 focus:ring-brand-600 bg-white dark:bg-zinc-700"
                 />
                 <span className="text-sm text-zinc-700 dark:text-zinc-300">加粗</span>
               </label>
@@ -333,7 +333,7 @@ export default function NameCardEditor({
                 type="checkbox"
                 checked={printSettings.showDepartment}
                 onChange={(e) => setPrintSettings((prev) => ({ ...prev, showDepartment: e.target.checked }))}
-                className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-emerald-600 focus:ring-emerald-600 bg-white dark:bg-zinc-700"
+                className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-brand-600 focus:ring-brand-600 bg-white dark:bg-zinc-700"
               />
               <span className="text-sm text-zinc-700 dark:text-zinc-300">显示部门</span>
             </label>
@@ -359,7 +359,7 @@ export default function NameCardEditor({
                 type="checkbox"
                 checked={printSettings.showRole}
                 onChange={(e) => setPrintSettings((prev) => ({ ...prev, showRole: e.target.checked }))}
-                className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-emerald-600 focus:ring-emerald-600 bg-white dark:bg-zinc-700"
+                className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-brand-600 focus:ring-brand-600 bg-white dark:bg-zinc-700"
               />
               <span className="text-sm text-zinc-700 dark:text-zinc-300">显示职位</span>
             </label>
@@ -385,7 +385,7 @@ export default function NameCardEditor({
                 type="checkbox"
                 checked={printSettings.showCompanyName}
                 onChange={(e) => setPrintSettings((prev) => ({ ...prev, showCompanyName: e.target.checked }))}
-                className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-emerald-600 focus:ring-emerald-600 bg-white dark:bg-zinc-700"
+                className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-brand-600 focus:ring-brand-600 bg-white dark:bg-zinc-700"
               />
               <span className="text-sm text-zinc-700 dark:text-zinc-300">显示公司名称</span>
             </label>

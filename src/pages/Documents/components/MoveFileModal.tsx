@@ -56,7 +56,7 @@ export function MoveFileModal({
                 onChange={() => {
                   onTargetFolderChange(null);
                 }}
-                className="h-4 w-4 text-emerald-600 focus:ring-emerald-600 border-zinc-200 dark:border-zinc-700/80"
+                className="h-4 w-4 text-brand-600 focus:ring-brand-600 border-zinc-200 dark:border-zinc-700/80"
               />
               <FolderOpen className="w-4 h-4 ml-3 mr-2 text-zinc-400 dark:text-zinc-500" />
               <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">全部文件 (根目录)</span>
@@ -73,7 +73,7 @@ export function MoveFileModal({
                   onChange={() => {
                     onTargetFolderChange(folder.id);
                   }}
-                  className="h-4 w-4 text-emerald-600 focus:ring-emerald-600 border-zinc-200 dark:border-zinc-700/80"
+                  className="h-4 w-4 text-brand-600 focus:ring-brand-600 border-zinc-200 dark:border-zinc-700/80"
                 />
                 <Folder className="w-4 h-4 ml-3 mr-2 text-zinc-400 dark:text-zinc-500" />
                 <span className="text-sm text-zinc-700 dark:text-zinc-300 truncate">{folder.name}</span>
