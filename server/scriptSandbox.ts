@@ -89,24 +89,27 @@ export function runTemplateSandbox(
       finish(() => reject(new SandboxError("模板执行超时，已强制终止")));
     }, HARD_KILL_MS);
 
-    worker.on("message", (msg: any) => {
+    worker.on("message", (msg: unknown) => {
       if (!msg || typeof msg !== "object") {
         finish(() => reject(new SandboxError("沙箱返回了无效数据")));
         return;
       }
-      if (msg.ok !== true) {
-        finish(() => reject(new SandboxError(String(msg.error ?? "模板执行失败"))));
+      // Worker 消息为跨线程序列化数据：逐字段窄化读取
+      const m = msg as { ok?: unknown; error?: unknown; payload?: unknown };
+      if (m.ok !== true) {
+        finish(() => reject(new SandboxError(String(m.error ?? "模板执行失败"))));
         return;
       }
-      let parsed: any;
+      let parsed: unknown;
       try {
-        parsed = JSON.parse(String(msg.payload));
+        parsed = JSON.parse(String(m.payload));
       } catch {
         finish(() => reject(new SandboxError("沙箱结果解析失败")));
         return;
       }
-      const ops = Array.isArray(parsed?.ops) ? parsed.ops : [];
-      const logs = Array.isArray(parsed?.logs) ? parsed.logs.map((l: unknown) => String(l)) : [];
+      const p = parsed && typeof parsed === "object" ? (parsed as { ops?: unknown; logs?: unknown }) : {};
+      const ops = Array.isArray(p.ops) ? p.ops : [];
+      const logs = Array.isArray(p.logs) ? p.logs.map((l: unknown) => String(l)) : [];
       finish(() => resolve({ ops, logs }));
     });
 

@@ -33,6 +33,12 @@ async function main() {
   const db = dbMod.db;
   const doc = await import("../server/documentsDb.ts");
 
+  /** listDocuments 返回联合类型（数组 | 分页信封）：测试中统一取数组形态 */
+  const docArray = (q: Record<string, unknown> = {}) => {
+    const r = doc.listDocuments(q);
+    return Array.isArray(r) ? r : r.items;
+  };
+
   const UPLOADS = doc.UPLOADS_DIR;
   const uploadsCount = () =>
     fs.existsSync(UPLOADS) ? fs.readdirSync(UPLOADS).length : 0;
@@ -69,7 +75,7 @@ async function main() {
     check("返回被删文档 id", r.removedDocIds.includes(created.id));
     check("父文件夹已删除", !doc.listFolders().some((f: any) => f.id === pid));
     check("子文件夹已删除", !doc.listFolders().some((f: any) => f.id === cid));
-    check("文档已从库删除", !doc.listDocuments().some((d: any) => d.id === created.id));
+    check("文档已从库删除", !docArray().some((d) => d.id === created!.id));
     const set = doc.listDocumentSets().find((s: any) => s.id === sid);
     check("套件引用已清理", !!set && !set.documentIds.includes(created.id));
     check("磁盘文件已删除", uploadsCount() === before - 1);
@@ -104,7 +110,7 @@ async function main() {
     check("事务内抛错被 propagate", threw);
     check("父文件夹回滚保留", doc.listFolders().some((f: any) => f.id === pid));
     check("子文件夹回滚保留", doc.listFolders().some((f: any) => f.id === cid));
-    check("文档回滚保留", doc.listDocuments().some((d: any) => d.id === created.id));
+    check("文档回滚保留", docArray().some((d) => d.id === created!.id));
     const set = doc.listDocumentSets().find((s: any) => s.id === sid);
     check("套件引用回滚保留", !!set && set.documentIds.includes(created.id));
     check("磁盘文件回滚保留（未提交不删）", uploadsCount() === before);
@@ -149,7 +155,7 @@ async function main() {
     }
     injectFail = false;
     check("单文档删除中途失败被 propagate", threw);
-    check("单文档回滚保留", doc.listDocuments().some((d: any) => d.id === d2.id));
+    check("单文档回滚保留", docArray().some((d) => d.id === d2!.id));
     check("单文档磁盘文件回滚保留", uploadsCount() === before2);
     doc.deleteDocument(d2.id);
     doc.deleteDocumentSet(s2);

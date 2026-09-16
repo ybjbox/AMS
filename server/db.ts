@@ -6,6 +6,7 @@ import { DatabaseSync } from "node:sqlite";
 import path from "path";
 import fs from "fs";
 import { resolvePaging, toListResult } from "./listQuery.ts";
+import { type DbRow, asString, asNumber, asNullableString, asCount } from "./sqliteUtil.ts";
 
 export const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), "data");
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -249,10 +250,13 @@ function normalize(input: Record<string, unknown>) {
   return out;
 }
 
+// listEmployees 返回类型：未请求分页 = 员工数组；请求分页 = 分页信封
+export type EmployeeListResult = ReturnType<typeof rowToUser>[] | import("./listQuery.ts").ListResult<ReturnType<typeof rowToUser>>;
+
 // ---------- CRUD ----------
-// 返回类型显式为 any：运行时根据是否传入分页参数返回 完整数组 或
+// 返回类型：运行时根据是否传入分页参数返回 完整数组 或
 // 分页信封 { items, total, page, pageSize, totalPages }。调用方用 Array.isArray 区分。
-export function listEmployees(query: Record<string, unknown> = {}): any {
+export function listEmployees(query: Record<string, unknown> = {}): EmployeeListResult {
   const paging = resolvePaging(query);
   const keyword = typeof query.keyword === "string" ? query.keyword.trim() : "";
   const where = keyword
@@ -261,22 +265,22 @@ export function listEmployees(query: Record<string, unknown> = {}): any {
   const params = keyword ? [`%${keyword}%`, `%${keyword}%`, `%${keyword}%`] : [];
   const base = `FROM employees e LEFT JOIN departments d ON d.id = e.departmentId`;
 
-  const total = (db.prepare(`SELECT COUNT(*) AS c ${base} ${where}`).get(...params) as any).c;
+  const total = asCount(db.prepare(`SELECT COUNT(*) AS c ${base} ${where}`).get(...params)?.c);
 
   if (!paging.requested) {
     // 向后兼容：未请求分页时返回完整数组
     const rows = db
       .prepare(`SELECT e.*, d.name AS deptName ${base} ${where} ORDER BY e.id`)
-      .all(...params) as any[];
-    return rows.map(rowToUser);
+      .all(...params);
+    return rows.map((r) => rowToUser(r)).filter((u): u is NonNullable<typeof u> => u !== null);
   }
 
   const rows = db
     .prepare(
       `SELECT e.*, d.name AS deptName ${base} ${where} ORDER BY e.id LIMIT ? OFFSET ?`
     )
-    .all(...params, paging.limit, paging.offset) as any[];
-  return toListResult(rows.map(rowToUser), total, paging);
+    .all(...params, paging.limit, paging.offset);
+  return toListResult(rows.map((r) => rowToUser(r)).filter((u): u is NonNullable<typeof u> => u !== null), total, paging);
 }
 
 export function getEmployee(id: string) {
@@ -293,10 +297,10 @@ export function getEmployee(id: string) {
 
 export function createEmployee(input: Record<string, unknown>) {
   const data = normalize(input);
-  const maxRow: any = db
+  const maxRow = db
     .prepare("SELECT id FROM employees WHERE id LIKE 'EMP%' ORDER BY id DESC LIMIT 1")
     .get();
-  const nextNum = maxRow ? parseInt(String(maxRow.id).replace("EMP", ""), 10) + 1 : 1;
+  const nextNum = maxRow ? parseInt(asString(maxRow.id).replace("EMP", ""), 10) + 1 : 1;
   const id = `EMP${String(nextNum).padStart(4, "0")}`;
 
   const keys = Object.keys(data);
@@ -366,7 +370,7 @@ function generateIdCard(): string {
 }
 
 function seedIfEmpty() {
-  const count = (db.prepare("SELECT COUNT(*) AS c FROM employees").get() as any).c;
+  const count = asCount(db.prepare("SELECT COUNT(*) AS c FROM employees").get()?.c);
   if (count > 0) return;
 
   const insert = db.prepare(`INSERT INTO employees (

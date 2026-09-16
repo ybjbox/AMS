@@ -3,6 +3,7 @@
  * 前端语义是整树替换（setDepartments / setRoles），因此写入时扁平化落库，读取时重建树。
  */
 import { db } from "./db.ts";
+import { type DbRow, asString, asNumber } from "./sqliteUtil.ts";
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS departments (
@@ -24,16 +25,19 @@ type DeptNode = { id: string; name: string; priority?: number; children?: DeptNo
 // ---------- Departments（树 <-> 扁平） ----------
 export function listDepartmentsTree(): DeptNode[] {
   // rows 已按 priority DESC 排序，children 挂载顺序即展示顺序
-  const rows: any[] = db.prepare("SELECT * FROM departments ORDER BY priority DESC, rowid").all();
+  const rows = db.prepare("SELECT * FROM departments ORDER BY priority DESC, rowid").all();
   const byId = new Map<string, DeptNode>();
   for (const r of rows) {
-    byId.set(r.id, { id: r.id, name: r.name, priority: r.priority });
+    const id = asString(r.id);
+    byId.set(id, { id, name: asString(r.name), priority: asNumber(r.priority) });
   }
   const roots: DeptNode[] = [];
   for (const r of rows) {
-    const node = byId.get(r.id)!;
-    if (r.parentId && byId.has(r.parentId)) {
-      const parent = byId.get(r.parentId)!;
+    const node = byId.get(asString(r.id));
+    if (!node) continue;
+    const parentId = asString(r.parentId);
+    if (parentId && byId.has(parentId)) {
+      const parent = byId.get(parentId)!;
       parent.children = parent.children || [];
       parent.children.push(node);
     } else {
@@ -129,11 +133,27 @@ function flattenTree(
 }
 
 // ---------- Roles ----------
-export function listRoles() {
-  return db.prepare("SELECT * FROM roles ORDER BY priority DESC, rowid").all();
+export interface RoleNode {
+  id: string;
+  name: string;
+  departmentId: string;
+  priority?: number;
 }
 
-export function replaceRoles(roles: any[]) {
+function rowToRole(row: DbRow): RoleNode {
+  return {
+    id: asString(row.id),
+    name: asString(row.name),
+    departmentId: asString(row.departmentId),
+    priority: asNumber(row.priority),
+  };
+}
+
+export function listRoles(): RoleNode[] {
+  return db.prepare("SELECT * FROM roles ORDER BY priority DESC, rowid").all().map(rowToRole);
+}
+
+export function replaceRoles(roles: RoleNode[]): RoleNode[] {
   const insert = db.prepare("INSERT INTO roles (id, name, departmentId, priority) VALUES (?, ?, ?, ?)");
   db.exec("BEGIN");
   try {
@@ -151,7 +171,7 @@ export function replaceRoles(roles: any[]) {
 
 // ---------- 首次播种（与原静态种子一致） ----------
 (function seedIfEmpty() {
-  const count = (db.prepare("SELECT COUNT(*) AS c FROM departments").get() as any).c;
+  const count = asNumber(db.prepare("SELECT COUNT(*) AS c FROM departments").get()?.c);
   if (count > 0) return;
 
   replaceDepartmentsTree([

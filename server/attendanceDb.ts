@@ -7,7 +7,62 @@
  */
 import { db } from "./db.ts";
 import crypto from "crypto";
-import { resolvePaging, toListResult } from "./listQuery.ts";
+import { resolvePaging, toListResult, ListResult } from "./listQuery.ts";
+import { type DbRow, asString, asNumber, asNullableNumber } from "./sqliteUtil.ts";
+
+// ---------- 行类型（typescript-best-practices：边界解析） ----------
+export interface ShiftRow {
+  id: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+}
+
+export interface ScheduleRow {
+  employeeId: string;
+  employeeName: string;
+  shiftIds: string[];
+  version: number;
+}
+
+export interface PunchRecordRow {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  date: string;
+  time: string;
+  version: number;
+}
+
+export interface AnomalyRow {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  date: string;
+  type: string;
+  minutes: number | null;
+  description: string;
+}
+
+function rowToShift(row: DbRow): ShiftRow {
+  return {
+    id: asString(row.id),
+    name: asString(row.name),
+    startTime: asString(row.startTime),
+    endTime: asString(row.endTime),
+  };
+}
+
+function rowToRecord(row: DbRow): PunchRecordRow {
+  return {
+    id: asString(row.id),
+    employeeId: asString(row.employeeId),
+    employeeName: asString(row.employeeName),
+    date: asString(row.date),
+    time: asString(row.time),
+    version: asNumber(row.version),
+  };
+}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS shifts (
@@ -42,28 +97,32 @@ db.exec(`
 `);
 
 // ---------- Shifts ----------
-export function listShifts() {
-  return db.prepare("SELECT * FROM shifts ORDER BY rowid").all();
+export function listShifts(): ShiftRow[] {
+  return db.prepare("SELECT * FROM shifts ORDER BY rowid").all().map(rowToShift);
 }
 
-export function createShift(input: { id?: string; name: string; startTime: string; endTime: string }) {
+export function createShift(input: { id?: string; name: string; startTime: string; endTime: string }): ShiftRow {
   const id = input.id || crypto.randomUUID();
   db.prepare("INSERT INTO shifts (id, name, startTime, endTime) VALUES (?, ?, ?, ?)").run(
     id, input.name, input.startTime, input.endTime
   );
-  return db.prepare("SELECT * FROM shifts WHERE id = ?").get(id);
+  const row = db.prepare("SELECT * FROM shifts WHERE id = ?").get(id);
+  if (!row) throw new Error(`createShift: 插入后未找到班次 ${id}`);
+  return rowToShift(row);
 }
 
-export function updateShift(id: string, input: Record<string, any>) {
-  const existing: any = db.prepare("SELECT * FROM shifts WHERE id = ?").get(id);
-  if (!existing) return null;
+export function updateShift(id: string, input: { name?: string; startTime?: string; endTime?: string }): ShiftRow | null {
+  const existingRow = db.prepare("SELECT * FROM shifts WHERE id = ?").get(id);
+  if (!existingRow) return null;
+  const existing = rowToShift(existingRow);
   db.prepare("UPDATE shifts SET name = ?, startTime = ?, endTime = ? WHERE id = ?").run(
     input.name ?? existing.name,
     input.startTime ?? existing.startTime,
     input.endTime ?? existing.endTime,
     id
   );
-  return db.prepare("SELECT * FROM shifts WHERE id = ?").get(id);
+  const row = db.prepare("SELECT * FROM shifts WHERE id = ?").get(id);
+  return row ? rowToShift(row) : null;
 }
 
 export function deleteShift(id: string) {
@@ -71,16 +130,25 @@ export function deleteShift(id: string) {
 }
 
 // ---------- Schedules ----------
-function rowToSchedule(row: any) {
+function rowToSchedule(row: DbRow): ScheduleRow {
   return {
-    employeeId: row.employeeId,
-    employeeName: row.employeeName,
-    shiftIds: JSON.parse(row.shiftIds || "[]"),
-    version: row.version ?? 0,
+    employeeId: asString(row.employeeId),
+    employeeName: asString(row.employeeName),
+    shiftIds: parseShiftIds(asString(row.shiftIds)),
+    version: asNumber(row.version),
   };
 }
 
-export function listSchedules() {
+function parseShiftIds(raw: string): string[] {
+  try {
+    const v = JSON.parse(raw || "[]");
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+export function listSchedules(): ScheduleRow[] {
   return db.prepare("SELECT * FROM schedules ORDER BY rowid").all().map(rowToSchedule);
 }
 
@@ -89,7 +157,7 @@ export function listSchedules() {
  * 未出现在请求中的行保持不变，从而避免并发编辑时「后提交者删掉他人新增」的丢数据问题。
  * 单条增删请走 upsertSchedule / deleteSchedule。
  */
-export function replaceSchedules(schedules: any[]) {
+export function replaceSchedules(schedules: { employeeId: string; employeeName: string; shiftIds?: string[] }[]): ScheduleRow[] {
   const upsert = db.prepare(
     `INSERT INTO schedules (employeeId, employeeName, shiftIds, version)
      VALUES (?, ?, ?, 1)
@@ -130,13 +198,14 @@ export function upsertSchedule(s: {
   employeeName: string;
   shiftIds?: string[];
   expectedVersion?: number;
-}) {
-  const existing = db
+}): ScheduleRow {
+  const existingRow = db
     .prepare("SELECT version FROM schedules WHERE employeeId = ?")
-    .get(s.employeeId) as { version: number } | undefined;
+    .get(s.employeeId);
+  const existingVersion = existingRow ? asNumber(existingRow.version) : undefined;
 
-  if (existing) {
-    if (s.expectedVersion !== undefined && s.expectedVersion !== existing.version) {
+  if (existingVersion !== undefined) {
+    if (s.expectedVersion !== undefined && s.expectedVersion !== existingVersion) {
       throw new VersionConflictError();
     }
     db.prepare(
@@ -148,7 +217,9 @@ export function upsertSchedule(s: {
       `INSERT INTO schedules (employeeId, employeeName, shiftIds, version) VALUES (?, ?, ?, 1)`
     ).run(s.employeeId, s.employeeName, JSON.stringify(s.shiftIds || []));
   }
-  return db.prepare("SELECT * FROM schedules WHERE employeeId = ?").get(s.employeeId);
+  const row = db.prepare("SELECT * FROM schedules WHERE employeeId = ?").get(s.employeeId);
+  if (!row) throw new Error(`upsertSchedule: upsert 后未找到排班 ${s.employeeId}`);
+  return rowToSchedule(row);
 }
 
 /** 增量：删除单个员工排班 */
@@ -162,48 +233,48 @@ export function clearSchedules() {
 }
 
 // ---------- Punch Records ----------
-export function listRecords(query: Record<string, any> = {}): any {
+export function listRecords(query: Record<string, unknown> = {}): PunchRecordRow[] | ListResult<PunchRecordRow> {
   const paging = resolvePaging(query);
 
   const clauses: string[] = [];
-  const params: any[] = [];
-  if (query.employeeId) {
+  const params: string[] = [];
+  if (typeof query.employeeId === "string" && query.employeeId) {
     clauses.push("employeeId = ?");
     params.push(query.employeeId);
   }
-  if (query.employeeName) {
+  if (typeof query.employeeName === "string" && query.employeeName) {
     clauses.push("employeeName LIKE ?");
     params.push(`%${query.employeeName}%`);
   }
-  if (query.dateFrom) {
+  if (typeof query.dateFrom === "string" && query.dateFrom) {
     clauses.push("date >= ?");
     params.push(query.dateFrom);
   }
-  if (query.dateTo) {
+  if (typeof query.dateTo === "string" && query.dateTo) {
     clauses.push("date <= ?");
     params.push(query.dateTo);
   }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
 
-  const total = (db.prepare(`SELECT COUNT(*) AS c FROM punch_records ${where}`).get(...params) as any).c;
+  const total = asNumber(db.prepare(`SELECT COUNT(*) AS c FROM punch_records ${where}`).get(...params)?.c);
 
   if (!paging.requested) {
     // 向后兼容：未请求分页时返回完整数组
-    const rows = db.prepare(`SELECT * FROM punch_records ${where} ORDER BY date, time`).all(...params) as any[];
-    return rows;
+    const rows = db.prepare(`SELECT * FROM punch_records ${where} ORDER BY date, time`).all(...params);
+    return rows.map(rowToRecord);
   }
 
   const rows = db
     .prepare(`SELECT * FROM punch_records ${where} ORDER BY date, time LIMIT ? OFFSET ?`)
-    .all(...params, paging.limit, paging.offset) as any[];
-  return toListResult(rows, total, paging);
+    .all(...params, paging.limit, paging.offset);
+  return toListResult(rows.map(rowToRecord), total, paging);
 }
 
 /**
  * 整表替换（Excel 导入语义）：清空后整体写入。保留该语义（导入即全量覆盖），
  * 但用事务包裹，避免中途失败留下半截数据。
  */
-export function replaceRecords(records: any[]) {
+export function replaceRecords(records: { id?: string; employeeId: string; employeeName: string; date: string; time: string }[]): PunchRecordRow[] | ListResult<PunchRecordRow> {
   const insert = db.prepare(
     "INSERT INTO punch_records (id, employeeId, employeeName, date, time, version) VALUES (?, ?, ?, ?, ?, 1)"
   );
@@ -230,14 +301,15 @@ export function upsertRecord(r: {
   date: string;
   time: string;
   expectedVersion?: number;
-}) {
+}): PunchRecordRow {
   const id = r.id ?? crypto.randomUUID();
-  const existing = db
+  const existingRow = db
     .prepare("SELECT version FROM punch_records WHERE id = ?")
-    .get(id) as { version: number } | undefined;
+    .get(id);
+  const existingVersion = existingRow ? asNumber(existingRow.version) : undefined;
 
-  if (existing) {
-    if (r.expectedVersion !== undefined && r.expectedVersion !== existing.version) {
+  if (existingVersion !== undefined) {
+    if (r.expectedVersion !== undefined && r.expectedVersion !== existingVersion) {
       throw new VersionConflictError();
     }
     db.prepare(
@@ -249,7 +321,9 @@ export function upsertRecord(r: {
       `INSERT INTO punch_records (id, employeeId, employeeName, date, time, version) VALUES (?, ?, ?, ?, ?, 1)`
     ).run(id, r.employeeId, r.employeeName, r.date, r.time);
   }
-  return db.prepare("SELECT * FROM punch_records WHERE id = ?").get(id);
+  const row = db.prepare("SELECT * FROM punch_records WHERE id = ?").get(id);
+  if (!row) throw new Error(`upsertRecord: upsert 后未找到打卡记录 ${id}`);
+  return rowToRecord(row);
 }
 
 /** 增量：删除单条打卡记录 */
@@ -263,10 +337,15 @@ export function clearRecords() {
 }
 
 // ---------- Anomalies ----------
-export function listAnomalies() {
-  return db.prepare("SELECT * FROM anomalies ORDER BY date, employeeId").all().map((row: any) => ({
-    ...row,
-    minutes: row.minutes === null ? undefined : row.minutes,
+export function listAnomalies(): AnomalyRow[] {
+  return db.prepare("SELECT * FROM anomalies ORDER BY date, employeeId").all().map((row) => ({
+    id: asString(row.id),
+    employeeId: asString(row.employeeId),
+    employeeName: asString(row.employeeName),
+    date: asString(row.date),
+    type: asString(row.type),
+    minutes: asNullableNumber(row.minutes),
+    description: asString(row.description),
   }));
 }
 
@@ -276,23 +355,24 @@ function toMinutes(hhmm: string): number {
 }
 
 /** 真实异常分析：基于打卡记录 + 排班 + 班次时间计算，结果持久化 */
-export function analyzeAnomalies() {
-  const shifts: any[] = listShifts();
+export function analyzeAnomalies(): AnomalyRow[] {
+  const shifts = listShifts();
   const schedules = listSchedules();
-  const records: any[] = listRecords();
+  const recordsResult = listRecords();
+  const records = Array.isArray(recordsResult) ? recordsResult : recordsResult.items;
 
   const shiftMap = new Map(shifts.map((s) => [s.id, s]));
   const scheduleMap = new Map(schedules.map((s) => [s.employeeId, s]));
 
   // 按 员工+日期 分组打卡
-  const grouped = new Map<string, any[]>();
+  const grouped = new Map<string, PunchRecordRow[]>();
   for (const r of records) {
     const key = `${r.employeeId}__${r.date}`;
     if (!grouped.has(key)) grouped.set(key, []);
     grouped.get(key)!.push(r);
   }
 
-  const anomalies: any[] = [];
+  const anomalies: { employeeId: string; employeeName: string; date: string; type: string; minutes?: number; description: string }[] = [];
   for (const [key, punches] of grouped) {
     const [employeeId, date] = key.split("__");
     const schedule = scheduleMap.get(employeeId);
@@ -353,7 +433,7 @@ export function analyzeAnomalies() {
 
 // ---------- 首次播种（默认班次，与原 mock 一致） ----------
 (function seedShiftsIfEmpty() {
-  const count = (db.prepare("SELECT COUNT(*) AS c FROM shifts").get() as any).c;
+  const count = asNumber(db.prepare("SELECT COUNT(*) AS c FROM shifts").get()?.c);
   if (count > 0) return;
   db.prepare("INSERT INTO shifts (id, name, startTime, endTime) VALUES (?, ?, ?, ?)").run(
     "1", "正常班", "09:00", "18:00"

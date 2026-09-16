@@ -7,6 +7,83 @@ import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 import { resolvePaging, toListResult } from "./listQuery.ts";
+import { type DbRow, asString, asNumber, asNullableString, asCount } from "./sqliteUtil.ts";
+
+// ---------- 行类型（与表结构一致，typescript-best-practices：边界解析）---------
+interface FolderRow {
+  id: string;
+  name: string;
+  parentId: string | null;
+}
+
+interface DocumentRow {
+  id: string;
+  name: string;
+  type: string;
+  url: string;
+  size: number;
+  uploadedAt: string;
+  folderId: string | null;
+  storedPath: string;
+}
+
+interface DocumentSetRow {
+  id: string;
+  name: string;
+  description: string;
+  documentIds: string[];
+  printSettings: Record<string, unknown>;
+}
+
+function rowToFolder(row: DbRow): FolderRow {
+  return {
+    id: asString(row.id),
+    name: asString(row.name),
+    parentId: asNullableString(row.parentId),
+  };
+}
+
+function rowToDocument(row: DbRow): Omit<DocumentRow, "storedPath"> {
+  return {
+    id: asString(row.id),
+    name: asString(row.name),
+    type: asString(row.type),
+    url: asString(row.url),
+    size: asNumber(row.size),
+    uploadedAt: asString(row.uploadedAt),
+    folderId: asNullableString(row.folderId),
+  };
+}
+
+function rowToSet(row: DbRow): DocumentSetRow {
+  return {
+    id: asString(row.id),
+    name: asString(row.name),
+    description: asString(row.description),
+    documentIds: parseJsonArray(asString(row.documentIds)),
+    printSettings: parseJsonObject(asString(row.printSettings)),
+  };
+}
+
+function parseJsonArray(raw: string): string[] {
+  if (!raw) return [];
+  try {
+    const v = JSON.parse(raw);
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseJsonObject(raw: string): Record<string, unknown> {
+  if (!raw) return {};
+  try {
+    const v = JSON.parse(raw);
+    return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+}
 
 const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), "data");
 export const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
@@ -38,32 +115,35 @@ db.exec(`
 `);
 
 // ---------- Folders ----------
-export function listFolders() {
-  return db.prepare("SELECT id, name, parentId FROM folders ORDER BY rowid").all();
+export function listFolders(): FolderRow[] {
+  return db.prepare("SELECT id, name, parentId FROM folders ORDER BY rowid").all().map(rowToFolder);
 }
 
-export function createFolder(input: { id?: string; name: string; parentId?: string | null }) {
+export function createFolder(input: { id?: string; name: string; parentId?: string | null }): FolderRow | undefined {
   const id = input.id || crypto.randomUUID();
   db.prepare("INSERT INTO folders (id, name, parentId) VALUES (?, ?, ?)").run(
     id, input.name, input.parentId ?? null
   );
-  return db.prepare("SELECT id, name, parentId FROM folders WHERE id = ?").get(id);
+  const row = db.prepare("SELECT id, name, parentId FROM folders WHERE id = ?").get(id);
+  return row ? rowToFolder(row) : undefined;
 }
 
-export function updateFolder(id: string, input: { name?: string; parentId?: string | null }) {
-  const existing: any = db.prepare("SELECT * FROM folders WHERE id = ?").get(id);
+export function updateFolder(id: string, input: { name?: string; parentId?: string | null }): FolderRow | null {
+  const existing = db.prepare("SELECT * FROM folders WHERE id = ?").get(id);
   if (!existing) return null;
+  const existingRow = rowToFolder(existing);
   db.prepare("UPDATE folders SET name = ?, parentId = ? WHERE id = ?").run(
-    input.name ?? existing.name,
-    input.parentId === undefined ? existing.parentId : input.parentId,
+    input.name ?? existingRow.name,
+    input.parentId === undefined ? existingRow.parentId : input.parentId,
     id
   );
-  return db.prepare("SELECT id, name, parentId FROM folders WHERE id = ?").get(id);
+  const row = db.prepare("SELECT id, name, parentId FROM folders WHERE id = ?").get(id);
+  return row ? rowToFolder(row) : null;
 }
 
 /** 级联删除：子文件夹 + 其下文档（含磁盘文件）+ 套件引用清理 */
 export function deleteFolderCascade(id: string) {
-  const all: any[] = db.prepare("SELECT id, parentId FROM folders").all();
+  const all = db.prepare("SELECT id, parentId FROM folders").all().map(rowToFolder);
   const toRemove = new Set<string>([id]);
   let changed = true;
   while (changed) {
@@ -77,9 +157,10 @@ export function deleteFolderCascade(id: string) {
   }
   const folderIds = [...toRemove];
   const placeholders = folderIds.map(() => "?").join(", ");
-  const docs: any[] = db
+  const docs = db
     .prepare(`SELECT id, storedPath FROM documents WHERE folderId IN (${placeholders})`)
-    .all(...folderIds);
+    .all(...folderIds)
+    .map((row) => ({ id: asString(row.id), storedPath: asString(row.storedPath) }));
   const docIds = docs.map((d) => d.id);
 
   // 所有数据库写操作（删文档 + 删文件夹 + 清理套件引用）包在同一个事务里；
@@ -101,18 +182,19 @@ export function deleteFolderCascade(id: string) {
   return { removedFolderIds: folderIds, removedDocIds: docIds };
 }
 
-// ---------- Documents ----------
-function rowToDocument(row: any) {
-  if (!row) return null;
-  const { storedPath, ...doc } = row;
-  return doc;
-}
+// ---------- Documents (rowToDocument 定义见文件头部) ----------
 
-export function listDocuments(query: Record<string, any> = {}): any {
+/**
+ * 列表返回：未请求分页时 = T[]；请求分页时 = 分页信封。
+ * （typescript-best-practices：用判别联合表达两种形态，调用方必须收窄后使用）
+ */
+export type PagedOrArray<T> = T[] | import("./listQuery.ts").ListResult<T>;
+
+export function listDocuments(query: Record<string, unknown> = {}): PagedOrArray<Omit<DocumentRow, "storedPath">> {
   const paging = resolvePaging(query);
 
   const clauses: string[] = [];
-  const params: any[] = [];
+  const params: (string | number)[] = [];
 
   // folderId：缺省=全部；"none"=未归类；具体 id=该文件夹
   const folderId = query.folderId !== undefined ? query.folderId : null;
@@ -122,7 +204,7 @@ export function listDocuments(query: Record<string, any> = {}): any {
       params.push("");
     } else {
       clauses.push("folderId = ?");
-      params.push(folderId);
+      params.push(folderId as string);
     }
   }
   const keyword = typeof query.keyword === "string" ? query.keyword.trim() : "";
@@ -132,27 +214,28 @@ export function listDocuments(query: Record<string, any> = {}): any {
   }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
 
-  const total = (db.prepare(`SELECT COUNT(*) AS c FROM documents ${where}`).get(...params) as any).c;
+  const total = asCount(db.prepare(`SELECT COUNT(*) AS c FROM documents ${where}`).get(...params)?.c);
 
   if (!paging.requested) {
     // 向后兼容：未请求分页时返回完整数组
-    const rows = db.prepare(`SELECT * FROM documents ${where} ORDER BY rowid`).all(...params) as any[];
+    const rows = db.prepare(`SELECT * FROM documents ${where} ORDER BY rowid`).all(...params);
     return rows.map(rowToDocument);
   }
 
   const rows = db
     .prepare(`SELECT * FROM documents ${where} ORDER BY rowid LIMIT ? OFFSET ?`)
-    .all(...params, paging.limit, paging.offset) as any[];
+    .all(...params, paging.limit, paging.offset);
   return toListResult(rows.map(rowToDocument), total, paging);
 }
 
-export function getDocumentRaw(id: string): any {
+/** 原始行读取（内部使用：审核快照/更新链）；对外返回用 typed 版本 */
+export function getDocumentRaw(id: string): DbRow | undefined {
   return db.prepare("SELECT * FROM documents WHERE id = ?").get(id);
 }
 
 function insertDocumentRow(input: {
   id: string; name: string; type: string; folderId: string | null; filePath: string; size: number;
-}): any {
+}): Omit<DocumentRow, "storedPath"> {
   db.prepare(`INSERT INTO documents (id, name, type, url, size, uploadedAt, folderId, storedPath)
               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
     input.id,
@@ -164,7 +247,10 @@ function insertDocumentRow(input: {
     input.folderId,
     input.filePath
   );
-  return rowToDocument(getDocumentRaw(input.id));
+  const row = getDocumentRaw(input.id);
+  // 不变量：刚插入的行必然存在；不成立则是程序错误，立即暴露
+  if (!row) throw new Error(`insertDocumentRow: 插入后未找到文档 ${input.id}`);
+  return rowToDocument(row);
 }
 
 export function createDocumentFromUpload(input: {
@@ -190,17 +276,19 @@ export function createDocumentFromUploadedFile(input: {
   return insertDocumentRow({ id: input.id, name: input.name, type, folderId: input.folderId ?? null, filePath: input.filePath, size });
 }
 
-export function updateDocument(id: string, input: Record<string, any>) {
+export function updateDocument(id: string, input: { name?: string; type?: string; folderId?: string | null }) {
   const existing = getDocumentRaw(id);
   if (!existing) return null;
-  const allowed = ["name", "type", "folderId"];
-  for (const k of allowed) {
-    if (input[k] !== undefined) existing[k] = input[k];
-  }
+  const merged = {
+    name: input.name ?? asString(existing.name),
+    type: input.type ?? asString(existing.type),
+    folderId: input.folderId === undefined ? asNullableString(existing.folderId) : input.folderId,
+  };
   db.prepare("UPDATE documents SET name = ?, type = ?, folderId = ? WHERE id = ?").run(
-    existing.name, existing.type, existing.folderId, id
+    merged.name, merged.type, merged.folderId, id
   );
-  return rowToDocument(getDocumentRaw(id));
+  const row = getDocumentRaw(id);
+  return row ? rowToDocument(row) : null;
 }
 
 export function deleteDocument(id: string) {
@@ -216,7 +304,7 @@ export function deleteDocument(id: string) {
     db.exec("ROLLBACK");
     throw err;
   }
-  removeStoredFile(existing.storedPath);
+  removeStoredFile(asString(existing.storedPath));
   return true;
 }
 
@@ -226,23 +314,19 @@ function removeStoredFile(storedPath?: string) {
   }
 }
 
-// ---------- Document Sets ----------
-function rowToSet(row: any) {
-  if (!row) return null;
-  return {
-    id: row.id,
-    name: row.name,
-    description: row.description,
-    documentIds: JSON.parse(row.documentIds || "[]"),
-    printSettings: JSON.parse(row.printSettings || "{}"),
-  };
-}
+// ---------- Document Sets (rowToSet 定义见文件头部) ----------
 
-export function listDocumentSets() {
+export function listDocumentSets(): DocumentSetRow[] {
   return db.prepare("SELECT * FROM document_sets ORDER BY rowid").all().map(rowToSet);
 }
 
-export function createDocumentSet(input: any) {
+export function createDocumentSet(input: {
+  id?: string;
+  name: string;
+  description?: string;
+  documentIds?: string[];
+  printSettings?: Record<string, unknown>;
+}): DocumentSetRow {
   const id = input.id || crypto.randomUUID();
   db.prepare(`INSERT INTO document_sets (id, name, description, documentIds, printSettings)
               VALUES (?, ?, ?, ?, ?)`).run(
@@ -250,12 +334,21 @@ export function createDocumentSet(input: any) {
     JSON.stringify(input.documentIds || []),
     JSON.stringify(input.printSettings || {})
   );
-  return rowToSet(db.prepare("SELECT * FROM document_sets WHERE id = ?").get(id));
+  const row = db.prepare("SELECT * FROM document_sets WHERE id = ?").get(id);
+  // 不变量：刚插入的行必然存在
+  if (!row) throw new Error(`createDocumentSet: 插入后未找到套件 ${id}`);
+  return rowToSet(row);
 }
 
-export function updateDocumentSet(id: string, input: any) {
-  const existing = rowToSet(db.prepare("SELECT * FROM document_sets WHERE id = ?").get(id));
-  if (!existing) return null;
+export function updateDocumentSet(id: string, input: {
+  name?: string;
+  description?: string;
+  documentIds?: string[];
+  printSettings?: Record<string, unknown>;
+}): DocumentSetRow | null {
+  const existingRow = db.prepare("SELECT * FROM document_sets WHERE id = ?").get(id);
+  if (!existingRow) return null;
+  const existing = rowToSet(existingRow);
   const merged = { ...existing, ...input };
   db.prepare(`UPDATE document_sets SET name = ?, description = ?, documentIds = ?, printSettings = ?
               WHERE id = ?`).run(
@@ -264,7 +357,9 @@ export function updateDocumentSet(id: string, input: any) {
     JSON.stringify(merged.printSettings || {}),
     id
   );
-  return rowToSet(db.prepare("SELECT * FROM document_sets WHERE id = ?").get(id));
+  const row = db.prepare("SELECT * FROM document_sets WHERE id = ?").get(id);
+  if (!row) throw new Error(`updateDocumentSet: 更新后未找到套件 ${id}`);
+  return rowToSet(row);
 }
 
 export function deleteDocumentSet(id: string) {
@@ -273,18 +368,19 @@ export function deleteDocumentSet(id: string) {
 
 function removeDocIdsFromSets(docIds: string[]) {
   if (docIds.length === 0) return;
-  const sets: any[] = db.prepare("SELECT id, documentIds FROM document_sets").all();
+  const sets = db.prepare("SELECT id, documentIds FROM document_sets").all();
   const update = db.prepare("UPDATE document_sets SET documentIds = ? WHERE id = ?");
   for (const s of sets) {
-    const ids: string[] = JSON.parse(s.documentIds || "[]");
+    const setId = asString(s.id);
+    const ids = parseJsonArray(asString(s.documentIds));
     const filtered = ids.filter((d) => !docIds.includes(d));
-    if (filtered.length !== ids.length) update.run(JSON.stringify(filtered), s.id);
+    if (filtered.length !== ids.length) update.run(JSON.stringify(filtered), setId);
   }
 }
 
 // ---------- 首次播种（仅目录结构，不播种假文件） ----------
 (function seedFoldersIfEmpty() {
-  const count = (db.prepare("SELECT COUNT(*) AS c FROM folders").get() as any).c;
+  const count = asCount(db.prepare("SELECT COUNT(*) AS c FROM folders").get()?.c);
   if (count > 0) return;
   const insert = db.prepare("INSERT INTO folders (id, name, parentId) VALUES (?, ?, ?)");
   insert.run("f1", "人事文件", null);

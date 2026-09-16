@@ -1,4 +1,5 @@
 import { db, onDbReload } from "./db.ts";
+import { asString } from "./sqliteUtil.ts";
 
 /**
  * AI 助手对话持久化层。
@@ -83,24 +84,24 @@ function parseMessages(json: string): StoredMsg[] {
 }
 
 export function listConversations(username: string): ConversationMeta[] {
-  return listStmt.all(username).map((r: any) => ({
-    id: r.id,
-    title: r.title,
-    updatedAt: r.updatedAt,
-    messageCount: parseMessages(r.messages).length,
+  return listStmt.all(username).map((r) => ({
+    id: asString(r.id),
+    title: asString(r.title),
+    updatedAt: asString(r.updatedAt),
+    messageCount: parseMessages(asString(r.messages)).length,
   }));
 }
 
 export function getConversation(id: string): Conversation | null {
-  const r = getStmt.get(id) as any;
+  const r = getStmt.get(id);
   if (!r) return null;
   return {
-    id: r.id,
-    username: r.username,
-    title: r.title,
-    messages: parseMessages(r.messages),
-    createdAt: r.createdAt,
-    updatedAt: r.updatedAt,
+    id: asString(r.id),
+    username: asString(r.username),
+    title: asString(r.title),
+    messages: parseMessages(asString(r.messages)),
+    createdAt: asString(r.createdAt),
+    updatedAt: asString(r.updatedAt),
     messageCount: 0,
   };
 }
@@ -154,26 +155,26 @@ onDbReload(() => {
 
 /** 超管审计：列出全部用户的对话（含归属用户名），按更新时间倒序。 */
 export function listAllConversations(): ConversationMeta[] {
-  return listAllStmt.all().map((r: any) => ({
-    id: r.id,
-    username: r.username,
-    title: r.title,
-    updatedAt: r.updatedAt,
-    messageCount: parseMessages(r.messages).length,
+  return listAllStmt.all().map((r) => ({
+    id: asString(r.id),
+    username: asString(r.username),
+    title: asString(r.title),
+    updatedAt: asString(r.updatedAt),
+    messageCount: parseMessages(asString(r.messages)).length,
   }));
 }
 
 /** 超管审计：读取任意对话详情（不按 username 隔离）。 */
 export function getConversationAdmin(id: string): Conversation | null {
-  const r = getAdminStmt.get(id) as any;
+  const r = getAdminStmt.get(id);
   if (!r) return null;
   return {
-    id: r.id,
-    username: r.username,
-    title: r.title,
-    messages: parseMessages(r.messages),
-    createdAt: r.createdAt,
-    updatedAt: r.updatedAt,
+    id: asString(r.id),
+    username: asString(r.username),
+    title: asString(r.title),
+    messages: parseMessages(asString(r.messages)),
+    createdAt: asString(r.createdAt),
+    updatedAt: asString(r.updatedAt),
     messageCount: 0,
   };
 }

@@ -29,7 +29,7 @@ backupRopter.use(requireRole("ADMIN"));
 backupRopter.get("/", (_req, res) => {
   try {
     res.json({ config: getBackupConfig(), backups: listBackups() });
-  } catch (e: any) {
+  } catch (e) {
     serverErrorResponse(res, e, "读取备份列表失败");
   }
 });
@@ -40,7 +40,7 @@ backupRopter.post("/create", (req, res) => {
     const label = typeof req.body?.label === "string" ? req.body.label : undefined;
     const backup = createBackup(label);
     res.json({ success: true, backup });
-  } catch (e: any) {
+  } catch (e) {
     serverErrorResponse(res, e, "创建备份失败");
   }
 });
@@ -63,7 +63,7 @@ backupRopter.get("/export/:name", (req, res) => {
       `attachment; filename=${encodeURIComponent(name)}`
     );
     createReadStream(filePath).pipe(res);
-  } catch (e: any) {
+  } catch (e) {
     serverErrorResponse(res, e, "下载备份失败");
   }
 });
@@ -77,8 +77,8 @@ backupRopter.post("/restore", (req, res) => {
     }
     const result = restoreBackup(name);
     res.json({ success: true, ...result });
-  } catch (e: any) {
-    res.status(400).json({ error: e?.message ?? "恢复失败" });
+  } catch (e) {
+    res.status(400).json({ error: e instanceof Error ? e.message : "恢复失败" });
   }
 });
 
@@ -92,7 +92,7 @@ backupRopter.delete("/:name", (req, res) => {
     const ok = deleteBackup(name);
     if (!ok) return res.status(404).json({ error: "备份不存在" });
     res.json({ success: true });
-  } catch (e: any) {
+  } catch (e) {
     serverErrorResponse(res, e, "删除备份失败");
   }
 });

@@ -91,6 +91,31 @@ function sanitizeCellKey(raw: unknown): number | string {
   return s.slice(0, 64);
 }
 
+/** 把不可信的 row 值规范为 ExcelJS 可接受的行数据（数组或对象）。 */
+function normalizeRowValue(raw: unknown): ExcelJS.Row["values"] extends never ? never : ExcelJS.CellValue[] | Record<string, unknown> {
+  if (Array.isArray(raw)) return raw as ExcelJS.CellValue[];
+  if (raw && typeof raw === "object") return raw as Record<string, unknown>;
+  return [];
+}
+
+/** 动态属性写入：prop 已由 ROW_PROPS 白名单过滤（见调用处）。 */
+function assignRowProp(row: ExcelJS.Row, prop: string, value: unknown): void {
+  const target = row as unknown as Record<string, unknown>;
+  target[prop] = value;
+}
+
+/** 动态属性写入：prop 已由 CELL_PROPS 白名单过滤。 */
+function assignCellProp(cell: ExcelJS.Cell, prop: string, value: unknown): void {
+  const target = cell as unknown as Record<string, unknown>;
+  target[prop] = value;
+}
+
+/** 动态属性写入：prop 已由 COLUMN_PROPS 白名单过滤。 */
+function assignColumnProp(column: Partial<ExcelJS.Column>, prop: string, value: unknown): void {
+  const target = column as unknown as Record<string, unknown>;
+  target[prop] = value;
+}
+
 export interface ReplayStats {
   applied: number;
   skipped: number;
@@ -117,13 +142,13 @@ export function applyTemplateOps(
           break;
         }
         case "addRow": {
-          const row = worksheet.addRow(op.value as any);
+          const row = worksheet.addRow(normalizeRowValue(op.value));
           if (typeof op.rowId === "string") rows.set(op.rowId, row);
           break;
         }
         case "insertRow": {
           const pos = clampInt(op.pos, 1, MAX_ROW, 1);
-          const row = worksheet.insertRow(pos, op.value as any);
+          const row = worksheet.insertRow(pos, normalizeRowValue(op.value));
           if (typeof op.rowId === "string") rows.set(op.rowId, row);
           break;
         }
@@ -139,7 +164,7 @@ export function applyTemplateOps(
             skipped++;
             continue;
           }
-          const cell = row.getCell(sanitizeCellKey(op.key) as any);
+          const cell = row.getCell(sanitizeCellKey(op.key));
           if (typeof op.cellId === "string") cells.set(op.cellId, cell);
           break;
         }
@@ -155,7 +180,7 @@ export function applyTemplateOps(
           }
           const value =
             op.prop === "height" ? clampInt(op.value, 1, 409, 15) : op.value;
-          (row as any)[op.prop] = value;
+          assignRowProp(row, String(op.prop), value);
           break;
         }
         case "setCellProp": {
@@ -168,7 +193,7 @@ export function applyTemplateOps(
             skipped++;
             continue;
           }
-          (cell as any)[op.prop] = op.value;
+          assignCellProp(cell, String(op.prop), op.value);
           break;
         }
         case "setColumnProp": {
@@ -176,9 +201,9 @@ export function applyTemplateOps(
             skipped++;
             continue;
           }
-          const column = worksheet.getColumn(sanitizeCellKey(op.key) as any);
+          const column = worksheet.getColumn(sanitizeCellKey(op.key));
           const value = op.prop === "width" ? clampInt(op.value, 1, 255, 15) : op.value;
-          (column as any)[op.prop] = value;
+          assignColumnProp(column, String(op.prop), value);
           break;
         }
         case "mergeCells": {

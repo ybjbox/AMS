@@ -9,6 +9,7 @@
  * 演进方向（ROADMAP R1 完整版）：多级审批链、审批模板、抄送、撤回。
  */
 import { db } from "./db.ts";
+import { type DbRow, asString, asNullableString } from "./sqliteUtil.ts";
 import { randomUUID } from "node:crypto";
 import { createNotification } from "./notificationsDb.ts";
 
@@ -52,20 +53,20 @@ export function ensureApprovalsTable(): void {
 }
 ensureApprovalsTable();
 
-function rowToApproval(row: any): ApprovalRow {
+function rowToApproval(row: DbRow): ApprovalRow {
   return {
-    id: row.id,
-    applicant: row.applicant,
-    type: row.type,
-    leaveType: row.leaveType,
-    startDate: row.startDate,
-    endDate: row.endDate ?? null,
-    reason: row.reason,
-    status: row.status,
-    approver: row.approver ?? null,
-    comment: row.comment ?? "",
-    createdAt: row.createdAt,
-    decidedAt: row.decidedAt ?? null,
+    id: asString(row.id),
+    applicant: asString(row.applicant),
+    type: asString(row.type),
+    leaveType: asString(row.leaveType),
+    startDate: asString(row.startDate),
+    endDate: asNullableString(row.endDate),
+    reason: asString(row.reason),
+    status: asString(row.status),
+    approver: asNullableString(row.approver),
+    comment: asString(row.comment),
+    createdAt: asString(row.createdAt),
+    decidedAt: asNullableString(row.decidedAt),
   };
 }
 
@@ -100,18 +101,18 @@ export function createApproval(input: {
 
 /** 我的申请（按提交时间倒序） */
 export function listMine(username: string): ApprovalRow[] {
-  return (
-    db
-      .prepare("SELECT * FROM approvals WHERE applicant = ? ORDER BY createdAt DESC, id DESC")
-      .all(username) as any[]
-  ).map(rowToApproval);
+  return db
+    .prepare("SELECT * FROM approvals WHERE applicant = ? ORDER BY createdAt DESC, id DESC")
+    .all(username)
+    .map(rowToApproval);
 }
 
 /** 待审批列表（HR+ 使用；路由层 requireRole 收紧） */
 export function listPending(): ApprovalRow[] {
-  return (
-    db.prepare("SELECT * FROM approvals WHERE status = 'pending' ORDER BY createdAt DESC").all() as any[]
-  ).map(rowToApproval);
+  return db
+    .prepare("SELECT * FROM approvals WHERE status = 'pending' ORDER BY createdAt DESC")
+    .all()
+    .map(rowToApproval);
 }
 
 export interface DecideResult {

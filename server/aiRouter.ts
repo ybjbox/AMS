@@ -147,8 +147,13 @@ async function summarizeMessages(
       }
     );
     if (!upstream.ok) return "";
-    const json = (await upstream.json()) as any;
-    return (json.choices?.[0]?.message?.content ?? "").trim();
+    const json: unknown = await upstream.json();
+    // 上游响应为外部数据：按 OpenAI 兼容格式窄化读取
+    const choices = json && typeof json === "object" && "choices" in json
+      ? (json as { choices?: Array<{ message?: { content?: unknown } }> }).choices
+      : undefined;
+    const content = choices?.[0]?.message?.content;
+    return (typeof content === "string" ? content : "").trim();
   } catch {
     return "";
   }
@@ -290,11 +295,15 @@ aiRouter.get("/models", async (req: Request, res: ExpressResponse) => {
             : `服务商返回 ${r.status}${txt ? `：${txt.slice(0, 120)}` : ""}`,
       });
     }
-    const json = (await r.json()) as any;
-    const list: string[] = Array.isArray(json?.data)
-      ? json.data
-          .map((m: any) => (typeof m?.id === "string" ? m.id : null))
-          .filter((x: string | null): x is string => !!x)
+    const json: unknown = await r.json();
+    // 上游响应为外部数据：按 OpenAI 兼容格式窄化读取（{ data: [{ id }] }）
+    const data = json && typeof json === "object" && "data" in json
+      ? (json as { data?: unknown }).data
+      : undefined;
+    const list: string[] = Array.isArray(data)
+      ? data
+          .map((m) => (m && typeof m === "object" && "id" in m && typeof (m as { id?: unknown }).id === "string" ? (m as { id: string }).id : null))
+          .filter((x): x is string => x !== null)
       : [];
     list.sort((a, b) => a.localeCompare(b));
     res.json({ models: list });

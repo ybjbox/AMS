@@ -79,14 +79,14 @@ export function createBackup(label?: string): BackupMeta {
     db.exec("PRAGMA wal_checkpoint(TRUNCATE)");
     // VACUUM INTO 要求目标文件不存在，且产出自包含的完整库
     db.exec(`VACUUM INTO '${target.replace(/'/g, "''")}'`);
-  } catch (e: any) {
+  } catch (e) {
     // 清理可能残留下来的半个文件
     try {
       if (fs.existsSync(target)) fs.rmSync(target, { force: true });
     } catch {
       /* ignore */
     }
-    throw new Error(`备份失败：${e?.message ?? e}`);
+    throw new Error(`备份失败：${e instanceof Error ? e.message : e}`);
   }
   const stat = fs.statSync(target);
   return { name, path: target, size: stat.size, createdAt: new Date().toISOString() };

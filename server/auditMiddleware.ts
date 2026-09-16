@@ -95,8 +95,17 @@ interface Descriptor {
   /** 取业务对象快照，用于 before/after 差异比对 */
   snapshot?: (id: string) => unknown;
   /** 从快照里提取可读名称 */
-  nameOf?: (snap: any) => string;
+  nameOf?: (snap: unknown) => string;
   level?: AuditLevel;
+}
+
+/** 从审计快照对象中安全提取字符串字段（缺失/非字符串时返回空串）。 */
+function pickField(snap: unknown, key: string): string {
+  if (snap && typeof snap === "object" && key in snap) {
+    const v = (snap as Record<string, unknown>)[key];
+    return typeof v === "string" ? v : "";
+  }
+  return "";
 }
 
 const DESCRIPTORS: Descriptor[] = [
@@ -107,7 +116,7 @@ const DESCRIPTORS: Descriptor[] = [
     category: "员工",
     targetType: "employee",
     snapshot: (id) => getEmployee(id),
-    nameOf: (s) => s?.name ?? "",
+    nameOf: (s) => pickField(s, "name"),
   },
   { pattern: /^\/users\/?$/, action: "employee", category: "员工", targetType: "employee" },
 
@@ -141,7 +150,7 @@ const DESCRIPTORS: Descriptor[] = [
     category: "文档",
     targetType: "document",
     snapshot: (id) => getDocumentRaw(id),
-    nameOf: (s) => s?.name ?? "",
+    nameOf: (s) => pickField(s, "name"),
   },
   { pattern: /^\/documents\/?$/, action: "document", category: "文档", targetType: "document" },
   {
@@ -150,7 +159,7 @@ const DESCRIPTORS: Descriptor[] = [
     category: "文档",
     targetType: "folder",
     snapshot: folderSnapshot,
-    nameOf: (s) => s?.name ?? "",
+    nameOf: (s) => pickField(s, "name"),
   },
   { pattern: /^\/folders\/?$/, action: "folder", category: "文档", targetType: "folder" },
   {
@@ -159,7 +168,7 @@ const DESCRIPTORS: Descriptor[] = [
     category: "文档",
     targetType: "documentSet",
     snapshot: documentSetSnapshot,
-    nameOf: (s) => s?.name ?? "",
+    nameOf: (s) => pickField(s, "name"),
   },
   {
     pattern: /^\/document-sets\/?$/,
@@ -175,7 +184,7 @@ const DESCRIPTORS: Descriptor[] = [
     category: "待办",
     targetType: "todo",
     snapshot: (id) => getTodoRaw(id),
-    nameOf: (s) => s?.title ?? "",
+    nameOf: (s) => pickField(s, "title"),
   },
   { pattern: /^\/todos\/?$/, action: "todo", category: "待办", targetType: "todo" },
   {
@@ -184,7 +193,7 @@ const DESCRIPTORS: Descriptor[] = [
     category: "通知",
     targetType: "notification",
     snapshot: (id) => getNotificationRaw(id),
-    nameOf: (s) => s?.title ?? "",
+    nameOf: (s) => pickField(s, "title"),
   },
   { pattern: /^\/notifications\/?$/, action: "notification", category: "通知", targetType: "notification" },
 
@@ -196,7 +205,7 @@ const DESCRIPTORS: Descriptor[] = [
     category: "文档",
     targetType: "document",
     snapshot: (id) => getDocumentRaw(id),
-    nameOf: (s) => s?.name ?? "",
+    nameOf: (s) => pickField(s, "name"),
   },
 
   // ---- 考勤 ----
@@ -206,7 +215,7 @@ const DESCRIPTORS: Descriptor[] = [
     category: "考勤",
     targetType: "shift",
     snapshot: shiftSnapshot,
-    nameOf: (s) => s?.name ?? "",
+    nameOf: (s) => pickField(s, "name"),
   },
   { pattern: /^\/attendance\/shifts\/?$/, action: "shift", category: "考勤", targetType: "shift" },
   {
@@ -215,7 +224,7 @@ const DESCRIPTORS: Descriptor[] = [
     category: "考勤",
     targetType: "schedule",
     snapshot: scheduleSnapshot,
-    nameOf: (s) => s?.employeeName ?? "",
+    nameOf: (s) => pickField(s, "employeeName"),
   },
   {
     pattern: /^\/attendance\/schedules\/?$/,
@@ -229,7 +238,7 @@ const DESCRIPTORS: Descriptor[] = [
     category: "考勤",
     targetType: "punchRecord",
     snapshot: recordSnapshot,
-    nameOf: (s) => s?.employeeName ?? "",
+    nameOf: (s) => pickField(s, "employeeName"),
   },
   {
     pattern: /^\/attendance\/records\/?$/,
@@ -311,11 +320,12 @@ export const auditGate: RequestHandler = (req: Request, res: Response, next: Nex
   // 捕获错误响应体，便于在日志里看到失败原因
   const originalJson = res.json.bind(res);
   let errorMessage = "";
-  res.json = ((payload: any) => {
-    if (payload && typeof payload === "object" && typeof payload.error === "string") {
-      errorMessage = payload.error;
+  res.json = ((payload: unknown) => {
+    if (payload && typeof payload === "object" && "error" in payload) {
+      const errVal = (payload as { error?: unknown }).error;
+      if (typeof errVal === "string") errorMessage = errVal;
     }
-    return originalJson(payload);
+    return originalJson(payload as Parameters<typeof originalJson>[0]);
   }) as Response["json"];
 
   res.on("finish", () => {
@@ -341,9 +351,12 @@ export const auditGate: RequestHandler = (req: Request, res: Response, next: Nex
             : `api.${verb(method)}`;
 
       const body = compactBody(req.body);
+      const bodyName =
+        req.body && typeof req.body === "object" && "name" in req.body && typeof (req.body as { name?: unknown }).name === "string"
+          ? (req.body as { name: string }).name
+          : "";
       const targetName =
-        (desc?.nameOf?.(after) || desc?.nameOf?.(before) || "") ||
-        (typeof (req.body as any)?.name === "string" ? (req.body as any).name : "");
+        (desc?.nameOf?.(after) || desc?.nameOf?.(before) || "") || bodyName;
 
       writeAuditLog({
         actor: req.auth?.username ?? "anonymous",

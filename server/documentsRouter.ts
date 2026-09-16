@@ -12,6 +12,7 @@ import {
   listDocumentSets, createDocumentSet, updateDocumentSet, deleteDocumentSet,
   UPLOADS_DIR,
 } from "./documentsDb.ts";
+import { asString } from "./sqliteUtil.ts";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
@@ -163,14 +164,16 @@ documentSetsRouter.delete("/:id", (req, res) => {
 export const filesRouter = Router();
 filesRouter.get("/:id", (req, res) => {
   const doc = getDocumentRaw(req.params.id);
-  if (!doc || !doc.storedPath || !fs.existsSync(doc.storedPath)) {
+  const storedPath = asString(doc?.storedPath);
+  const docName = asString(doc?.name);
+  if (!doc || !storedPath || !fs.existsSync(storedPath)) {
     return res.status(404).json({ error: "File not found" });
   }
   // attachment + nosniff：HR 上传的 HTML/SVG 不允许在 API 源上内联渲染，堵存储型 XSS
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader(
     "Content-Disposition",
-    `attachment; filename*=UTF-8''${encodeURIComponent(doc.name)}`
+    `attachment; filename*=UTF-8''${encodeURIComponent(docName)}`
   );
-  res.sendFile(doc.storedPath);
+  res.sendFile(storedPath);
 });

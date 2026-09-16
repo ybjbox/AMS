@@ -24,6 +24,18 @@ function check(name: string, cond: boolean, extra = "") {
   }
 }
 
+/** 列表返回值联合类型：断言信封形态并收窄类型 */
+function asEnvelope<T>(r: T[] | { items: T[]; total: number; page: number; pageSize: number; totalPages: number }) {
+  if (Array.isArray(r)) throw new Error("预期分页信封，实得数组");
+  return r;
+}
+
+/** 列表返回值联合类型：断言数组形态并收窄类型（无分页参数场景） */
+function asArray<T>(r: T[] | { items: T[]; total: number; page: number; pageSize: number; totalPages: number }) {
+  if (!Array.isArray(r)) throw new Error("预期数组，实得分页信封");
+  return r;
+}
+
 async function main() {
   const DATA_DIR = mkdtempSync(path.join(tmpdir(), "ams-pg-"));
   process.env.DATA_DIR = DATA_DIR;
@@ -69,20 +81,20 @@ async function main() {
   check("打卡记录共 30 条", recTotal === 30, `count=${recTotal}`);
 
   // ---------- 向后兼容：无分页参数返回数组 ----------
-  const empArr = listEmployees({});
+  const empArr = asArray(listEmployees({}));
   check("员工无分页参数返回数组", Array.isArray(empArr), `type=${typeof empArr}`);
-  check("员工完整数组长度匹配总数", (empArr as any[]).length === empTotal);
+  check("员工完整数组长度匹配总数", empArr.length === empTotal);
 
-  const docArr = listDocuments({});
+  const docArr = asArray(listDocuments({}));
   check("文档无分页参数返回数组", Array.isArray(docArr), `type=${typeof docArr}`);
-  check("文档完整数组长度匹配总数", (docArr as any[]).length === docTotal);
+  check("文档完整数组长度匹配总数", docArr.length === docTotal);
 
-  const recArr = listRecords({});
+  const recArr = asArray(listRecords({}));
   check("打卡记录无分页参数返回数组", Array.isArray(recArr), `type=${typeof recArr}`);
-  check("打卡记录完整数组长度匹配总数", (recArr as any[]).length === recTotal);
+  check("打卡记录完整数组长度匹配总数", recArr.length === recTotal);
 
   // ---------- 分页信封形状 ----------
-  const emp1 = listEmployees({ page: 1, pageSize: 10 });
+  const emp1 = asEnvelope(listEmployees({ page: 1, pageSize: 10 }));
   check("员工分页返回信封对象", !Array.isArray(emp1) && "items" in emp1 && "total" in emp1 && "totalPages" in emp1);
   check("员工信封 total 匹配总数", emp1.total === empTotal);
   check("员工信封 totalPages 计算正确", emp1.totalPages === Math.ceil(empTotal / 10), `totalPages=${emp1.totalPages}`);
@@ -90,43 +102,43 @@ async function main() {
   check("员工信封 page/pageSize 回显", emp1.page === 1 && emp1.pageSize === 10);
 
   // 末页（第 5 页，员工 45 条 -> 5 页，末页 5 条）
-  const emp5 = listEmployees({ page: 5, pageSize: 10 });
+  const emp5 = asEnvelope(listEmployees({ page: 5, pageSize: 10 }));
   check("员工末页 items 长度=余数", emp5.items.length === empTotal - 40, `len=${emp5.items.length}`);
 
   // 超出末页：空 items 但 totalPages 不变
-  const emp99 = listEmployees({ page: 99, pageSize: 10 });
+  const emp99 = asEnvelope(listEmployees({ page: 99, pageSize: 10 }));
   check("员工超末页 items 为空", emp99.items.length === 0, `len=${emp99.items.length}`);
   check("员工超末页 totalPages 不变", emp99.totalPages === emp1.totalPages);
 
   // pageSize 上限（MAX_PAGE_SIZE=200）：请求 9999 被夹到 200
-  const empCap = listEmployees({ page: 1, pageSize: 9999 });
+  const empCap = asEnvelope(listEmployees({ page: 1, pageSize: 9999 }));
   check("员工 pageSize 上限夹紧到 200", empCap.pageSize === 200, `pageSize=${empCap.pageSize}`);
 
   // ---------- 文档分页 + folderId 服务端筛选 ----------
-  const docF1 = listDocuments({ page: 1, pageSize: 50, folderId: "f1" });
+  const docF1 = asEnvelope(listDocuments({ page: 1, pageSize: 50, folderId: "f1" }));
   check("文档 folderId=f1 仅 10 条", docF1.total === 10, `total=${docF1.total}`);
   check("文档 folderId=f1 items 全属 f1", docF1.items.every((d: any) => d.folderId === "f1"));
 
-  const docNone = listDocuments({ page: 1, pageSize: 50, folderId: "none" });
+  const docNone = asEnvelope(listDocuments({ page: 1, pageSize: 50, folderId: "none" }));
   check("文档 folderId=none 仅 15 条", docNone.total === 15, `total=${docNone.total}`);
 
-  const docKw = listDocuments({ page: 1, pageSize: 50, keyword: "合同" });
+  const docKw = asEnvelope(listDocuments({ page: 1, pageSize: 50, keyword: "合同" }));
   check("文档 keyword=合同 仅命中 10 条", docKw.total === 10, `total=${docKw.total}`);
-  check("文档 keyword 命中项名含 合同", docKw.items.every((d: any) => d.name.includes("合同")));
+  check("文档 keyword 命中项名含 合同", docKw.items.every((d) => d.name.includes("合同")));
 
   // ---------- 打卡记录分页 + 筛选 ----------
-  const recP = listRecords({ page: 1, pageSize: 10 });
+  const recP = asEnvelope(listRecords({ page: 1, pageSize: 10 }));
   check("打卡记录分页 total=30", recP.total === 30, `total=${recP.total}`);
   check("打卡记录第 1 页 items=10", recP.items.length === 10, `len=${recP.items.length}`);
 
-  const recEmp = listRecords({ page: 1, pageSize: 50, employeeId: "EMP0001" });
+  const recEmp = asEnvelope(listRecords({ page: 1, pageSize: 50, employeeId: "EMP0001" }));
   // employeeId=EMP0001 的记录：i % 5 == 0 -> i = 0,5,10,15,20,25 -> 6 条
   check("打卡记录按 employeeId 筛选=6 条", recEmp.total === 6, `total=${recEmp.total}`);
-  check("打卡记录筛选项 employeeId 全为 EMP0001", recEmp.items.every((r: any) => r.employeeId === "EMP0001"));
+  check("打卡记录筛选项 employeeId 全为 EMP0001", recEmp.items.every((r) => r.employeeId === "EMP0001"));
 
-  const recDate = listRecords({ page: 1, pageSize: 50, dateFrom: "2026-01-15", dateTo: "2026-01-31" });
+  const recDate = asEnvelope(listRecords({ page: 1, pageSize: 50, dateFrom: "2026-01-15", dateTo: "2026-01-31" }));
   check("打卡记录按日期区间筛选非空", recDate.total > 0, `total=${recDate.total}`);
-  check("打卡记录日期筛选项均在区间内", recDate.items.every((r: any) => r.date >= "2026-01-15" && r.date <= "2026-01-31"));
+  check("打卡记录日期筛选项均在区间内", recDate.items.every((r) => r.date >= "2026-01-15" && r.date <= "2026-01-31"));
 
   // ---------- 汇总 ----------
   console.log(`\n[verify-pagination] PASS=${pass} FAIL=${fail}`);

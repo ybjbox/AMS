@@ -22,6 +22,7 @@
  * BEFORE / AFTER 在 SQLite 里是触发器保留字，避免每次查询都要加引号。
  */
 import { db, onDbReload } from "./db.ts";
+import { type DbRow, asString, asNumber } from "./sqliteUtil.ts";
 
 // ---------------------------------------------------------------- 表结构
 
@@ -323,13 +324,23 @@ function parseJson(text: unknown): unknown {
   }
 }
 
-function toAuditRow(row: any): AuditRow {
+function toAuditRow(row: DbRow): AuditRow {
   return {
-    ...row,
-    before: parseJson(row.beforeJson),
-    after: parseJson(row.afterJson),
-    changes: parseJson(row.changesJson) as string[] | null,
-  };
+    id: asNumber(row.id),
+    at: asString(row.at),
+    actor: asString(row.actor),
+    actorRole: asString(row.actorRole),
+    action: asString(row.action),
+    category: asString(row.category),
+    level: asString(row.level) as AuditLevel,
+    method: asString(row.method),
+    path: asString(row.path),
+    targetType: asString(row.targetType),
+    targetId: asString(row.targetId),
+    before: parseJson(asString(row.beforeJson)),
+    after: parseJson(asString(row.afterJson)),
+    changes: parseJson(asString(row.changesJson)) as string[] | null,
+  } as AuditRow;
 }
 
 export function queryAuditLogs(query: AuditQuery = {}): {
@@ -341,16 +352,17 @@ export function queryAuditLogs(query: AuditQuery = {}): {
   const limit = Math.min(Math.max(Number(query.limit) || 50, 1), 500);
   const offset = Math.max(Number(query.offset) || 0, 0);
 
-  const total = (db.prepare(`SELECT COUNT(*) AS c FROM audit_logs ${where}`).get(...params) as any).c;
+  const total = asNumber(db.prepare(`SELECT COUNT(*) AS c FROM audit_logs ${where}`).get(...params)?.c);
 
   const rows = db
     .prepare(`SELECT * FROM audit_logs ${where} ORDER BY id DESC LIMIT ? OFFSET ?`)
-    .all(...params, limit, offset) as any[];
+    .all(...params, limit, offset);
 
   // 等级分布用于顶部统计卡片，沿用同一批过滤条件
   const levelRows = db
     .prepare(`SELECT level, COUNT(*) AS c FROM audit_logs ${where} GROUP BY level`)
-    .all(...params) as Array<{ level: string; c: number }>;
+    .all(...params)
+    .map((r) => ({ level: asString(r.level), c: asNumber(r.c) }));
   const levels: Record<string, number> = { INFO: 0, WARN: 0, ERROR: 0 };
   for (const r of levelRows) levels[r.level] = r.c;
 
@@ -360,7 +372,11 @@ export function queryAuditLogs(query: AuditQuery = {}): {
 /** 过滤下拉框的可选值 */
 export function auditFacets(): { actions: string[]; categories: string[]; actors: string[] } {
   const pick = (sql: string, key: string) =>
-    (db.prepare(sql).all() as any[]).map((r) => r[key]).filter(Boolean);
+    db
+      .prepare(sql)
+      .all()
+      .map((r) => asString(r[key]))
+      .filter((v) => v !== "");
   return {
     actions: pick("SELECT DISTINCT action FROM audit_logs ORDER BY action", "action"),
     categories: pick("SELECT DISTINCT category FROM audit_logs ORDER BY category", "category"),
@@ -376,7 +392,7 @@ export function exportAuditLogs(query: AuditQuery = {}, cap = 10000): AuditRow[]
   const { sql: where, params } = buildWhere(query);
   const rows = db
     .prepare(`SELECT * FROM audit_logs ${where} ORDER BY id DESC LIMIT ?`)
-    .all(...params, cap) as any[];
+    .all(...params, cap);
   return rows.map(toAuditRow);
 }
 
@@ -413,5 +429,5 @@ export function pruneAuditLogs(retentionDays = Number(process.env.AUDIT_RETENTIO
 }
 
 export function auditLogCount(): number {
-  return (db.prepare("SELECT COUNT(*) AS c FROM audit_logs").get() as any).c;
+  return asNumber(db.prepare("SELECT COUNT(*) AS c FROM audit_logs").get()?.c);
 }

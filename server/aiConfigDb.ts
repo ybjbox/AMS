@@ -1,4 +1,5 @@
 import { db, onDbReload } from "./db.ts";
+import { asString, asNumber } from "./sqliteUtil.ts";
 
 /**
  * AI 助手运行配置（仅超级管理员可写）。
@@ -97,23 +98,23 @@ function envDefaults() {
 /** 读配置：数据库值优先，空则回退环境变量。 */
 export function getAiConfig(): AiConfig {
   const env = envDefaults();
-  const row = getStmt.get() as any;
+  const row = getStmt.get();
   if (!row) {
     return { enabled: true, allowNonAdmin: true, useDataDefault: true, systemPrompt: "", assistantName: "", assistantIcon: "", assistantLogo: "", assistantDraggable: false, conversationRetentionDays: 0, ...env };
   }
   return {
-    enabled: !!row.enabled,
-    allowNonAdmin: !!row.allowNonAdmin,
-    useDataDefault: !!row.useDataDefault,
-    baseUrl: row.baseUrl || env.baseUrl,
-    model: row.model || env.model,
-    apiKey: row.apiKey || env.apiKey,
-    systemPrompt: typeof row.systemPrompt === "string" ? row.systemPrompt : "",
-    assistantName: typeof row.assistantName === "string" ? row.assistantName : "",
-    assistantIcon: typeof row.assistantIcon === "string" ? row.assistantIcon : "",
-    assistantLogo: typeof row.assistantLogo === "string" ? row.assistantLogo : "",
-    assistantDraggable: !!row.assistantDraggable,
-    conversationRetentionDays: Number.isFinite(row.conversationRetentionDays) ? row.conversationRetentionDays : 0,
+    enabled: !!asNumber(row.enabled),
+    allowNonAdmin: !!asNumber(row.allowNonAdmin),
+    useDataDefault: !!asNumber(row.useDataDefault),
+    baseUrl: asString(row.baseUrl) || env.baseUrl,
+    model: asString(row.model) || env.model,
+    apiKey: asString(row.apiKey) || env.apiKey,
+    systemPrompt: asString(row.systemPrompt),
+    assistantName: asString(row.assistantName),
+    assistantIcon: asString(row.assistantIcon),
+    assistantLogo: asString(row.assistantLogo),
+    assistantDraggable: !!asNumber(row.assistantDraggable),
+    conversationRetentionDays: Number.isFinite(asNumber(row.conversationRetentionDays)) ? asNumber(row.conversationRetentionDays) : 0,
   };
 }
 

@@ -48,7 +48,7 @@ auditRouter.get("/", (req, res) => {
       offset: query.offset,
       retentionDays: Number(process.env.AUDIT_RETENTION_DAYS) || 180,
     });
-  } catch (e: any) {
+  } catch (e) {
     serverErrorResponse(res, e, "查询审计日志失败");
   }
 });
@@ -57,7 +57,7 @@ auditRouter.get("/", (req, res) => {
 auditRouter.get("/facets", (_req, res) => {
   try {
     res.json({ ...auditFacets(), total: auditLogCount() });
-  } catch (e: any) {
+  } catch (e) {
     serverErrorResponse(res, e, "读取过滤项失败");
   }
 });
@@ -95,7 +95,7 @@ auditRouter.get("/export", (req, res) => {
       `attachment; filename=${encodeURIComponent(`审计日志-${new Date().toISOString().slice(0, 10)}.csv`)}`
     );
     res.send(csv);
-  } catch (e: any) {
+  } catch (e) {
     serverErrorResponse(res, e, "导出失败");
   }
 });
