@@ -34,7 +34,7 @@ export default function AttendanceHeatmap({ stats, isLoading }: Props) {
     <div className="card-base p-6 transition duration-300 hover:shadow-md">
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
-          <CalendarDays className="w-4 h-4 text-blue-600 dark:text-blue-400" aria-hidden="true" />
+          <CalendarDays className="w-4 h-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
           考勤热力（近 30 天）
         </h2>
         <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">

@@ -91,7 +91,7 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
       {/* ---------- 第一步：上传 ---------- */}
       {step === 'upload' && (
         <div className="space-y-5">
-          <div className="rounded-xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-900/10 p-4">
+          <div className="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-900/10 p-4">
             <p className="text-sm text-zinc-700 dark:text-zinc-300">
               导入前请先下载模板，按模板格式填写员工数据（
               <span className="font-medium">姓名、身份证号、电话、部门、入职日期为必填</span>
@@ -114,11 +114,11 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={isParsing}
-            className="w-full rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-600 hover:border-blue-400 dark:hover:border-blue-500 py-10 flex flex-col items-center justify-center gap-2 transition-colors disabled:opacity-60"
+            className="w-full rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-600 hover:border-emerald-400 dark:hover:border-emerald-500 py-10 flex flex-col items-center justify-center gap-2 transition-colors disabled:opacity-60"
           >
             {isParsing ? (
               <>
-                <RotateCcw className="w-8 h-8 text-blue-500 animate-spin" aria-hidden="true" />
+                <RotateCcw className="w-8 h-8 text-emerald-500 animate-spin" aria-hidden="true" />
                 <span className="text-sm text-zinc-600 dark:text-zinc-300">解析中…</span>
               </>
             ) : (

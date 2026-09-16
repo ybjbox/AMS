@@ -27,7 +27,7 @@ export function DocumentSetGrid({
       {isLoading ? (
         <div className="col-span-full text-center py-16 bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl">
           <div className="flex flex-col items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mb-4"></div>
             <p className="text-zinc-500 dark:text-zinc-400">加载中…</p>
           </div>
         </div>
@@ -60,7 +60,7 @@ export function DocumentSetGrid({
                 <div className="flex space-x-1">
                   <button
                     onClick={() => onEditSetClick(set)}
-                    className="p-1.5 text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors"
+                    className="p-1.5 text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-md transition-colors"
                     title="编辑套件"
                   >
                     <Edit2 className="w-4 h-4" />
@@ -105,7 +105,7 @@ export function DocumentSetGrid({
               <button
                 onClick={() => onPrintSetClick(set)}
                 disabled={set.documentIds.length === 0}
-                className="w-full flex items-center justify-center px-4 py-2.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Printer className="w-4 h-4 mr-2" />
                 一键打印套件

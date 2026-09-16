@@ -13,7 +13,7 @@ export function TableCard({ table, viewMode, onRemove }: TableCardProps) {
     <div className="bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl overflow-hidden flex flex-col">
       <div className="px-5 py-4 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner dark:bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+          <div className="w-8 h-8 bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-inner dark:bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
             {table.number}
           </div>
           <h3 className="font-semibold text-zinc-900 dark:text-white">{table.number}号桌</h3>

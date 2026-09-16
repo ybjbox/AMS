@@ -53,6 +53,9 @@ export default function Login() {
         const message = (err as { error?: string })?.error || '登录失败，请检查用户名和密码';
         const { toast } = await import('sonner');
         toast.error(message);
+      } finally {
+        // 成功与失败都要关闭全局 loading；此前成功路径漏关，
+        // 导致登录后遮罩永挂（遮罩挡住整个应用）
         setLoading(false);
       }
     },
@@ -61,7 +64,7 @@ export default function Login() {
 
   return (
     <main
-      className="min-h-screen bg-zinc-50 dark:bg-zinc-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden"
+      className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden"
       style={
         loginBackground
           ? {
@@ -75,8 +78,8 @@ export default function Login() {
       {/* 背景装饰 */}
       {!loginBackground && (
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-          <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-blue-100/50 dark:bg-blue-900/20 blur-3xl" />
-          <div className="absolute top-[60%] -right-[10%] w-[40%] h-[60%] rounded-full bg-indigo-100/50 dark:bg-indigo-900/20 blur-3xl" />
+          <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-emerald-100/50 dark:bg-emerald-900/20 blur-3xl" />
+          <div className="absolute top-[60%] -right-[10%] w-[40%] h-[60%] rounded-full bg-slate-100/50 dark:bg-slate-900/20 blur-3xl" />
         </div>
       )}
 
@@ -84,7 +87,7 @@ export default function Login() {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md animate-in fade-in slide-in-from-bottom-4 duration-700">
         <div className="flex justify-center">
-          <div className="w-14 h-14 brand-gradient rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20 overflow-hidden">
+          <div className="w-14 h-14 brand-gradient rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-600/20 overflow-hidden">
             {systemIcon ? (
               <img src={systemIcon} alt="Logo" width={96} height={96} className="w-full h-full object-contain bg-white dark:bg-zinc-800" />
             ) : (
@@ -162,7 +165,7 @@ export default function Login() {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-600 border-zinc-200/80 dark:border-zinc-600 rounded cursor-pointer"
+                  className="h-4 w-4 text-emerald-600 focus:ring-emerald-600 border-zinc-200/80 dark:border-zinc-600 rounded cursor-pointer"
                 />
                 <label
                   htmlFor="remember-me"
@@ -181,7 +184,7 @@ export default function Login() {
                       toast.info('忘记密码功能暂未开放，请联系管理员重置');
                     });
                   }}
-                  className="font-medium text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                  className="font-medium text-sm text-emerald-600 hover:text-emerald-500 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
                 >
                   忘记密码？
                 </button>
@@ -192,7 +195,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading || isSubmitting}
-                className="btn-primary w-full py-2.5 sm:text-sm disabled:opacity-70 disabled:cursor-not-allowed group focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"
+                className="btn-primary w-full py-2.5 sm:text-sm disabled:opacity-70 disabled:cursor-not-allowed group focus:ring-2 focus:ring-offset-2 focus:ring-emerald-600"
               >
                 {loading || isSubmitting ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

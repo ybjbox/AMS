@@ -75,7 +75,7 @@ export function SetFormModal({
             type="text"
             defaultValue={editingSet?.name}
             placeholder="如：入职文件套件"
-            className="block w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition duration-200 sm:text-sm"
+            className="block w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-emerald-600/20 focus:border-emerald-600 transition duration-200 sm:text-sm"
           />
         </div>
         <div>
@@ -85,7 +85,7 @@ export function SetFormModal({
             rows={2}
             defaultValue={editingSet?.description}
             placeholder="简要说明该套件的用途"
-            className="block w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition duration-200 sm:text-sm resize-none"
+            className="block w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-emerald-600/20 focus:border-emerald-600 transition duration-200 sm:text-sm resize-none"
           />
         </div>
         <div>
@@ -94,7 +94,7 @@ export function SetFormModal({
             <button
               type="button"
               onClick={toggleAllModalFolders}
-              className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+              className="text-sm text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium"
             >
               {expandedModalFolders.size === folders.filter((f) => documents.some((d) => d.folderId === f.id)).length &&
               expandedModalFolders.size > 0
@@ -122,7 +122,7 @@ export function SetFormModal({
                         data-docid={doc.id}
                         checked={selectedDocIds.includes(doc.id)}
                         onChange={onDocToggleChange}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-600 border-zinc-200 dark:border-zinc-700/80 rounded"
+                        className="h-4 w-4 text-emerald-600 focus:ring-emerald-600 border-zinc-200 dark:border-zinc-700/80 rounded"
                       />
                       <FileText className="w-4 h-4 ml-3 mr-2 text-zinc-400 dark:text-zinc-500" />
                       <span className="text-sm text-zinc-700 dark:text-zinc-300 truncate">{doc.name}</span>
@@ -160,7 +160,7 @@ export function SetFormModal({
                                 data-docid={doc.id}
                                 checked={selectedDocIds.includes(doc.id)}
                                 onChange={onDocToggleChange}
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-600 border-zinc-200 dark:border-zinc-700/80 rounded"
+                                className="h-4 w-4 text-emerald-600 focus:ring-emerald-600 border-zinc-200 dark:border-zinc-700/80 rounded"
                               />
                               <FileText className="w-4 h-4 ml-3 mr-2 text-zinc-400 dark:text-zinc-500" />
                               <span className="text-sm text-zinc-700 dark:text-zinc-300 truncate">{doc.name}</span>
@@ -206,7 +206,7 @@ export function SetFormModal({
                         <button
                           type="button"
                           onClick={() => onSetColorClick(id, true)}
-                          className={`px-2 py-1 text-xs rounded ${settings.color ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'text-zinc-500 dark:text-zinc-400'}`}
+                          className={`px-2 py-1 text-xs rounded ${settings.color ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300' : 'text-zinc-500 dark:text-zinc-400'}`}
                         >
                           彩色
                         </button>
@@ -222,7 +222,7 @@ export function SetFormModal({
                         <button
                           type="button"
                           onClick={() => onSetDuplexClick(id, true)}
-                          className={`px-2 py-1 text-xs rounded ${settings.duplex ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' : 'text-zinc-500 dark:text-zinc-400'}`}
+                          className={`px-2 py-1 text-xs rounded ${settings.duplex ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300' : 'text-zinc-500 dark:text-zinc-400'}`}
                         >
                           双面
                         </button>

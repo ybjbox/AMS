@@ -89,7 +89,7 @@ export default function Departments() {
             {logic.departments.length > 0 && (
               <button
                 onClick={logic.isAllRoleDeptsExpanded ? logic.collapseAllRoleDepts : logic.expandAllRoleDepts}
-                className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors"
+                className="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium transition-colors"
               >
                 {logic.isAllRoleDeptsExpanded ? '一键收起' : '一键展开'}
               </button>

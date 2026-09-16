@@ -52,7 +52,7 @@ const RoleTreeNode = React.memo(function RoleTreeNode({
             <button
               data-id={node.id}
               onClick={onAddRole}
-              className="p-1 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors shrink-0"
+              className="p-1 text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-md transition-colors shrink-0"
               title="新增职位"
               aria-label={`新增职位：${node.name}`}
             >

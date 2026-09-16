@@ -29,7 +29,7 @@ export function UserFilters({
           {activeFilterCount > 0 && (
             <button
               onClick={clearFilters}
-              className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
             >
               清除全部
             </button>

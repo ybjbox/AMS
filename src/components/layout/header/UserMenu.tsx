@@ -58,7 +58,7 @@ export default function UserMenu() {
         onClick={toggleMenu}
         className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors duration-200"
       >
-        <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-400 text-sm font-semibold select-none">
+        <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-sm font-semibold select-none">
           {userInfo?.username?.[0]?.toUpperCase() ?? <User className="h-5 w-5" />}
         </div>
         <div className="hidden sm:flex flex-col">

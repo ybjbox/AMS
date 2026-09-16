@@ -51,7 +51,7 @@ export default function DiagnosticsPanel() {
       <div className="flex items-center justify-between shrink-0">
         <div>
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-white flex items-center">
-            <Activity className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />
+            <Activity className="w-4 h-4 mr-2 text-emerald-600 dark:text-emerald-400" />
             运行诊断
           </h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">

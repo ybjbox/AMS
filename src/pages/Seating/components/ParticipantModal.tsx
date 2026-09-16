@@ -52,7 +52,7 @@ export function ParticipantModal({
           <span className="text-lg leading-6 font-medium text-zinc-900 dark:text-white">选择参与人员</span>
           <button
             onClick={toggleAllDeptsExpand}
-            className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+            className="text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium"
           >
             {expandedDepts.size === Object.keys(groupedUsers).length ? '全部收起' : '全部展开'}
           </button>
@@ -83,9 +83,9 @@ export function ParticipantModal({
               >
                 <div className="flex items-center">
                   {allSelected ? (
-                    <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-600 mr-3" />
+                    <CheckSquare className="w-5 h-5 text-emerald-600 dark:text-emerald-600 mr-3" />
                   ) : someSelected ? (
-                    <div className="w-5 h-5 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner dark:bg-blue-600 rounded flex items-center justify-center mr-3">
+                    <div className="w-5 h-5 bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-inner dark:bg-emerald-600 rounded flex items-center justify-center mr-3">
                       <div className="w-3 h-0.5 bg-white dark:bg-zinc-800"></div>
                     </div>
                   ) : (
@@ -111,9 +111,9 @@ export function ParticipantModal({
                         type="checkbox"
                         checked={selectedUserIds.has(u.id)}
                         onChange={() => toggleUserSelection(u.id)}
-                        className="rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600 bg-white dark:bg-zinc-900"
+                        className="rounded border-zinc-200/80 dark:border-zinc-600 text-emerald-600 focus:ring-emerald-600 bg-white dark:bg-zinc-900"
                       />
-                      <span className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      <span className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                         {u.name}
                       </span>
                       <span className="text-xs text-zinc-400 dark:text-zinc-500">({u.role})</span>

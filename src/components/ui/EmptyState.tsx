@@ -21,7 +21,7 @@ export function EmptyState({ title, description, icon: Icon, action, className }
           </div>
         </div>
         {/* 装饰点 */}
-        <div className="absolute top-1 right-1 w-3 h-3 rounded-full bg-blue-100 dark:bg-blue-900/40" />
+        <div className="absolute top-1 right-1 w-3 h-3 rounded-full bg-emerald-100 dark:bg-emerald-900/40" />
         <div className="absolute bottom-2 left-0 w-2 h-2 rounded-full bg-zinc-200 dark:bg-zinc-700" />
       </div>
       <h2 className="text-base font-semibold text-zinc-900 dark:text-white mb-2">{title}</h2>

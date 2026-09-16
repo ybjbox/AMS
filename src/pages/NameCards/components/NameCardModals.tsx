@@ -87,7 +87,7 @@ export default function NameCardModals({
             <span className="text-lg leading-6 font-medium text-zinc-900 dark:text-white">选择参与人员</span>
             <button
               onClick={toggleAllDeptsExpand}
-              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+              className="text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium"
             >
               {expandedDepts.size === Object.keys(groupedUsers).length ? '全部收起' : '全部展开'}
             </button>
@@ -129,9 +129,9 @@ export default function NameCardModals({
                 >
                   <div className="flex items-center">
                     {allSelected ? (
-                      <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-600 mr-3" />
+                      <CheckSquare className="w-5 h-5 text-emerald-600 dark:text-emerald-600 mr-3" />
                     ) : someSelected ? (
-                      <div className="w-5 h-5 bg-gradient-to-b from-blue-600 to-blue-700 shadow-inner dark:bg-blue-600 rounded flex items-center justify-center mr-3">
+                      <div className="w-5 h-5 bg-gradient-to-b from-emerald-600 to-emerald-700 shadow-inner dark:bg-emerald-600 rounded flex items-center justify-center mr-3">
                         <div className="w-3 h-0.5 bg-white dark:bg-zinc-800"></div>
                       </div>
                     ) : (
@@ -161,7 +161,7 @@ export default function NameCardModals({
                           data-id={u.id}
                           checked={selectedUserIds.has(u.id)}
                           onChange={onToggleUserSelectionChange}
-                          className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600 bg-white dark:bg-zinc-700"
+                          className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-emerald-600 focus:ring-emerald-600 bg-white dark:bg-zinc-700"
                         />
                         <span className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white">
                           {u.name}
@@ -201,8 +201,8 @@ export default function NameCardModals({
         }
       >
         <div className="sm:flex sm:items-start">
-          <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 sm:mx-0 sm:h-10 sm:w-10">
-            <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" aria-hidden="true" />
+          <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 sm:mx-0 sm:h-10 sm:w-10">
+            <FileText className="h-6 w-6 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
           </div>
           <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
             <div className="mt-2">
@@ -213,7 +213,7 @@ export default function NameCardModals({
               </p>
               <textarea
                 rows={10}
-                className="w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition duration-200 sm:text-sm font-mono bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
+                className="w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-emerald-600/20 focus:border-emerald-600 transition duration-200 sm:text-sm font-mono bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
                 placeholder="张三 技术部 工程师&#10;李四 市场部 总监"
                 value={manualInputText}
                 onChange={(e) => setManualInputText(e.target.value)}

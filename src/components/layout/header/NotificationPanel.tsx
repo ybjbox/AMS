@@ -39,7 +39,7 @@ const NotificationPanel = React.memo(function NotificationPanel({ onClose }: Not
           {unreadCount > 0 && (
             <button
               onClick={markAllNotificationsAsRead}
-              className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center"
+              className="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 flex items-center"
             >
               <Check className="h-3 w-3 mr-1" />
               全部已读
@@ -65,14 +65,14 @@ const NotificationPanel = React.memo(function NotificationPanel({ onClose }: Not
             {notifications.map((notification) => (
                <div
                 key={notification.id}
-                className={`relative p-4 pl-5 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer ${!notification.read ? 'bg-blue-50/50 dark:bg-blue-900/20' : ''}`}
+                className={`relative p-4 pl-5 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer ${!notification.read ? 'bg-emerald-50/50 dark:bg-emerald-900/20' : ''}`}
                 onClick={() => handleMarkAsRead(notification.id)}
               >
                 <span className={`absolute left-0 top-2 bottom-2 w-0.5 rounded-full ${
                   notification.type === 'error'   ? 'bg-red-500' :
                   notification.type === 'warning' ? 'bg-amber-500' :
                   notification.type === 'success' ? 'bg-emerald-500' :
-                  'bg-blue-500'
+                  'bg-emerald-500'
                 }`} />
                 <div className="flex justify-between items-start mb-1">
                   <h4
@@ -98,7 +98,7 @@ const NotificationPanel = React.memo(function NotificationPanel({ onClose }: Not
               navigate('/settings?tab=logs');
               onClose?.();
             }}
-            className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors"
+            className="text-sm text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium transition-colors"
           >
             查看全部通知
           </button>

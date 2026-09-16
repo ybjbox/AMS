@@ -117,7 +117,7 @@ export default function ThemesPanel() {
               exit={{ opacity: 0, x: -10 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
               className={`bg-white dark:bg-zinc-800 rounded-xl border transition overflow-hidden ${
-                editingId === theme.id ? 'border-blue-400 ring-4 ring-blue-600/5' : 'border-zinc-200 dark:border-zinc-700 shadow-sm'
+                editingId === theme.id ? 'border-emerald-400 ring-4 ring-emerald-600/5' : 'border-zinc-200 dark:border-zinc-700 shadow-sm'
               }`}
             >
               <div className="p-4 border-b border-zinc-100 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800 flex items-center justify-between">
@@ -131,13 +131,13 @@ export default function ThemesPanel() {
                       type="text"
                       value={theme.name}
                       onChange={(e) => handleUpdateTheme(theme.id, 'name', e.target.value)}
-                      className="px-2 py-1 bg-transparent border border-blue-300 rounded text-sm font-semibold outline-none focus:outline-none focus:ring-4 focus:ring-blue-600/20 text-zinc-900 dark:text-white transition duration-200"
+                      className="px-2 py-1 bg-transparent border border-emerald-300 rounded text-sm font-semibold outline-none focus:outline-none focus:ring-4 focus:ring-emerald-600/20 text-zinc-900 dark:text-white transition duration-200"
                     />
                   ) : (
                     <h3 className="font-semibold text-zinc-900 dark:text-white">{theme.name}</h3>
                   )}
                   {(theme.id === 'default' || theme.id === 'theme_1') && (
-                    <span className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded-full font-bold">默认</span>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold">默认</span>
                   )}
                 </div>
 

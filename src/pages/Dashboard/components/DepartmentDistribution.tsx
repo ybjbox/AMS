@@ -19,7 +19,7 @@ export default function DepartmentDistribution({ stats, isLoading }: Props) {
     <div className="card-base p-6 transition duration-300 hover:shadow-md">
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
-          <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+          <Building2 className="w-4 h-4 text-slate-600 dark:text-slate-400" aria-hidden="true" />
           部门人数分布
         </h2>
         {stats && (
@@ -45,7 +45,7 @@ export default function DepartmentDistribution({ stats, isLoading }: Props) {
               </span>
               <div className="flex-1 h-5 rounded bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
                 <div
-                  className="h-full rounded bg-indigo-500/80 dark:bg-indigo-400/80 transition-[width] duration-500"
+                  className="h-full rounded bg-slate-500/80 dark:bg-slate-400/80 transition-[width] duration-500"
                   style={{ width: `${(d.count / max) * 100}%` }}
                   role="img"
                   aria-label={`${d.name} ${d.count} 人`}

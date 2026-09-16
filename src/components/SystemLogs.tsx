@@ -52,7 +52,7 @@ export default function SystemLogs() {
       case 'WARN':
         return <AlertTriangle className="w-4 h-4 text-amber-500" />;
       case 'INFO':
-        return <Info className="w-4 h-4 text-blue-600" />;
+        return <Info className="w-4 h-4 text-emerald-600" />;
     }
   }, []);
 
@@ -63,7 +63,7 @@ export default function SystemLogs() {
       case 'WARN':
         return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800';
       case 'INFO':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800';
+        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800';
     }
   }, []);
 
@@ -92,13 +92,13 @@ export default function SystemLogs() {
               placeholder="搜索日志内容、来源或详情…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-zinc-200/80 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition duration-200"
+              className="w-full pl-9 pr-4 py-2 text-sm border border-zinc-200/80 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-emerald-600/20 focus:border-emerald-600 transition duration-200"
             />
           </div>
           <div className="flex items-center space-x-2">
             <Filter className="w-4 h-4 text-zinc-400" />
             <Select value={filterLevel} onValueChange={(value) => setFilterLevel(value as LogLevel | 'ALL')}>
-              <SelectTrigger className="w-[180px] text-sm border border-zinc-200/80 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 transition duration-200">
+              <SelectTrigger className="w-[180px] text-sm border border-zinc-200/80 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-emerald-600/20 focus:border-emerald-600 transition duration-200">
                 <SelectValue placeholder="所有等级">
                   {(val) =>
                     val === 'ALL'
@@ -181,7 +181,7 @@ export default function SystemLogs() {
                         {log.details && (
                           <button
                             onClick={() => toggleExpand(log.id)}
-                            className="flex items-center text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 whitespace-nowrap transition-colors"
+                            className="flex items-center text-xs text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 whitespace-nowrap transition-colors"
                           >
                             {expandedLogs.has(log.id) ? (
                               <>

@@ -42,7 +42,7 @@ export function FileList({
   const getFileIcon = useCallback((type: string) => {
     if (!type) return <File className="w-8 h-8 text-zinc-500" />;
     if (type.includes('pdf')) return <FileText className="w-8 h-8 text-red-500" />;
-    if (type.includes('image')) return <ImageIcon className="w-8 h-8 text-blue-600" />;
+    if (type.includes('image')) return <ImageIcon className="w-8 h-8 text-emerald-600" />;
     if (type.includes('zip') || type.includes('rar')) return <FileArchive className="w-8 h-8 text-amber-500" />;
     return <File className="w-8 h-8 text-zinc-500" />;
   }, []);
@@ -53,7 +53,7 @@ export function FileList({
         <div className="flex items-center text-sm text-zinc-500 dark:text-zinc-400">
           <button
             onClick={() => onBreadcrumbClick(null)}
-            className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
           >
             根目录
           </button>
@@ -62,7 +62,7 @@ export function FileList({
               <ChevronRight className="w-4 h-4 mx-1" />
               <button
                 onClick={() => onBreadcrumbClick(crumb.id)}
-                className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate max-w-[100px] sm:max-w-[200px]"
+                className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors truncate max-w-[100px] sm:max-w-[200px]"
               >
                 {crumb.name}
               </button>
@@ -124,7 +124,7 @@ export function FileList({
                   <tr>
                     <td colSpan={4} className="px-6 py-12 text-center text-zinc-500 dark:text-zinc-400">
                       <div className="flex flex-col items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mb-4"></div>
                         <p>加载中…</p>
                       </div>
                     </td>
@@ -158,7 +158,7 @@ export function FileList({
                         </button>
                         <button
                           onClick={() => handleDownloadDocClick(doc.url, doc.name)}
-                          className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-4"
+                          className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-300 mr-4"
                         >
                           下载
                         </button>

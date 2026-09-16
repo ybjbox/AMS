@@ -48,7 +48,7 @@ const Header = memo(function Header({ isCollapsed, setIsCollapsed }: HeaderProps
         {/* Desktop collapse button */}
         <button
           onClick={handleToggleCollapse}
-          className="hidden md:block p-2 -ml-2 text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 rounded-xl transition duration-300 hover:-translate-y-0.5"
+          className="hidden md:block p-2 -ml-2 text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 rounded-xl transition duration-300 hover:-translate-y-0.5"
           title={isCollapsed ? '展开菜单' : '收起菜单'}
         >
           {isCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}

@@ -226,7 +226,7 @@ export default function Filter({
             <div className="flex-1 relative" ref={dropdownRef}>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">选择员工</label>
               <div
-                className="w-full p-2.5 border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white cursor-pointer flex justify-between items-center focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition duration-200"
+                className="w-full p-2.5 border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white cursor-pointer flex justify-between items-center focus:outline-none focus:ring-4 focus:ring-emerald-600/20 transition duration-200"
                 onClick={() => setIsEmployeeDropdownOpen(!isEmployeeDropdownOpen)}
                 tabIndex={0}
               >
@@ -248,7 +248,7 @@ export default function Filter({
                         placeholder="搜索姓名或工号…"
                         value={employeeSearchQuery}
                         onChange={(e) => setEmployeeSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 text-sm border-none rounded-lg bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition duration-200"
+                        className="w-full pl-9 pr-3 py-2 text-sm border-none rounded-lg bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-emerald-600/20 transition duration-200"
                         onClick={(e) => e.stopPropagation()}
                         autoFocus
                       />
@@ -256,7 +256,7 @@ export default function Filter({
                   </div>
                   <div className="overflow-y-auto flex-1 py-1">
                     <div
-                      className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-700/50 ${!selectedEmployeeId ? 'bg-blue-50/50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-zinc-700 dark:text-zinc-300'}`}
+                      className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-700/50 ${!selectedEmployeeId ? 'bg-emerald-50/50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'text-zinc-700 dark:text-zinc-300'}`}
                       data-employeeid=""
                       onClick={onEmployeeSelectClick}
                     >
@@ -271,7 +271,7 @@ export default function Filter({
                       .map((u) => (
                         <div
                           key={u.id}
-                          className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-700/50 ${selectedEmployeeId === u.id ? 'bg-blue-50/50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-zinc-700 dark:text-zinc-300'}`}
+                          className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-700/50 ${selectedEmployeeId === u.id ? 'bg-emerald-50/50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'text-zinc-700 dark:text-zinc-300'}`}
                           data-employeeid={u.id}
                           onClick={onEmployeeSelectClick}
                         >
@@ -294,7 +294,7 @@ export default function Filter({
                       data-shiftid={s.id}
                       checked={selectedShiftIds.includes(s.id)}
                       onChange={onShiftCheckboxChange}
-                      className="w-4 h-4 text-blue-600 border-zinc-300 rounded focus:ring-blue-600/30 transition-colors"
+                      className="w-4 h-4 text-emerald-600 border-zinc-300 rounded focus:ring-emerald-600/30 transition-colors"
                     />
                     <span className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
                       {s.name} ({s.startTime}-{s.endTime})
@@ -328,7 +328,7 @@ export default function Filter({
                 value={editingShift ? editingShift.name : ''}
                 onChange={onShiftNameChange}
                 placeholder="如: 早班, 晚班"
-                className="w-full p-2.5 border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition duration-200"
+                className="w-full p-2.5 border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-emerald-600/20 transition duration-200"
               />
             </div>
             <div>
@@ -337,7 +337,7 @@ export default function Filter({
                 type="time"
                 value={editingShift ? editingShift.startTime : '09:00'}
                 onChange={onShiftStartTimeChange}
-                className="w-full p-2.5 border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition duration-200"
+                className="w-full p-2.5 border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-emerald-600/20 transition duration-200"
               />
             </div>
             <div>
@@ -346,7 +346,7 @@ export default function Filter({
                 type="time"
                 value={editingShift ? editingShift.endTime : '18:00'}
                 onChange={onShiftEndTimeChange}
-                className="w-full p-2.5 border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition duration-200"
+                className="w-full p-2.5 border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-emerald-600/20 transition duration-200"
               />
             </div>
             <div className="flex space-x-3">
@@ -395,7 +395,7 @@ export default function Filter({
               placeholder="搜索姓名或工号…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2.5 w-full text-sm border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-600/20 transition duration-200"
+              className="pl-10 pr-4 py-2.5 w-full text-sm border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-emerald-600/20 transition duration-200"
             />
           </div>
         </div>

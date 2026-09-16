@@ -41,7 +41,7 @@ export function FolderTree({
             return (
               <li key={folder.id}>
                 <div
-                  className={`flex items-center justify-between py-1.5 px-2 rounded-md cursor-pointer transition-colors group ${isSelected ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700'}`}
+                  className={`flex items-center justify-between py-1.5 px-2 rounded-md cursor-pointer transition-colors group ${isSelected ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700'}`}
                   onClick={() => onSetCurrentFolderClick(folder.id)}
                 >
                   <div className="flex items-center space-x-1.5 overflow-hidden">
@@ -62,7 +62,7 @@ export function FolderTree({
                         <span className="w-3.5 h-3.5 inline-block" />
                       )}
                     </button>
-                    <Folder className={`w-4 h-4 shrink-0 ${isSelected ? 'text-blue-600' : 'text-zinc-400'}`} />
+                    <Folder className={`w-4 h-4 shrink-0 ${isSelected ? 'text-emerald-600' : 'text-zinc-400'}`} />
                     <span className="text-sm truncate">{folder.name}</span>
                   </div>
                   <div className="hidden group-hover:flex items-center space-x-1 shrink-0">
@@ -71,7 +71,7 @@ export function FolderTree({
                         e.stopPropagation();
                         onAddSubFolderClick(folder.id);
                       }}
-                      className="p-1 text-zinc-400 hover:text-blue-600"
+                      className="p-1 text-zinc-400 hover:text-emerald-600"
                     >
                       <Plus className="w-3 h-3" />
                     </button>
@@ -112,7 +112,7 @@ export function FolderTree({
         </span>
         <button
           onClick={handleCreateRootFolderClick}
-          className="p-1.5 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-zinc-700 rounded-md transition-colors"
+          className="p-1.5 text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-zinc-700 rounded-md transition-colors"
           title="新建根目录文件夹"
           aria-label="新建根目录文件夹"
         >
@@ -121,12 +121,12 @@ export function FolderTree({
       </div>
       <div className="flex-1 overflow-y-auto p-3 space-y-1">
         <div
-          className={`flex items-center py-1.5 px-2 rounded-md cursor-pointer transition-colors ${currentFolderId === null ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700'}`}
+          className={`flex items-center py-1.5 px-2 rounded-md cursor-pointer transition-colors ${currentFolderId === null ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700'}`}
           onClick={() => onSetCurrentFolderClick(null)}
         >
           <div className="w-3.5 h-3.5 mr-1.5" />
           <FolderOpen
-            className={`w-4 h-4 mr-1.5 shrink-0 ${currentFolderId === null ? 'text-blue-600' : 'text-zinc-400'}`}
+            className={`w-4 h-4 mr-1.5 shrink-0 ${currentFolderId === null ? 'text-emerald-600' : 'text-zinc-400'}`}
           />
           <span className="text-sm font-medium">全部文件 (根目录)</span>
         </div>

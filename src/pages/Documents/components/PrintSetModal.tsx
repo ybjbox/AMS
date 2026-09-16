@@ -57,8 +57,8 @@ export function PrintSetModal({
         </>
       }
     >
-      <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 mb-4">
-        <Printer className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+      <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 mb-4">
+        <Printer className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
       </div>
       <div className="text-center">
         <div className="mt-2">

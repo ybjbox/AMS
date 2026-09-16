@@ -37,7 +37,7 @@ export const ContractTemplateEditor = ({ isOpen, onClose }: ContractTemplateEdit
       onClose={onClose}
       title={
         <div className="flex items-center">
-          <FileEdit className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
+          <FileEdit className="w-5 h-5 mr-2 text-emerald-600 dark:text-emerald-400" />
           劳动合同模板设置
         </div>
       }
@@ -88,7 +88,7 @@ export const ContractTemplateEditor = ({ isOpen, onClose }: ContractTemplateEdit
             <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">HTML 模板源码</span>
             <button
               onClick={() => setEditingTemplate(defaultTemplate)}
-              className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
+              className="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
             >
               恢复默认模板
             </button>
@@ -124,7 +124,7 @@ export const ContractTemplateEditor = ({ isOpen, onClose }: ContractTemplateEdit
                 key={v.key}
                 className="flex items-center justify-between bg-white dark:bg-zinc-700 p-2 rounded border border-zinc-200 dark:border-zinc-600"
               >
-                <code className="text-xs text-blue-600 dark:text-blue-400 font-mono bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">
+                <code className="text-xs text-emerald-600 dark:text-emerald-400 font-mono bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">
                   {v.key}
                 </code>
                 <span className="text-xs text-zinc-600 dark:text-zinc-300">{v.desc}</span>

@@ -105,7 +105,7 @@ export default function AnnouncementsPanel() {
       <div className="flex items-center justify-between shrink-0">
         <div>
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-white flex items-center">
-            <Megaphone className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />
+            <Megaphone className="w-4 h-4 mr-2 text-emerald-600 dark:text-emerald-400" />
             公告管理
           </h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
@@ -163,7 +163,7 @@ export default function AnnouncementsPanel() {
               type="checkbox"
               checked={form.priority === 'important'}
               onChange={(e) => setForm({ ...form, priority: e.target.checked ? 'important' : 'normal' })}
-              className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600"
+              className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-emerald-600 focus:ring-emerald-600"
             />
             重要公告（置顶显示）
           </label>
@@ -172,7 +172,7 @@ export default function AnnouncementsPanel() {
               type="checkbox"
               checked={form.notifyAll}
               onChange={(e) => setForm({ ...form, notifyAll: e.target.checked })}
-              className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-blue-600 focus:ring-blue-600"
+              className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-emerald-600 focus:ring-emerald-600"
             />
             同时通知全员
           </label>
