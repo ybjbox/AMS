@@ -11,6 +11,7 @@
  * - 数字列读到字符串/大整数：转为 number（超出安全整数时保留精度丢失警告值）
  * - null/undefined：由调用方选择默认值（提供 asString / asNullableString 等变体）
  */
+import type { DatabaseSync, SQLInputValue } from 'node:sqlite';
 import type { SQLOutputValue } from 'node:sqlite';
 
 /** SQLite 查询结果行的类型化视图（边界类型，勿直接使用其字段值） */
@@ -77,4 +78,49 @@ export const allRows = (
 /** COUNT(*) 结果读取帮助（SQLite 总是返回 number） */
 export function asCount(v: SQLOutputValue | undefined): number {
   return asNumber(v);
+}
+
+// ---------- 慢查询监控（可观测性） ----------
+
+/** 慢查询阈值（毫秒），可用 LOG_SLOW_QUERY_MS 环境变量调整 */
+const SLOW_QUERY_MS = Number(process.env.LOG_SLOW_QUERY_MS) || 500;
+
+/**
+ * 包装 DatabaseSync 的 prepare，为每个语句挂耗时统计：
+ * 超过 SLOW_QUERY_MS 的查询以结构化 JSON 输出到 stdout（与 accessLog 同格式）。
+ *
+ * 设计取舍：node:sqlite 无原生钩子，只能包一层 prepare。
+ * 只在「执行」时计时（prepare 本身廉价），且只记录慢查询避免日志洪水。
+ */
+export function instrumentDatabase(db: DatabaseSync): void {
+  const origPrepare = db.prepare.bind(db);
+  db.prepare = ((sql: string, ..._params: SQLInputValue[]) => {
+    const stmt = origPrepare(sql);
+
+    const timed = <A extends SQLInputValue[], R>(fn: (...args: A) => R, kind: string): ((...args: A) => R) =>
+      ((...args: A) => {
+        const start = performance.now();
+        const result = fn(...args);
+        const elapsed = performance.now() - start;
+        if (elapsed >= SLOW_QUERY_MS) {
+          process.stdout.write(
+            JSON.stringify({
+              ts: new Date().toISOString(),
+              method: 'sqlite',
+              path: `${kind}:${sql.slice(0, 120).replace(/\s+/g, ' ')}`,
+              status: 200,
+              durationMs: Math.round(elapsed),
+              slow: true,
+            }) + '\n'
+          );
+        }
+        return result;
+      });
+
+    return {
+      get: timed(stmt.get.bind(stmt), 'get'),
+      all: timed(stmt.all.bind(stmt), 'all'),
+      run: timed(stmt.run.bind(stmt), 'run'),
+    } as typeof stmt;
+  }) as DatabaseSync['prepare'];
 }

@@ -2,12 +2,14 @@ import "./server/env.ts";
 import express from "express";
 import compression from "compression";
 import { createServer as createViteServer } from "vite";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import ExcelJS from "exceljs";
 import { EXCEL_THEMES } from "./server/themes.ts";
 import { runMigrations } from "./server/migrate.ts";
-import { optimizeDb } from "./server/db.ts";
+import { db, optimizeDb } from "./server/db.ts";
+import { accessLog, installProcessGuards } from "./server/accessLog.ts";
 import { authGate } from "./server/authMiddleware.ts";
 import { auditGate } from "./server/auditMiddleware.ts";
 import { errorHandler } from "./server/errorHandler.ts";
@@ -55,6 +57,15 @@ function sendTemplateError(res: express.Response, e: unknown): boolean {
   }
   return false;
 }
+
+/** 应用版本：从 package.json 读取一次（健康检查暴露） */
+const APP_VERSION: string = (() => {
+  try {
+    return (JSON.parse(fs.readFileSync(path.join(process.cwd(), "package.json"), "utf-8")) as { version?: string }).version ?? "unknown";
+  } catch {
+    return "unknown";
+  }
+})();
 
 async function startServer() {
   const app = express();
@@ -105,6 +116,8 @@ async function startServer() {
 
   // 3) 鉴权闸门：按设计必须挂在所有 /api 业务路由之前（见 server/authMiddleware.ts 头部）。
   //    公开白名单：GET /api/health、POST /api/auth/login；其余接口默认"登录可读、HR 可写"。
+  // 请求日志（可观测性）：记录慢请求与失败响应（JSON 行到 stdout）
+  app.use(accessLog());
   app.use("/api", authGate);
   // 4) 审计网关（AUDIT P1-5）：必须紧跟 authGate——req.auth 已就绪，写操作自动留痕。
   app.use("/api", auditGate);
@@ -130,7 +143,22 @@ async function startServer() {
 
   // API routes
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok" });
+    // 增强健康检查：供负载均衡/监控探针与运维排障使用。
+    // 注意：保持轻量（不做重量级查询），且不泄露敏感信息。
+    const mem = process.memoryUsage();
+    let dbOk = true;
+    try {
+      db.prepare("SELECT 1").get();
+    } catch {
+      dbOk = false;
+    }
+    res.json({
+      status: dbOk ? "ok" : "degraded",
+      db: dbOk ? "up" : "down",
+      uptimeSec: Math.round(process.uptime()),
+      memMB: Math.round(mem.heapUsed / 1024 / 1024),
+      version: APP_VERSION,
+    });
   });
 
   // Theme management APIs（读写穿透 settings 表，重启不丢）
@@ -354,6 +382,7 @@ async function startServer() {
 
   app.listen(PORT, HOST, () => {
     console.log(`Server running on http://localhost:${PORT}`);
+  installProcessGuards();
     if (HOST === "0.0.0.0") {
       console.warn(
         "[security] HOST=0.0.0.0：服务正暴露给所有网络接口，请确认这是受信任的部署环境"

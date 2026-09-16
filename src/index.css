@@ -322,6 +322,15 @@ main,
   body {
     @apply bg-background text-foreground;
   }
+  /* Tailwind preflight 移除了按钮的默认 cursor；
+     按 ui-ux-pro-max pre-delivery checklist 要求，可点击元素统一手型光标。
+     disabled 状态保持默认箭头（语义上不可点）。 */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  label:has(input[type="checkbox"]),
+  label:has(input[type="radio"]) {
+    cursor: pointer;
+  }
 
   /* 数值对齐：表格/统计数字使用等宽字形，保证纵向扫读时列宽稳定 */
   table {

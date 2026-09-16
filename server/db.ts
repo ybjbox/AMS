@@ -6,6 +6,7 @@ import { DatabaseSync } from "node:sqlite";
 import path from "path";
 import fs from "fs";
 import { resolvePaging, toListResult } from "./listQuery.ts";
+import { instrumentDatabase } from "./sqliteUtil.ts";
 import { type DbRow, asString, asNumber, asNullableString, asCount } from "./sqliteUtil.ts";
 
 export const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), "data");
@@ -39,6 +40,8 @@ function applyConnectionPragmas(conn: DatabaseSync): void {
 }
 
 applyConnectionPragmas(db);
+// 慢查询监控：包装 prepare，超时阈值查询输出结构化日志（可观测性）
+instrumentDatabase(db);
 
 /** 重开连接后需要重新 prepare 缓存语句的钩子（由审计/安全等模块注册） */
 const reloadHooks: Array<() => void> = [];

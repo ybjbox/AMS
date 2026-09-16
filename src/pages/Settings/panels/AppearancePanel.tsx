@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { toast } from 'sonner';
-import { Palette, Image as ImageIcon, Upload, Monitor, Building2 } from 'lucide-react';
+import { Building2, Image as ImageIcon, Monitor, Moon, Palette, Sun, Upload } from 'lucide-react';
 import { useAppSettings } from '@/store/appSettings';
 
 export default function AppearancePanel() {
@@ -60,9 +60,9 @@ export default function AppearancePanel() {
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { id: 'light', label: '浅色模式', icon: '☀️' },
-              { id: 'dark', label: '深色模式', icon: '🌙' },
-              { id: 'system', label: '跟随系统', icon: '💻' },
+              { id: 'light', label: '浅色模式', Icon: Sun },
+              { id: 'dark', label: '深色模式', Icon: Moon },
+              { id: 'system', label: '跟随系统', Icon: Monitor },
             ].map((t) => (
               <button
                 key={t.id}
@@ -74,7 +74,7 @@ export default function AppearancePanel() {
                     : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-200/80 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
                 }`}
               >
-                <span className="text-2xl mb-2">{t.icon}</span>
+                <t.Icon className="w-6 h-6 mb-2" aria-hidden="true" />
                 <span
                   className={`text-sm font-medium ${theme === t.id ? 'text-blue-700 dark:text-blue-400' : 'text-zinc-700 dark:text-zinc-300'}`}
                 >
