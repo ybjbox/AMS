@@ -103,10 +103,10 @@ export const BaseModal: React.FC<BaseModalProps> = React.memo(
             <motion.div
               ref={modalRef}
               tabIndex={-1}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0, scale: 0.96, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 4, transition: { duration: 0.15, ease: 'easeIn' } }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
               className={`relative z-10 w-full bg-white dark:bg-zinc-800 rounded-2xl text-left shadow-xl flex flex-col outline-none ${size === 'full' ? 'h-[90vh] max-h-[90vh]' : 'max-h-[90vh]'} ${sizeClasses[size]} ${className}`}
             >
               {/* Header */}

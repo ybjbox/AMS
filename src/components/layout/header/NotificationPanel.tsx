@@ -27,10 +27,10 @@ const NotificationPanel = React.memo(function NotificationPanel({ onClose }: Not
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.12, ease: 'easeIn' } }}
+      transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
       className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white dark:bg-zinc-800 rounded-lg shadow-xl border border-zinc-100 dark:border-zinc-700 z-50 transform origin-top-right"
     >
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100 dark:border-zinc-700">

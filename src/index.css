@@ -66,6 +66,14 @@ main,
   background: #475569;
 }
 
+/* 主题切换时抑制全局过渡：否则每个主题属性逐个动画，产生“波浪式”变色。
+   ThemeToggle 切换时给 root 加 data-theme-switching 一拍后移除 */
+[data-theme-switching] *,
+[data-theme-switching] *::before,
+[data-theme-switching] *::after {
+  transition: none !important;
+}
+
 @media print {
   @page {
     size: A4;
@@ -248,7 +256,7 @@ main,
     @apply w-full px-3 py-2 text-sm border border-zinc-200/80 dark:border-zinc-600 
     rounded-lg bg-white dark:bg-zinc-700/60 text-zinc-900 dark:text-white 
     focus:outline-none focus:ring-4 focus:ring-brand-500/25 focus:border-brand-500
-    transition-all duration-200;
+    transition-[color,background-color,border-color,box-shadow] duration-200;
   }
   
   .btn-primary {
@@ -305,7 +313,7 @@ main,
   .stat-card {
     @apply bg-white dark:bg-zinc-800 p-4 rounded-2xl shadow-sm 
     border border-zinc-200/60 dark:border-white/10
-    flex items-center transition-all duration-300 hover:shadow-md hover:-translate-y-0.5;
+    flex items-center transition-[box-shadow,transform] duration-300 hover:shadow-md hover:-translate-y-0.5;
   }
   
   .page-header {
@@ -348,7 +356,7 @@ main,
 
 /* 基础 Tab 样式（内部复用） */
 @utility tab-item-base {
-  @apply px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 whitespace-nowrap cursor-pointer;
+  @apply px-4 py-1.5 text-sm font-medium rounded-lg transition-[color,background-color,box-shadow] duration-200 whitespace-nowrap cursor-pointer;
 }
 
 @layer base {

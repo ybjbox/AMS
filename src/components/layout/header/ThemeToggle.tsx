@@ -6,9 +6,23 @@ const ThemeToggle = React.memo(function ThemeToggle() {
   const theme = useAppSettings((state) => state.theme);
   const setTheme = useAppSettings((state) => state.setTheme);
 
-  const handleSetLight = useCallback(() => setTheme('light'), [setTheme]);
-  const handleSetDark = useCallback(() => setTheme('dark'), [setTheme]);
-  const handleSetSystem = useCallback(() => setTheme('system'), [setTheme]);
+  // 切换主题的下一拍抑制全局过渡（index.css [data-theme-switching]），
+  // 避免 body/侧栏/卡片几十个属性“波浪式”逐个变色；过渡完成后恢复
+  const applyTheme = useCallback(
+    (next: 'light' | 'dark' | 'system') => {
+      const root = document.documentElement;
+      root.setAttribute('data-theme-switching', '');
+      setTheme(next);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => root.removeAttribute('data-theme-switching'));
+      });
+    },
+    [setTheme]
+  );
+
+  const handleSetLight = useCallback(() => applyTheme('light'), [applyTheme]);
+  const handleSetDark = useCallback(() => applyTheme('dark'), [applyTheme]);
+  const handleSetSystem = useCallback(() => applyTheme('system'), [applyTheme]);
 
   return (
     <div className="px-4 py-2 border-b border-zinc-100 dark:border-zinc-700">

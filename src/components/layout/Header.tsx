@@ -28,7 +28,7 @@ const Header = memo(function Header({ isCollapsed, setIsCollapsed }: HeaderProps
         {/* Mobile menu button */}
         <div className="md:hidden">
           <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-            <SheetTrigger className="p-2 -ml-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 rounded-xl transition duration-300 hover:-translate-y-0.5">
+            <SheetTrigger className="p-2 -ml-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 rounded-xl transition-colors duration-150">
               <Menu className="h-5 w-5" />
             </SheetTrigger>
             <SheetContent
@@ -48,7 +48,7 @@ const Header = memo(function Header({ isCollapsed, setIsCollapsed }: HeaderProps
         {/* Desktop collapse button */}
         <button
           onClick={handleToggleCollapse}
-          className="hidden md:block p-2 -ml-2 text-zinc-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 rounded-xl transition duration-300 hover:-translate-y-0.5"
+          className="hidden md:block p-2 -ml-2 text-zinc-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 rounded-xl transition-colors duration-150"
           title={isCollapsed ? '展开菜单' : '收起菜单'}
         >
           {isCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
