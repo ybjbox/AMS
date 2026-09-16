@@ -4,6 +4,7 @@ import { ChartData } from '../components/DashboardChart';
 import { fetchUsersPage } from '@/services/userApi';
 import { attendanceApi } from '@/services/attendanceApi';
 import { notificationApi } from '@/services/notificationApi';
+import { announcementApi, type Announcement } from '@/services/announcementApi';
 import { flattenDepartments, useDepartments } from '@/store/useDepartmentStore';
 import { useTodoStore } from '@/store/useTodoStore';
 import { formatDateTime } from '@/utils/dateUtils';
@@ -102,10 +103,12 @@ export function useDashboard(): UseDashboardReturn {
 
     (async () => {
       try {
-        const [usersPage, records, notifications] = await Promise.all([
+        const [usersPage, records, notifications, announcements] = await Promise.all([
           fetchUsersPage({ page: 1, pageSize: 1 }),
           attendanceApi.fetchRecords(),
           notificationApi.list(),
+          // 公告为全员可读接口；失败时回退到最近通知（不阻断仪表盘）
+          announcementApi.list(3).catch(() => [] as Announcement[]),
         ]);
         if (cancelled) return;
 
@@ -129,12 +132,20 @@ export function useDashboard(): UseDashboardReturn {
         setRaw({
           totalEmployees: usersPage.total,
           todayPunchers,
-          notices: notifications.slice(0, 3).map((n) => ({
-            title: n.title,
-            dept: '系统通知',
-            date: (n.time || '').slice(0, 10),
-            isNew: !n.read,
-          })),
+          notices:
+            announcements.length > 0
+              ? announcements.map((a) => ({
+                  title: a.title,
+                  dept: `${a.publisher || '管理员'}${a.priority === 'important' ? ' · 重要' : ''}`,
+                  date: (a.createdAt || '').slice(0, 10),
+                  isNew: Date.now() - new Date(a.createdAt).getTime() < 3 * 24 * 3600 * 1000,
+                }))
+              : notifications.slice(0, 3).map((n) => ({
+                  title: n.title,
+                  dept: '系统通知',
+                  date: (n.time || '').slice(0, 10),
+                  isNew: !n.read,
+                })),
           chartData: trend,
           lastUpdated: formatDateTime(new Date()),
         });

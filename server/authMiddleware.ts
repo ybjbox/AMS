@@ -126,6 +126,10 @@ const POLICIES: Policy[] = [
   // 运行诊断（进程健康/访问日志/表行数）：运维信息，仅管理员
   { pattern: /^\/system\b/, methods: "*", minRole: "ADMIN" },
 
+  // 公告：读取（有效公告）全员可见；管理列表与写操作仅 ADMIN
+  { pattern: /^\/announcements\/all\b/, methods: "*", minRole: "ADMIN" },
+  { pattern: /^\/announcements\b/, methods: ["POST", "PUT", "PATCH", "DELETE"], minRole: "ADMIN" },
+
   // 导出脚本模板 = 可执行代码，读写都必须是管理员
   { pattern: /^\/export-templates\b/, methods: "*", minRole: "ADMIN" },
   // 主题写入

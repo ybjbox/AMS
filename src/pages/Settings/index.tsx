@@ -15,6 +15,7 @@ import {
   History,
   ShieldCheck,
   Activity,
+  Megaphone,
 } from 'lucide-react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import DepartmentsPanel from './panels/DepartmentsPanel';
@@ -30,6 +31,7 @@ import AiConfigPanel from './panels/AiConfigPanel';
 import AiHistoryPanel from './panels/AiHistoryPanel';
 import PermissionMatrixPanel from './panels/PermissionMatrixPanel';
 import DiagnosticsPanel from './panels/DiagnosticsPanel';
+import AnnouncementsPanel from './panels/AnnouncementsPanel';
 
 const tabs = [
   { id: 'departments', label: '部门与职位架构', icon: Building2 },
@@ -43,15 +45,18 @@ const tabs = [
   { id: 'ai', label: 'AI 管理配置', icon: Bot },
   { id: 'ai-history', label: 'AI 会话记录', icon: History },
   { id: 'permissions', label: '权限矩阵', icon: ShieldCheck },
+  { id: 'announcements', label: '公告管理', icon: Megaphone },
   { id: 'diagnostics', label: '运行诊断', icon: Activity },
   { id: 'logs', label: '系统日志', icon: TerminalSquare },
 ];
 
 export default function Settings() {
   const location = useLocation();
-  // 登录页强制改密会带 { tab: 'profile' } 跳转过来
+  // Tab 初值优先级：URL ?tab= 参数（支持外部深链，如控制台"查看全部"）＞
+  // 登录页强制改密携带的 { tab: 'profile' } ＞ 默认「部门与职位」
   const [activeTab, setActiveTab] = useState(() => {
-    const wanted = (location.state as { tab?: string } | null)?.tab;
+    const fromQuery = new URLSearchParams(location.search).get('tab');
+    const wanted = fromQuery || (location.state as { tab?: string } | null)?.tab;
     return tabs.some((t) => t.id === wanted) ? (wanted as string) : 'departments';
   });
 
@@ -75,6 +80,7 @@ export default function Settings() {
       case 'ai': return <AiConfigPanel />;
       case 'ai-history': return <AiHistoryPanel />;
       case 'permissions': return <PermissionMatrixPanel />;
+      case 'announcements': return <AnnouncementsPanel />;
       case 'diagnostics': return <DiagnosticsPanel />;
       case 'logs': return <LogsPanel />;
       default: return null;

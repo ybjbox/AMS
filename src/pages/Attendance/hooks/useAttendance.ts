@@ -4,7 +4,7 @@ import { useEmployeeStore } from '@/store/useEmployeeStore';
 import { User } from '@/types';
 import { useUserStore as useAuthStore } from '@/store/useUserStore';
 
-export type TabType = 'records' | 'schedules' | 'anomalies' | 'shifts';
+export type TabType = 'records' | 'schedules' | 'anomalies' | 'shifts' | 'monthly';
 
 export interface UseAttendanceReturn {
   // State

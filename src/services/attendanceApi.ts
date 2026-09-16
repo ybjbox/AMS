@@ -9,6 +9,23 @@ import type { Anomaly, EmployeeSchedule, PunchRecord, Shift } from '../store/use
  * PUT /schedules、PUT /records 为批量替换语义（schedules 为 upsert-only），
  * 写入后重新 GET，以服务器状态为准。
  */
+/** 月度考勤汇总行（与服务端 MonthlySummaryRow 对齐） */
+export interface MonthlySummaryRow {
+  employeeId: string;
+  employeeName: string;
+  department: string;
+  workDays: number;
+  punchCount: number;
+  lateCount: number;
+  earlyLeaveCount: number;
+  missingCount: number;
+}
+
+export interface MonthlySummaryResponse {
+  month: string;
+  rows: MonthlySummaryRow[];
+}
+
 export const attendanceApi = {
   // ---- 班次 ----
   fetchShifts: (): Promise<Shift[]> => http.get<Shift[]>('/attendance/shifts'),
@@ -32,6 +49,10 @@ export const attendanceApi = {
     await http.put('/attendance/records', { records });
     return http.get<PunchRecord[]>('/attendance/records');
   },
+
+  // ---- 月度报表 ----
+  fetchMonthlySummary: (month: string): Promise<MonthlySummaryResponse> =>
+    http.get<MonthlySummaryResponse>(`/attendance/summary?month=${encodeURIComponent(month)}`),
 
   // ---- 异常 ----
   fetchAnomalies: (): Promise<Anomaly[]> => http.get<Anomaly[]>('/attendance/anomalies'),

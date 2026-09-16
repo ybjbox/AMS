@@ -3,6 +3,7 @@ import React from 'react';
 import Filter from './components/Filter';
 import Stats from './components/Stats';
 import Table from './components/Table';
+import MonthlyReport from './components/MonthlyReport';
 import { useAttendance } from './hooks/useAttendance';
 
 export default function Attendance() {
@@ -24,6 +25,7 @@ export default function Attendance() {
                 { tab: 'schedules', label: '排班字典' },
                 { tab: 'shifts', label: '班次管理' },
                 { tab: 'anomalies', label: '异常分析' },
+                { tab: 'monthly', label: '月度报表' },
               ] as const
             ).map(({ tab, label }) => (
               <button
@@ -38,13 +40,19 @@ export default function Attendance() {
             ))}
           </div>
         </div>
-        <div className="shrink-0 space-y-4 mb-4">
-          <Stats {...attendanceData} />
-          <Filter {...attendanceData} />
-        </div>
+        {attendanceData.activeTab !== 'monthly' && (
+          <div className="shrink-0 space-y-4 mb-4">
+            <Stats {...attendanceData} />
+            <Filter {...attendanceData} />
+          </div>
+        )}
         <div className="flex-1 card-base overflow-hidden flex flex-col min-h-0">
           <div className="flex-1 overflow-auto">
-            <Table {...attendanceData} />
+            {attendanceData.activeTab === 'monthly' ? (
+              <MonthlyReport />
+            ) : (
+              <Table {...attendanceData} />
+            )}
           </div>
         </div>
       </div>

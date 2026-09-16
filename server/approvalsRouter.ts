@@ -24,16 +24,25 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const createSchema = z
   .object({
-    type: z.enum(["leave"]).optional(),
+    /** 'leave' 请假（默认） | 'makeup' 补卡 */
+    type: z.enum(["leave", "makeup"]).optional(),
     leaveType: z.enum(["事假", "病假", "年假", "调休"]).optional(),
     startDate: z
-      .string({ error: "开始日期不能为空" })
-      .regex(DATE_RE, "开始日期格式应为 YYYY-MM-DD"),
+      .string()
+      .regex(DATE_RE, "开始日期格式应为 YYYY-MM-DD")
+      .optional(),
     endDate: z
       .string()
       .regex(DATE_RE, "结束日期格式应为 YYYY-MM-DD")
       .optional(),
     reason: z.string({ error: "请填写申请事由" }).min(1, "请填写申请事由"),
+    // 补卡专用字段（type='makeup' 时必填，由处理函数分支校验）
+    punchDate: z.string().regex(DATE_RE, "补卡日期格式应为 YYYY-MM-DD").optional(),
+    punchTime: z
+      .string()
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "补卡时间格式应为 HH:mm")
+      .optional(),
+    punchKind: z.enum(["上班卡", "下班卡"]).optional(),
   })
   .loose();
 
@@ -46,9 +55,33 @@ const decideSchema = z
 
 approvalsRouter.post("/", validateBody(createSchema), (req, res, next) => {
   try {
+    // 补卡分支：日期/时间/卡类型必填；startDate 复用为补卡日期（保持列表排序与展示兼容）
+    if (req.body.type === "makeup") {
+      const { punchDate, punchTime, punchKind, reason } = req.body;
+      if (!punchDate || !punchTime || !punchKind) {
+        return res.status(400).json({ error: "补卡申请需填写日期、时间与卡类型" });
+      }
+      const row = createApproval({
+        applicant: req.auth!.username,
+        type: "makeup",
+        leaveType: "补卡",
+        startDate: punchDate,
+        endDate: null,
+        reason,
+        punchDate,
+        punchTime,
+        punchKind,
+      });
+      return res.status(201).json(row);
+    }
+
+    // 请假分支（默认）
+    if (!req.body.startDate) {
+      return res.status(400).json({ error: "开始日期不能为空" });
+    }
     const row = createApproval({
       applicant: req.auth!.username,
-      type: req.body.type,
+      type: "leave",
       leaveType: req.body.leaveType,
       startDate: req.body.startDate,
       endDate: req.body.endDate ?? null,

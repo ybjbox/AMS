@@ -5,6 +5,7 @@ export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
 export interface Approval {
   id: string;
   applicant: string;
+  /** 'leave' 请假 | 'makeup' 补卡 */
   type: string;
   leaveType: string;
   startDate: string;
@@ -15,16 +16,31 @@ export interface Approval {
   comment: string;
   createdAt: string;
   decidedAt: string | null;
+  /** 补卡字段（type='makeup' 时有效） */
+  punchDate: string;
+  punchTime: string;
+  punchKind: string;
 }
 
-export interface ApprovalCreateInput {
+export interface LeaveCreateInput {
+  type?: 'leave';
   leaveType: '事假' | '病假' | '年假' | '调休';
   startDate: string;
   endDate?: string;
   reason: string;
 }
 
-/** 审批 API（R1 v1：请假申请闭环 + R2 员工自助提交） */
+export interface MakeupCreateInput {
+  type: 'makeup';
+  punchDate: string;
+  punchTime: string;
+  punchKind: '上班卡' | '下班卡';
+  reason: string;
+}
+
+export type ApprovalCreateInput = LeaveCreateInput | MakeupCreateInput;
+
+/** 审批 API（R1 v1：请假 + 补卡申请闭环 + R2 员工自助提交） */
 export const approvalApi = {
   listMine: (): Promise<Approval[]> => http.get<Approval[]>('/approvals/mine'),
 

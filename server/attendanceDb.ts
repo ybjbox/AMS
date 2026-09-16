@@ -354,6 +354,103 @@ function toMinutes(hhmm: string): number {
   return h * 60 + (m || 0);
 }
 
+// ---------- 月度考勤汇总（P0：HR 月报） ----------
+
+export interface MonthlySummaryRow {
+  employeeId: string;
+  employeeName: string;
+  department: string;
+  /** 出勤天数（当月有打卡记录的天数） */
+  workDays: number;
+  /** 打卡总次数 */
+  punchCount: number;
+  /** 迟到次数（与异常规则一致：首卡晚于班次开始 +5 分钟以上） */
+  lateCount: number;
+  /** 早退次数（末卡早于班次结束） */
+  earlyLeaveCount: number;
+  /** 缺卡次数（单次打卡的日期数） */
+  missingCount: number;
+}
+
+/**
+ * 月度考勤汇总：按 员工 聚合当月打卡数据，套用与异常分析一致的规则。
+ * 直接实时计算（不依赖 anomalies 表），保证报表始终是最新口径。
+ */
+export function monthlySummary(month: string): MonthlySummaryRow[] {
+  const prefix = `${month}-%`;
+  const shifts = listShifts();
+  const schedules = listSchedules();
+  const shiftMap = new Map(shifts.map((s) => [s.id, s]));
+  const scheduleMap = new Map(schedules.map((s) => [s.employeeId, s]));
+
+  // 当月打卡记录（含部门联查）
+  const rows = db
+    .prepare(
+      `SELECT p.employeeId AS employeeId, p.employeeName AS employeeName, p.date AS date, p.time AS time,
+              COALESCE(e.department, '') AS department
+         FROM punch_records p
+         LEFT JOIN employees e ON e.id = p.employeeId
+        WHERE p.date LIKE ?`
+    )
+    .all(prefix);
+
+  // 按 员工+日期 分组
+  const grouped = new Map<string, { employeeName: string; department: string; punches: string[] }>();
+  for (const r of rows) {
+    const employeeId = asString(r.employeeId);
+    const date = asString(r.date);
+    const key = `${employeeId}__${date}`;
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        employeeName: asString(r.employeeName),
+        department: asString(r.department),
+        punches: [],
+      });
+    }
+    grouped.get(key)!.punches.push(asString(r.time).slice(0, 5));
+  }
+
+  // 聚合到员工维度
+  const byEmployee = new Map<string, MonthlySummaryRow>();
+  for (const [key, info] of grouped) {
+    const [employeeId] = key.split("__");
+    if (!byEmployee.has(employeeId)) {
+      byEmployee.set(employeeId, {
+        employeeId,
+        employeeName: info.employeeName,
+        department: info.department,
+        workDays: 0,
+        punchCount: 0,
+        lateCount: 0,
+        earlyLeaveCount: 0,
+        missingCount: 0,
+      });
+    }
+    const agg = byEmployee.get(employeeId)!;
+    agg.workDays += 1;
+    agg.punchCount += info.punches.length;
+
+    // 规则与 analyzeAnomalies 保持一致（未排班员工只计出勤/打卡，不计异常）
+    const schedule = scheduleMap.get(employeeId);
+    const shift = schedule
+      ? (schedule.shiftIds || []).map((id) => shiftMap.get(id)).find(Boolean)
+      : undefined;
+    if (!shift) continue;
+
+    const times = [...info.punches].sort();
+    if (times.length === 1) {
+      agg.missingCount += 1;
+      continue;
+    }
+    const inTime = toMinutes(times[0]);
+    const outTime = toMinutes(times[times.length - 1]);
+    if (inTime - toMinutes(shift.startTime) > 5) agg.lateCount += 1;
+    if (toMinutes(shift.endTime) - outTime > 0) agg.earlyLeaveCount += 1;
+  }
+
+  return [...byEmployee.values()].sort((a, b) => a.employeeId.localeCompare(b.employeeId));
+}
+
 /** 真实异常分析：基于打卡记录 + 排班 + 班次时间计算，结果持久化 */
 export function analyzeAnomalies(): AnomalyRow[] {
   const shifts = listShifts();

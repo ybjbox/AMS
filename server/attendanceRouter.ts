@@ -14,8 +14,7 @@ import {
   listRecords, replaceRecords,
   upsertRecord, deleteRecord, clearRecords,
   listAnomalies, analyzeAnomalies,
-  VersionConflictError,
-} from "./attendanceDb.ts";
+  VersionConflictError, monthlySummary } from "./attendanceDb.ts";
 
 export const attendanceRouter = Router();
 attendanceRouter.use(json({ limit: "20mb" }));
@@ -171,6 +170,15 @@ attendanceRouter.delete("/records", (_req, res) => {
 });
 
 // ---- Anomalies ----
+/** 月度考勤汇总（月报）：GET /api/attendance/summary?month=YYYY-MM */
+attendanceRouter.get("/summary", (req, res) => {
+  const month =
+    typeof req.query.month === "string" && /^\d{4}-\d{2}$/.test(req.query.month)
+      ? req.query.month
+      : new Date().toISOString().slice(0, 7);
+  res.json({ month, rows: monthlySummary(month) });
+});
+
 attendanceRouter.get("/anomalies", (_req, res) => {
   res.json(listAnomalies());
 });
