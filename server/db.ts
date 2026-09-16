@@ -298,13 +298,43 @@ export function getEmployee(id: string) {
   return rowToUser(row);
 }
 
+/**
+ * 单调递增工号序列（修复：删除员工后 ID 复用导致的历史引用混淆——
+ * 如删掉 EMP0050 后新建员工再次拿到 EMP0050，会继承旧 ID 的孤儿数据引用）。
+ * 序列持久化在 id_sequences 表，只增不减。
+ */
+function ensureIdSequences(): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS id_sequences (
+      name TEXT PRIMARY KEY,
+      next INTEGER NOT NULL
+    )
+  `);
+}
+ensureIdSequences();
+
+function nextEmployeeId(): string {
+  const row = db.prepare("SELECT next FROM id_sequences WHERE name = 'employee'").get();
+  let num: number;
+  if (row) {
+    num = asNumber(row.next);
+  } else {
+    // 首次初始化：现有最大工号 + 1（空库则从 1 开始）
+    const maxRow = db
+      .prepare("SELECT id FROM employees WHERE id LIKE 'EMP%' ORDER BY id DESC LIMIT 1")
+      .get();
+    num = maxRow ? parseInt(asString(maxRow.id).replace("EMP", ""), 10) + 1 : 1;
+  }
+  db.prepare(
+    `INSERT INTO id_sequences (name, next) VALUES ('employee', ?)
+     ON CONFLICT(name) DO UPDATE SET next = excluded.next`
+  ).run(num + 1);
+  return `EMP${String(num).padStart(4, "0")}`;
+}
+
 export function createEmployee(input: Record<string, unknown>) {
   const data = normalize(input);
-  const maxRow = db
-    .prepare("SELECT id FROM employees WHERE id LIKE 'EMP%' ORDER BY id DESC LIMIT 1")
-    .get();
-  const nextNum = maxRow ? parseInt(asString(maxRow.id).replace("EMP", ""), 10) + 1 : 1;
-  const id = `EMP${String(nextNum).padStart(4, "0")}`;
+  const id = nextEmployeeId();
 
   const keys = Object.keys(data);
   const sql = `INSERT INTO employees (id${keys.map(k => `, ${k}`).join("")})
@@ -360,8 +390,21 @@ export function updateEmployee(id: string, input: Record<string, unknown>) {
 }
 
 export function deleteEmployee(id: string) {
-  const result = db.prepare("DELETE FROM employees WHERE id = ?").run(id);
-  return result.changes > 0;
+  db.exec("BEGIN");
+  try {
+    // 续签历史无外键约束，需显式清理（避免孤儿记录被后续同 ID 引用）
+    try {
+      db.prepare("DELETE FROM contract_renewals WHERE employeeId = ?").run(id);
+    } catch {
+      /* 续签表尚未创建时忽略（模块加载早期） */
+    }
+    const result = db.prepare("DELETE FROM employees WHERE id = ?").run(id);
+    db.exec("COMMIT");
+    return result.changes > 0;
+  } catch (e) {
+    db.exec("ROLLBACK");
+    throw e;
+  }
 }
 
 // ---------- 首次启动播种（与原 mock 逻辑一致的随机数据） ----------

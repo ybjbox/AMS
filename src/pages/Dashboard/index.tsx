@@ -8,6 +8,8 @@ import QuickActions from './components/QuickActions';
 // recharts 体积较大（~350KB）：懒加载使图表代码仅在控制台页进入时加载，
 // 不拖累登录页与其它页面的首屏
 const DashboardChart = lazy(() => import('./components/DashboardChart'));
+import WorkforceTrend from './components/WorkforceTrend';
+import DepartmentDistribution from './components/DepartmentDistribution';
 
 export default function Dashboard() {
   const dashboardData = useDashboard();
@@ -37,6 +39,16 @@ export default function Dashboard() {
         <div className="md:col-span-2 space-y-6 md:space-y-8">
           <QuickActions quickActions={dashboardData.quickActions} isLoading={dashboardData.isLoading} />
           <SystemNotices notices={dashboardData.notices} isLoading={dashboardData.isLoading} />
+        </div>
+      </div>
+
+      {/* 第二行：人员流动趋势 + 部门分布（P1 统计） */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+        <div className="md:col-span-3">
+          <WorkforceTrend stats={dashboardData.workforce} isLoading={dashboardData.isLoading} />
+        </div>
+        <div className="md:col-span-2">
+          <DepartmentDistribution stats={dashboardData.workforce} isLoading={dashboardData.isLoading} />
         </div>
       </div>
     </PageContainer>

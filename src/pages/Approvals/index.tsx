@@ -29,17 +29,24 @@ function StatusBadge({ status }: { status: ApprovalStatus }) {
   );
 }
 
-/** 审批条目的单行摘要（请假=日期区间；补卡=日期+时间+卡类型） */
+/** 审批条目的单行摘要（按类型展示关键信息） */
 function approvalSummary(item: Approval): string {
   if (item.type === 'makeup') {
     return `${item.punchDate || item.startDate} ${item.punchTime} · ${item.punchKind}`;
   }
+  if (item.type === 'resign') {
+    return `最后工作日 ${item.startDate}`;
+  }
+  if (item.type === 'conversion') {
+    return '试用期转正申请';
+  }
   return `${item.startDate}${item.endDate && item.endDate !== item.startDate ? ` ~ ${item.endDate}` : ''}`;
 }
 
-/** 条目主标题：补卡显示「补卡」，请假显示假别 */
+/** 条目主标题：补卡/转正/离职显示类型名，请假显示假别 */
 function approvalTitle(item: Approval): string {
-  return item.type === 'makeup' ? '补卡' : item.leaveType;
+  const map: Record<string, string> = { makeup: '补卡', conversion: '转正', resign: '离职' };
+  return map[item.type] ?? item.leaveType;
 }
 
 export default function Approvals() {
@@ -52,7 +59,7 @@ export default function Approvals() {
   const [pending, setPending] = useState<Approval[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [formType, setFormType] = useState<'leave' | 'makeup'>('leave');
+  const [formType, setFormType] = useState<'leave' | 'makeup' | 'conversion' | 'resign'>('leave');
   const [form, setForm] = useState({
     leaveType: '事假',
     startDate: '',
@@ -60,6 +67,7 @@ export default function Approvals() {
     punchDate: '',
     punchTime: '',
     punchKind: '上班卡' as (typeof PUNCH_KINDS)[number],
+    resignDate: '',
     reason: '',
   });
 
@@ -94,6 +102,19 @@ export default function Approvals() {
             punchKind: form.punchKind,
             reason: form.reason.trim(),
           });
+        } else if (formType === 'conversion') {
+          if (!form.reason.trim()) return;
+          await approvalApi.create({
+            type: 'conversion',
+            reason: form.reason.trim(),
+          });
+        } else if (formType === 'resign') {
+          if (!form.resignDate || !form.reason.trim()) return;
+          await approvalApi.create({
+            type: 'resign',
+            startDate: form.resignDate,
+            reason: form.reason.trim(),
+          });
         } else {
           if (!form.startDate || !form.reason.trim()) return;
           await approvalApi.create({
@@ -105,7 +126,7 @@ export default function Approvals() {
           });
         }
         toast.success('申请已提交');
-        setForm({ ...form, startDate: '', endDate: '', punchDate: '', punchTime: '', reason: '' });
+        setForm({ ...form, startDate: '', endDate: '', punchDate: '', punchTime: '', resignDate: '', reason: '' });
         await refresh();
         setTab('mine');
       } catch (err) {
@@ -220,12 +241,14 @@ export default function Approvals() {
             <Send className="w-4 h-4 text-zinc-400" /> 提交申请
           </h2>
 
-          {/* 类型切换：请假 / 补卡 */}
+          {/* 类型切换：请假 / 补卡 / 转正 / 离职 */}
           <div className="flex rounded-lg bg-zinc-100 dark:bg-zinc-700/50 p-0.5" role="tablist" aria-label="申请类型">
             {(
               [
                 { id: 'leave', label: '请假' },
                 { id: 'makeup', label: '补卡' },
+                { id: 'conversion', label: '转正' },
+                { id: 'resign', label: '离职' },
               ] as const
             ).map((t) => (
               <button
@@ -245,7 +268,7 @@ export default function Approvals() {
             ))}
           </div>
 
-          {formType === 'leave' ? (
+                    {formType === 'leave' && (
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
                 <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">类型 <span className="text-red-500" aria-hidden="true">*</span></span>
@@ -280,7 +303,9 @@ export default function Approvals() {
                 />
               </label>
             </div>
-          ) : (
+          )}
+
+          {formType === 'makeup' && (
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
                 <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">补卡日期 <span className="text-red-500" aria-hidden="true">*</span></span>
@@ -320,14 +345,52 @@ export default function Approvals() {
             </div>
           )}
 
+          {formType === 'conversion' && (
+            <div className="space-y-2">
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                转正申请需满足：账号已关联员工档案，且当前状态为「试用期」。
+                审批通过后，员工状态将自动变更为「在职」。
+              </p>
+            </div>
+          )}
+
+          {formType === 'resign' && (
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block col-span-2">
+                <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">最后工作日 <span className="text-red-500" aria-hidden="true">*</span></span>
+                <input
+                  type="date"
+                  required
+                  value={form.resignDate}
+                  onChange={(e) => setForm({ ...form, resignDate: e.target.value })}
+                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white"
+                />
+              </label>
+              <p className="col-span-2 text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                离职审批通过后：员工状态变更为「离职」，登录账号将被停用（此操作不可逆，请谨慎提交）。
+              </p>
+            </div>
+          )}
+
+
           <label className="block">
-            <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">事由 <span className="text-red-500" aria-hidden="true">*</span></span>
+            <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
+              {formType === 'resign' ? '离职原因' : '事由'} <span className="text-red-500" aria-hidden="true">*</span>
+            </span>
             <textarea
               required
               rows={3}
               value={form.reason}
               onChange={(e) => setForm({ ...form, reason: e.target.value })}
-              placeholder={formType === 'makeup' ? '请说明漏卡原因（如：忘记打卡、设备故障）' : '请简要说明申请原因'}
+              placeholder={
+                formType === 'makeup'
+                  ? '请说明漏卡原因（如：忘记打卡、设备故障）'
+                  : formType === 'conversion'
+                    ? '请简要说明转正理由或试用期工作成果'
+                    : formType === 'resign'
+                      ? '请说明离职原因'
+                      : '请简要说明申请原因'
+              }
               className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white resize-y md:resize-y"
             />
           </label>

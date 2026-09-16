@@ -1,4 +1,5 @@
 import { http } from './api';
+import { STORAGE_KEYS } from '../config/constants';
 import { User } from '../types';
 
 /**
@@ -44,3 +45,78 @@ export const updateUser = (id: string, user: Partial<User>): Promise<User> =>
 /** 删除员工（考勤等关联数据由后端外键级联清理） */
 export const deleteUser = (id: string): Promise<{ success: boolean }> =>
   http.delete<{ success: boolean }>(`/users/${id}`);
+
+// ---------------------------------------------------------------- 批量导入
+
+export interface ImportRowResult {
+  rowNumber: number;
+  data: Record<string, string | number>;
+  errors: string[];
+  duplicate: boolean;
+}
+
+export interface ImportPreview {
+  total: number;
+  valid: number;
+  invalid: number;
+  duplicates: number;
+  rows: ImportRowResult[];
+}
+
+export interface ImportCommitResult {
+  created: number;
+  skipped: number;
+  ids: string[];
+}
+
+/** 二进制上传（raw body）——axios 拦截器面向 JSON，这里用 fetch 直传 Buffer 语义 */
+async function sendBinary<T>(url: string, blob: Blob): Promise<T> {
+  const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/octet-stream',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: blob,
+  });
+  if (!res.ok) {
+    let err: unknown;
+    try {
+      err = await res.json();
+    } catch {
+      err = { error: `HTTP ${res.status}` };
+    }
+    throw err;
+  }
+  return (await res.json()) as T;
+}
+
+/** 上传 Excel → 解析 + 校验 + 预览 */
+export const previewImport = (file: File): Promise<ImportPreview> =>
+  sendBinary<ImportPreview>('/api/users/import', file);
+
+/** 确认导入（服务端二次校验后落库） */
+export const commitImport = (rows: ImportRowResult[]): Promise<ImportCommitResult> =>
+  http.post<ImportCommitResult>('/users/import/commit', { rows });
+
+/** 合同续签 */
+export interface ContractRenewal {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  contractYears: number;
+  contractSignDate: string;
+  contractExpiry: string;
+  prevExpiry: string;
+  renewedBy: string;
+  createdAt: string;
+}
+
+export const renewContract = (
+  id: string,
+  data: { contractYears: number; contractSignDate: string; contractExpiry: string }
+): Promise<ContractRenewal> => http.post<ContractRenewal>(`/users/${id}/renew-contract`, data);
+
+export const fetchContractRenewals = (id: string): Promise<ContractRenewal[]> =>
+  http.get<ContractRenewal[]>(`/users/${id}/contract-renewals`);

@@ -38,7 +38,23 @@ export interface MakeupCreateInput {
   reason: string;
 }
 
-export type ApprovalCreateInput = LeaveCreateInput | MakeupCreateInput;
+export interface ConversionCreateInput {
+  type: 'conversion';
+  reason: string;
+}
+
+export interface ResignCreateInput {
+  type: 'resign';
+  /** 最后工作日 */
+  startDate: string;
+  reason: string;
+}
+
+export type ApprovalCreateInput =
+  | LeaveCreateInput
+  | MakeupCreateInput
+  | ConversionCreateInput
+  | ResignCreateInput;
 
 /** 审批 API（R1 v1：请假 + 补卡申请闭环 + R2 员工自助提交） */
 export const approvalApi = {

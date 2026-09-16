@@ -10,6 +10,8 @@ import { Router, json } from "express";
 import { z } from "zod";
 import { validateBody } from "./validation.ts";
 import { requireRole } from "./authMiddleware.ts";
+import { db } from "./db.ts";
+import { asString } from "./sqliteUtil.ts";
 import {
   createApproval,
   listMine,
@@ -24,8 +26,8 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const createSchema = z
   .object({
-    /** 'leave' 请假（默认） | 'makeup' 补卡 */
-    type: z.enum(["leave", "makeup"]).optional(),
+    /** 'leave' 请假（默认） | 'makeup' 补卡 | 'conversion' 转正 | 'resign' 离职 */
+    type: z.enum(["leave", "makeup", "conversion", "resign"]).optional(),
     leaveType: z.enum(["事假", "病假", "年假", "调休"]).optional(),
     startDate: z
       .string()
@@ -71,6 +73,46 @@ approvalsRouter.post("/", validateBody(createSchema), (req, res, next) => {
         punchDate,
         punchTime,
         punchKind,
+      });
+      return res.status(201).json(row);
+    }
+
+    // 转正分支：申请人须为「试用期」状态的已关联员工
+    if (req.body.type === "conversion") {
+      const accountRow = db
+        .prepare("SELECT employeeId FROM accounts WHERE username = ?")
+        .get(req.auth!.username);
+      const employeeId = asString(accountRow?.employeeId);
+      if (!employeeId) {
+        return res.status(400).json({ error: "你的账号未关联员工档案，无法申请转正" });
+      }
+      const empRow = db.prepare("SELECT status FROM employees WHERE id = ?").get(employeeId);
+      if (asString(empRow?.status) !== "试用期") {
+        return res.status(400).json({ error: "当前员工状态不是试用期，无需转正申请" });
+      }
+      const row = createApproval({
+        applicant: req.auth!.username,
+        type: "conversion",
+        leaveType: "转正",
+        startDate: new Date().toISOString().slice(0, 10),
+        endDate: null,
+        reason: req.body.reason,
+      });
+      return res.status(201).json(row);
+    }
+
+    // 离职分支：最后工作日（startDate）+ 原因必填
+    if (req.body.type === "resign") {
+      if (!req.body.startDate) {
+        return res.status(400).json({ error: "请填写最后工作日" });
+      }
+      const row = createApproval({
+        applicant: req.auth!.username,
+        type: "resign",
+        leaveType: "离职",
+        startDate: req.body.startDate,
+        endDate: null,
+        reason: req.body.reason,
       });
       return res.status(201).json(row);
     }

@@ -1,6 +1,6 @@
 import { Permission } from "@/components/Permission";
 import React from 'react';
-import { Printer, Edit } from 'lucide-react';
+import { Printer, Edit, FileSignature } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { User, SystemRole } from '@/types';
 import { formatPhone } from '@/utils/dateUtils';
@@ -10,9 +10,10 @@ interface UserDetailModalProps {
   onClose: () => void;
   selectedUser: User | null;
   handleEdit: (user: User) => void;
+  onRenew: (user: User) => void;
 }
 
-export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit }: UserDetailModalProps) {
+export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit, onRenew }: UserDetailModalProps) {
   return (
     <BaseModal
       isOpen={isOpen && !!selectedUser}
@@ -238,6 +239,18 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit }: U
                           : '普通员工'}
                   </span>
                 </div>
+                {selectedUser && (
+                  <Permission code="users:manage">
+                    <button
+                      type="button"
+                      onClick={() => onRenew(selectedUser)}
+                      className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-3 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors"
+                    >
+                      <FileSignature className="w-3.5 h-3.5" aria-hidden="true" />
+                      合同续签
+                    </button>
+                  </Permission>
+                )}
               </div>
             </div>
           </div>

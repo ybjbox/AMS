@@ -23,6 +23,7 @@ import {
 } from "./server/templateStore.ts";
 import { systemRouter } from "./server/systemRouter.ts";
 import { announcementsRouter } from "./server/announcementsRouter.ts";
+import { statsRouter } from "./server/statsRouter.ts";
 import { runTemplateSandbox } from "./server/scriptSandbox.ts";
 import { applyTemplateOps } from "./server/excelReplay.ts";
 import { startBackupScheduler } from "./server/backupDb.ts";
@@ -143,6 +144,7 @@ async function startServer() {
   app.use("/api/ai", aiRouter);
   app.use("/api/system", systemRouter);
   app.use("/api/announcements", announcementsRouter);
+  app.use("/api/stats", statsRouter);
   // ===== 接线结束 =====
 
   // API routes

@@ -176,25 +176,38 @@ export function decideApproval(
 
   const updated = getApproval(id)!;
 
-  // 领域动作：补卡审批通过 → 自动补写打卡记录并刷新异常分析（闭环）
-  if (updated.type === "makeup" && decision === "approved") {
+  // 领域动作：审批通过后自动执行（闭环）
+  if (decision === "approved") {
     try {
-      applyMakeupPunch(updated);
+      if (updated.type === "makeup") {
+        applyMakeupPunch(updated);
+      } else if (updated.type === "conversion") {
+        applyConversion(updated);
+      } else if (updated.type === "resign") {
+        applyResign(updated);
+      }
     } catch (e) {
       // 领域动作失败不回滚审批（审批决定本身有效），但必须留下告警
-      console.warn("[approvals] 补卡写入失败：", e);
+      console.warn(`[approvals] 领域动作失败（${updated.type}）：`, e);
     }
   }
 
   // 通知申请人（ recipients=申请人；同内容未读去重由 notificationsDb 负责）
+  const typeLabel: Record<string, string> = {
+    makeup: "补卡",
+    conversion: "转正",
+    resign: "离职",
+  };
   const subject =
     updated.type === "makeup"
       ? `你的${updated.punchKind || "补卡"}申请`
-      : `你的${updated.leaveType}申请`;
+      : `你的${typeLabel[updated.type] ?? updated.leaveType}申请`;
   const detail =
     updated.type === "makeup"
       ? `${updated.punchDate} ${updated.punchTime} 的补卡`
-      : `${updated.startDate} 提交的申请`;
+      : updated.type === "resign"
+        ? `最后工作日 ${updated.startDate}`
+        : `${updated.startDate} 提交的申请`;
   createNotification({
     title: `${subject}已${decision === "approved" ? "通过" : "被驳回"}`,
     message: `${detail}，审批人：${approver}${comment ? `，意见：${comment}` : ""}`,
@@ -203,6 +216,76 @@ export function decideApproval(
   });
 
   return { row: updated };
+}
+
+/** 申请人账号 → 员工档案映射（accounts.employeeId 关联） */
+function findApplicantEmployee(applicant: string): { employeeId: string; employeeName: string } | null {
+  const accountRow = db
+    .prepare("SELECT employeeId FROM accounts WHERE username = ?")
+    .get(applicant);
+  const employeeId = asString(accountRow?.employeeId);
+  if (!employeeId) return null;
+  const emp = db.prepare("SELECT id, name FROM employees WHERE id = ?").get(employeeId);
+  if (!emp) return null;
+  return { employeeId: asString(emp.id), employeeName: asString(emp.name) };
+}
+
+/**
+ * 转正领域动作：通过后员工状态「试用期」→「在职」。
+ * 提交时已校验试用期状态；此处做二次确认防并发变更。
+ */
+function applyConversion(approval: ApprovalRow): void {
+  const emp = findApplicantEmployee(approval.applicant);
+  if (!emp) {
+    createNotification({
+      title: "转正未自动生效",
+      message: "你的账号未关联员工档案，请联系管理员在「账号管理」中完成关联。",
+      type: "warning",
+      recipient: approval.applicant,
+    });
+    console.warn(`[approvals] 转正跳过：账号 ${approval.applicant} 未关联员工档案（approval=${approval.id}）`);
+    return;
+  }
+  const row = db.prepare("SELECT status FROM employees WHERE id = ?").get(emp.employeeId);
+  const status = asString(row?.status);
+  if (status !== "试用期") {
+    createNotification({
+      title: "转正未变更（状态已变化）",
+      message: `员工的当前状态为「${status || "未知"}」，非试用期，无需变更。`,
+      type: "info",
+      recipient: approval.applicant,
+    });
+    return;
+  }
+  db.prepare("UPDATE employees SET status = '在职', updatedAt = ? WHERE id = ?").run(
+    new Date().toISOString(),
+    emp.employeeId
+  );
+}
+
+/**
+ * 离职领域动作：通过后员工状态置「离职」，账号停用并吊销全部会话。
+ * 说明：最后工作日为信息性字段（流程审批时已确认），停用动作立即执行——
+ * 避免"已批准离职但账号仍可登录"的权限悬空。
+ */
+function applyResign(approval: ApprovalRow): void {
+  const now = new Date().toISOString();
+
+  const emp = findApplicantEmployee(approval.applicant);
+  if (emp) {
+    db.prepare("UPDATE employees SET status = '离职', updatedAt = ? WHERE id = ?").run(now, emp.employeeId);
+  }
+
+  // 账号面动作：停用 + 吊销会话（无论是否关联员工档案都执行）
+  db.prepare("UPDATE accounts SET enabled = 0, updatedAt = ? WHERE username = ?").run(now, approval.applicant);
+  db.prepare("DELETE FROM sessions WHERE username = ?").run(approval.applicant);
+
+  createNotification({
+    title: "离职流程已完成",
+    message: `最后工作日：${approval.startDate || "未填写"}。账号已停用，如需办理交接请联系行政。`,
+    type: "info",
+    recipient: approval.applicant,
+  });
 }
 
 /**

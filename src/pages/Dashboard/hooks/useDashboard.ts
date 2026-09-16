@@ -5,6 +5,7 @@ import { fetchUsersPage } from '@/services/userApi';
 import { attendanceApi } from '@/services/attendanceApi';
 import { notificationApi } from '@/services/notificationApi';
 import { announcementApi, type Announcement } from '@/services/announcementApi';
+import { fetchWorkforceStats, type WorkforceStats } from '@/services/statsApi';
 import { flattenDepartments, useDepartments } from '@/store/useDepartmentStore';
 import { useTodoStore } from '@/store/useTodoStore';
 import { formatDateTime } from '@/utils/dateUtils';
@@ -39,6 +40,7 @@ export interface UseDashboardReturn {
   notices: NoticeItem[];
   quickActions: QuickActionItem[];
   chartData: ChartData[];
+  workforce: WorkforceStats | null;
   lastUpdated: string;
   isLoading: boolean;
 }
@@ -85,6 +87,7 @@ export function useDashboard(): UseDashboardReturn {
     lastUpdated: string;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [workforce, setWorkforce] = useState<WorkforceStats | null>(null);
 
   // 部门数据复用全局 store（避免绕过 store 直连 http 导致的重复请求）
   const departments = useDepartments((state) => state.departments);
@@ -96,6 +99,21 @@ export function useDashboard(): UseDashboardReturn {
     // 确保组织架构已加载（store 内有 initialized/inflight 去重）
     fetchDepartments();
   }, [fetchDepartments]);
+
+  // 人员流动统计（独立加载，失败不阻断仪表盘）
+  useEffect(() => {
+    let cancelled = false;
+    fetchWorkforceStats()
+      .then((w) => {
+        if (!cancelled) setWorkforce(w);
+      })
+      .catch(() => {
+        /* 统计不可用时该区块静默隐藏 */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // 数据拉取仅执行一次（不依赖 store 派生值，避免重复请求）
   useEffect(() => {
@@ -177,6 +195,7 @@ export function useDashboard(): UseDashboardReturn {
     notices: raw?.notices ?? [],
     quickActions: QUICK_ACTIONS,
     chartData: raw?.chartData ?? [],
+    workforce,
     lastUpdated: raw?.lastUpdated ?? '',
     isLoading,
   };

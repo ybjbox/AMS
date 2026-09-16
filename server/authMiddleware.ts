@@ -178,7 +178,7 @@ function extractToken(req: Request, path: string): string {
   if (m) return m[1].trim();
   // query 兜底仅限文件下载类端点（<a href>/window.open 带不上自定义头）。
   // token 进 URL 会落入访问日志/代理日志，对普通接口一律拒绝，尽量收窄暴露面。
-  const DOWNLOAD_PATHS = [/^\/files\//, /^\/backup\/export\//, /^\/audit-logs\/export/];
+  const DOWNLOAD_PATHS = [/^\/files\//, /^\/backup\/export\//, /^\/audit-logs\/export/, /^\/users\/import\/template/];
   if (!DOWNLOAD_PATHS.some((p) => p.test(path))) return "";
   const q = req.query?.access_token;
   return typeof q === "string" ? q : "";

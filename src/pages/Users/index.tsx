@@ -5,7 +5,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { useDepartments } from '@/store/useDepartmentStore';
 import { useBodyOverflow } from '@/hooks/useBodyOverflow';
 import { useEmployeeStore } from '@/store/useEmployeeStore';
-import { Download, Plus, Printer, ChevronDown } from 'lucide-react';
+import { Download, Plus, Printer, ChevronDown, Upload } from 'lucide-react';
 import { User } from '@/types';
 import { UserTable } from '@/components/users/UserTable';
 import { UserToolbar } from './components/UserToolbar';
@@ -17,6 +17,8 @@ import { useUserFilters } from './hooks/useUserFilters';
 import { useExport } from './hooks/useExport';
 import { Pagination } from '@/components/ui/Pagination';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import ImportModal from './components/ImportModal';
+import RenewContractModal from './components/RenewContractModal';
 import { RosterPrintTemplate, AddressBookPrintTemplate } from './components/PrintTemplates';
 
 export default function Users() {
@@ -38,6 +40,8 @@ export default function Users() {
   const departments = useMemo(() => allDepartments, [allDepartments]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [renewUser, setRenewUser] = useState<User | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -133,6 +137,15 @@ export default function Users() {
               </DropdownMenu>
               <Permission code="users:manage">
                 <button
+                  onClick={() => setIsImportModalOpen(true)}
+                  className="btn-secondary"
+                >
+                  <Upload className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">批量导入</span>
+                </button>
+              </Permission>
+              <Permission code="users:manage">
+                <button
                   onClick={handleAdd}
                   className="btn-primary"
                 >
@@ -218,6 +231,15 @@ export default function Users() {
         onClose={() => setIsDetailModalOpen(false)}
         selectedUser={selectedUser}
         handleEdit={handleEdit}
+        onRenew={(u) => setRenewUser(u)}
+      />
+      <RenewContractModal
+        isOpen={!!renewUser}
+        onClose={() => setRenewUser(null)}
+        user={renewUser}
+        onRenewed={() => {
+          void fetchUsers();
+        }}
       />
       <UserFormModal
         isOpen={isModalOpen}
@@ -229,6 +251,13 @@ export default function Users() {
         setSelectedDeptName={setSelectedDeptName}
         selectedRoleName={selectedRoleName}
         setSelectedRoleName={setSelectedRoleName}
+      />
+      <ImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImported={() => {
+          void fetchUsers();
+        }}
       />
       {/* ── 打印模板（hidden，不参与布局） ── */}
       <RosterPrintTemplate
