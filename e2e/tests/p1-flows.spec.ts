@@ -113,24 +113,42 @@ test.describe.serial('P1 功能闭环', () => {
     const deptRow = preview.rows.find((r: { rowNumber: number }) => r.rowNumber === 5);
     expect(deptRow.errors.join('')).toContain('不存在');
 
-    // 4) 提交有效行
+    // 4) 提交有效行：异步导入（#16），立即返回 202 + jobId，后台分块落库
     const validRows = preview.rows.filter((r: { errors: string[] }) => r.errors.length === 0);
     const commitRes = await request.post('/api/users/import/commit', {
       headers: auth,
       data: { rows: validRows },
     });
-    expect(commitRes.status(), '提交').toBe(201);
-    const result = await commitRes.json();
-    expect(result.created).toBe(1);
-    expect(result.ids.length).toBe(1);
-    const newId = result.ids[0];
+    expect(commitRes.status(), '提交').toBe(202);
+    const { jobId } = await commitRes.json();
+    expect(jobId, '应返回 jobId').toBeTruthy();
 
-    // 5) 验证落库 + 清理
-    const check = await request.get(`/api/users/${newId}`, { headers: auth });
-    expect(check.status()).toBe(200);
-    expect((await check.json()).name).toBe('E2E导入甲');
+    // 轮询任务直到完成
+    let job = null;
+    for (let i = 0; i < 50; i++) {
+      const jobRes = await request.get(`/api/users/import/jobs/${jobId}`, { headers: auth });
+      expect(jobRes.status(), '查询导入任务').toBe(200);
+      job = await jobRes.json();
+      if (job.status !== 'running') break;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    expect(job.status, `导入任务应完成（error: ${job.error}）`).toBe('done');
+    expect(job.processed).toBe(1);
+    expect(job.created).toBe(1);
+    expect(job.skipped).toBe(0);
 
-    const del = await request.delete(`/api/users/${newId}`, { headers: auth });
+    // 5) 验证落库 + 清理（按姓名搜索后用身份证号精确匹配取回 id）
+    const listRes = await request.get('/api/users?keyword=' + encodeURIComponent('E2E导入甲'), { headers: auth });
+    expect(listRes.status()).toBe(200);
+    const found = (await listRes.json()).find(
+      (u: { idCard?: string }) => u.idCard === `11010119${stamp}1111`
+    );
+    expect(found, '导入的员工应已落库').toBeTruthy();
+    expect(found.name).toBe('E2E导入甲');
+    const detail = await request.get(`/api/users/${found.id}`, { headers: auth });
+    expect(detail.status()).toBe(200);
+
+    const del = await request.delete(`/api/users/${found.id}`, { headers: auth });
     expect(del.status()).toBe(200);
   });
 
