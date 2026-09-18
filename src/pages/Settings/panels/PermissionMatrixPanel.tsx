@@ -18,7 +18,6 @@ const OPERATIONS: { label: string; code: string }[] = [
   { label: '考勤增删改', code: 'attendance:manage' },
   { label: '审批决定', code: 'approvals:approve' },
   { label: '文档库上传 / 删除', code: 'documents:manage' },
-  { label: '部门 / 职位管理', code: 'settings:manage' },
 ];
 
 type CellRenderer = (role: SystemRole, code: string) => React.ReactNode;
@@ -135,7 +134,7 @@ export default function PermissionMatrixPanel() {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-300 space-y-6">
+    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-400 space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="section-title flex items-center gap-2">

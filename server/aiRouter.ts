@@ -20,6 +20,17 @@ import {
   type StoredMsg,
 } from "./aiDb.ts";
 import { ROLE_LEVEL } from "./authDb.ts";
+import {
+  getUserAiConfig,
+  setUserAiConfig,
+  clearUserAiConfig,
+  isUserAiConfigUsable,
+  getUsageToday,
+  incrementUsage,
+  listTodayUsage,
+  listPersonalModelUsers,
+  type UserAiConfig,
+} from "./aiUserDb.ts";
 
 /**
  * AI 助手路由。
@@ -36,6 +47,10 @@ import { ROLE_LEVEL } from "./authDb.ts";
  * - GET  /api/ai/config        仅超级管理员：读取配置（apiKey 脱敏）
  * - PUT  /api/ai/config        仅超级管理员：保存配置
  * - GET  /api/ai/logo          登录用户：自定义 Logo 图片字节流（替代内置图标）
+ * - GET  /api/ai/me/config     登录用户：读取自己的模型配置（apiKey 脱敏）
+ * - PUT  /api/ai/me/config     登录用户：保存自己的模型配置（配置齐全后对话不占系统额度）
+ * - DELETE /api/ai/me/config   登录用户：清除自己的模型配置（回退系统额度）
+ * - GET  /api/ai/admin/usage   仅超级管理员：今日各用户的系统额度使用次数
  *
  * 上游：OpenAI 兼容 /v1/chat/completions（stream:true），配置来自 aiConfigDb（DB + env 合并）。
  * 占位模式：未配置 apiKey 时返回模拟流式回复，便于无密钥联调。
@@ -249,6 +264,8 @@ aiRouter.get("/config", (req: Request, res: ExpressResponse) => {
     assistantLogo: c.assistantLogo ?? "",
     assistantDraggable: !!c.assistantDraggable,
     conversationRetentionDays: c.conversationRetentionDays ?? 0,
+    dailyQuota: c.dailyQuota ?? 0,
+    allowPersonalModel: !!c.allowPersonalModel,
     apiKeySet: !!c.apiKey,
     apiKeyMasked: masked,
   });
@@ -345,6 +362,13 @@ aiRouter.put("/config", (req: Request, res: ExpressResponse) => {
       }
     }
   }
+  // 系统额度：0 = 不限，上限防误配
+  if (b.dailyQuota !== undefined) {
+    const q = Number(b.dailyQuota);
+    if (!Number.isFinite(q) || q < 0 || q > 100000) {
+      return res.status(400).json({ error: "每日额度需为 0～100000 之间的数字（0 表示不限）" });
+    }
+  }
   const next = setAiConfig({
     enabled: b.enabled,
     allowNonAdmin: b.allowNonAdmin,
@@ -358,6 +382,8 @@ aiRouter.put("/config", (req: Request, res: ExpressResponse) => {
     assistantLogo: b.assistantLogo,
     assistantDraggable: b.assistantDraggable,
     conversationRetentionDays: b.conversationRetentionDays,
+    dailyQuota: b.dailyQuota !== undefined ? Math.floor(Number(b.dailyQuota)) : undefined,
+    allowPersonalModel: b.allowPersonalModel,
   });
   res.json({
     ok: true,
@@ -422,10 +448,85 @@ aiRouter.delete(
   }
 );
 
+/** 超管审计：今日各用户的系统额度使用次数 + 额度上限 + 已配置个人模型的用户名单。 */
+aiRouter.get("/admin/usage", (req: Request, res: ExpressResponse) => {
+  if (!isSuperAdmin(req)) {
+    return res.status(403).json({ error: "仅超级管理员可访问" });
+  }
+  res.json({
+    limit: getAiConfig().dailyQuota ?? 0,
+    users: listTodayUsage(),
+    personalModelUsers: listPersonalModelUsers(),
+  });
+});
+
+// --------------------------------------------------------------- 个人模型配置（登录用户自助）
+
+function maskKey(key: string): string {
+  return key && key.length > 10
+    ? `${key.slice(0, 6)}…${key.slice(-4)}`
+    : key
+    ? "已设置"
+    : "";
+}
+
+aiRouter.get("/me/config", (req: Request, res: ExpressResponse) => {
+  const user = req.auth?.username;
+  if (!user) return res.status(401).json({ error: "未登录" });
+  const c = getUserAiConfig(user);
+  res.json({
+    baseUrl: c?.baseUrl ?? "",
+    model: c?.model ?? "",
+    apiKeySet: !!c?.apiKey,
+    apiKeyMasked: maskKey(c?.apiKey ?? ""),
+    usable: isUserAiConfigUsable(c),
+  });
+});
+
+aiRouter.put("/me/config", (req: Request, res: ExpressResponse) => {
+  const user = req.auth?.username;
+  if (!user) return res.status(401).json({ error: "未登录" });
+  if (!getAiConfig().allowPersonalModel) {
+    return res.status(403).json({ error: "管理员已停用个人模型功能，如有需要请联系管理员" });
+  }
+  const b = (req.body ?? {}) as Partial<UserAiConfig>;
+  const baseUrl = typeof b.baseUrl === "string" ? b.baseUrl.trim() : "";
+  const model = typeof b.model === "string" ? b.model.trim() : "";
+  const apiKey = typeof b.apiKey === "string" ? b.apiKey.trim() : "";
+  if (!baseUrl || !model) {
+    return res.status(400).json({ error: "Base URL 与模型名均需填写" });
+  }
+  // apiKey 留空 = 沿用已保存的密钥（前端只显示脱敏值，不回传明文）
+  const cur = getUserAiConfig(user);
+  const effectiveKey = apiKey || cur?.apiKey || "";
+  if (!effectiveKey) {
+    return res.status(400).json({ error: "请填写 API Key" });
+  }
+  // 与系统配置同一 SSRF 防线：员工自配地址也不允许指向内网/元数据
+  const v = validateOutboundBaseUrl(baseUrl);
+  if (!v.ok) {
+    return res.status(400).json({ error: `Base URL 不合法：${v.reason}` });
+  }
+  if (effectiveKey.length > 500 || model.length > 200) {
+    return res.status(400).json({ error: "API Key 或模型名过长" });
+  }
+  setUserAiConfig(user, { baseUrl, model, apiKey: effectiveKey });
+  res.json({ ok: true });
+});
+
+aiRouter.delete("/me/config", (req: Request, res: ExpressResponse) => {
+  const user = req.auth?.username;
+  if (!user) return res.status(401).json({ error: "未登录" });
+  clearUserAiConfig(user);
+  res.json({ ok: true });
+});
+
 // --------------------------------------------------------------- 状态（登录用户可读）
 
-aiRouter.get("/status", (_req: Request, res: ExpressResponse) => {
+aiRouter.get("/status", (req: Request, res: ExpressResponse) => {
   const c = getAiConfig();
+  const user = req.auth?.username;
+  const quotaUsed = user ? getUsageToday(user) : 0;
   res.json({
     enabled: c.enabled,
     allowNonAdmin: c.allowNonAdmin,
@@ -436,6 +537,11 @@ aiRouter.get("/status", (_req: Request, res: ExpressResponse) => {
     assistantIcon: c.assistantIcon ?? "",
     hasLogo: !!c.assistantLogo,
     assistantDraggable: !!c.assistantDraggable,
+    dailyQuota: c.dailyQuota ?? 0,
+    quotaUsed,
+    quotaRemaining: c.dailyQuota > 0 ? Math.max(0, c.dailyQuota - quotaUsed) : null,
+    allowPersonalModel: !!c.allowPersonalModel,
+    hasOwnModel: !!c.allowPersonalModel && isUserAiConfigUsable(user ? getUserAiConfig(user) : null),
   });
 });
 
@@ -566,6 +672,30 @@ aiRouter.post("/chat", async (req: Request, res: ExpressResponse) => {
       return res.status(400).json({ error: "messages 不能为空" });
     }
 
+    // 3) 凭据来源：个人模型（不占额度，需管理员启用）优先，否则走系统配置并接受每日额度限制
+    const user = req.auth?.username ?? "";
+    const own = user ? getUserAiConfig(user) : null;
+    const useOwn = config.allowPersonalModel && isUserAiConfigUsable(own);
+    const effective: AiConfig = useOwn
+      ? { ...config, baseUrl: own!.baseUrl.trim(), apiKey: own!.apiKey.trim(), model: own!.model.trim() }
+      : config;
+    if (!useOwn && config.apiKey && (config.dailyQuota ?? 0) > 0) {
+      // 仅真实调用系统大模型时计额度；占位演示模式与不限额（0）不计数
+      const limit = config.dailyQuota ?? 0;
+      if (getUsageToday(user) >= limit) {
+        res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+        res.setHeader("Cache-Control", "no-cache, no-transform");
+        res.flushHeaders?.();
+        sse(res, {
+          error: `今日系统额度已用尽（限额 ${limit} 次/天）。可配置个人模型继续使用（使用自有凭据，不受系统额度限制），或待次日额度重置。`,
+        });
+        sse(res, { done: true });
+        res.end();
+        return;
+      }
+      incrementUsage(user);
+    }
+
     res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
     res.setHeader("Cache-Control", "no-cache, no-transform");
     res.setHeader("Connection", "keep-alive");
@@ -581,6 +711,15 @@ aiRouter.post("/chat", async (req: Request, res: ExpressResponse) => {
     // 超管可在「系统设置 → AI 助手配置」中自定义大模型提示（system prompt）；
     // 留空则回退到内置默认提示，保证开箱即用。
     let system = (config.systemPrompt && config.systemPrompt.trim()) || DEFAULT_SYSTEM_PROMPT;
+    // 防滥用约束（方案 B）：走系统额度时强制追加业务范围限定；
+    // 员工用自有模型则视为其个人自由，不额外设限。
+    if (!useOwn) {
+      system +=
+        "\n\n【使用范围约束】你只回答与本系统内行政事务相关的问题：" +
+        "员工信息与合同、考勤/请假/加班/调休、座位与部门、待办与审批、文档与公告、公司制度与日常流程。" +
+        "对无关请求（如代写文章/作业、翻译无关内容、闲聊、外部通用知识问答等）礼貌拒绝，" +
+        "并引导用户回到行政事务话题，不要输出无关内容。";
+    }
     let dataContext = "";
     if (useData ?? config.useDataDefault) {
       dataContext = await buildDataContext(messages, req.auth?.username);
@@ -601,27 +740,28 @@ aiRouter.post("/chat", async (req: Request, res: ExpressResponse) => {
         ? messages.slice(messages.length - RECENT_K)
         : messages;
     let summary = "";
-    if (older.length >= 6) summary = await summarizeMessages(older, config);
+    if (older.length >= 6) summary = await summarizeMessages(older, effective);
     if (summary) system += `\n\n【历史对话摘要】\n${summary}`;
 
     const ok = await streamFromUpstream(
       res,
       {
-        model: config.model,
+        model: effective.model,
         stream: true,
         temperature: 0.3,
         messages: [{ role: "system", content: system }, ...recent],
       },
-      config
+      effective
     );
 
     if (!ok) {
-      if (!config.apiKey) {
+      if (!effective.apiKey) {
         await streamPlaceholder(res, lastUser, dataContext, summary);
       } else {
         sse(res, {
-          error:
-            "大模型服务暂不可用，请检查 API Base URL / API Key 配置或网络连通性。",
+          error: useOwn
+            ? "个人模型服务暂不可用，请在「模型设置」中检查你配置的 API Base URL / API Key / 模型名。"
+            : "大模型服务暂不可用，请检查 API Base URL / API Key 配置或网络连通性。",
         });
       }
     }

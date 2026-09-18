@@ -69,7 +69,7 @@ export default function Todos() {
   );
 
   return (
-    <PageContainer className="space-y-6 animate-in fade-in duration-500">
+    <PageContainer className="space-y-6 animate-in fade-in duration-400">
       <div className="page-header shrink-0">
           <div>
             <h1 className="page-title">待办事项</h1>

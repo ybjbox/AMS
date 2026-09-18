@@ -151,6 +151,9 @@ const POLICIES: Policy[] = [
   // AI 助手（PoC）：对话功能，任何登录用户可用；
   // 数据检索在 aiContext 中按最小暴露原则只取聚合摘要，且遵守 req.auth 的数据权限。
   { pattern: /^\/ai\//, methods: "*", minRole: "EMPLOYEE" },
+
+  // 微信通知生成器：任何登录用户可用；AI 启停/管理员限制在 wechatNoticeRouter 内部按 aiConfig 判断。
+  { pattern: /^\/notice\//, methods: "*", minRole: "EMPLOYEE" },
 ];
 
 /** 兜底：读操作任何登录用户可做，写操作至少 HR */

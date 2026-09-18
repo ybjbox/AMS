@@ -113,7 +113,7 @@ export default function NotifyPanel() {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-300 space-y-6">
+    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-400 space-y-6">
       <div>
         <h2 className="subsection-title flex items-center gap-2">
           <Webhook className="size-4 text-muted-foreground" />

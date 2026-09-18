@@ -17,7 +17,7 @@ export default function Dashboard() {
   const dashboardData = useDashboard();
 
   return (
-    <PageContainer className="space-y-8 animate-in fade-in duration-500">
+    <PageContainer className="space-y-8 animate-in fade-in duration-400">
       <div className="page-header">
         <div>
           <h1 className="page-title">控制台</h1>

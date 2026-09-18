@@ -46,6 +46,7 @@ import { approvalsRouter } from "./server/approvalsRouter.ts";
 import { auditRouter } from "./server/auditRouter.ts";
 import { backupRopter } from "./server/backupRopter.ts";
 import { aiRouter } from "./server/aiRouter.ts";
+import { noticeRouter } from "./server/wechatNoticeRouter.ts";
 
 // In-memory theme storage (initialized with default themes, startup 时从 settings 回填)
 let dynamicThemes: Record<string, Record<string, unknown>> = { ...EXCEL_THEMES };
@@ -144,6 +145,7 @@ async function startServer() {
   app.use("/api/audit-logs", auditRouter);
   app.use("/api/backup", backupRopter);
   app.use("/api/ai", aiRouter);
+  app.use("/api/notice", noticeRouter);
   app.use("/api/system", systemRouter);
   app.use("/api/announcements", announcementsRouter);
   app.use("/api/stats", statsRouter);

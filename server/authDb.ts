@@ -86,6 +86,16 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_accounts_employee ON accounts(employeeId);
 `);
 
+// 兼容老库：补头像列（存 base64 data URL，空串 = 使用默认头像）。与 ai_config.assistantLogo 同模式。
+try {
+  const cols = db.prepare(`PRAGMA table_info(accounts)`).all() as Array<{ name: string }>;
+  if (!cols.some((c) => c.name === "avatar")) {
+    db.exec(`ALTER TABLE accounts ADD COLUMN avatar TEXT NOT NULL DEFAULT ''`);
+  }
+} catch {
+  /* 表不存在等异常时忽略 */
+}
+
 // ---------------------------------------------------------------- 口令哈希
 
 /** 生成 `scrypt$N$r$p$salt$hash` 格式的口令摘要 */
@@ -147,6 +157,8 @@ export interface AccountRow {
   employeeId: string | null;
   displayName: string;
   email: string;
+  /** 头像：base64 data URL，空串表示使用默认头像 */
+  avatar: string;
   passwordHash: string;
   systemRole: SystemRole;
   enabled: number;
@@ -165,6 +177,7 @@ export interface PublicAccount {
   employeeId: string | null;
   displayName: string;
   email: string;
+  avatar: string;
   systemRole: SystemRole;
   enabled: boolean;
   mustChangePassword: boolean;
@@ -179,6 +192,7 @@ export function toPublicAccount(row: AccountRow): PublicAccount {
     employeeId: row.employeeId,
     displayName: row.displayName,
     email: row.email,
+    avatar: row.avatar ?? "",
     systemRole: row.systemRole,
     enabled: !!row.enabled,
     mustChangePassword: !!row.mustChangePassword,
@@ -267,7 +281,7 @@ export function setPassword(username: string, newPassword: string, mustChange = 
 
 export function updateAccountMeta(
   username: string,
-  patch: { systemRole?: SystemRole; enabled?: boolean; displayName?: string; email?: string; employeeId?: string | null }
+  patch: { systemRole?: SystemRole; enabled?: boolean; displayName?: string; email?: string; employeeId?: string | null; avatar?: string }
 ): PublicAccount {
   const current = getAccount(username);
   if (!current) throw new AuthError(404, "账号不存在");
@@ -290,6 +304,10 @@ export function updateAccountMeta(
   if (patch.email !== undefined) {
     sets.push("email = ?");
     args.push(String(patch.email));
+  }
+  if (patch.avatar !== undefined) {
+    sets.push("avatar = ?");
+    args.push(String(patch.avatar));
   }
   if (patch.employeeId !== undefined) {
     sets.push("employeeId = ?");

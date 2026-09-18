@@ -21,6 +21,8 @@ export interface StatItem {
 }
 
 export interface NoticeItem {
+  /** 公告/通知的真实 id——同标题同日期是常态（如多个员工的合同到期提醒），列表 key 必须用它 */
+  id: string;
   title: string;
   dept: string;
   date: string;
@@ -162,12 +164,14 @@ export function useDashboard(): UseDashboardReturn {
           notices:
             announcements.length > 0
               ? announcements.map((a) => ({
+                  id: a.id,
                   title: a.title,
                   dept: `${a.publisher || '管理员'}${a.priority === 'important' ? ' · 重要' : ''}`,
                   date: (a.createdAt || '').slice(0, 10),
                   isNew: Date.now() - new Date(a.createdAt).getTime() < 3 * 24 * 3600 * 1000,
                 }))
               : notifications.slice(0, 3).map((n) => ({
+                  id: n.id,
                   title: n.title,
                   dept: '系统通知',
                   date: (n.time || '').slice(0, 10),

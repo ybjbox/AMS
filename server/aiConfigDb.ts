@@ -22,7 +22,9 @@ db.exec(`
     model         TEXT DEFAULT '',
     apiKey        TEXT DEFAULT '',
     assistantDraggable INTEGER NOT NULL DEFAULT 0,
-    conversationRetentionDays INTEGER NOT NULL DEFAULT 0
+    conversationRetentionDays INTEGER NOT NULL DEFAULT 0,
+    dailyQuota INTEGER NOT NULL DEFAULT 20,
+    allowPersonalModel INTEGER NOT NULL DEFAULT 1
   );
 `);
 
@@ -51,20 +53,29 @@ try {
   if (!cols.some((c) => c.name === "conversationRetentionDays")) {
     db.exec(`ALTER TABLE ai_config ADD COLUMN conversationRetentionDays INTEGER NOT NULL DEFAULT 0`);
   }
+  // 兼容老库：补系统额度每人每日提问上限（0 = 不限；个人模型不受限）
+  if (!cols.some((c) => c.name === "dailyQuota")) {
+    db.exec(`ALTER TABLE ai_config ADD COLUMN dailyQuota INTEGER NOT NULL DEFAULT 20`);
+  }
+  // 兼容老库：补「是否允许员工使用个人模型」总开关（默认允许）
+  if (!cols.some((c) => c.name === "allowPersonalModel")) {
+    db.exec(`ALTER TABLE ai_config ADD COLUMN allowPersonalModel INTEGER NOT NULL DEFAULT 1`);
+  }
 } catch {
   /* 表不存在等异常时忽略，交由上层建表逻辑处理 */
 }
 
-const GET_SQL = `SELECT enabled, allowNonAdmin, useDataDefault, baseUrl, model, apiKey, systemPrompt, assistantName, assistantIcon, assistantLogo, assistantDraggable, conversationRetentionDays FROM ai_config WHERE id = 1`;
+const GET_SQL = `SELECT enabled, allowNonAdmin, useDataDefault, baseUrl, model, apiKey, systemPrompt, assistantName, assistantIcon, assistantLogo, assistantDraggable, conversationRetentionDays, dailyQuota, allowPersonalModel FROM ai_config WHERE id = 1`;
 let getStmt = db.prepare(GET_SQL);
 
-const UPSERT_SQL = `INSERT INTO ai_config (id, enabled, allowNonAdmin, useDataDefault, baseUrl, model, apiKey, systemPrompt, assistantName, assistantIcon, assistantLogo, assistantDraggable, conversationRetentionDays)
-  VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+const UPSERT_SQL = `INSERT INTO ai_config (id, enabled, allowNonAdmin, useDataDefault, baseUrl, model, apiKey, systemPrompt, assistantName, assistantIcon, assistantLogo, assistantDraggable, conversationRetentionDays, dailyQuota, allowPersonalModel)
+  VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(id) DO UPDATE SET
     enabled=excluded.enabled, allowNonAdmin=excluded.allowNonAdmin, useDataDefault=excluded.useDataDefault,
     baseUrl=excluded.baseUrl, model=excluded.model, apiKey=excluded.apiKey, systemPrompt=excluded.systemPrompt,
     assistantName=excluded.assistantName, assistantIcon=excluded.assistantIcon, assistantLogo=excluded.assistantLogo,
-    assistantDraggable=excluded.assistantDraggable, conversationRetentionDays=excluded.conversationRetentionDays`;
+    assistantDraggable=excluded.assistantDraggable, conversationRetentionDays=excluded.conversationRetentionDays,
+    dailyQuota=excluded.dailyQuota, allowPersonalModel=excluded.allowPersonalModel`;
 let upsertStmt = db.prepare(UPSERT_SQL);
 
 onDbReload(() => {
@@ -85,6 +96,8 @@ export interface AiConfig {
   assistantLogo: string;
   assistantDraggable: boolean;
   conversationRetentionDays: number;
+  dailyQuota: number;
+  allowPersonalModel: boolean;
 }
 
 function envDefaults() {
@@ -100,7 +113,7 @@ export function getAiConfig(): AiConfig {
   const env = envDefaults();
   const row = getStmt.get();
   if (!row) {
-    return { enabled: true, allowNonAdmin: true, useDataDefault: true, systemPrompt: "", assistantName: "", assistantIcon: "", assistantLogo: "", assistantDraggable: false, conversationRetentionDays: 0, ...env };
+    return { enabled: true, allowNonAdmin: true, useDataDefault: true, systemPrompt: "", assistantName: "", assistantIcon: "", assistantLogo: "", assistantDraggable: false, conversationRetentionDays: 0, dailyQuota: 20, allowPersonalModel: true, ...env };
   }
   return {
     enabled: !!asNumber(row.enabled),
@@ -115,6 +128,8 @@ export function getAiConfig(): AiConfig {
     assistantLogo: asString(row.assistantLogo),
     assistantDraggable: !!asNumber(row.assistantDraggable),
     conversationRetentionDays: Number.isFinite(asNumber(row.conversationRetentionDays)) ? asNumber(row.conversationRetentionDays) : 0,
+    dailyQuota: Number.isFinite(asNumber(row.dailyQuota)) ? asNumber(row.dailyQuota) : 20,
+    allowPersonalModel: !!asNumber(row.allowPersonalModel),
   };
 }
 
@@ -134,6 +149,8 @@ export function setAiConfig(p: Partial<AiConfig>): AiConfig {
     assistantLogo: p.assistantLogo !== undefined ? p.assistantLogo : cur.assistantLogo,
     assistantDraggable: p.assistantDraggable !== undefined ? p.assistantDraggable : cur.assistantDraggable,
     conversationRetentionDays: p.conversationRetentionDays !== undefined ? p.conversationRetentionDays : cur.conversationRetentionDays,
+    dailyQuota: p.dailyQuota !== undefined ? p.dailyQuota : cur.dailyQuota,
+    allowPersonalModel: p.allowPersonalModel ?? cur.allowPersonalModel,
   };
   upsertStmt.run(
     next.enabled ? 1 : 0,
@@ -147,7 +164,9 @@ export function setAiConfig(p: Partial<AiConfig>): AiConfig {
     next.assistantIcon,
     next.assistantLogo,
     next.assistantDraggable ? 1 : 0,
-    next.conversationRetentionDays | 0
+    next.conversationRetentionDays | 0,
+    Math.max(0, next.dailyQuota | 0),
+    next.allowPersonalModel ? 1 : 0
   );
   return next;
 }

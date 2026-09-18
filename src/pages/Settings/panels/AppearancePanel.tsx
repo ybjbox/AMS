@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { toast } from 'sonner';
-import { Building2, Image as ImageIcon, Monitor, Moon, Palette, Sun, Upload } from 'lucide-react';
+import { Image as ImageIcon, Monitor, Moon, Palette, Sun, Upload } from 'lucide-react';
+import { DEFAULT_SYSTEM_ICON } from '@/config/constants';
 import { useAppSettings } from '@/store/appSettings';
 
 export default function AppearancePanel() {
@@ -45,7 +46,7 @@ export default function AppearancePanel() {
   );
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-300 space-y-6">
+    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-400 space-y-6">
       <div>
         <h2 className="text-lg font-medium text-zinc-900 dark:text-white">外观设置</h2>
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">自定义系统主题、图标和登录页背景</p>
@@ -93,11 +94,13 @@ export default function AppearancePanel() {
           </h3>
           <div className="flex items-start space-x-6">
             <div className="w-24 h-24 rounded-xl border-2 border-dashed border-zinc-200/80 dark:border-zinc-600 flex items-center justify-center bg-zinc-50 dark:bg-zinc-800/50 overflow-hidden shrink-0">
-              {systemIcon ? (
-                <img src={systemIcon} alt="System Icon" width={96} height={96} className="w-full h-full object-contain" />
-              ) : (
-                <Building2 className="w-8 h-8 text-zinc-400 dark:text-zinc-500" />
-              )}
+              <img
+                src={systemIcon || DEFAULT_SYSTEM_ICON}
+                alt="System Icon"
+                width={96}
+                height={96}
+                className={`w-full h-full object-contain ${systemIcon ? '' : 'rounded-lg'}`}
+              />
             </div>
             <div className="flex-1">
               <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">

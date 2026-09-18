@@ -217,7 +217,7 @@ export function TreeSelect({
 
       {isOpen && (
         <div
-          className="absolute z-10 mt-1 w-full bg-white dark:bg-zinc-800 shadow-lg max-h-60 rounded-md ring-1 ring-black ring-opacity-5 dark:ring-white/10 flex flex-col focus:outline-none sm:text-sm origin-top animate-in fade-in-0 zoom-in-95 duration-150 ease-out"
+          className="absolute z-10 mt-1 w-full bg-white dark:bg-zinc-800 shadow-lg max-h-60 rounded-md ring-1 ring-black ring-opacity-5 dark:ring-white/10 flex flex-col focus:outline-none sm:text-sm origin-top animate-in fade-in-0 zoom-in-97 duration-250 ease-[var(--ease-smooth-out)]"
           role="tree"
           tabIndex={-1}
         >

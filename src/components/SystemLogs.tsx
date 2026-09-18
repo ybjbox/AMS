@@ -141,7 +141,7 @@ export default function SystemLogs() {
     'h-9 text-sm border border-zinc-200/80 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-600/20';
 
   return (
-    <div className="animate-in fade-in duration-300 h-full flex flex-col">
+    <div className="animate-in fade-in duration-400 h-full flex flex-col">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-lg font-medium text-zinc-900 dark:text-white">审计日志</h2>

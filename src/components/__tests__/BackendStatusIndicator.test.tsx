@@ -49,8 +49,30 @@ describe('BackendStatusIndicator', () => {
     h.unmount();
   });
 
-  it('health 返回 JSON 但 status≠ok（dev 前端兜底返回 HTML 的防护）时判定“后端离线”', async () => {
+  it('health 返回 JSON 但 status≠ok 时判定“后端异常”（黄灯：服务可达但健康检查未通过）', async () => {
     mockFetch({ status: 'down' });
+    const h = await mount();
+    await h.flush();
+    expect(h.text()).toContain('后端异常');
+    h.unmount();
+  });
+
+  it('HTTP 状态码非 2xx 时判定“后端异常”', async () => {
+    mockFetch({}, false);
+    const h = await mount();
+    await h.flush();
+    expect(h.text()).toContain('后端异常');
+    h.unmount();
+  });
+
+  it('响应非 JSON（dev 纯前端兜底返回 HTML）时判定“后端离线”', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => {
+        throw new SyntaxError('Unexpected token <');
+      },
+    } as unknown as Response);
+    vi.stubGlobal('fetch', fetchMock);
     const h = await mount();
     await h.flush();
     expect(h.text()).toContain('后端离线');

@@ -8,7 +8,7 @@ export type QuickActionsProps = Pick<UseDashboardReturn, 'quickActions' | 'isLoa
 
 export default function QuickActions({ quickActions, isLoading }: QuickActionsProps) {
   return (
-    <div className="card-base p-6 transition duration-300 hover:shadow-md hover:-translate-y-0.5">
+    <div className="card-base p-6 transition duration-250 hover:shadow-md hover:-translate-y-0.5">
       <h2 className="text-base font-semibold text-zinc-900 dark:text-white mb-6 tracking-tight">
         快捷操作
       </h2>
@@ -41,7 +41,7 @@ export default function QuickActions({ quickActions, isLoading }: QuickActionsPr
               className="flex flex-col items-center justify-center p-5 rounded-2xl border border-zinc-100 dark:border-zinc-700/50 shadow-sm hover:shadow-md transition duration-300 hover:-translate-y-0.5 group bg-white dark:bg-zinc-800"
             >
               <div
-                className={`p-3.5 rounded-xl ${action.bg} mb-3 transition-transform duration-300 group-hover:scale-110`}
+                className={`p-3.5 rounded-xl ${action.bg} mb-3 transition-transform duration-250 group-hover:scale-110`}
               >
                 <action.icon className={`h-6 w-6 ${action.color}`} />
               </div>

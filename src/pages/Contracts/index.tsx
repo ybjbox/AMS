@@ -71,7 +71,7 @@ export default function ContractsPage() {
 
   return (
     <PageContainer width="none">
-      <div className="relative max-w-7xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-6 animate-in fade-in duration-500">
+      <div className="relative max-w-7xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-6 animate-in fade-in duration-400">
         <div className="page-header shrink-0">
           <div>
             <h1 className="page-title">合同管理</h1>

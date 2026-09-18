@@ -16,7 +16,9 @@ export default function Departments() {
   
   useBodyOverflow(logic.modal.isOpen || logic.roleModal.isOpen);
 
-  const canManage = hasPermission('settings:manage');
+  // 与页面入口同码：departments:view 即 HR+（后端部门写操作 = HR+），
+  // 不再用幽灵权限码 settings:manage（矩阵中不存在，严格模式下会误伤 HR）
+  const canManage = hasPermission('departments:view');
 
   return (
     <PageContainer className="space-y-6">

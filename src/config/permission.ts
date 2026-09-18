@@ -8,7 +8,11 @@ import { SystemRole } from '../types/user';
  *   - approvals:approve →  /api/approvals/:id/decide requireRole("HR")
  *   - contracts:view    →  合同预览含身份证，读侧裁剪后 <HR 拿不到 idCard，故页面也只到 HR+
  *   - documents:manage  →  文档上传/删除等写操作 = HR+（authGate 默认写策略）
+ *   - departments:view  →  部门管理页（顶层 /departments）；写操作 = HR+
+ *   - settings:view     →  仅决定 /settings 页面可达；页内面板再按角色秩过滤，
+ *                          员工可见「个人设置 / 外观设置」（强制改密流程需要入口）
  *   - approvals:view    →  POST /api/approvals 对任何登录用户开放（自助提交）
+ *   - notice:view       →  /api/notice/* 策略 = EMPLOYEE（AI 启停/仅管理员在 router 内按 aiConfig 二次判断）
  * 注意：本文件只作初始值 /「恢复默认」的来源；运行时以 usePermissionsStore
  * （权限矩阵面板可编辑）为准。
  */
@@ -19,6 +23,7 @@ export const permissions: Record<string, string[]> = {
     'dashboard:view',
     'users:view',
     'users:manage',
+    'departments:view',
     'attendance:view',
     'attendance:manage',
     'contracts:view',
@@ -27,6 +32,8 @@ export const permissions: Record<string, string[]> = {
     'documents:manage',
     'approvals:view',
     'approvals:approve',
+    'notice:view',
+    'settings:view',
   ],
   [SystemRole.EMPLOYEE]: [
     'dashboard:view',
@@ -34,5 +41,7 @@ export const permissions: Record<string, string[]> = {
     'todos:view',
     'documents:view',
     'approvals:view',
+    'notice:view',
+    'settings:view',
   ],
 };

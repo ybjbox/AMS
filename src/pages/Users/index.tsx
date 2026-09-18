@@ -110,7 +110,7 @@ export default function Users() {
     <>
       {/* ── 主内容布局 ── */}
       <PageContainer width="none">
-        <div className="space-y-6 animate-in fade-in duration-500 w-full flex-1 flex flex-col min-h-0 max-w-7xl mx-auto">
+        <div className="space-y-6 animate-in fade-in duration-400 w-full flex-1 flex flex-col min-h-0">
           <div className="page-header shrink-0">
             <div>
               <h1 className="page-title">员工管理</h1>

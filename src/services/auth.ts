@@ -6,6 +6,8 @@ export interface AuthUser {
   username: string;
   displayName: string;
   email: string;
+  /** 头像 base64 data URL；空串 = 默认头像 */
+  avatar: string;
   /** 系统角色，权限字典按它取值 */
   role: string;
   systemRole: string;
@@ -15,7 +17,14 @@ export interface AuthUser {
 
 /** 后端 AuthUser → 前端 UserInfo（role 统一取 systemRole 权限键） */
 export function toUserInfo(u: AuthUser): UserInfo {
-  return { id: u.id, username: u.username, email: u.email, role: u.systemRole };
+  return {
+    id: u.id,
+    username: u.username,
+    displayName: u.displayName,
+    email: u.email,
+    avatar: u.avatar || undefined,
+    role: u.systemRole,
+  };
 }
 
 export interface LoginResponse {
@@ -43,4 +52,12 @@ export const authService = {
   /** 后端会吊销全部旧会话并返回一个新 token */
   changePassword: (currentPassword: string, newPassword: string) =>
     http.post<ChangePasswordResponse>('/auth/change-password', { currentPassword, newPassword }),
+
+  /** 自助更新个人资料（显示名称/邮箱/头像），不会吊销当前会话；avatar 省略 = 不修改 */
+  updateProfile: (displayName: string, email: string, avatar?: string) =>
+    http.put<{ user: AuthUser }>('/auth/profile', {
+      displayName,
+      email,
+      ...(avatar !== undefined ? { avatar } : {}),
+    }),
 };

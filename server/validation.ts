@@ -159,3 +159,24 @@ export const accountUpdateSchema = z.object({
   email: z.string().optional(),
   employeeId: z.union([z.string(), z.null()]).optional(),
 });
+
+/** 自助资料更新：只允许改显示名称 / 邮箱 / 头像，角色/状态一律不在此接口暴露 */
+export const profileUpdateSchema = z.object({
+  displayName: z
+    .string({ error: "显示名称不能为空" })
+    .trim()
+    .min(1, "显示名称不能为空")
+    .max(30, "显示名称最多 30 个字符"),
+  email: z
+    .string()
+    .trim()
+    .max(120, "邮箱过长")
+    .refine((v) => v === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), "邮箱格式不正确"),
+  // 头像 = base64 data URL（前端 canvas 已压到 128px，约 5–15KB）；空串 = 恢复默认头像。
+  // authRouter 的 body 上限 64kb，这里再收一道，给友好报错而不是 JSON 解析失败。
+  avatar: z
+    .string()
+    .max(50_000, "头像数据过大，请压缩后重试")
+    .refine((v) => v === "" || /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(v), "头像必须是图片数据")
+    .optional(),
+});

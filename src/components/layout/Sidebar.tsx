@@ -1,37 +1,34 @@
-import React, { useMemo, useCallback } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Building2, User as UserIcon } from 'lucide-react';
+import React, { useMemo, useCallback, useState, useRef, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAppSettings } from '@/store/appSettings';
+import { DEFAULT_SYSTEM_ICON } from '@/config/constants';
 import { useUserStore } from '@/store/useUserStore';
 import { usePermissionsStore } from '@/store/permissions';
 import { useTodoStore } from '@/store/useTodoStore';
-import { routeConfig, NAV_GROUP_ORDER, RouteConfig } from '@/config/routes';
-import { getRoleDisplayName } from '@/utils/roleUtils';
-import BackendStatusIndicator from '@/components/BackendStatusIndicator';
+import { routeConfig, applyNavOrder, RouteConfig } from '@/config/routes';
+import UserMenu from './UserMenu';
 
 interface SidebarProps {
   isCollapsed?: boolean;
   className?: string;
   onClose?: () => void;
+  /** 传入时渲染骑跨侧栏右缘的圆形折叠钮（桌面端）；移动端抽屉不传即不渲染 */
+  onToggleCollapse?: () => void;
 }
 
-const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '', onClose }: SidebarProps) {
+const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '', onClose, onToggleCollapse }: SidebarProps) {
   const location = useLocation();
-  const navigate = useNavigate();
   const systemIcon = useAppSettings((state) => state.systemIcon);
 
-  const handleGoToProfile = useCallback(() => {
-    navigate('/settings');
-    if (onClose) onClose();
-  }, [navigate, onClose]);
-
-  // 订阅 userInfo 与权限矩阵，两者变化时导航即时重渲染
-  const userInfo = useUserStore((state) => state.userInfo);
+  // 订阅权限矩阵与 hasPermission，变化时导航即时重渲染
   const permissionsMap = usePermissionsStore((state) => state.permissions);
   const hasPermission = useUserStore((state) => state.hasPermission);
 
   const visibleNav = useMemo(() => {
     return routeConfig.filter((item) => {
+      // /settings 的入口已整合进底部账户弹窗（UserMenu），导航不再重复列出
+      if (item.path === '/settings') return false;
       // 如果配置了 permission 且当前用户没有该权限，则过滤掉；否则默认显示
       if (item.permission) {
         return hasPermission(item.permission);
@@ -43,27 +40,29 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
   // 待办未完成数（侧边栏角标）
   const pendingTodoCount = useTodoStore((state) => state.todos.filter((t) => !t.completed).length);
 
-  // 按域分组（控制台独立置顶，不参与分组）
-  const homeNav = useMemo(() => visibleNav.filter((item) => item.path === '/'), [visibleNav]);
-  const groupedNav = useMemo(() => {
-    const groups = new Map<string, RouteConfig[]>();
-    for (const item of visibleNav) {
-      if (item.path === '/') continue;
-      const key = item.group || '协作';
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)!.push(item);
-    }
-    // 按预定义顺序输出
-    return NAV_GROUP_ORDER
-      .filter((g) => groups.has(g))
-      .map((g) => ({ group: g, items: groups.get(g)! }));
-  }, [visibleNav]);
+  // 用户在「系统设置 → 功能模块排序」里保存的自定义顺序
+  const navOrder = useAppSettings((state) => state.navOrder);
+  const orderedNav = useMemo(() => applyNavOrder(visibleNav, navOrder), [visibleNav, navOrder]);
 
   const handleCloseSidebar = useCallback(() => {
     if (onClose) {
       onClose();
     }
   }, [onClose]);
+
+  // 滚动提示：隐藏滚动条（窄侧栏里常驻滚动条抢宽度且视觉杂乱），
+  // 改为底部渐隐 + 下箭头示意「下方还有内容」，滚到底自动消失
+  const navRef = useRef<HTMLElement | null>(null);
+  const [canScrollDown, setCanScrollDown] = useState(false);
+  const updateScrollHint = useCallback(() => {
+    const el = navRef.current;
+    if (el) setCanScrollDown(el.scrollHeight - el.clientHeight - el.scrollTop > 4);
+  }, []);
+  useEffect(() => {
+    updateScrollHint();
+    window.addEventListener('resize', updateScrollHint);
+    return () => window.removeEventListener('resize', updateScrollHint);
+  }, [updateScrollHint, orderedNav, isCollapsed]);
 
   /** 单个导航项渲染 */
   const renderNavItem = useCallback((item: RouteConfig) => {
@@ -77,31 +76,28 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
         title={isCollapsed ? (showBadge ? `${item.label} (${pendingTodoCount})` : item.label) : undefined}
         aria-current={isActive ? 'page' : undefined}
         aria-label={isCollapsed ? (showBadge ? `${item.label}，${pendingTodoCount} 项未完成` : item.label) : undefined}
-        className={`flex items-center py-2.5 px-3 rounded-xl transition duration-300 ease-in-out group ${
-          isCollapsed ? 'justify-center' : ''
-        } ${
+        className={`relative flex items-center justify-center py-2.5 px-3 rounded-xl transition duration-250 ease-[var(--ease-smooth-out)] group ${
           isActive
             ? 'bg-brand-50 dark:bg-brand-900/25 text-brand-700 dark:text-brand-300 font-semibold shadow-sm ring-1 ring-brand-500/20'
             : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white hover:shadow-sm'
         }`}
       >
-        <item.icon
-          className={`h-5 w-5 shrink-0 transition-colors ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-600 dark:group-hover:text-zinc-300'} ${isCollapsed ? '' : 'mr-3'}`}
-        />
+        {/* 图标 + 角标：角标是挂在图标右上角的独立标记，不占内容流、不参与行宽计算 */}
+        <span className={`relative inline-flex shrink-0 ${isCollapsed ? '' : 'mr-3'}`}>
+          <item.icon
+            className={`h-5 w-5 shrink-0 transition-colors ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-600 dark:group-hover:text-zinc-300'}`}
+          />
+          {showBadge && (
+            <span
+              className="absolute -top-1.5 -right-2 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-red-500 ring-2 ring-white dark:ring-zinc-800 text-[10px] font-bold text-white"
+              aria-hidden="true"
+            >
+              {pendingTodoCount > 99 ? '99+' : pendingTodoCount}
+            </span>
+          )}
+        </span>
         {!isCollapsed && (
-          <span className="whitespace-nowrap text-sm animate-in fade-in duration-300 flex-1">{item.label}</span>
-        )}
-        {!isCollapsed && showBadge && (
-          <span
-            className={`ml-2 shrink-0 min-w-[20px] px-1.5 py-0.5 rounded-full text-[11px] font-medium text-center ${
-              isActive
-                ? 'bg-brand-600 text-white dark:bg-brand-500'
-                : 'bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300'
-            }`}
-            aria-hidden="true"
-          >
-            {pendingTodoCount > 99 ? '99+' : pendingTodoCount}
-          </span>
+          <span className="w-[4em] shrink-0 whitespace-nowrap text-sm text-left animate-in fade-in duration-150">{item.label}</span>
         )}
       </Link>
     );
@@ -109,90 +105,62 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
 
   return (
     <aside
-      className={`bg-white/80 dark:bg-zinc-800/70 backdrop-blur-xl border border-zinc-200/60 dark:border-white/10 shadow-sm dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] rounded-2xl flex flex-col print:hidden shrink-0 transition duration-300 ease-in-out ${
-        isCollapsed ? 'w-20' : 'w-64'
+      className={`relative z-30 bg-white/80 dark:bg-zinc-800/70 backdrop-blur-xl border border-zinc-200/60 dark:border-white/10 shadow-sm dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] rounded-2xl flex flex-col print:hidden shrink-0 transition duration-300 ease-in-out ${
+        isCollapsed ? 'w-20' : 'w-48'
       } ${className}`}
     >
-      {/* Logo */}
+      {/* Banner：Logo 与名称上下两行居中。折叠入口做成骑跨侧栏右边框的小圆钮（不占 banner 横向空间）；
+          桌面端页眉已移除，此区承担品牌展示 */}
       <div
-        className={`h-20 flex items-center transition duration-300 ${isCollapsed ? 'justify-center px-0' : 'px-6'}`}
+        className="flex items-center justify-center h-[72px] shrink-0 border-b border-zinc-200/60 dark:border-white/10 transition duration-250"
       >
-        <div className="w-9 h-9 brand-gradient rounded-xl flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
-          {systemIcon ? (
-            <img src={systemIcon} alt="Logo" width={36} height={36} className="w-full h-full object-contain bg-white dark:bg-zinc-800" />
-          ) : (
-            <Building2 className="h-5 w-5 text-white" />
+        <div className={`flex flex-col items-center justify-center min-w-0 ${isCollapsed ? '' : 'w-[124px]'}`}>
+          <div className="w-9 h-9 flex items-center justify-center shrink-0 overflow-hidden">
+            <img
+              src={systemIcon || DEFAULT_SYSTEM_ICON}
+              alt="Logo"
+              width={36}
+              height={36}
+              className={`w-full h-full object-contain ${systemIcon ? 'bg-white dark:bg-zinc-800' : ''}`}
+            />
+          </div>
+          {!isCollapsed && (
+            <span className="mt-1 text-base font-bold text-zinc-800 dark:text-white leading-none whitespace-nowrap overflow-hidden animate-in fade-in duration-300">
+              AMS 系统
+            </span>
           )}
         </div>
-        {!isCollapsed && (
-          <span className="text-lg font-bold text-zinc-800 dark:text-white ml-3 whitespace-nowrap overflow-hidden animate-in fade-in duration-300">
-            AMS 系统
-          </span>
+      </div>
+      {onToggleCollapse && (
+        <button
+          onClick={onToggleCollapse}
+          className="absolute z-40 -right-3 top-[72px] -translate-y-1/2 h-6 w-6 rounded-full bg-white dark:bg-zinc-800 border border-zinc-300/80 dark:border-zinc-600 shadow-sm flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-brand-600 dark:hover:text-brand-400 hover:border-brand-400 dark:hover:border-brand-500 transition-colors duration-150"
+          title={isCollapsed ? '展开菜单' : '收起菜单'}
+          aria-label={isCollapsed ? '展开菜单' : '收起菜单'}
+        >
+          {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+        </button>
+      )}
+      {/* Nav（外层 relative 容器承载底部滚动提示箭头） */}
+      <div className="relative flex-1 flex flex-col min-h-0">
+        <nav ref={navRef} onScroll={updateScrollHint} aria-label="主导航" className="px-3 pt-3 pb-4 flex-1 overflow-y-auto overflow-x-hidden no-scrollbar">
+          {/* 三区块共用 124px 内容列（banner/导航/账户区左缘同线），列整体居中；角标走绝对定位不撑宽 */}
+          <div className={`${isCollapsed ? 'w-max' : 'w-[124px]'} mx-auto space-y-1.5`}>
+            {orderedNav.map(renderNavItem)}
+          </div>
+        </nav>
+        {canScrollDown && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-12 flex items-end justify-center pb-1.5 bg-gradient-to-t from-white via-white/70 to-transparent dark:from-zinc-800 dark:via-zinc-800/70"
+          >
+            <ChevronDown className="h-4 w-4 text-zinc-400 dark:text-zinc-500 animate-bounce [animation-duration:1.6s]" />
+          </div>
         )}
       </div>
-      {/* Nav */}
-      <nav aria-label="主导航" className="px-3 pb-4 space-y-1.5 flex-1 overflow-y-auto overflow-x-hidden">
-        {/* 控制台（置顶，无分组） */}
-        {homeNav.map(renderNavItem)}
-
-        {/* 分组导航 */}
-        {groupedNav.map(({ group, items }) => (
-          <div key={group} className="pt-2 first:pt-0">
-            {!isCollapsed ? (
-              <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 select-none">
-                {group}
-              </p>
-            ) : (
-              <div className="mx-2 mb-1.5 border-t border-zinc-100 dark:border-zinc-700/60" role="separator" aria-hidden="true" />
-            )}
-            <div className="space-y-1.5">{items.map(renderNavItem)}</div>
-          </div>
-        ))}
-      </nav>
-      {/* 用户信息底部区 */}
+      {/* 用户信息底部区（含账户菜单：主题/个人设置/退出登录） */}
       <div className={`border-t border-zinc-200/60 dark:border-zinc-700/60 p-3 shrink-0 ${isCollapsed ? 'flex flex-col items-center gap-1' : ''}`}>
-        {isCollapsed ? (
-          // 折叠状态：仅显示头像
-          <button
-            onClick={handleGoToProfile}
-            title={userInfo?.username || '用户'}
-            aria-label="前往个人设置"
-            className="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-900/50 flex items-center justify-center hover:ring-2 hover:ring-brand-500/40 transition"
-          >
-            {userInfo?.username
-              ? <span className="text-xs font-bold text-brand-600 dark:text-brand-400">
-                  {userInfo.username.charAt(0).toUpperCase()}
-                </span>
-              : <UserIcon className="h-4 w-4 text-brand-600 dark:text-brand-400" />
-            }
-          </button>
-        ) : (
-          // 展开状态：头像 + 姓名 + 角色；系统状态收进底部行，不再悬浮遮挡页面内容
-          <>
-            <button
-              onClick={handleGoToProfile}
-              className="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer group text-left"
-              aria-label="前往个人设置"
-            >
-              <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/50 flex items-center justify-center shrink-0 text-xs font-bold text-brand-600 dark:text-brand-400 select-none">
-                {userInfo?.username
-                  ? userInfo.username.charAt(0).toUpperCase()
-                  : <UserIcon className="h-4 w-4" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate">
-                  {userInfo?.username || '用户'}
-                </p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
-                  {getRoleDisplayName(userInfo?.role)}
-                </p>
-              </div>
-            </button>
-            <div className="px-2 pt-1.5 flex items-center justify-between">
-              <BackendStatusIndicator variant="bare" className="scale-90 origin-left" />
-            </div>
-          </>
-        )}
+        <UserMenu isCollapsed={isCollapsed} onNavigate={handleCloseSidebar} />
       </div>
     </aside>
   );

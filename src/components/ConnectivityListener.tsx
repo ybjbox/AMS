@@ -73,7 +73,7 @@ export default function ConnectivityListener() {
             className="btn-primary w-full py-3 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed group"
           >
             <RefreshCw
-              className={`w-5 h-5 mr-2 ${isChecking ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`}
+              className={`w-5 h-5 mr-2 ${isChecking ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-250'}`}
             />
             {isChecking ? '正在重试...' : '立即重试'}
           </button>

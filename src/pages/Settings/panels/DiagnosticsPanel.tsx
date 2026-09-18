@@ -20,6 +20,20 @@ function formatTime(iso: string): string {
   return d.toLocaleTimeString('zh-CN', { hour12: false });
 }
 
+/** 关键表中文名（与 server/systemRouter.ts COUNT_TABLES 对应；未收录的表回退显示原始名） */
+const TABLE_LABELS: Record<string, string> = {
+  employees: '员工档案',
+  accounts: '登录账号',
+  sessions: '在线会话',
+  audit_logs: '操作日志',
+  security_events: '安全事件',
+  punch_records: '打卡记录',
+  todos: '待办事项',
+  notifications: '系统通知',
+  approvals: '审批单',
+  documents: '文档资料',
+};
+
 /** 运行诊断：进程健康 + 访问日志汇总 + 最近慢请求/错误（数据源 = 内存环形缓冲） */
 export default function DiagnosticsPanel() {
   const [data, setData] = useState<DiagnosticsResponse | null>(null);
@@ -120,41 +134,46 @@ export default function DiagnosticsPanel() {
         </div>
       </div>
 
-      {/* 最近异常请求 */}
-      <div className="card-base flex-1 min-h-0 flex flex-col">
+      {/* 最近异常请求：固定高度 + 内部滚动（此前 flex-1 在页面级滚动容器里会塌缩成一行高） */}
+      <div className="card-base flex flex-col shrink-0 h-80">
         <div className="px-4 py-3 border-b border-zinc-200/80 dark:border-zinc-700 shrink-0">
           <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
-            最近失败/慢请求（{data?.recent.length ?? 0}）
+            最近异常请求（{data?.recent.length ?? 0}）
           </h3>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+            报错（状态码 ≥400）或超时（&gt;{data?.accessLog.slowThresholdMs ?? 1000}ms）的接口请求，红色=服务端错误，橙色=客户端错误/慢请求
+          </p>
         </div>
         <div className="flex-1 min-h-0 overflow-auto">
           {data && data.recent.length > 0 ? (
             <table className="w-full text-left text-sm" aria-label="最近异常请求">
               <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs text-zinc-500 dark:text-zinc-400">
                 <tr>
-                  <th className="px-4 py-2 font-medium">时间</th>
-                  <th className="px-4 py-2 font-medium">方法</th>
-                  <th className="px-4 py-2 font-medium">路径</th>
-                  <th className="px-4 py-2 font-medium">状态</th>
-                  <th className="px-4 py-2 font-medium">耗时</th>
-                  <th className="px-4 py-2 font-medium">操作者</th>
+                  <th className="px-3 py-2 font-medium whitespace-nowrap">时间</th>
+                  <th className="px-3 py-2 font-medium whitespace-nowrap">方法</th>
+                  <th className="px-3 py-2 font-medium w-full">路径</th>
+                  <th className="px-3 py-2 font-medium whitespace-nowrap">状态</th>
+                  <th className="px-3 py-2 font-medium whitespace-nowrap">耗时</th>
+                  <th className="px-3 py-2 font-medium whitespace-nowrap">操作者</th>
                 </tr>
               </thead>
               <tbody>
                 {data.recent.map((e, i) => (
                   <tr key={`${e.ts}-${i}`} className="border-t border-zinc-100 dark:border-zinc-800">
-                    <td className="px-4 py-2 text-zinc-500 dark:text-zinc-400 tabular-nums whitespace-nowrap">{formatTime(e.ts)}</td>
-                    <td className="px-4 py-2 text-zinc-700 dark:text-zinc-300 font-mono text-xs">{e.method}</td>
-                    <td className="px-4 py-2 text-zinc-700 dark:text-zinc-300 font-mono text-xs truncate max-w-[280px]" title={e.path}>{e.path}</td>
-                    <td className="px-4 py-2 tabular-nums">
+                    <td className="px-3 py-2 text-zinc-500 dark:text-zinc-400 tabular-nums whitespace-nowrap">{formatTime(e.ts)}</td>
+                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300 font-mono text-xs">{e.method}</td>
+                    <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300 font-mono text-xs">
+                      <div className="truncate" title={e.path}>{e.path}</div>
+                    </td>
+                    <td className="px-3 py-2 tabular-nums">
                       <span className={e.status >= 500 ? 'text-red-600 dark:text-red-400 font-medium' : e.status >= 400 ? 'text-amber-700 dark:text-amber-400 font-medium' : 'text-zinc-500 dark:text-zinc-400'}>
                         {e.status}
                       </span>
                     </td>
-                    <td className="px-4 py-2 tabular-nums text-zinc-700 dark:text-zinc-300">
+                    <td className="px-3 py-2 tabular-nums whitespace-nowrap text-zinc-700 dark:text-zinc-300">
                       {e.durationMs}ms{e.slow && <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">慢</span>}
                     </td>
-                    <td className="px-4 py-2 text-zinc-500 dark:text-zinc-400">{e.actor || '—'}</td>
+                    <td className="px-3 py-2 text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{e.actor || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -168,15 +187,18 @@ export default function DiagnosticsPanel() {
         </div>
       </div>
 
-      {/* 关键表行数 */}
+      {/* 数据概况 */}
       {data && (
         <div className="card-base p-4 shrink-0">
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-3">关键表行数</h3>
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">数据概况</h3>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 mb-3">
+            各模块当前的记录条数；某项为 0 或「—」通常意味着对应功能没有数据或读取失败。
+          </p>
           <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
             {Object.entries(data.tableCounts).map(([table, count]) => (
               <div key={table} className="text-center p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
-                <div className="text-sm font-bold text-zinc-900 dark:text-white tabular-nums">{count < 0 ? '—' : count}</div>
-                <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-mono truncate" title={table}>{table}</div>
+                <div className="text-sm font-bold text-zinc-900 dark:text-white tabular-nums">{count < 0 ? '—' : `${count} 条`}</div>
+                <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate" title={table}>{TABLE_LABELS[table] ?? table}</div>
               </div>
             ))}
           </div>

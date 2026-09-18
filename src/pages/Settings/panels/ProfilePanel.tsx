@@ -1,14 +1,27 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { KeyRound, ShieldAlert, UserCog } from 'lucide-react';
+import { Camera, KeyRound, ShieldAlert, UserCog } from 'lucide-react';
 import { toast } from 'sonner';
 import { authService, toUserInfo } from '@/services/auth';
 import { useUserStore } from '@/store/useUserStore';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { useConfirm } from '@/hooks/useConfirm';
+import { DEFAULT_USER_AVATAR } from '@/config/constants';
+
+const profileSchema = z.object({
+  displayName: z.string().trim().min(1, '请输入显示名称').max(30, '显示名称最多 30 个字符'),
+  email: z
+    .string()
+    .trim()
+    .max(120, '邮箱过长')
+    .refine((v) => v === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), '邮箱格式不正确'),
+  /** 头像 base64 data URL；空串 = 使用默认头像 */
+  avatar: z.string().max(50_000, '头像数据过大'),
+});
+
+type ProfileForm = z.infer<typeof profileSchema>;
 
 const changePasswordSchema = z
   .object({
@@ -31,12 +44,92 @@ export default function ProfilePanel() {
   const location = useLocation();
   const setUser = useUserStore((s) => s.setUser);
   const userInfo = useUserStore((s) => s.userInfo);
+  const token = useUserStore((s) => s.token);
   const confirm = useConfirm();
   const [submitting, setSubmitting] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
   // 登录页检测到 mustChangePassword 时会带 state 跳转过来（强制改密引导）
   const mustChangePassword = Boolean(
     (location.state as { mustChangePassword?: boolean } | null)?.mustChangePassword
   );
+
+  const profileForm = useForm<ProfileForm>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: { displayName: '', email: '', avatar: '' },
+  });
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const avatar = profileForm.watch('avatar');
+
+  // 挂载时从 /auth/me 取最新资料回填（localStorage 里的旧缓存可能缺 displayName/email/avatar）
+  useEffect(() => {
+    let cancelled = false;
+    authService
+      .me()
+      .then((res) => {
+        if (cancelled) return;
+        profileForm.reset({
+          displayName: res.user.displayName ?? '',
+          email: res.user.email ?? '',
+          avatar: res.user.avatar ?? '',
+        });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        profileForm.reset({
+          displayName: userInfo?.displayName ?? '',
+          email: userInfo?.email ?? '',
+          avatar: userInfo?.avatar ?? '',
+        });
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** 本地裁剪压缩：任意图片 → 居中方形 128px data URL（≤50k 字符，与后端校验一致） */
+  const handleAvatarFile = (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('请选择图片文件');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('图片过大，请选择 5MB 以内的图片');
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const SIZE = 128;
+      const canvas = document.createElement('canvas');
+      canvas.width = SIZE;
+      canvas.height = SIZE;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        toast.error('当前浏览器不支持头像处理');
+        return;
+      }
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, SIZE, SIZE); // JPEG/WebP 兜底：透明图垫白底
+      const side = Math.min(img.width, img.height);
+      ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, SIZE, SIZE);
+      let dataUrl = canvas.toDataURL('image/webp', 0.85);
+      if (!dataUrl.startsWith('data:image/webp')) dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      if (dataUrl.length > 50_000) {
+        toast.error('图片内容过于复杂，压缩后仍超限，请更换图片');
+        return;
+      }
+      profileForm.setValue('avatar', dataUrl, { shouldDirty: true });
+      toast.success('头像已就绪，点击「保存资料」生效');
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      toast.error('图片读取失败，请更换图片');
+    };
+    img.src = url;
+  };
 
   const {
     register,
@@ -47,6 +140,20 @@ export default function ProfilePanel() {
     resolver: zodResolver(changePasswordSchema),
     defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
   });
+
+  const onProfileSubmit = async (values: ProfileForm) => {
+    setSavingProfile(true);
+    try {
+      const res = await authService.updateProfile(values.displayName, values.email, values.avatar ?? '');
+      // 同步本地账户区显示；token 不变（该接口不吊销会话）
+      if (token) setUser(toUserInfo(res.user), token);
+      toast.success('资料已更新');
+    } catch (err) {
+      toast.error((err as { error?: string })?.error || '资料更新失败，请稍后重试');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   const onSubmit = async (values: ChangePasswordForm) => {
     if (!mustChangePassword) {
@@ -71,10 +178,10 @@ export default function ProfilePanel() {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-300">
+    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-400">
       <div className="mb-6">
         <h2 className="text-lg font-medium text-zinc-900 dark:text-white">个人设置</h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">管理您的账号安全</p>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">管理您的个人资料与账号安全</p>
       </div>
 
       {mustChangePassword && (
@@ -90,6 +197,97 @@ export default function ProfilePanel() {
       )}
 
       <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200/60 dark:border-zinc-700/60 shadow-sm p-6 max-w-xl">
+        <div className="flex items-center gap-2 mb-5">
+          <UserCog className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+          <h3 className="text-sm font-medium text-zinc-900 dark:text-white">基本信息</h3>
+        </div>
+        <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4" noValidate>
+          <div className="flex items-center gap-4">
+            <img
+              src={avatar || DEFAULT_USER_AVATAR}
+              alt="当前头像"
+              className="w-16 h-16 rounded-full object-cover ring-1 ring-zinc-200 dark:ring-zinc-700 bg-white dark:bg-zinc-900"
+            />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-1.5 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  上传头像
+                </button>
+                {avatar && (
+                  <button
+                    type="button"
+                    onClick={() => profileForm.setValue('avatar', '', { shouldDirty: true })}
+                    className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
+                  >
+                    恢复默认
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1.5">
+                支持 PNG / JPG / WebP，自动居中裁剪为 128×128；未上传时使用默认头像
+              </p>
+            </div>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                handleAvatarFile(e.target.files?.[0]);
+                e.target.value = '';
+              }}
+            />
+          </div>
+          <div>
+            <label htmlFor="displayName" className="block text-sm text-zinc-600 dark:text-zinc-300 mb-1.5">
+              显示名称
+            </label>
+            <input
+              id="displayName"
+              autoComplete="nickname"
+              {...profileForm.register('displayName')}
+              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/40"
+            />
+            {profileForm.formState.errors.displayName && (
+              <p className="text-xs text-red-500 mt-1">{profileForm.formState.errors.displayName.message}</p>
+            )}
+          </div>
+          <div>
+            <label htmlFor="profileEmail" className="block text-sm text-zinc-600 dark:text-zinc-300 mb-1.5">
+              邮箱（用于接收通知，可留空）
+            </label>
+            <input
+              id="profileEmail"
+              type="email"
+              autoComplete="email"
+              {...profileForm.register('email')}
+              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/40"
+            />
+            {profileForm.formState.errors.email && (
+              <p className="text-xs text-red-500 mt-1">{profileForm.formState.errors.email.message}</p>
+            )}
+          </div>
+          <div className="pt-1 flex items-center justify-between">
+            <span className="text-xs text-zinc-400 dark:text-zinc-500">
+              登录账号：{userInfo?.username ?? '-'}（用户名由管理员维护，不可自助修改）
+            </span>
+            <button
+              type="submit"
+              disabled={savingProfile || !profileForm.formState.isDirty}
+              className="rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2 text-sm font-medium text-white transition-colors"
+            >
+              {savingProfile ? '保存中…' : '保存资料'}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200/60 dark:border-zinc-700/60 shadow-sm p-6 mt-6 max-w-xl">
         <div className="flex items-center gap-2 mb-5">
           <KeyRound className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
           <h3 className="text-sm font-medium text-zinc-900 dark:text-white">修改登录密码</h3>
@@ -153,15 +351,6 @@ export default function ProfilePanel() {
             </button>
           </div>
         </form>
-      </div>
-
-      <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200/60 dark:border-zinc-700/60 shadow-sm mt-6 max-w-xl">
-        <EmptyState
-          icon={UserCog}
-          title="个人资料编辑"
-          description="头像上传与资料维护功能正在开发中，敬请期待"
-          className="py-12"
-        />
       </div>
     </div>
   );

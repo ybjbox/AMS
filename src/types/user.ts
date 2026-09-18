@@ -36,6 +36,8 @@ export interface User {
 export interface UserInfo {
   id: string | number;
   username: string;
+  /** 显示名称（资料可编辑），UI 优先于 username 展示 */
+  displayName?: string;
   email: string;
   phone?: string;
   avatar?: string;

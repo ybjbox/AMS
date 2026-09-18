@@ -16,7 +16,7 @@ export default function DepartmentDistribution({ stats, isLoading }: Props) {
   const total = stats ? Object.entries(stats.statuses).reduce((s, [, v]) => s + v, 0) : 0;
 
   return (
-    <div className="card-base p-6 transition duration-300 hover:shadow-md">
+    <div className="card-base p-6 transition duration-250 hover:shadow-md">
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
           <Building2 className="w-4 h-4 text-slate-600 dark:text-slate-400" aria-hidden="true" />

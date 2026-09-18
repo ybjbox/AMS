@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, User, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { DEFAULT_SYSTEM_ICON } from '@/config/constants';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -85,14 +86,16 @@ export default function Login() {
 
       {loginBackground && <div className="absolute inset-0 bg-black/40 backdrop-blur-sm -z-10" />}
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex justify-center">
-          <div className="w-14 h-14 brand-gradient rounded-2xl flex items-center justify-center shadow-lg shadow-brand-600/20 overflow-hidden">
-            {systemIcon ? (
-              <img src={systemIcon} alt="Logo" width={96} height={96} className="w-full h-full object-contain bg-white dark:bg-zinc-800" />
-            ) : (
-              <Building2 className="h-8 w-8 text-white" />
-            )}
+          <div className="w-14 h-14 flex items-center justify-center overflow-hidden">
+            <img
+              src={systemIcon || DEFAULT_SYSTEM_ICON}
+              alt="Logo"
+              width={96}
+              height={96}
+              className={`w-full h-full object-contain ${systemIcon ? 'bg-white dark:bg-zinc-800' : ''}`}
+            />
           </div>
         </div>
         <h1
@@ -107,7 +110,7 @@ export default function Login() {
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md animate-in fade-in slide-in-from-bottom-8 duration-700 delay-150 fill-mode-both">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md animate-in fade-in slide-in-from-bottom-8 duration-500 delay-80 fill-mode-both">
         <div className="bg-white dark:bg-zinc-800 py-8 px-4 shadow-xl shadow-zinc-200/40 dark:shadow-none border border-zinc-100 dark:border-zinc-700 sm:rounded-2xl sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <div>

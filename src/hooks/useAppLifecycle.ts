@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useAppSettings } from '../store/appSettings';
 import { useInitData } from './useInitData';
 import { useNotificationStore } from '../store/useNotificationStore';
-import { EVENT_KEYS } from '../config/constants';
+import { EVENT_KEYS, DEFAULT_SYSTEM_ICON } from '../config/constants';
 
 export function useAppLifecycle() {
   const navigate = useNavigate();
@@ -40,17 +40,15 @@ export function useAppLifecycle() {
     }
   }, [theme]);
 
-  // System Icon applying
+  // System Icon applying（未上传自定义图标时使用内置默认 logo）
   useEffect(() => {
-    if (systemIcon) {
-      let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'icon';
-        document.head.appendChild(link);
-      }
-      link.href = systemIcon;
+    let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
     }
+    link.href = systemIcon || DEFAULT_SYSTEM_ICON;
   }, [systemIcon]);
 
   // Auth expired listener

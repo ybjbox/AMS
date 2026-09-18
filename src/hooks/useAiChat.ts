@@ -45,14 +45,18 @@ export function useAiChat() {
   const [assistantIcon, setAssistantIcon] = useState('');
   const [hasLogo, setHasLogo] = useState(false);
   const [assistantDraggable, setAssistantDraggable] = useState(false);
+  // 额度与个人模型状态（来自 /api/ai/status，发送后刷新）
+  const [dailyQuota, setDailyQuota] = useState(0);
+  const [quotaUsed, setQuotaUsed] = useState(0);
+  const [hasOwnModel, setHasOwnModel] = useState(false);
+  const [allowPersonalModel, setAllowPersonalModel] = useState(true);
 
   const abortRef = useRef<AbortController | null>(null);
   const activeIdRef = useRef<string | null>(null);
   activeIdRef.current = activeId;
 
-  // 读取全局开关 / 默认读数据
-  useEffect(() => {
-    fetch('/api/ai/status', { headers: authHeaders() })
+  const refreshStatus = useCallback(() => {
+    return fetch('/api/ai/status', { headers: authHeaders() })
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         if (j) {
@@ -62,10 +66,19 @@ export function useAiChat() {
           if (typeof j.assistantIcon === 'string') setAssistantIcon(j.assistantIcon);
           if (typeof j.hasLogo === 'boolean') setHasLogo(j.hasLogo);
           if (typeof j.assistantDraggable === 'boolean') setAssistantDraggable(j.assistantDraggable);
+          if (typeof j.dailyQuota === 'number') setDailyQuota(j.dailyQuota);
+          if (typeof j.quotaUsed === 'number') setQuotaUsed(j.quotaUsed);
+          if (typeof j.hasOwnModel === 'boolean') setHasOwnModel(j.hasOwnModel);
+          if (typeof j.allowPersonalModel === 'boolean') setAllowPersonalModel(j.allowPersonalModel);
         }
       })
       .catch(() => {});
   }, []);
+
+  // 读取全局开关 / 默认读数据 / 额度
+  useEffect(() => {
+    void refreshStatus();
+  }, [refreshStatus]);
 
   const refreshConversations = useCallback(() => {
     fetch('/api/ai/conversations', { headers: authHeaders() })
@@ -198,9 +211,11 @@ export function useAiChat() {
           void persist(m, content);
           return m;
         });
+        // 刷新额度计数 / 个人模型状态
+        void refreshStatus();
       }
     },
-    [messages, streaming, persist]
+    [messages, streaming, persist, refreshStatus]
   );
 
   const newChat = useCallback(() => {
@@ -253,6 +268,11 @@ export function useAiChat() {
     assistantIcon,
     hasLogo,
     assistantDraggable,
+    dailyQuota,
+    quotaUsed,
+    hasOwnModel,
+    allowPersonalModel,
+    refreshStatus,
     send,
     newChat,
     selectConversation,

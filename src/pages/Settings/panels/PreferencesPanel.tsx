@@ -35,7 +35,7 @@ export default function PreferencesPanel() {
   );
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-300 space-y-6">
+    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-400 space-y-6">
       <h2 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">系统偏好</h2>
 
       {/* 严格权限拦截开关 */}
@@ -64,7 +64,7 @@ export default function PreferencesPanel() {
           >
             <span
               aria-hidden="true"
-              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white dark:bg-zinc-800 shadow ring-0 transition duration-200 ease-in-out ${
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white dark:bg-zinc-800 shadow ring-0 transition duration-250 ease-[var(--ease-smooth-out)] ${
                 enableStrictPermission ? 'translate-x-5' : 'translate-x-0'
               }`}
             />

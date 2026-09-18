@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, type ChangeEvent } from 'react';
-import { Save, Bot, RotateCcw, RefreshCw, Upload, Image as ImageIcon, X } from 'lucide-react';
+import { useState, useEffect, useRef, type ChangeEvent, type ReactNode } from 'react';
+import { Save, Bot, RotateCcw, RefreshCw, Upload, X, ChevronDown } from 'lucide-react';
 import { STORAGE_KEYS } from '@/config/constants';
 import { AI_ICON_OPTIONS, resolveAiIcon, DEFAULT_AI_NAME } from '@/config/aiIcons';
 import {
@@ -28,6 +28,8 @@ interface ConfigForm {
   assistantLogo: string;
   assistantDraggable: boolean;
   conversationRetentionDays: number;
+  dailyQuota: number;
+  allowPersonalModel: boolean;
 }
 
 const EMPTY: ConfigForm = {
@@ -43,6 +45,8 @@ const EMPTY: ConfigForm = {
   assistantLogo: '',
   assistantDraggable: false,
   conversationRetentionDays: 0,
+  dailyQuota: 20,
+  allowPersonalModel: true,
 };
 
 /** Logo 文件大小上限（约 1.5MB）。 */
@@ -73,6 +77,19 @@ export default function AiConfigPanel() {
   const [customModel, setCustomModel] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 今日系统额度用量与个人模型配置名单（超管视角）
+  const [usage, setUsage] = useState<{ username: string; used: number }[] | null>(null);
+  const [personalUsers, setPersonalUsers] = useState<string[]>([]);
+  useEffect(() => {
+    fetch('/api/ai/admin/usage', { headers: authHeaders() })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (j && Array.isArray(j.users)) setUsage(j.users);
+        if (j && Array.isArray(j.personalModelUsers)) setPersonalUsers(j.personalModelUsers);
+      })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     fetch('/api/ai/config', { headers: authHeaders() })
       .then((r) => (r.ok ? r.json() : null))
@@ -90,6 +107,8 @@ export default function AiConfigPanel() {
             assistantLogo: j.assistantLogo ?? '',
             assistantDraggable: !!j.assistantDraggable,
             conversationRetentionDays: Number(j.conversationRetentionDays) || 0,
+            dailyQuota: Number.isFinite(Number(j.dailyQuota)) ? Number(j.dailyQuota) : 20,
+            allowPersonalModel: j.allowPersonalModel !== false,
             apiKey: '', // 后端返回脱敏值；用户不填则保留原值
           });
           setLoaded(true);
@@ -174,6 +193,8 @@ export default function AiConfigPanel() {
         assistantLogo: form.assistantLogo,
         assistantDraggable: form.assistantDraggable,
         conversationRetentionDays: Number(form.conversationRetentionDays) || 0,
+        dailyQuota: Number(form.dailyQuota) || 0,
+        allowPersonalModel: form.allowPersonalModel,
       };
       // 仅当用户确实输入了新 key 才覆盖；留空则不动原值
       if (form.apiKey.trim()) body.apiKey = form.apiKey.trim();
@@ -204,7 +225,7 @@ export default function AiConfigPanel() {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-300 space-y-6">
+    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-400 space-y-6">
       <div>
         <h2 className="section-title flex items-center gap-2">
           <Bot className="size-5 text-primary" />
@@ -216,8 +237,7 @@ export default function AiConfigPanel() {
       </div>
 
       {/* 可用范围 */}
-      <div className="bg-card p-6 rounded-xl border border-border shadow-sm space-y-4">
-        <h2 className="subsection-title">可用范围</h2>
+      <Section title="可用范围">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <SwitchRow
             label="启用 AI 助手"
@@ -238,21 +258,93 @@ export default function AiConfigPanel() {
             onChange={(v) => update({ useDataDefault: v })}
           />
         </div>
-      </div>
+      </Section>
+
+      {/* 额度与个人模型（防滥用） */}
+      <Section title="额度与个人模型" className="space-y-5">
+
+        {/* 系统模型额度 */}
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium text-foreground">系统模型额度</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-4 items-start">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">
+                每人每日提问上限
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={100000}
+                value={form.dailyQuota}
+                onChange={(e) => update({ dailyQuota: Number(e.target.value) })}
+                className={inputCls}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed sm:pt-7">
+              约束所有调用系统配置的对话，0 表示不限；额度按自然日计数，次日自动重置。
+              走系统额度的对话会强制附加「仅限行政事务范围」的提示词约束。
+            </p>
+          </div>
+          {usage && usage.length > 0 && (
+            <div>
+              <div className="mb-1.5 text-xs text-muted-foreground">今日系统额度用量</div>
+              <div className="flex flex-wrap gap-1.5">
+                {usage.map((u) => (
+                  <span
+                    key={u.username}
+                    className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs text-foreground"
+                  >
+                    {u.username}
+                    <span className="font-medium tabular-nums">{u.used} 次</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="border-t border-border/60" />
+
+        {/* 个人模型 */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-foreground">个人模型</h3>
+          <SwitchRow
+            label="允许员工配置个人模型"
+            desc="个人模型使用员工自有凭据，不占用系统额度，也不受系统提示词约束"
+            checked={form.allowPersonalModel}
+            onChange={(v) => update({ allowPersonalModel: v })}
+          />
+          <div>
+            <div className="mb-1.5 text-xs text-muted-foreground">已配置个人模型</div>
+            {personalUsers.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {personalUsers.map((u) => (
+                  <span
+                    key={u}
+                    className="rounded-full bg-muted px-2.5 py-1 text-xs text-foreground"
+                  >
+                    {u}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">暂无员工配置（停用后已配置者也将改走系统额度）</p>
+            )}
+          </div>
+        </div>
+      </Section>
 
       {/* AI 助手外观（名称 + 图标） */}
-      <div className="bg-card p-6 rounded-xl border border-border shadow-sm space-y-4">
-        <h2 className="subsection-title">助手外观</h2>
-          <p className="text-xs text-muted-foreground">
-            自定义右下角悬浮入口的图标与名称，保存后所有用户立即生效。
-          </p>
-
-          <SwitchRow
-            label="允许自由拖动入口"
-            desc="开启后用户可用鼠标把悬浮入口沿右侧上下拖动，位置自动记忆"
-            checked={form.assistantDraggable}
-            onChange={(v) => update({ assistantDraggable: v })}
-          />
+      <Section title="助手外观" defaultOpen={false}>
+        <p className="text-xs text-muted-foreground">
+          自定义右下角悬浮入口的图标与名称，保存后所有用户立即生效。
+        </p>
+        <SwitchRow
+          label="允许自由拖动入口"
+          desc="开启后用户可用鼠标把悬浮入口沿右侧上下拖动，位置自动记忆"
+          checked={form.assistantDraggable}
+          onChange={(v) => update({ assistantDraggable: v })}
+        />
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-foreground">
@@ -274,90 +366,76 @@ export default function AiConfigPanel() {
           <label className="mb-1.5 block text-sm font-medium text-foreground">
             助手图标
           </label>
-          <div className="flex items-center gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-foreground">
-              {(() => {
-                const Icon = resolveAiIcon(form.assistantIcon || undefined);
-                return <Icon className="size-5" />;
-              })()}
-            </span>
-            <div className="flex-1">
-              <Select
-                value={form.assistantIcon || undefined}
-                onValueChange={(v) => update({ assistantIcon: v ?? '' })}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={ACCEPTED_TYPES.join(',')}
+            onChange={onLogoFile}
+            className="hidden"
+          />
+          <div className="grid grid-cols-5 gap-2">
+            {AI_ICON_OPTIONS.map((o) => {
+              const Icon = resolveAiIcon(o.key);
+              const selected = !form.assistantLogo && (form.assistantIcon || 'bot') === o.key;
+              return (
+                <button
+                  key={o.key}
+                  type="button"
+                  title={o.label}
+                  aria-pressed={selected}
+                  onClick={() => update({ assistantIcon: o.key, assistantLogo: '' })}
+                  className={`flex flex-col items-center gap-1.5 rounded-lg border p-2.5 transition-colors ${
+                    selected
+                      ? 'border-brand-500 bg-brand-50/60 text-brand-700 ring-1 ring-brand-500/30 dark:bg-brand-900/20 dark:text-brand-300'
+                      : 'border-border/80 text-muted-foreground hover:border-brand-300 hover:text-foreground'
+                  }`}
+                >
+                  <Icon className="size-5" />
+                  <span className="text-[11px] leading-none">{o.label}</span>
+                </button>
+              );
+            })}
+            {/* 第 10 格：上传自定义 Logo（有 Logo 时优先于图标显示，角标 × 移除） */}
+            <div className="relative">
+              <button
+                type="button"
+                title="上传自定义 Logo（PNG / JPEG / WebP / GIF / SVG，≤1.5MB）"
+                aria-pressed={!!form.assistantLogo}
+                onClick={() => fileInputRef.current?.click()}
+                className={`flex w-full flex-col items-center gap-1.5 rounded-lg border p-2.5 transition-colors ${
+                  form.assistantLogo
+                    ? 'border-brand-500 bg-brand-50/60 text-brand-700 ring-1 ring-brand-500/30 dark:bg-brand-900/20 dark:text-brand-300'
+                    : 'border-dashed border-border/80 text-muted-foreground hover:border-brand-300 hover:text-foreground'
+                }`}
               >
-                <SelectTrigger className="w-full text-sm border border-border/80 dark:border-border rounded-lg bg-muted dark:bg-background text-foreground">
-                  <SelectValue placeholder="选择图标" />
-                </SelectTrigger>
-                <SelectContent>
-                  {AI_ICON_OPTIONS.map((o) => (
-                    <SelectItem key={o.key} value={o.key}>
-                      {o.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">
-            自定义 Logo 图片
-          </label>
-          <div className="flex items-center gap-3">
-            <span className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted text-foreground">
-              {form.assistantLogo ? (
-                <img
-                  src={form.assistantLogo}
-                  alt="自定义 Logo 预览"
-                  width={56}
-                  height={56}
-                  className="size-14 object-cover"
-                />
-              ) : (
-                <ImageIcon className="size-6 opacity-50" />
-              )}
-            </span>
-            <div className="flex flex-col gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={ACCEPTED_TYPES.join(',')}
-                onChange={onLogoFile}
-                className="hidden"
-              />
-              <div className="flex items-center gap-2">
+                {form.assistantLogo ? (
+                  <img src={form.assistantLogo} alt="自定义 Logo" width={20} height={20} className="size-5 rounded object-cover" />
+                ) : (
+                  <Upload className="size-5" />
+                )}
+                <span className="text-[11px] leading-none">{form.assistantLogo ? '更换 Logo' : '上传 Logo'}</span>
+              </button>
+              {form.assistantLogo && (
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="btn-secondary inline-flex items-center gap-1.5 text-sm"
+                  aria-label="移除自定义 Logo"
+                  title="移除自定义 Logo，恢复上方选中的图标"
+                  onClick={() => update({ assistantLogo: '' })}
+                  className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-zinc-700 text-white shadow transition-colors hover:bg-red-600 dark:bg-zinc-600"
                 >
-                  <Upload className="size-4" />
-                  {form.assistantLogo ? '更换图片' : '上传图片'}
+                  <X className="size-3" />
                 </button>
-                {form.assistantLogo && (
-                  <button
-                    type="button"
-                    onClick={() => update({ assistantLogo: '' })}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-destructive"
-                  >
-                    <X className="size-4" />
-                    清除
-                  </button>
-                )}
-              </div>
+              )}
             </div>
           </div>
           <p className="mt-1.5 text-xs text-muted-foreground">
-            上传后优先于上方内置图标，显示在右下角悬浮入口与面板标题。支持 PNG / JPEG / WebP / GIF / SVG，建议不超过 1.5MB。
+            所选图标/Logo 用于右下角悬浮入口与面板标题；上传 Logo 后优先于图标，点图标即切回并自动移除 Logo。
           </p>
         </div>
-      </div>
+      </Section>
 
       {/* 大模型连接 */}
-      <div className="bg-card p-6 rounded-xl border border-border shadow-sm space-y-5">
-        <h2 className="subsection-title">大模型连接（OpenAI 兼容）</h2>
+      <Section title="大模型连接（OpenAI 兼容）" className="space-y-5">
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-foreground">
@@ -457,11 +535,15 @@ export default function AiConfigPanel() {
             密钥仅保存在本系统配置中（单租户内部管理工具）。留空则不改动已存密钥。
           </p>
         </div>
-      </div>
+      </Section>
 
       {/* 大模型提示 */}
-      <div className="bg-card p-6 rounded-xl border border-border shadow-sm space-y-2">
-        <h2 className="subsection-title">大模型提示（System Prompt）</h2>
+      <Section
+        title="大模型提示（System Prompt）"
+        defaultOpen={false}
+        className="space-y-2"
+        badge={form.systemPrompt.trim() ? `已填写 ${form.systemPrompt.trim().length} 字` : '使用默认提示'}
+      >
         <p className="text-xs text-muted-foreground">
           自定义发给大模型的系统提示词，用于约束 AI 的角色、语气与回答范围。留空则使用内置默认提示。
         </p>
@@ -484,11 +566,10 @@ export default function AiConfigPanel() {
             </button>
           )}
         </div>
-      </div>
+      </Section>
 
       {/* 对话历史自动清理 */}
-      <div className="bg-card p-6 rounded-xl border border-border shadow-sm space-y-3">
-        <h2 className="subsection-title">对话历史自动清理</h2>
+      <Section title="对话历史自动清理" defaultOpen={false}>
         <p className="text-xs text-muted-foreground">
           设置保留天数后，系统每天自动删除超过该天数的 AI 对话记录（全员生效）。设为 0 表示不自动清理。
         </p>
@@ -505,7 +586,7 @@ export default function AiConfigPanel() {
           />
           <span className="text-sm text-muted-foreground">天（0 = 关闭自动清理）</span>
         </div>
-      </div>
+      </Section>
 
       {msg && (
         <div
@@ -537,6 +618,59 @@ export default function AiConfigPanel() {
           <RotateCcw className="h-4 w-4" />
           重置
         </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 可折叠配置分区：低频项（外观 / 提示词 / 清理）默认收起，
+ * 折叠用 grid-rows 过渡，展开后仍保留表单状态（组件不卸载）。
+ */
+function Section({
+  title,
+  defaultOpen = true,
+  className = 'space-y-4',
+  badge,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  className?: string;
+  badge?: string;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="bg-card rounded-xl border border-border shadow-sm">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between gap-3 px-6 py-4 text-left"
+      >
+        <span className="flex items-center gap-2 min-w-0">
+          <h2 className="subsection-title shrink-0">{title}</h2>
+          {badge && !open && (
+            <span className="truncate rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+              {badge}
+            </span>
+          )}
+        </span>
+        <ChevronDown
+          className={`size-4 shrink-0 text-muted-foreground transition-transform duration-250 ease-[var(--ease-smooth-out)] ${
+            open ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
+      <div
+        className={`grid transition-[grid-template-rows] duration-250 ease-[var(--ease-smooth-out)] ${
+          open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className={`px-6 pb-6 ${className}`}>{children}</div>
+        </div>
       </div>
     </div>
   );

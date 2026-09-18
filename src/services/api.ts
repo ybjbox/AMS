@@ -49,22 +49,27 @@ api.interceptors.response.use(
 
     // Handle 401 Unauthorized globally
     if (error.response.status === 401) {
+      // 关键：只有「持有 token 时收到的第一个 401」才广播事件。
+      // 否则 401 → API_ERROR → addNotification(POST /notifications) → 401 会形成无限弹 toast 循环
+      const hadToken = !!localStorage.getItem(STORAGE_KEYS.TOKEN);
       localStorage.removeItem(STORAGE_KEYS.TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER_INFO);
 
-      // 抛出自定义事件，交由顶层组件处理通知
-      window.dispatchEvent(
-        new CustomEvent(EVENT_KEYS.API_ERROR, {
-          detail: {
-            title: '身份验证失败',
-            message: '登录已过期，请重新登录',
-            type: 'warning',
-          },
-        })
-      );
+      if (hadToken) {
+        // 抛出自定义事件，交由顶层组件处理通知
+        window.dispatchEvent(
+          new CustomEvent(EVENT_KEYS.API_ERROR, {
+            detail: {
+              title: '身份验证失败',
+              message: '登录已过期，请重新登录',
+              type: 'warning',
+            },
+          })
+        );
 
-      // 抛出自定义事件，交由 React Router 或顶层组件处理跳转
-      window.dispatchEvent(new CustomEvent(EVENT_KEYS.AUTH_EXPIRED));
+        // 抛出自定义事件，交由 React Router 或顶层组件处理跳转
+        window.dispatchEvent(new CustomEvent(EVENT_KEYS.AUTH_EXPIRED));
+      }
     }
 
     const errorData = (error.response?.data || error.response || error) as ApiErrorResponse;

@@ -27,7 +27,7 @@ import {
   verifyPassword,
 } from "./authDb.ts";
 import { clientIp, listSecurityEvents, logSecurityEvent, requireRole } from "./authMiddleware.ts";
-import { validateBody, loginSchema, changePasswordSchema, accountCreateSchema, accountUpdateSchema } from "./validation.ts";
+import { validateBody, loginSchema, changePasswordSchema, accountCreateSchema, accountUpdateSchema, profileUpdateSchema } from "./validation.ts";
 
 export const authRouter = express.Router();
 authRouter.use(express.json({ limit: "64kb" }));
@@ -55,6 +55,7 @@ function sessionUserPayload(username: string) {
     username: account.username,
     displayName: account.displayName,
     email: account.email,
+    avatar: account.avatar ?? "",
     // 前端 permission.ts 按 role 查权限字典，这里直接给系统角色
     role: account.systemRole,
     systemRole: account.systemRole,
@@ -164,6 +165,25 @@ authRouter.post("/change-password", validateBody(changePasswordSchema), (req, re
     res.json({ success: true, token, expiresAt, user: sessionUserPayload(account.username) });
   } catch (error) {
     handleError(res, error, "修改密码失败");
+  }
+});
+
+// ---------------------------------------------------------------- 自助资料（本人）
+
+/** 更新当前登录人的显示名称 / 邮箱 / 头像。不涉及角色/启停，故不吊销会话（改完不掉线） */
+authRouter.put("/profile", validateBody(profileUpdateSchema), (req, res) => {
+  try {
+    if (!req.auth) return res.status(401).json({ error: "未登录" });
+    const { displayName, email, avatar } = req.body;
+    updateAccountMeta(req.auth.username, {
+      displayName,
+      email,
+      ...(avatar !== undefined ? { avatar } : {}),
+    });
+    logSecurityEvent("account.update_profile", req.auth.username, clientIp(req), "");
+    res.json({ user: sessionUserPayload(req.auth.username) });
+  } catch (error) {
+    handleError(res, error, "更新个人资料失败");
   }
 });
 

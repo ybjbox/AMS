@@ -126,7 +126,7 @@ export default function Documents() {
   }, [setIsPrinting, setIsPrintModalOpen]);
 
   return (
-    <PageContainer className="space-y-6 animate-in fade-in duration-500">
+    <PageContainer className="space-y-6 animate-in fade-in duration-400">
       <div className="page-header shrink-0">
         <div>
           <h1 className="page-title">常用文件</h1>

@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@import './styles/transitions-tokens.css';
 @import 'shadcn/tailwind.css';
 /* 设计基准字体（design-system/ams/MASTER.md）：Fira Sans 正文 + Fira Code 数字/等宽场景
    自托管 @fontsource，内网可用；中文回退系统字体栈 */
@@ -313,7 +314,7 @@ main,
   .stat-card {
     @apply bg-white dark:bg-zinc-800 p-4 rounded-2xl shadow-sm 
     border border-zinc-200/60 dark:border-white/10
-    flex items-center transition-[box-shadow,transform] duration-300 hover:shadow-md hover:-translate-y-0.5;
+    flex items-center transition-[box-shadow,transform] duration-250 hover:shadow-md hover:-translate-y-0.5;
   }
   
   .page-header {
@@ -347,6 +348,15 @@ main,
     scrollbar-width: none;
   }
   .tab-group::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 隐藏滚动条但保留滚动能力（侧边栏导航等窄容器，用渐隐+箭头示意可滚动） */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
 

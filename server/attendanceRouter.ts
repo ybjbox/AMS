@@ -17,6 +17,7 @@ import {
   VersionConflictError, monthlySummary } from "./attendanceDb.ts";
 import { db } from "./db.ts";
 import { asString } from "./sqliteUtil.ts";
+import { requireRole } from "./authMiddleware.ts";
 import { createNotification } from "./notificationsDb.ts";
 
 /**
@@ -131,8 +132,8 @@ attendanceRouter.delete("/schedules/:employeeId", (req, res) => {
   res.json({ success: true });
 });
 
-// 增量：清空所有排班
-attendanceRouter.delete("/schedules", (_req, res) => {
+// 增量：清空所有排班（整表级破坏性操作：仅 ADMIN，默认 HR+ 写策略之上再收紧一档）
+attendanceRouter.delete("/schedules", requireRole("ADMIN"), (_req, res) => {
   clearSchedules();
   res.json({ success: true });
 });
@@ -142,7 +143,8 @@ attendanceRouter.get("/records", (req, res) => {
   res.json(listRecords(req.query));
 });
 
-// 整表替换（Excel 导入语义）：清空后整体写入
+// 整表替换（Excel 导入语义）：清空后整体写入——考勤页导入功能的承载端点，
+// 维持默认写策略（HR+）；如需收紧到 ADMIN，须同步调整前端导入入口的角色门槛
 attendanceRouter.put("/records", (req, res) => {
   const { records } = req.body || {};
   if (!Array.isArray(records)) return res.status(400).json({ error: "records array is required" });
@@ -196,8 +198,8 @@ attendanceRouter.delete("/records/:id", (req, res) => {
   res.json({ success: true });
 });
 
-// 增量：清空所有打卡记录
-attendanceRouter.delete("/records", (_req, res) => {
+// 增量：清空所有打卡记录（整表级破坏性操作：仅 ADMIN+）
+attendanceRouter.delete("/records", requireRole("ADMIN"), (_req, res) => {
   clearRecords();
   res.json({ success: true });
 });

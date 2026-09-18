@@ -159,7 +159,7 @@ export default function Seating() {
   }, []);
 
   return (
-    <PageContainer className="space-y-6 animate-in fade-in duration-500 print:hidden">
+    <PageContainer className="space-y-6 animate-in fade-in duration-400 print:hidden">
         <div className="page-header shrink-0">
           <div>
             <h1 className="page-title">座位安排</h1>

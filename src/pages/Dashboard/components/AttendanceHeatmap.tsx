@@ -31,7 +31,7 @@ function dayLabel(date: string): string {
  */
 export default function AttendanceHeatmap({ stats, isLoading }: Props) {
   return (
-    <div className="card-base p-6 transition duration-300 hover:shadow-md">
+    <div className="card-base p-6 transition duration-250 hover:shadow-md">
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
           <CalendarDays className="w-4 h-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />

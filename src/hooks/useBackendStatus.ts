@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-export type BackendStatus = 'checking' | 'online' | 'offline';
+export type BackendStatus = 'checking' | 'online' | 'error' | 'offline';
+
+/** 探针结果三态：可达且正常 / 可达但异常 / 无法连接 */
+export type ProbeResult = 'online' | 'error' | 'offline';
 
 const HEALTH_URL = '/api/health';
 const POLL_INTERVAL_MS = 15000;
@@ -16,7 +19,7 @@ const PROBE_TIMEOUT_MS = 5000;
  * 3. 浏览器明确离线（navigator.onLine === false）时直接判离线，省一次无用请求。
  * 4. 监听 online/offline 与页面可见性，后端恢复（切回标签页/网络恢复）时立即复检。
  */
-async function probeOnce(): Promise<boolean> {
+async function probeOnce(): Promise<ProbeResult> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
   try {
@@ -26,11 +29,18 @@ async function probeOnce(): Promise<boolean> {
       cache: 'no-store',
       headers: { Accept: 'application/json' },
     });
-    if (!res.ok) return false;
-    const data = (await res.json()) as { status?: string };
-    return data?.status === 'ok';
+    // 有 HTTP 响应但状态码异常：服务可达但报错 → error
+    if (!res.ok) return 'error';
+    let data: { status?: string };
+    try {
+      data = (await res.json()) as { status?: string };
+    } catch {
+      // 响应非 JSON（如 dev 纯前端兜底返回 index.html）：后端并未真正在服务 → offline
+      return 'offline';
+    }
+    return data?.status === 'ok' ? 'online' : 'error';
   } catch {
-    return false;
+    return 'offline';
   } finally {
     clearTimeout(timer);
   }
@@ -45,9 +55,9 @@ export function useBackendStatus(pollInterval = POLL_INTERVAL_MS): BackendStatus
       setStatus('offline');
       return;
     }
-    const ok = await probeOnce();
+    const result = await probeOnce();
     if (mountedRef.current) {
-      setStatus(ok ? 'online' : 'offline');
+      setStatus(result);
     }
   }, []);
 

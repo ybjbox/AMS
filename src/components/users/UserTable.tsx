@@ -52,7 +52,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
             <div className="text-zinc-500 dark:text-zinc-400 text-xs mt-0.5">{row.original.id}</div>
           </div>
         ),
-        size: 150,
+        size: 130,
         minSize: 100,
       },
       {
@@ -76,7 +76,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
             <div className="text-zinc-500 dark:text-zinc-400 text-xs mt-0.5">{row.original.role || '-'}</div>
           </div>
         ),
-        size: 180,
+        size: 150,
         minSize: 120,
       },
       {
@@ -110,14 +110,14 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
             </span>
           );
         },
-        size: 100,
+        size: 90,
         minSize: 80,
       },
       {
         accessorKey: 'phone',
         header: '联系电话',
         cell: ({ row }) => <div className="text-zinc-900 dark:text-zinc-200 tabular-nums">{row.original.phone ? maskPhone(row.original.phone) : '-'}</div>,
-        size: 130,
+        size: 120,
         minSize: 100,
       },
       {
@@ -130,7 +130,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
             </div>
           );
         },
-        size: 100,
+        size: 90,
         minSize: 80,
       },
       {
@@ -157,7 +157,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
             </div>
           );
         },
-        size: 150,
+        size: 130,
         minSize: 120,
       },
       {
@@ -166,7 +166,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
         cell: ({ row }) => (
           <div className="text-zinc-900 dark:text-zinc-200">{row.original.employmentType || '-'}</div>
         ),
-        size: 100,
+        size: 90,
         minSize: 80,
       },
       {
@@ -174,7 +174,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
         header: ({ column }) => {
           return (
             <div className="flex items-center cursor-pointer select-none" onClick={column.getToggleSortingHandler()}>
-              合同到期(天)
+              合同到期
               {{
                 asc: <ArrowUp className="ml-2 h-4 w-4" />,
                 desc: <ArrowDown className="ml-2 h-4 w-4" />,
@@ -195,7 +195,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                 : 'text-zinc-900 dark:text-zinc-200';
           return <div className={`tabular-nums ${tone}`}>{days}{typeof days === 'number' ? ' 天' : ''}</div>;
         },
-        size: 130,
+        size: 110,
         minSize: 100,
       },
     ];
@@ -230,7 +230,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
             </button>
           </div>
         ),
-        size: 100,
+        size: 80,
         minSize: 80,
         enableSorting: false,
         enableResizing: false,
@@ -360,7 +360,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                                 ? 'descending'
                                 : undefined
                             }
-                            className={`group px-6 py-2 text-xs font-medium text-zinc-500 uppercase tracking-wider bg-zinc-50/50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800 sticky top-0 z-20 ${
+                            className={`group px-4 py-2 text-xs font-medium text-zinc-500 uppercase tracking-wider bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-100 dark:border-zinc-800 sticky top-0 z-20 ${
                               isFirst
                                 ? 'left-0 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]'
                                 : ''
@@ -410,7 +410,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                           return (
                             <td
                               key={cell.id}
-                              className={`px-6 whitespace-nowrap text-sm bg-white dark:bg-zinc-800 group-hover/row:bg-zinc-50/80 dark:group-hover/row:bg-zinc-700/30 transition-colors ${
+                              className={`px-4 whitespace-nowrap text-sm bg-white dark:bg-zinc-800 group-hover/row:bg-zinc-50/80 dark:group-hover/row:bg-zinc-700/30 transition-colors ${
                                 isFirst
                                   ? 'sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]'
                                   : ''

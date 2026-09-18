@@ -23,7 +23,7 @@ export function UserFilters({
   return (
     <>
       <div className="fixed inset-0 z-10" onClick={() => setIsFilterOpen(false)} />
-      <div className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-xs sm:max-w-none bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700 z-20 animate-in fade-in slide-in-from-top-2 duration-200">
+      <div className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-xs sm:max-w-none bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-700 z-20 animate-in fade-in slide-in-from-top-2 duration-250">
         <div className="p-4 border-b border-zinc-100 dark:border-zinc-700 flex items-center justify-between">
           <h3 className="text-sm font-medium text-zinc-900 dark:text-white">高级筛选</h3>
           {activeFilterCount > 0 && (

@@ -185,10 +185,13 @@ employeesRouter.post("/:id/renew-contract", (req, res) => {
   }
 });
 
-// GET /api/users/:id/contract-renewals — 续签历史
+// GET /api/users/:id/contract-renewals — 续签历史（本人或 HR+；合同信息属 PII 口径）
 employeesRouter.get("/:id/contract-renewals", (req, res) => {
   const user = getEmployee(req.params.id);
   if (!user) return res.status(404).json({ error: "User not found" });
+  if (!canViewPii(req.auth, req.params.id)) {
+    return res.status(403).json({ error: "无权查看该员工的合同信息" });
+  }
   res.json(listRenewals(req.params.id));
 });
 

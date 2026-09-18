@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, type PointerEvent as ReactPointerEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Send, Square, Plus, History, Trash2, MessageSquare, Loader2 } from 'lucide-react';
+import { X, Send, Square, Plus, History, Trash2, MessageSquare, Loader2, SlidersHorizontal } from 'lucide-react';
 import { useAiChat } from '@/hooks/useAiChat';
 import { resolveAiIcon, resolveAiName } from '@/config/aiIcons';
+import AiOwnModelModal from '@/components/AiOwnModelModal';
 
 /**
  * 流式回复中的打字指示器。
@@ -27,6 +28,7 @@ function TypingIndicator() {
 export default function AiAssistant() {
   const [open, setOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showOwnModel, setShowOwnModel] = useState(false);
   const [input, setInput] = useState('');
   const {
     messages,
@@ -40,6 +42,11 @@ export default function AiAssistant() {
     assistantIcon,
     hasLogo,
     assistantDraggable,
+    dailyQuota,
+    quotaUsed,
+    hasOwnModel,
+    allowPersonalModel,
+    refreshStatus,
     send,
     newChat,
     selectConversation,
@@ -51,7 +58,7 @@ export default function AiAssistant() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // —— 悬浮入口自由拖动（贴右侧上下移动）——
-  const BTN_H = 56; // h-14 = 3.5rem = 56px
+  const BTN_H = 44; // h-11 = 2.75rem = 44px
   const FLOAT_KEY = 'ams_ai_float_y';
   const clampTop = (y: number) => {
     const min = 12;
@@ -121,6 +128,24 @@ export default function AiAssistant() {
     setOpen((v) => !v);
   };
 
+  // —— 默认贴边收纳：仅悬停/键盘聚焦/拖动/面板打开时弹出；鼠标移开延迟 600ms 自动缩回 ——
+  const [focused, setFocused] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const pinTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pin = (next: boolean) => {
+    if (pinTimer.current) clearTimeout(pinTimer.current);
+    if (next) {
+      setPinned(true);
+    } else {
+      // 延迟收回：避免鼠标贴着半隐按钮边缘移动时抖动
+      pinTimer.current = setTimeout(() => setPinned(false), 600);
+    }
+  };
+  useEffect(() => () => {
+    if (pinTimer.current) clearTimeout(pinTimer.current);
+  }, []);
+  const tucked = !(pinned || focused || open || dragging);
+
   /** 入口图标：若配置了自定义 Logo 则显示图片，否则用内置图标。 */
   const renderGlyph = (sizeClass: string) =>
     hasLogo ? (
@@ -163,14 +188,22 @@ export default function AiAssistant() {
         onPointerUp={isFloatable ? onPointerUp : undefined}
         aria-label="打开 AI 助手"
         title={isFloatable ? "拖动可上下调整位置，点击打开" : "打开 AI 助手"}
-        style={isFloatable && effectiveY != null ? { top: effectiveY, right: 24, touchAction: 'none' } : undefined}
+        onMouseEnter={() => pin(true)}
+        onMouseLeave={() => pin(false)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        style={{
+          ...(isFloatable && effectiveY != null ? { top: effectiveY, right: 24, touchAction: 'none' } : undefined),
+          transform: tucked ? 'translateX(calc(50% + 24px))' : undefined,
+        }}
         className={
-          "fixed z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform hover:scale-105 active:scale-95" +
+          "fixed z-50 flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-[transform,opacity] duration-300 ease-[var(--ease-smooth-out)] hover:scale-105 active:scale-95" +
+          (tucked ? " opacity-50" : "") +
           (isFloatable ? " cursor-grab" : " bottom-6 right-6") +
           (dragging ? " cursor-grabbing" : "")
         }
       >
-        {renderGlyph("h-9 w-9")}
+        {renderGlyph("h-6 w-6")}
       </button>
 
       <AnimatePresence>
@@ -185,11 +218,32 @@ export default function AiAssistant() {
           >
             {/* 头部 */}
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 {renderGlyph("h-4 w-4")}
-                <span className="text-sm font-semibold">{assistantLabel}</span>
+                <span className="shrink-0 text-sm font-semibold">{assistantLabel}</span>
+                <span
+                  title={hasOwnModel ? '当前使用个人模型（自有凭据，不占用系统额度）' : '系统模型的当日剩余额度'}
+                  className="truncate rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
+                >
+                  {hasOwnModel
+                    ? '个人模型 · 不占额度'
+                    : dailyQuota > 0
+                    ? `今日剩余 ${Math.max(0, dailyQuota - quotaUsed)} 次`
+                    : '系统模型'}
+                </span>
               </div>
               <div className="flex items-center gap-1">
+                {allowPersonalModel && (
+                  <button
+                    type="button"
+                    onClick={() => setShowOwnModel(true)}
+                    aria-label="模型设置"
+                    title="模型设置（可配置个人模型，不占用系统额度）"
+                    className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setShowHistory((v) => !v)}
@@ -393,6 +447,14 @@ export default function AiAssistant() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* 模型设置弹窗（个人 BYOD 配置）：挂在根层级，避免被面板 transform 影响定位 */}
+      {showOwnModel && (
+        <AiOwnModelModal
+          onClose={() => setShowOwnModel(false)}
+          onChanged={() => void refreshStatus()}
+        />
+      )}
     </>
   );
 }

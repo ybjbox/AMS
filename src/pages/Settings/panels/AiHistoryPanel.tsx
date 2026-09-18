@@ -121,7 +121,7 @@ export default function AiHistoryPanel() {
   });
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-300 space-y-5">
+    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-400 space-y-5">
       <div>
         <h2 className="section-title flex items-center gap-2">
           <MessagesSquare className="size-5 text-primary" />
@@ -233,7 +233,7 @@ export default function AiHistoryPanel() {
           onClick={() => setDetail(null)}
         >
           <div
-            className="w-full max-w-lg h-full bg-card shadow-xl flex flex-col animate-in slide-in-from-right duration-200"
+            className="w-full max-w-lg h-full bg-card shadow-xl flex flex-col animate-in slide-in-from-right duration-400 ease-[var(--ease-smooth-out)]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">

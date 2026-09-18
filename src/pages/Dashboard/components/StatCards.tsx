@@ -34,7 +34,7 @@ export default function StatCards({ stats, isLoading }: StatCardsProps) {
           <div
             key={item.name}
             /* 数字卡入场：40ms 级联（低频汇总页的 group entrance，总量 <160ms） */
-            className="card-base transition-[box-shadow,transform] duration-300 cursor-default hover:shadow-md hover:-translate-y-0.5 flex flex-col justify-between p-6 min-h-[120px] sm:min-h-[140px] animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out fill-mode-both"
+            className="card-base transition-[box-shadow,transform] duration-250 cursor-default hover:shadow-md hover:-translate-y-0.5 flex flex-col justify-between p-6 min-h-[120px] sm:min-h-[140px] animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out fill-mode-both"
             style={{ animationDelay: `${i * 40}ms` }}
           >
             <div className="flex justify-between items-start">
