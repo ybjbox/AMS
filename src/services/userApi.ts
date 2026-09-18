@@ -63,10 +63,16 @@ export interface ImportPreview {
   rows: ImportRowResult[];
 }
 
-export interface ImportCommitResult {
+/** 后台导入任务（#16）：提交返回 jobId，轮询拿进度与最终计数 */
+export interface ImportJob {
+  id: string;
+  username: string;
+  status: 'running' | 'done' | 'error';
+  total: number;
+  processed: number;
   created: number;
   skipped: number;
-  ids: string[];
+  error: string;
 }
 
 /** 二进制上传（raw body）——axios 拦截器面向 JSON，这里用 fetch 直传 Buffer 语义 */
@@ -96,9 +102,13 @@ async function sendBinary<T>(url: string, blob: Blob): Promise<T> {
 export const previewImport = (file: File): Promise<ImportPreview> =>
   sendBinary<ImportPreview>('/api/users/import', file);
 
-/** 确认导入（服务端二次校验后落库） */
-export const commitImport = (rows: ImportRowResult[]): Promise<ImportCommitResult> =>
-  http.post<ImportCommitResult>('/users/import/commit', { rows });
+/** 确认导入：异步任务，立即返回 jobId */
+export const commitImport = (rows: ImportRowResult[]): Promise<{ jobId: string }> =>
+  http.post<{ jobId: string }>('/users/import/commit', { rows });
+
+/** 查询导入任务进度（轮询用） */
+export const getImportJob = (jobId: string): Promise<ImportJob> =>
+  http.get<ImportJob>(`/users/import/jobs/${jobId}`);
 
 /** 合同续签 */
 export interface ContractRenewal {

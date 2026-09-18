@@ -3,6 +3,8 @@ import { toast } from 'sonner';
 import { Plus, Trash2, Save, FileCode, Palette } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { AnimatePresence, motion } from 'motion/react';
+import { exportApi } from '@/services/exportApi';
+import { describeSaveError } from '@/store/saveFailureCore';
 
 export default function ScriptsPanel() {
   const [scripts, setScripts] = useState<{ name: string; code: string }[]>([]);
@@ -16,14 +18,9 @@ export default function ScriptsPanel() {
 
   const fetchScripts = async () => {
     try {
-      // Mock backend processing
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setScripts([
-        { name: 'default_template', code: '// 默认导出模板' },
-        { name: 'custom_template', code: '// 自定义导出模板' },
-      ]);
+      setScripts(await exportApi.listTemplates());
     } catch (error) {
-      console.error('Failed to fetch scripts:', error);
+      toast.error(describeSaveError(error, '加载脚本模板失败'));
     } finally {
       setLoading(false);
     }
@@ -33,26 +30,25 @@ export default function ScriptsPanel() {
     if (!editingScript || !editingScript.name || !editingScript.code) return;
     setSaving(true);
     try {
-      // Mock backend processing
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // 名称白名单（字母/数字/下划线/中划线）由服务端校验，失败原因直接透传
+      await exportApi.saveTemplate(editingScript.name, editingScript.code);
       setEditingScript(null);
       fetchScripts();
-      toast.success('保存成功 (Mock)');
+      toast.success(`保存成功: ${editingScript.name}.js`);
     } catch (error) {
-      console.error('Failed to save script:', error);
+      toast.error(describeSaveError(error, '保存脚本失败'));
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (name: string) => {
-    // Mock backend processing
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await exportApi.deleteTemplate(name);
       fetchScripts();
-      toast.success(`删除成功: ${name} (Mock)`);
+      toast.success(`删除成功: ${name}`);
     } catch (error) {
-      console.error('Failed to delete script:', error);
+      toast.error(describeSaveError(error, '删除脚本失败'));
     }
   };
 

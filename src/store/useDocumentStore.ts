@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { api } from '../services/mockApi';
-import { Folder, Document, DocumentSet } from '../types';
+import { documentApi, type FolderInput, type DocumentSetInput } from '../services/documentApi';
+import { Folder, Document, DocumentSet } from '../types/document';
 import { createAsyncAction } from './utils';
 
 export type { Folder, Document, DocumentSet };
@@ -14,15 +14,15 @@ interface DocumentState {
 
   fetchData: () => Promise<void>;
 
-  addFolder: (folder: Folder) => Promise<void>;
+  addFolder: (input: FolderInput) => Promise<void>;
   updateFolder: (id: string, folder: Partial<Folder>) => Promise<void>;
   removeFolder: (id: string) => Promise<void>;
 
-  addDocument: (doc: Document) => Promise<void>;
+  uploadDocument: (file: File, folderId: string | null) => Promise<void>;
   updateDocument: (id: string, doc: Partial<Document>) => Promise<void>;
   removeDocument: (id: string) => Promise<void>;
 
-  addDocumentSet: (set: DocumentSet) => Promise<void>;
+  addDocumentSet: (input: DocumentSetInput) => Promise<void>;
   updateDocumentSet: (id: string, set: Partial<DocumentSet>) => Promise<void>;
   removeDocumentSet: (id: string) => Promise<void>;
 }
@@ -37,24 +37,24 @@ export const useDocumentStore = create<DocumentState>()((set, get) => ({
   fetchData: async () => {
     return createAsyncAction(set, async () => {
       const [folders, documents, documentSets] = await Promise.all([
-        api.fetchFolders(),
-        api.fetchDocuments(),
-        api.fetchDocumentSets(),
+        documentApi.listFolders(),
+        documentApi.listDocuments(),
+        documentApi.listDocumentSets(),
       ]);
       return { folders, documents, documentSets };
     });
   },
 
-  addFolder: async (folder) => {
+  addFolder: async (input) => {
     return createAsyncAction(set, async () => {
-      const newFolder = await api.createFolder(folder);
+      const newFolder = await documentApi.createFolder(input);
       return { folders: [...get().folders, newFolder] };
     });
   },
 
   updateFolder: async (id, folder) => {
     return createAsyncAction(set, async () => {
-      const updatedFolder = await api.updateFolder(id, folder);
+      const updatedFolder = await documentApi.updateFolder(id, folder);
       return {
         folders: get().folders.map((f) => (f.id === id ? updatedFolder : f)),
       };
@@ -63,40 +63,31 @@ export const useDocumentStore = create<DocumentState>()((set, get) => ({
 
   removeFolder: async (id) => {
     return createAsyncAction(set, async () => {
-      await api.deleteFolder(id);
-      
-      const state = get();
-      const getSubFolders = (parentId: string, allFolders: Folder[]): string[] => {
-        const children = allFolders.filter((f) => f.parentId === parentId).map((f) => f.id);
-        return children.reduce((acc, childId) => [...acc, ...getSubFolders(childId, allFolders)], children);
-      };
-      const folderIdsToRemove = [id, ...getSubFolders(id, state.folders)];
-
-      const removedDocIds = state.documents
-        .filter((d) => d.folderId !== null && folderIdsToRemove.includes(d.folderId))
-        .map((d) => d.id);
-
-      return {
-        folders: state.folders.filter((f) => !folderIdsToRemove.includes(f.id)),
-        documents: state.documents.filter((d) => d.folderId === null || !folderIdsToRemove.includes(d.folderId)),
-        documentSets: state.documentSets.map((s) => ({
-          ...s,
-          documentIds: s.documentIds.filter((did) => !removedDocIds.includes(did)),
-        })),
-      };
+      await documentApi.deleteFolder(id);
+      // 服务端级联删除子文件夹、其下文档（含磁盘文件）并清理套件引用，
+      // 影响面跨三张表，删除后整体重新拉取，避免客户端模拟级联与服务端漂移。
+      const [folders, documents, documentSets] = await Promise.all([
+        documentApi.listFolders(),
+        documentApi.listDocuments(),
+        documentApi.listDocumentSets(),
+      ]);
+      return { folders, documents, documentSets };
     });
   },
 
-  addDocument: async (doc) => {
+  uploadDocument: async (file, folderId) => {
     return createAsyncAction(set, async () => {
-      const newDoc = await api.createDocument(doc);
+      const newDoc = await documentApi.uploadDocument(file, {
+        name: file.name,
+        folderId,
+      });
       return { documents: [...get().documents, newDoc] };
     });
   },
 
   updateDocument: async (id, doc) => {
     return createAsyncAction(set, async () => {
-      const updatedDoc = await api.updateDocument(id, doc);
+      const updatedDoc = await documentApi.updateDocument(id, doc);
       return {
         documents: get().documents.map((d) => (d.id === id ? updatedDoc : d)),
       };
@@ -105,7 +96,7 @@ export const useDocumentStore = create<DocumentState>()((set, get) => ({
 
   removeDocument: async (id) => {
     return createAsyncAction(set, async () => {
-      await api.deleteDocument(id);
+      await documentApi.deleteDocument(id);
       return {
         documents: get().documents.filter((d) => d.id !== id),
         documentSets: get().documentSets.map((s) => ({ ...s, documentIds: s.documentIds.filter((did) => did !== id) })),
@@ -113,16 +104,16 @@ export const useDocumentStore = create<DocumentState>()((set, get) => ({
     });
   },
 
-  addDocumentSet: async (docSet) => {
+  addDocumentSet: async (input) => {
     return createAsyncAction(set, async () => {
-      const newSet = await api.createDocumentSet(docSet);
+      const newSet = await documentApi.createDocumentSet(input);
       return { documentSets: [...get().documentSets, newSet] };
     });
   },
 
   updateDocumentSet: async (id, docSet) => {
     return createAsyncAction(set, async () => {
-      const updatedSet = await api.updateDocumentSet(id, docSet);
+      const updatedSet = await documentApi.updateDocumentSet(id, docSet);
       return {
         documentSets: get().documentSets.map((s) => (s.id === id ? updatedSet : s)),
       };
@@ -131,7 +122,7 @@ export const useDocumentStore = create<DocumentState>()((set, get) => ({
 
   removeDocumentSet: async (id) => {
     return createAsyncAction(set, async () => {
-      await api.deleteDocumentSet(id);
+      await documentApi.deleteDocumentSet(id);
       return {
         documentSets: get().documentSets.filter((s) => s.id !== id),
       };

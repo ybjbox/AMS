@@ -2,6 +2,8 @@ import React from 'react';
 import { Folder, Edit2, Trash2, FileText, Printer, Plus } from 'lucide-react';
 import { DocumentSet, Document } from '@/store/useDocumentStore';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { usePermissionsStore } from '@/store/permissions';
+import { hasPermission } from '@/utils/permission';
 
 interface DocumentSetGridProps {
   documentSets: DocumentSet[];
@@ -22,6 +24,8 @@ export function DocumentSetGrid({
   onPrintSetClick,
   handleCreateSetClick,
 }: DocumentSetGridProps) {
+  usePermissionsStore((state) => state.permissions);
+  const canManageDocs = hasPermission('documents:manage');
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {isLoading ? (
@@ -35,9 +39,9 @@ export function DocumentSetGrid({
         <div className="col-span-full">
           <EmptyState
             title="暂无文件套件"
-            description="点击右上角新建套件，将常用文件组合在一起"
+            description={canManageDocs ? '点击右上角新建套件，将常用文件组合在一起' : '暂无文件套件'}
             icon={Folder}
-            action={
+            action={canManageDocs ? (
               <button
                 onClick={handleCreateSetClick}
                 className="btn-primary"
@@ -45,7 +49,7 @@ export function DocumentSetGrid({
                 <Plus className="w-4 h-4 mr-2" />
                 立即创建
               </button>
-            }
+            ) : undefined}
           />
         </div>
       ) : (
@@ -57,6 +61,7 @@ export function DocumentSetGrid({
             <div className="p-5 border-b border-zinc-100 dark:border-zinc-700">
               <div className="flex justify-between items-start mb-2">
                 <div className="text-lg font-semibold text-zinc-900 dark:text-white">{set.name}</div>
+                {canManageDocs && (
                 <div className="flex space-x-1">
                   <button
                     onClick={() => onEditSetClick(set)}
@@ -73,6 +78,7 @@ export function DocumentSetGrid({
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
+                )}
               </div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2 min-h-[40px]">{set.description}</p>
             </div>

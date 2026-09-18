@@ -38,7 +38,7 @@ function resolveTsx(): string {
 /** 场景 A：全新库（仅 employees 被 db.ts 引导）迁移不崩溃且结构正确。 */
 async function runFresh(): Promise<void> {
   const dbMod = await import("../server/db.ts");
-  const { runMigrations } = await import("../server/migrate.ts");
+  const { runMigrations, SCHEMA_VERSION } = await import("../server/migrate.ts");
   const db = dbMod.db;
 
   // 关键断言：这一步在修复前会因 SELECT FROM 不存在的 departments 而抛错。
@@ -61,7 +61,7 @@ async function runFresh(): Promise<void> {
   check("全新库建好全部带 FK 的表", core.every((t) => tables.includes(t)), `tables=${tables.join(",")}`);
 
   const uv = (db.prepare("PRAGMA user_version").get() as any).user_version;
-  check("user_version 升级到 5", uv === 5, `uv=${uv}`);
+  check(`user_version 升级到 ${SCHEMA_VERSION}`, uv === SCHEMA_VERSION, `uv=${uv}`);
 
   const fk = (db.prepare("PRAGMA foreign_keys").get() as any).foreign_keys;
   check("迁移后 foreign_keys 已开启", fk === 1, `fk=${fk}`);
@@ -107,7 +107,7 @@ async function runLegacy(): Promise<void> {
   db.prepare("UPDATE employees SET department = '研发部' WHERE id = 'EMP0001'").run();
   const before = (db.prepare("SELECT COUNT(*) AS c FROM employees").get() as any).c;
 
-  const { runMigrations } = await import("../server/migrate.ts");
+  const { runMigrations, SCHEMA_VERSION } = await import("../server/migrate.ts");
   runMigrations();
 
   const after = (db.prepare("SELECT COUNT(*) AS c FROM employees").get() as any).c;
@@ -120,7 +120,7 @@ async function runLegacy(): Promise<void> {
   check("roles.departmentId 经迁移保留", !!r1 && r1.departmentId === "D-X", `got=${JSON.stringify(r1)}`);
 
   const uv = (db.prepare("PRAGMA user_version").get() as any).user_version;
-  check("user_version 升级到 5", uv === 5, `uv=${uv}`);
+  check(`user_version 升级到 ${SCHEMA_VERSION}`, uv === SCHEMA_VERSION, `uv=${uv}`);
 
   let rejected = false;
   try {

@@ -9,6 +9,8 @@ export interface BackupMeta {
   path: string;
   size: number;
   createdAt: string;
+  /** 是否附带 uploads 文件快照（旧备份无此字段 = 只含数据库） */
+  withUploads?: boolean;
 }
 
 export interface BackupConfig {
@@ -28,6 +30,8 @@ export interface RestoreResponse {
   success: boolean;
   restoredFrom: string;
   safetyBackup?: string;
+  /** uploads 目录是否一并回滚（旧备份无快照时 uploads 保持现状） */
+  uploadsRestored?: boolean;
 }
 
 export const fetchBackups = (): Promise<BackupListResponse> => http.get('/backup');

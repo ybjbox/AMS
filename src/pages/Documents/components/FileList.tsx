@@ -4,6 +4,9 @@ import { File, FileText, ImageIcon, FileArchive, Search, ChevronRight } from 'lu
 import { Document } from '@/store/useDocumentStore';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { formatFileSize } from '@/utils/fileUtils';
+import { withAuthToken } from '@/services/api';
+import { usePermissionsStore } from '@/store/permissions';
+import { hasPermission } from '@/utils/permission';
 
 interface FileListProps {
   documents: Document[];
@@ -26,16 +29,19 @@ export function FileList({
   onMoveDocClick,
   handleDeleteDocClick,
 }: FileListProps) {
+  usePermissionsStore((state) => state.permissions);
+  const canManageDocs = hasPermission('documents:manage');
   const handleDownloadDocClick = useCallback((url: string, name: string) => {
-    if (url !== '#') {
+    if (url) {
+      // 下载端点要求凭据：直接链接走不了 axios 拦截器，用 access_token 查询参数
       const a = document.createElement('a');
-      a.href = url;
+      a.href = withAuthToken(url);
       a.download = name;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
     } else {
-      toast.error('Mock文件无法下载');
+      toast.error('该文件没有可下载的内容');
     }
   }, []);
 
@@ -150,24 +156,28 @@ export function FileList({
                         {doc.uploadedAt}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        {canManageDocs && (
                         <button
                           onClick={() => onMoveDocClick(doc.id, doc.folderId || null)}
                           className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 mr-4"
                         >
                           移动
                         </button>
+                        )}
                         <button
                           onClick={() => handleDownloadDocClick(doc.url, doc.name)}
                           className="text-brand-600 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300 mr-4"
                         >
                           下载
                         </button>
+                        {canManageDocs && (
                         <button
                           onClick={() => handleDeleteDocClick(doc.id)}
                           className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
                         >
                           删除
                         </button>
+                        )}
                       </td>
                     </tr>
                   ))

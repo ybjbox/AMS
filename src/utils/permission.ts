@@ -1,11 +1,14 @@
 import { useUserStore } from '../store/useUserStore';
 import { useAppSettings } from '../store/appSettings';
-import { permissions } from '../config/permission';
+import { usePermissionsStore } from '../store/permissions';
 
 /**
- * 检查当前登录用户是否具有指定的权限
- * @param permissionCode 权限代码，例如 'attendance:view'
- * @returns boolean
+ * 检查当前登录用户是否具有指定的权限（体验层显隐判断；硬约束在后端策略表）。
+ *
+ * 数据源是 usePermissionsStore（权限矩阵面板编辑的就是它，zustand persist）。
+ * 此前这里读的是 config 静态字典——矩阵面板改了也不生效，两份真相漂移；
+ * #14 对齐后 config 只作为 store 的初始值 /「恢复默认」来源。
+ * 矩阵修改对新挂载的组件即时生效，已挂载组件在路由切换后生效。
  */
 export function hasPermission(permissionCode: string): boolean {
   // 获取严格权限拦截开关状态
@@ -24,9 +27,9 @@ export function hasPermission(permissionCode: string): boolean {
     return false;
   }
 
-  // 将角色转换为大写以匹配 permissions 字典的键
+  // 将角色转换为大写以匹配权限矩阵的键
   const userRole = userInfo.role.toUpperCase();
-  const rolePermissions = permissions[userRole] || [];
+  const rolePermissions = usePermissionsStore.getState().permissions[userRole] || [];
 
   // 如果角色拥有 '*' 权限，则代表拥有所有权限
   if (rolePermissions.includes('*')) {

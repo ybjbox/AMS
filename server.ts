@@ -41,6 +41,7 @@ import {
 } from "./server/documentsRouter.ts";
 import { todosRouter } from "./server/todosRouter.ts";
 import { notificationsRouter } from "./server/notificationsRouter.ts";
+import { notifyRouter } from "./server/notifyRouter.ts";
 import { approvalsRouter } from "./server/approvalsRouter.ts";
 import { auditRouter } from "./server/auditRouter.ts";
 import { backupRopter } from "./server/backupRopter.ts";
@@ -138,6 +139,7 @@ async function startServer() {
   app.use("/api/files", filesRouter);
   app.use("/api/todos", todosRouter);
   app.use("/api/notifications", notificationsRouter);
+  app.use("/api/notify", notifyRouter);
   app.use("/api/approvals", approvalsRouter);
   app.use("/api/audit-logs", auditRouter);
   app.use("/api/backup", backupRopter);

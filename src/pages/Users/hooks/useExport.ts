@@ -2,6 +2,8 @@ import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
 import { User } from '@/types';
 import { DEFAULT_ROSTER_COLUMNS, DEFAULT_ADDRESS_BOOK_COLUMNS, ExportTheme, ExportScript } from '../constants';
+import { exportApi, downloadEmployeeExport, type EmployeeExportConfig } from '@/services/exportApi';
+import { describeSaveError } from '@/store/saveFailureCore';
 
 export function useExport(users: User[]) {
   const [isExporting, setIsExporting] = useState(false);
@@ -51,32 +53,33 @@ export function useExport(users: User[]) {
   const rosterPrintRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isExportModalOpen) {
-      setTimeout(() => {
-        setThemes({
-          theme_1: {
-            id: 'theme_1',
-            name: '默认主题',
-            titleFill: 'FFF1F5F9',
-            headerFill: 'FF2563EB',
-            headerFontColor: 'FFFFFFFF',
-            zebraFill: 'FFF8FAFC',
-          },
-        });
-      }, 500);
-
-      setTimeout(() => {
-        const mockScripts = [
-          { id: '1', name: 'default_template', code: '// 默认导出模板' },
-          { id: '2', name: 'custom_template', code: '// 自定义导出模板' },
-        ];
-        setScripts(mockScripts);
-        if (mockScripts.length > 0 && !exportConfig.templateName) {
-          setExportConfig((prev) => ({ ...prev, templateName: mockScripts[0].name }));
+    if (!isExportModalOpen) return;
+    let cancelled = false;
+    exportApi
+      .fetchThemes()
+      .then((t) => {
+        if (!cancelled) setThemes(t);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) toast.error(describeSaveError(err, '加载导出主题失败'));
+      });
+    exportApi
+      .listTemplates()
+      .then((list) => {
+        if (cancelled) return;
+        const scripts: ExportScript[] = list.map((s) => ({ id: s.name, name: s.name, code: s.code }));
+        setScripts(scripts);
+        if (scripts.length > 0) {
+          setExportConfig((prev) => (prev.templateName ? prev : { ...prev, templateName: scripts[0].name }));
         }
-      }, 500);
-    }
-  }, [isExportModalOpen, exportConfig.templateName]);
+      })
+      .catch(() => {
+        /* 无脚本模板是合法状态，列表保持为空 */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isExportModalOpen]);
 
   const processedAddressBookUsers = useMemo(() => {
     let processed = users.filter((u) => (addressBookConfig.includeResigned ? true : u.status !== '离职'));
@@ -142,19 +145,40 @@ export function useExport(users: User[]) {
     }
   }, [processedAddressBookUsers, addressBookConfig, calculateRowSpans]);
 
-  const handleExport = useCallback(async (filteredUsersLength: number) => {
-    setIsExporting(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      toast.success(`成功导出 ${filteredUsersLength} 条员工数据 (Mock)`);
-      setIsExportModalOpen(false);
-    } catch (error) {
-      console.error('Export error:', error);
-      toast.error('导出失败，请重试');
-    } finally {
-      setIsExporting(false);
-    }
-  }, []);
+  const handleExport = useCallback(
+    async (filteredUsersLength: number) => {
+      const selectedColumns = exportConfig.columns.filter((c) => c.selected);
+      if (selectedColumns.length === 0) {
+        toast.error('请至少选择一个导出列');
+        return;
+      }
+      if (exportConfig.mode === 'script' && !exportConfig.templateName) {
+        toast.error('请先创建或选择一个脚本模板');
+        return;
+      }
+      setIsExporting(true);
+      try {
+        const config: EmployeeExportConfig = {
+          title: exportConfig.title,
+          columns: selectedColumns.map((c) => ({ header: c.label, key: c.key })),
+          includeResigned: exportConfig.includeResigned,
+          themeId: exportConfig.themeId,
+          mode: exportConfig.mode,
+          templateName: exportConfig.templateName || undefined,
+        };
+        // 离职过滤在服务端做（基于 item.status），前端传全量数据
+        await downloadEmployeeExport(users as unknown as Record<string, unknown>[], config);
+        toast.success(`成功导出 ${filteredUsersLength} 条员工数据`);
+        setIsExportModalOpen(false);
+      } catch (error) {
+        console.error('Export error:', error);
+        toast.error(describeSaveError(error, '导出失败，请重试'));
+      } finally {
+        setIsExporting(false);
+      }
+    },
+    [users, exportConfig]
+  );
 
   const handlePrintRoster = useCallback(() => {
     if (!rosterPrintRef.current) return;

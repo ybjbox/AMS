@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Plus, Trash2, Save, RotateCcw, Palette } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { exportApi } from '@/services/exportApi';
+import { describeSaveError } from '@/store/saveFailureCore';
 
 interface Theme {
   id: string;
@@ -24,20 +26,10 @@ export default function ThemesPanel() {
 
   const fetchThemes = async () => {
     try {
-      // Mock backend processing
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setThemes({
-        theme_1: {
-          id: 'theme_1',
-          name: '默认主题',
-          titleFill: 'FFF1F5F9',
-          headerFill: 'FF2563EB',
-          headerFontColor: 'FFFFFFFF',
-          zebraFill: 'FFF8FAFC',
-        },
-      });
+      const data = await exportApi.fetchThemes();
+      setThemes(data);
     } catch (error) {
-      console.error('Failed to fetch themes:', error);
+      toast.error(describeSaveError(error, '加载主题失败'));
     } finally {
       setLoading(false);
     }
@@ -46,12 +38,13 @@ export default function ThemesPanel() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Mock backend processing
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const res = await exportApi.saveThemes(themes);
+      // 以服务端回读结果为准，保证 UI 与持久化一致
+      setThemes(res.themes as Record<string, Theme>);
       setEditingId(null);
-      toast.success('保存成功 (Mock)');
+      toast.success('保存成功');
     } catch (error) {
-      console.error('Failed to save themes:', error);
+      toast.error(describeSaveError(error, '保存主题失败'));
     } finally {
       setSaving(false);
     }

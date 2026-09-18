@@ -8,7 +8,7 @@
  *   POST   /restore     从某份备份恢复（body: { name }，危险操作，先打安全备份）
  *   DELETE /:name       删除某份备份文件
  */
-import { Router } from "express";
+import { Router, json } from "express";
 import { serverErrorResponse } from "./errorHandler.ts";
 import { createReadStream } from "fs";
 import {
@@ -23,6 +23,8 @@ import {
 import { requireRole } from "./authMiddleware.ts";
 
 export const backupRopter = Router();
+// 此前漏挂 json()：req.body 恒为空 → /restore 永远「缺少备份名称」、/create 的 label 被忽略
+backupRopter.use(json());
 backupRopter.use(requireRole("ADMIN"));
 
 // GET /api/backup — 列表 + 配置

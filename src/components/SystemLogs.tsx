@@ -1,168 +1,308 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { useLogStore, LogLevel } from '../store/useLogStore';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   AlertCircle,
   AlertTriangle,
   Info,
-  Trash2,
   Search,
   Filter,
   ChevronDown,
   ChevronRight,
+  Download,
 } from 'lucide-react';
+import {
+  fetchAuditLogs,
+  fetchAuditFacets,
+  auditExportUrl,
+  type AuditLevel,
+  type AuditListResponse,
+  type AuditFacets,
+  type AuditQueryParams,
+} from '@/services/auditApi';
+import { describeSaveError } from '@/store/saveFailureCore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EmptyState } from './ui/EmptyState';
 import { formatDateTime } from '@/utils/dateUtils';
 
-export default function SystemLogs() {
-  const logs = useLogStore((state) => state.logs);
-  const clearLogs = useLogStore((state) => state.clearLogs);
-  const [filterLevel, setFilterLevel] = useState<LogLevel | 'ALL'>('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
+const PAGE_SIZE = 50;
 
-  const toggleExpand = useCallback((id: string) => {
-    setExpandedLogs((prev) => {
+type Filters = Pick<Required<AuditQueryParams>, 'level' | 'category' | 'actor' | 'action' | 'result' | 'from' | 'to'>;
+
+const INITIAL_FILTERS: Filters = {
+  level: 'ALL',
+  category: 'ALL',
+  actor: 'ALL',
+  action: 'ALL',
+  result: 'ALL',
+  from: '',
+  to: '',
+};
+
+export default function SystemLogs() {
+  const [data, setData] = useState<AuditListResponse | null>(null);
+  const [facets, setFacets] = useState<AuditFacets | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState<Filters>(INITIAL_FILTERS);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [reloadToken, setReloadToken] = useState(0);
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+
+  const patchFilters = useCallback((patch: Partial<Filters>) => {
+    setFilters((prev) => ({ ...prev, ...patch }));
+    setPage(0);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (debouncedQuery) setPage(0);
+  }, [debouncedQuery]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    fetchAuditLogs({ ...filters, q: debouncedQuery, limit: PAGE_SIZE, offset: page * PAGE_SIZE })
+      .then((res) => {
+        if (cancelled) return;
+        setData(res);
+        setExpandedIds(new Set());
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) setError(describeSaveError(err, '加载审计日志失败'));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [filters, debouncedQuery, page, reloadToken]);
+
+  useEffect(() => {
+    fetchAuditFacets()
+      .then(setFacets)
+      .catch(() => {
+        /* 下拉可选项加载失败不阻塞列表 */
+      });
+  }, []);
+
+  const toggleExpand = useCallback((id: number) => {
+    setExpandedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }, []);
 
-  const filteredLogs = useMemo(() => {
-    return logs.filter((log) => {
-      const matchesLevel = filterLevel === 'ALL' || log.level === filterLevel;
-      const matchesSearch =
-        log.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (log.source && log.source.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (log.details && log.details.toLowerCase().includes(searchQuery.toLowerCase()));
+  const handleExport = useCallback(() => {
+    const a = document.createElement('a');
+    a.href = auditExportUrl({ ...filters, q: debouncedQuery });
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }, [filters, debouncedQuery]);
 
-      return matchesLevel && matchesSearch;
-    });
-  }, [logs, filterLevel, searchQuery]);
+  const items = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const from = total === 0 ? 0 : page * PAGE_SIZE + 1;
+  const to = Math.min((page + 1) * PAGE_SIZE, total);
 
-  const getLevelIcon = useCallback((level: LogLevel) => {
+  const getLevelIcon = (level: AuditLevel) => {
     switch (level) {
       case 'ERROR':
         return <AlertCircle className="w-4 h-4 text-red-500" />;
       case 'WARN':
         return <AlertTriangle className="w-4 h-4 text-amber-500" />;
-      case 'INFO':
+      default:
         return <Info className="w-4 h-4 text-brand-600" />;
     }
-  }, []);
+  };
 
-  const getLevelBadge = useCallback((level: LogLevel) => {
+  const getLevelBadge = (level: AuditLevel) => {
     switch (level) {
       case 'ERROR':
         return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800';
       case 'WARN':
         return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800';
-      case 'INFO':
+      default:
         return 'bg-brand-100 text-brand-800 dark:bg-brand-900/30 dark:text-brand-400 border-brand-200 dark:border-brand-800';
     }
-  }, []);
+  };
+
+  const selectClass =
+    'h-9 text-sm border border-zinc-200/80 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-600/20';
 
   return (
     <div className="animate-in fade-in duration-300 h-full flex flex-col">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-lg font-medium text-zinc-900 dark:text-white">系统日志</h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">查看和分析系统运行日志</p>
+          <h2 className="text-lg font-medium text-zinc-900 dark:text-white">审计日志</h2>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+            记录所有写操作与登录事件，只增不删{data ? `，保留期 ${data.retentionDays} 天` : ''}
+          </p>
         </div>
         <button
-          onClick={clearLogs}
-          className="flex items-center px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 transition-colors"
+          onClick={handleExport}
+          className="btn-secondary flex items-center px-3 py-2"
+          title="按当前筛选条件导出 CSV（最多 10000 条）"
         >
-          <Trash2 className="w-4 h-4 mr-2" />
-          清空日志
+          <Download className="w-4 h-4 mr-2" />
+          导出 CSV
         </button>
       </div>
 
       <div className="bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl overflow-hidden flex flex-col flex-1 min-h-0">
-        <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-            <input
-              type="text"
-              placeholder="搜索日志内容、来源或详情…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-zinc-200/80 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-600/20 focus:border-brand-600 transition duration-200"
-            />
+        <div className="p-4 border-b border-zinc-200 dark:border-zinc-700 flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+              <input
+                type="text"
+                placeholder="搜索操作、操作人、对象、详情、路径…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 text-sm border border-zinc-200/80 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-600/20 focus:border-brand-600 transition duration-200"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Filter className="w-4 h-4 text-zinc-400 shrink-0" />
+              <Select value={filters.level} onValueChange={(v) => patchFilters({ level: v ?? "ALL" })}>
+                <SelectTrigger className={`w-[130px] ${selectClass}`}>
+                  <SelectValue placeholder="所有等级" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">所有等级</SelectItem>
+                  <SelectItem value="INFO">INFO</SelectItem>
+                  <SelectItem value="WARN">WARN</SelectItem>
+                  <SelectItem value="ERROR">ERROR</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filters.result} onValueChange={(v) => patchFilters({ result: v ?? "ALL" })}>
+                <SelectTrigger className={`w-[120px] ${selectClass}`}>
+                  <SelectValue placeholder="所有结果" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">所有结果</SelectItem>
+                  <SelectItem value="success">成功</SelectItem>
+                  <SelectItem value="failure">失败</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Filter className="w-4 h-4 text-zinc-400" />
-            <Select value={filterLevel} onValueChange={(value) => setFilterLevel(value as LogLevel | 'ALL')}>
-              <SelectTrigger className="w-[180px] text-sm border border-zinc-200/80 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-600/20 focus:border-brand-600 transition duration-200">
-                <SelectValue placeholder="所有等级">
-                  {(val) =>
-                    val === 'ALL'
-                      ? '所有等级'
-                      : val === 'INFO'
-                        ? 'INFO (信息)'
-                        : val === 'WARN'
-                          ? 'WARN (警告)'
-                          : val === 'ERROR'
-                            ? 'ERROR (错误)'
-                            : '所有等级'
-                  }
-                </SelectValue>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={filters.category} onValueChange={(v) => patchFilters({ category: v ?? "ALL" })}>
+              <SelectTrigger className={`w-[150px] ${selectClass}`}>
+                <SelectValue placeholder="全部分类" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">所有等级</SelectItem>
-                <SelectItem value="INFO">INFO (信息)</SelectItem>
-                <SelectItem value="WARN">WARN (警告)</SelectItem>
-                <SelectItem value="ERROR">ERROR (错误)</SelectItem>
+                <SelectItem value="ALL">全部分类</SelectItem>
+                {(facets?.categories ?? []).map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+            <Select value={filters.action} onValueChange={(v) => patchFilters({ action: v ?? "ALL" })}>
+              <SelectTrigger className={`w-[160px] ${selectClass}`}>
+                <SelectValue placeholder="全部操作" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">全部操作</SelectItem>
+                {(facets?.actions ?? []).map((a) => (
+                  <SelectItem key={a} value={a}>
+                    {a}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filters.actor} onValueChange={(v) => patchFilters({ actor: v ?? "ALL" })}>
+              <SelectTrigger className={`w-[150px] ${selectClass}`}>
+                <SelectValue placeholder="全部操作人" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">全部操作人</SelectItem>
+                {(facets?.actors ?? []).map((a) => (
+                  <SelectItem key={a} value={a}>
+                    {a}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <input
+              type="date"
+              value={filters.from}
+              onChange={(e) => patchFilters({ from: e.target.value })}
+              className={`px-3 ${selectClass}`}
+              aria-label="起始日期"
+            />
+            <span className="text-sm text-zinc-400">至</span>
+            <input
+              type="date"
+              value={filters.to}
+              onChange={(e) => patchFilters({ to: e.target.value })}
+              className={`px-3 ${selectClass}`}
+              aria-label="结束日期"
+            />
+            <button
+              onClick={() => {
+                setFilters(INITIAL_FILTERS);
+                setSearchQuery('');
+                setPage(0);
+              }}
+              className="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 px-2"
+            >
+              重置
+            </button>
           </div>
         </div>
 
         <div className="flex-1 overflow-auto p-0">
-          {filteredLogs.length === 0 ? (
+          {error ? (
+            <div className="flex flex-col items-center justify-center h-64 gap-2 px-6 text-center">
+              <AlertCircle className="w-8 h-8 text-red-500" />
+              <p className="text-sm text-zinc-600 dark:text-zinc-300">{error}</p>
+              <button onClick={() => setReloadToken((t) => t + 1)} className="text-sm text-brand-600 dark:text-brand-400">
+                重试
+              </button>
+            </div>
+          ) : loading ? (
+            <div className="flex flex-col items-center justify-center h-64 text-zinc-500 dark:text-zinc-400">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600 mb-4"></div>
+              <p>加载中…</p>
+            </div>
+          ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64">
-              <EmptyState title="暂无日志记录" description="没有找到符合条件的日志记录" icon={Info} />
+              <EmptyState title="暂无日志记录" description="没有找到符合条件的审计记录" icon={Info} />
             </div>
           ) : (
             <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
               <thead className="bg-zinc-50 dark:bg-zinc-900/50 sticky top-0 z-10">
                 <tr>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider w-48"
-                  >
-                    时间
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider w-24"
-                  >
-                    等级
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider w-32"
-                  >
-                    来源
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider"
-                  >
-                    内容
-                  </th>
+                  {['时间', '等级', '分类 / 操作', '操作人', '对象', '结果', '详情'].map((h) => (
+                    <th
+                      key={h}
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider"
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
-                {filteredLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors">
+                {items.map((log) => (
+                  <tr key={log.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors align-top">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400 font-mono tabular-nums">
-                      {formatDateTime(log.timestamp)}
+                      {formatDateTime(log.at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
@@ -172,34 +312,59 @@ export default function SystemLogs() {
                         <span className="ml-1">{log.level}</span>
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
-                      {log.source || '-'}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="text-zinc-500 dark:text-zinc-400 text-xs">{log.category}</div>
+                      <div className="text-zinc-900 dark:text-zinc-200 font-medium">{log.action}</div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-zinc-900 dark:text-zinc-200">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="font-medium">{log.message}</div>
-                        {log.details && (
-                          <button
-                            onClick={() => toggleExpand(log.id)}
-                            className="flex items-center text-xs text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 whitespace-nowrap transition-colors"
-                          >
-                            {expandedLogs.has(log.id) ? (
-                              <>
-                                收起详情
-                                <ChevronDown className="w-3 h-3 ml-1" />
-                              </>
-                            ) : (
-                              <>
-                                展开详情
-                                <ChevronRight className="w-3 h-3 ml-1" />
-                              </>
-                            )}
-                          </button>
-                        )}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="text-zinc-900 dark:text-zinc-200">{log.actor || '-'}</div>
+                      <div className="text-zinc-500 dark:text-zinc-400 text-xs">{log.actorRole}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm max-w-[220px]">
+                      <div className="text-zinc-500 dark:text-zinc-400 text-xs">{log.targetType || '-'}</div>
+                      <div className="text-zinc-900 dark:text-zinc-200 truncate" title={log.targetName || log.targetId}>
+                        {log.targetName || log.targetId || '-'}
                       </div>
-                      {log.details && expandedLogs.has(log.id) && (
-                        <div className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 font-mono bg-zinc-50 dark:bg-zinc-900 p-3 rounded border border-zinc-100 dark:border-zinc-700 overflow-x-auto whitespace-pre-wrap">
-                          {log.details}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${
+                          log.result === 'success'
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800'
+                        }`}
+                      >
+                        {log.result === 'success' ? '成功' : '失败'} {log.status}
+                      </span>
+                      <div className="text-zinc-400 dark:text-zinc-500 text-xs mt-1">{log.durationMs} ms</div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-zinc-900 dark:text-zinc-200 min-w-[200px]">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="text-zinc-500 dark:text-zinc-400 text-xs break-all">{log.detail || `${log.method} ${log.path}`}</div>
+                        <button
+                          onClick={() => toggleExpand(log.id)}
+                          className="flex items-center text-xs text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 whitespace-nowrap transition-colors"
+                        >
+                          {expandedIds.has(log.id) ? (
+                            <>
+                              收起
+                              <ChevronDown className="w-3 h-3 ml-1" />
+                            </>
+                          ) : (
+                            <>
+                              展开
+                              <ChevronRight className="w-3 h-3 ml-1" />
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      {expandedIds.has(log.id) && (
+                        <div className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 font-mono bg-zinc-50 dark:bg-zinc-900 p-3 rounded border border-zinc-100 dark:border-zinc-700 overflow-x-auto whitespace-pre-wrap break-all space-y-1">
+                          <div>{`${log.method} ${log.path}`}</div>
+                          {log.ip && <div>IP：{log.ip}</div>}
+                          {log.changes && log.changes.length > 0 && <div>变更字段：{log.changes.join('、')}</div>}
+                          {log.before != null && <div>before：{JSON.stringify(log.before)}</div>}
+                          {log.after != null && <div>after：{JSON.stringify(log.after)}</div>}
                         </div>
                       )}
                     </td>
@@ -208,6 +373,31 @@ export default function SystemLogs() {
               </tbody>
             </table>
           )}
+        </div>
+
+        <div className="p-4 border-t border-zinc-200 dark:border-zinc-700 flex items-center justify-between text-sm text-zinc-500 dark:text-zinc-400">
+          <span>
+            共 {total} 条{from > 0 ? `，显示第 ${from}–${to} 条` : ''}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0 || loading}
+              className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-600 disabled:opacity-40 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+            >
+              上一页
+            </button>
+            <span className="tabular-nums">
+              {page + 1} / {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page >= totalPages - 1 || loading}
+              className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-600 disabled:opacity-40 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+            >
+              下一页
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Building2, User as UserIcon } from 'lucide-react';
 import { useAppSettings } from '@/store/appSettings';
 import { useUserStore } from '@/store/useUserStore';
+import { usePermissionsStore } from '@/store/permissions';
 import { useTodoStore } from '@/store/useTodoStore';
 import { routeConfig, NAV_GROUP_ORDER, RouteConfig } from '@/config/routes';
 import { getRoleDisplayName } from '@/utils/roleUtils';
@@ -24,8 +25,9 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
     if (onClose) onClose();
   }, [navigate, onClose]);
 
-  // 订阅 userInfo 以确保权限变化时能重新渲染
+  // 订阅 userInfo 与权限矩阵，两者变化时导航即时重渲染
   const userInfo = useUserStore((state) => state.userInfo);
+  const permissionsMap = usePermissionsStore((state) => state.permissions);
   const hasPermission = useUserStore((state) => state.hasPermission);
 
   const visibleNav = useMemo(() => {
@@ -36,7 +38,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
       }
       return true;
     });
-  }, [hasPermission]);
+  }, [hasPermission, permissionsMap]);
 
   // 待办未完成数（侧边栏角标）
   const pendingTodoCount = useTodoStore((state) => state.todos.filter((t) => !t.completed).length);

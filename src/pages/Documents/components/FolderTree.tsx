@@ -1,6 +1,8 @@
 import React from 'react';
 import { Folder, ChevronRight, ChevronDown, Plus, Edit2, Trash2, FolderOpen, FolderPlus } from 'lucide-react';
 import { Folder as FolderType } from '@/store/useDocumentStore';
+import { usePermissionsStore } from '@/store/permissions';
+import { hasPermission } from '@/utils/permission';
 
 interface FolderTreeProps {
   folders: FolderType[];
@@ -25,6 +27,8 @@ export function FolderTree({
   onDeleteFolderClick,
   handleCreateRootFolderClick,
 }: FolderTreeProps) {
+  usePermissionsStore((state) => state.permissions);
+  const canManageDocs = hasPermission('documents:manage');
   const renderFolderTree = (parentId: string | null, level: number = 0): React.ReactNode => {
       const childFolders = folders.filter((f) => f.parentId === parentId);
       if (childFolders.length === 0) return null;
@@ -65,6 +69,7 @@ export function FolderTree({
                     <Folder className={`w-4 h-4 shrink-0 ${isSelected ? 'text-brand-600' : 'text-zinc-400'}`} />
                     <span className="text-sm truncate">{folder.name}</span>
                   </div>
+                  {canManageDocs && (
                   <div className="hidden group-hover:flex items-center space-x-1 shrink-0">
                     <button
                       onClick={(e) => {
@@ -94,6 +99,7 @@ export function FolderTree({
                       <Trash2 className="w-3 h-3" />
                     </button>
                   </div>
+                  )}
                 </div>
                 {isExpanded && renderFolderTree(folder.id, level + 1)}
               </li>
@@ -110,6 +116,7 @@ export function FolderTree({
           <FolderOpen className="w-4 h-4 mr-2 text-zinc-400" />
           文件夹
         </span>
+        {canManageDocs && (
         <button
           onClick={handleCreateRootFolderClick}
           className="p-1.5 text-zinc-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-zinc-700 rounded-md transition-colors"
@@ -118,6 +125,7 @@ export function FolderTree({
         >
           <FolderPlus className="w-4 h-4" />
         </button>
+        )}
       </div>
       <div className="flex-1 overflow-y-auto p-3 space-y-1">
         <div

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useUserStore } from '@/store/useUserStore';
+import { usePermissionsStore } from '@/store/permissions';
 
 export interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -11,8 +12,9 @@ export interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children, requiredPermission }: ProtectedRouteProps) {
-  // 订阅 userInfo 状态
+  // 订阅 userInfo 与权限矩阵（矩阵被管理员修改时本页即时重新判定）
   const userInfo = useUserStore((state) => state.userInfo);
+  usePermissionsStore((state) => state.permissions);
   const hasPermission = useUserStore((state) => state.hasPermission);
 
   // 1. 判断是否登录

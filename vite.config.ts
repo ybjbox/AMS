@@ -49,6 +49,9 @@ export default defineConfig(() => {
             include: ['server/tests/**/*.test.ts'],
             // 独立数据目录，与开发库 data/ams.db 完全隔离
             env: { DATA_DIR: 'data-test' },
+            // 全部用例共用 data-test 这一个 SQLite 文件：并行文件会互抢写锁
+            // （database is locked），故本 project 串行执行
+            poolOptions: { forks: { maxForks: 1, minForks: 1 } },
           },
         },
       ],

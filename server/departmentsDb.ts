@@ -88,7 +88,7 @@ export function replaceDepartmentsTree(tree: DeptNode[]): DeptNode[] {
       upsert.run(d.id, d.name, d.priority ?? 0, d.parentId ?? null);
     }
 
-    // 删除真正被移除的部门（外键会把相关员工/职位的引用置空）
+    // 删除真正被移除的部门（v6 外键：员工的引用置空；部门下的职位随 CASCADE 一并删除）
     if (toDelete.length > 0) {
       const ph = toDelete.map(() => "?").join(", ");
       db.prepare(`DELETE FROM departments WHERE id IN (${ph})`).run(...toDelete);

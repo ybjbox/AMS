@@ -12,10 +12,15 @@
  *    最后通过 db.reloadDb() 热重载连接（审计/安全模块的缓存语句也会重 prepare），
  *    全程不丢当前数据、不崩进程。
  * 4. 文件名做穿越校验，绝不允许 ../../ 这类路径。
+ * 5. （第二梯队 #13）documents.storedPath 指向 data/uploads/ 的真实文件，
+ *    只备 DB 会让「恢复后文档行存在、文件丢失」。因此每份备份 ams-x.db 都配一个
+ *    同名 sidecar 目录 ams-x.db.uploads（uploads 的整目录快照）；恢复时若快照存在
+ *    则一并回滚 uploads，旧备份无快照时保持 uploads 不动并在结果里如实上报。
  */
 import fs from "fs";
 import path from "path";
 import { db, DB_PATH, closeDb, reloadDb } from "./db.ts";
+import { UPLOADS_DIR } from "./documentsDb.ts";
 
 const SQLITE_MAGIC = "SQLite format 3\u0000"; // 前 16 字节
 
@@ -32,6 +37,13 @@ export interface BackupMeta {
   size: number;
   /** ISO 本地时间字符串 */
   createdAt: string;
+  /** 是否附带 uploads 目录快照（v2 备份才有；旧的纯 DB 备份为 false） */
+  withUploads?: boolean;
+}
+
+/** 某份备份的 uploads 快照目录（sidecar，与 .db 同名加 .uploads 后缀） */
+function uploadsSnapshotDir(backupName: string): string {
+  return path.join(backupDir(), `${backupName}.uploads`);
 }
 
 /** 生成唯一备份文件名：ams-YYYYMMDD-HHmmss[.label].db（已存在则追加序号） */
@@ -75,21 +87,30 @@ export function isSqliteFile(p: string): boolean {
 export function createBackup(label?: string): BackupMeta {
   const name = nextBackupName(label);
   const target = path.join(backupDir(), name);
+  const uploadsSnap = uploadsSnapshotDir(name);
+  let withUploads = false;
   try {
     db.exec("PRAGMA wal_checkpoint(TRUNCATE)");
     // VACUUM INTO 要求目标文件不存在，且产出自包含的完整库
     db.exec(`VACUUM INTO '${target.replace(/'/g, "''")}'`);
+    // uploads 快照：与 DB 备份尽力同窗（秒级窗口内的新上传文件可能落在两侧之间，
+    // 属可接受偏差——孤儿文件由 uploadsCleanup 兜底，缺文件在恢复场景里本就要人工核对）
+    if (fs.existsSync(UPLOADS_DIR)) {
+      fs.cpSync(UPLOADS_DIR, uploadsSnap, { recursive: true });
+      withUploads = true;
+    }
   } catch (e) {
-    // 清理可能残留下来的半个文件
+    // 清理可能残留下来的半个文件 / 半个快照
     try {
       if (fs.existsSync(target)) fs.rmSync(target, { force: true });
+      fs.rmSync(uploadsSnap, { recursive: true, force: true });
     } catch {
       /* ignore */
     }
     throw new Error(`备份失败：${e instanceof Error ? e.message : e}`);
   }
   const stat = fs.statSync(target);
-  return { name, path: target, size: stat.size, createdAt: new Date().toISOString() };
+  return { name, path: target, size: stat.size, createdAt: new Date().toISOString(), withUploads };
 }
 
 /** 列出全部备份，按时间倒序（最新在前） */
@@ -101,7 +122,13 @@ export function listBackups(): BackupMeta[] {
     try {
       const p = path.join(dir, f);
       const st = fs.statSync(p);
-      metas.push({ name: f, path: p, size: st.size, createdAt: new Date(st.mtimeMs).toISOString() });
+      metas.push({
+        name: f,
+        path: p,
+        size: st.size,
+        createdAt: new Date(st.mtimeMs).toISOString(),
+        withUploads: fs.existsSync(uploadsSnapshotDir(f)),
+      });
     } catch {
       /* 读取失败的文件跳过 */
     }
@@ -119,6 +146,7 @@ export function pruneBackups(retentionDays = 7): number {
     if (new Date(m.createdAt).getTime() < cutoff) {
       try {
         fs.rmSync(m.path, { force: true });
+        fs.rmSync(uploadsSnapshotDir(m.name), { recursive: true, force: true });
         removed++;
       } catch {
         /* ignore */
@@ -136,6 +164,8 @@ export function pruneBackups(retentionDays = 7): number {
 export interface RestoreResult {
   restoredFrom: string;
   safetyBackup?: string;
+  /** uploads 目录是否随备份一并回滚（旧备份无快照时保持现状并如实上报） */
+  uploadsRestored: boolean;
 }
 
 export function restoreBackup(name: string, safetyLabel = "pre-restore"): RestoreResult {
@@ -159,36 +189,55 @@ export function restoreBackup(name: string, safetyLabel = "pre-restore"): Restor
   }
 
   // 3) 关旧连接 → 拷贝到临时文件 → 原子 rename → 清 WAL/SHM → 重开新连接
-  //    （直接覆盖主库时若进程中断会留下损坏的半个文件；rename 保证主库要么是旧的、要么是完整的）
+  //    （直接覆盖主库时若进程中断会留下损坏的半个文件；rename 保证主库要么是旧的、要么是完整的。
+  //      Windows 下 rename 可能因残留句柄 EPERM，退化为直接覆盖；reloadDb 放 finally——
+  //      恢复失败也不能把连接留在关闭态，否则服务彻底失能）
   closeDb();
   const tmpPath = `${DB_PATH}.restore-tmp`;
   try {
     fs.copyFileSync(src, tmpPath);
-    fs.renameSync(tmpPath, DB_PATH);
+    try {
+      fs.renameSync(tmpPath, DB_PATH);
+    } catch (e) {
+      console.warn("[backup] rename 覆盖主库失败，退回直接覆盖：", e);
+      fs.copyFileSync(src, DB_PATH);
+    }
+    for (const ext of ["-wal", "-shm"]) {
+      try {
+        fs.rmSync(DB_PATH + ext, { force: true });
+      } catch {
+        /* ignore */
+      }
+    }
   } finally {
     try {
       fs.rmSync(tmpPath, { force: true });
     } catch {
       /* ignore */
     }
+    reloadDb();
   }
-  for (const ext of ["-wal", "-shm"]) {
-    try {
-      fs.rmSync(DB_PATH + ext, { force: true });
-    } catch {
-      /* ignore */
-    }
-  }
-  reloadDb();
 
-  return { restoredFrom: name, safetyBackup };
+  // 4) uploads 快照回滚：与恢复前安全备份（步骤 1，同样带 uploads 快照）配对，
+  //    即使拷贝中途失败也有退路。快照不存在的旧备份只恢复 DB，不擅自动文件。
+  const srcUploads = uploadsSnapshotDir(name);
+  let uploadsRestored = false;
+  if (fs.existsSync(srcUploads)) {
+    fs.rmSync(UPLOADS_DIR, { recursive: true, force: true });
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+    fs.cpSync(srcUploads, UPLOADS_DIR, { recursive: true });
+    uploadsRestored = true;
+  }
+
+  return { restoredFrom: name, safetyBackup, uploadsRestored };
 }
 
-/** 删除单份备份（仅删备份文件，不影响线上库）。返回是否删除成功。 */
+/** 删除单份备份（仅删备份文件与 uploads 快照，不影响线上库）。返回是否删除成功。 */
 export function deleteBackup(name: string): boolean {
   const p = resolveBackupPath(name);
   if (!fs.existsSync(p)) return false;
   fs.rmSync(p, { force: true });
+  fs.rmSync(uploadsSnapshotDir(name), { recursive: true, force: true });
   return true;
 }
 

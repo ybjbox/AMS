@@ -50,6 +50,29 @@ export function onDbReload(hook: () => void): void {
 }
 
 /**
+ * 可重入事务助手：最外层 BEGIN/COMMIT（失败 ROLLBACK 并抛出）；
+ * 嵌套调用不再开事务，直接并入外层（SQLite 不支持嵌套 BEGIN，
+ * 而 node:sqlite 也不暴露 inTransaction 探测，故用进程内计数器——
+ * 事件循环单线程且所有回调同步执行，计数不会失准）。
+ */
+let txDepth = 0;
+export function transact<T>(fn: () => T): T {
+  if (txDepth > 0) return fn();
+  txDepth++;
+  db.exec("BEGIN");
+  try {
+    const result = fn();
+    db.exec("COMMIT");
+    return result;
+  } catch (e) {
+    db.exec("ROLLBACK");
+    throw e;
+  } finally {
+    txDepth--;
+  }
+}
+
+/**
  * 运行 PRAGMA optimize（sqlite-best-practices）：
  * 按需更新查询规划器统计（sqlite_stat1），无变更时是快速 no-op。
  * 建议：应用退出前 / 周期性（如每小时）执行。

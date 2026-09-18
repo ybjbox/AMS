@@ -1,8 +1,38 @@
 import { SystemRole } from '../types/user';
 
+/**
+ * 默认权限矩阵（体验层显隐；真正的强制在后端 authGate / requireRole）。
+ * 每一行授予都对应后端的最小角色，改这里前先核对 server/authMiddleware.ts 的策略表：
+ *   - users:manage      →  /api/users 写操作默认策略 = HR+（authGate DEFAULT_POLICY.write）
+ *   - attendance:manage →  考勤写操作 = HR+
+ *   - approvals:approve →  /api/approvals/:id/decide requireRole("HR")
+ *   - contracts:view    →  合同预览含身份证，读侧裁剪后 <HR 拿不到 idCard，故页面也只到 HR+
+ *   - documents:manage  →  文档上传/删除等写操作 = HR+（authGate 默认写策略）
+ *   - approvals:view    →  POST /api/approvals 对任何登录用户开放（自助提交）
+ * 注意：本文件只作初始值 /「恢复默认」的来源；运行时以 usePermissionsStore
+ * （权限矩阵面板可编辑）为准。
+ */
 export const permissions: Record<string, string[]> = {
   [SystemRole.SUPER_ADMIN]: ['*'],
   [SystemRole.ADMIN]: ['*'],
-  [SystemRole.HR]: ['dashboard:view', 'users:view', 'attendance:view', 'attendance:edit', 'todos:view', 'documents:view'],
-  [SystemRole.EMPLOYEE]: ['dashboard:view', 'attendance:view', 'todos:view', 'documents:view'],
+  [SystemRole.HR]: [
+    'dashboard:view',
+    'users:view',
+    'users:manage',
+    'attendance:view',
+    'attendance:manage',
+    'contracts:view',
+    'todos:view',
+    'documents:view',
+    'documents:manage',
+    'approvals:view',
+    'approvals:approve',
+  ],
+  [SystemRole.EMPLOYEE]: [
+    'dashboard:view',
+    'attendance:view',
+    'todos:view',
+    'documents:view',
+    'approvals:view',
+  ],
 };

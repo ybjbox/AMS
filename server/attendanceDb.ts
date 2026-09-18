@@ -5,7 +5,7 @@
  *   当日仅一次打卡 → 按时间判定缺上班卡/缺下班卡；
  *   早退 → EARLY_LEAVE。
  */
-import { db } from "./db.ts";
+import { db, transact } from "./db.ts";
 import crypto from "crypto";
 import { resolvePaging, toListResult, ListResult } from "./listQuery.ts";
 import { type DbRow, asString, asNumber, asNullableNumber } from "./sqliteUtil.ts";
@@ -411,6 +411,7 @@ export function monthlySummary(month: string): MonthlySummaryRow[] {
   }
 
   // 聚合到员工维度
+  const leaveDays = approvedLeaveDayKeys();
   const byEmployee = new Map<string, MonthlySummaryRow>();
   for (const [key, info] of grouped) {
     const [employeeId] = key.split("__");
@@ -436,6 +437,8 @@ export function monthlySummary(month: string): MonthlySummaryRow[] {
       ? (schedule.shiftIds || []).map((id) => shiftMap.get(id)).find(Boolean)
       : undefined;
     if (!shift) continue;
+    // 已批准请假日不计异常（半天请假只有一次打卡会被误标缺卡），与 analyzeAnomalies 同口径
+    if (leaveDays.has(key)) continue;
 
     const times = [...info.punches].sort();
     if (times.length === 1) {
@@ -451,12 +454,47 @@ export function monthlySummary(month: string): MonthlySummaryRow[] {
   return [...byEmployee.values()].sort((a, b) => a.employeeId.localeCompare(b.employeeId));
 }
 
+/**
+ * 已批准请假覆盖的「员工__日期」集合（账号未关联员工档案的申请无法映射，跳过）。
+ * 请假当天不再判定考勤异常——否则半天请假只有一次打卡会被误标「缺卡」并通知员工。
+ * approvals 表由 approvalsDb 模块加载时建表；部分测试场景可能未加载，try/catch 视为无请假。
+ */
+function approvedLeaveDayKeys(): Set<string> {
+  const keys = new Set<string>();
+  try {
+    const rows = db
+      .prepare(
+        `SELECT a.employeeId AS employeeId, ap.startDate AS startDate, ap.endDate AS endDate
+           FROM approvals ap
+           JOIN accounts a ON a.username = ap.applicant
+          WHERE ap.status = 'approved' AND ap.type = 'leave'
+            AND a.employeeId IS NOT NULL AND a.employeeId != ''`
+      )
+      .all() as { employeeId: string; startDate: string; endDate: string | null }[];
+    for (const r of rows) {
+      const start = Date.parse(`${asString(r.startDate)}T00:00:00Z`);
+      if (Number.isNaN(start)) continue;
+      const endRaw = r.endDate ? Date.parse(`${asString(r.endDate)}T00:00:00Z`) : start;
+      const end = Number.isNaN(endRaw) ? start : endRaw;
+      // 上限 366 天：防脏数据（超大区间日期）拖垮分析
+      const capped = Math.min(end, start + 366 * 86_400_000);
+      for (let t = start; t <= capped; t += 86_400_000) {
+        keys.add(`${asString(r.employeeId)}__${new Date(t).toISOString().slice(0, 10)}`);
+      }
+    }
+  } catch {
+    /* approvals/accounts 表不存在时按无请假处理 */
+  }
+  return keys;
+}
+
 /** 真实异常分析：基于打卡记录 + 排班 + 班次时间计算，结果持久化 */
 export function analyzeAnomalies(): AnomalyRow[] {
   const shifts = listShifts();
   const schedules = listSchedules();
   const recordsResult = listRecords();
   const records = Array.isArray(recordsResult) ? recordsResult : recordsResult.items;
+  const leaveDays = approvedLeaveDayKeys();
 
   const shiftMap = new Map(shifts.map((s) => [s.id, s]));
   const scheduleMap = new Map(schedules.map((s) => [s.employeeId, s]));
@@ -472,6 +510,7 @@ export function analyzeAnomalies(): AnomalyRow[] {
   const anomalies: { employeeId: string; employeeName: string; date: string; type: string; minutes?: number; description: string }[] = [];
   for (const [key, punches] of grouped) {
     const [employeeId, date] = key.split("__");
+    if (leaveDays.has(key)) continue; // 已批准请假日：不判定异常
     const schedule = scheduleMap.get(employeeId);
     if (!schedule) continue; // 未排班员工不参与分析
     const shift = (schedule.shiftIds as string[]).map((id) => shiftMap.get(id)).find(Boolean);
@@ -510,21 +549,17 @@ export function analyzeAnomalies(): AnomalyRow[] {
     }
   }
 
-  // 持久化分析结果（整表替换包在事务里，避免中途失败丢失全部历史异常）
+  // 持久化分析结果（整表替换包在事务里，避免中途失败丢失全部历史异常；
+  // transact 可重入——被审批决定的外层事务调用时自动并入，不再嵌套 BEGIN）
   const insert = db.prepare(
     "INSERT INTO anomalies (id, employeeId, employeeName, date, type, minutes, description) VALUES (?, ?, ?, ?, ?, ?, ?)"
   );
-  db.exec("BEGIN");
-  try {
+  transact(() => {
     db.exec("DELETE FROM anomalies");
     for (const a of anomalies) {
       insert.run(crypto.randomUUID(), a.employeeId, a.employeeName, a.date, a.type, a.minutes ?? null, a.description);
     }
-    db.exec("COMMIT");
-  } catch (e) {
-    db.exec("ROLLBACK");
-    throw e;
-  }
+  });
   return listAnomalies();
 }
 

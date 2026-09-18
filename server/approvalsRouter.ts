@@ -18,6 +18,8 @@ import {
   listPending,
   decideApproval,
   getCompBalance,
+  getPendingCompUsedHours,
+  leaveDaysBetween,
 } from "./approvalsDb.ts";
 
 export const approvalsRouter = Router();
@@ -143,19 +145,19 @@ approvalsRouter.post("/", validateBody(createSchema), (req, res, next) => {
     if (!req.body.startDate) {
       return res.status(400).json({ error: "开始日期不能为空" });
     }
-    // P2：调休假需校验余额（overtime_ledger 累计的加班时长，8h=1 天）
+    // P2：调休假需校验余额（加班累计 − 待审调休已占用；8h=1 天，批准时才实际扣减）
     if (req.body.leaveType === "调休") {
       const accountRow = db
         .prepare("SELECT employeeId FROM accounts WHERE username = ?")
         .get(req.auth!.username);
       const employeeId = asString(accountRow?.employeeId);
-      const start = new Date(req.body.startDate);
-      const end = req.body.endDate ? new Date(req.body.endDate) : start;
-      const days = Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1;
-      const balance = employeeId ? getCompBalance(employeeId) : 0;
+      const days = leaveDaysBetween(req.body.startDate, req.body.endDate);
+      const balance = employeeId
+        ? getCompBalance(employeeId) - getPendingCompUsedHours(req.auth!.username)
+        : 0;
       if (days * 8 > balance) {
         return res.status(400).json({
-          error: `调休余额不足：需 ${days} 天（${days * 8}h），当前余额 ${balance}h`,
+          error: `调休余额不足：需 ${days} 天（${days * 8}h），当前可用 ${Math.max(balance, 0)}h（另有 ${getPendingCompUsedHours(req.auth!.username)}h 待审批占用）`,
           code: "COMP_BALANCE_INSUFFICIENT",
         });
       }

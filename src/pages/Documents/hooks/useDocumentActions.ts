@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useConfirm } from '@/hooks/useConfirm';
-import { useDocumentStore, Document, DocumentSet, Folder as FolderType } from '@/store/useDocumentStore';
+import { useDocumentStore, DocumentSet, Folder as FolderType } from '@/store/useDocumentStore';
 
 export function useDocumentActions() {
   const confirm = useConfirm();
@@ -10,7 +10,7 @@ export function useDocumentActions() {
   const addFolder = useDocumentStore((state) => state.addFolder);
   const updateFolder = useDocumentStore((state) => state.updateFolder);
   const removeFolder = useDocumentStore((state) => state.removeFolder);
-  const addDocument = useDocumentStore((state) => state.addDocument);
+  const uploadDocument = useDocumentStore((state) => state.uploadDocument);
   const updateDocument = useDocumentStore((state) => state.updateDocument);
   const removeDocument = useDocumentStore((state) => state.removeDocument);
   const addDocumentSet = useDocumentStore((state) => state.addDocumentSet);
@@ -40,6 +40,10 @@ export function useDocumentActions() {
   >({});
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // store 的 createAsyncAction 吞掉 rejection（写入 state.error 后 resolve），
+  // 且每次动作开始都会把 error 清空，因此 await 之后读到的 error 就是本次动作的结果。
+  const lastActionError = useCallback(() => useDocumentStore.getState().error, []);
 
   const toggleAllModalFolders = useCallback(() => {
     const foldersWithDocs = folders.filter((f) => documents.some((d) => d.folderId === f.id));
@@ -75,32 +79,35 @@ export function useDocumentActions() {
     }
   }, []);
 
+  const [isUploading, setIsUploading] = useState(false);
+
   const handleFileUpload = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
       if (!files || files.length === 0) return;
+      const list = Array.from(files);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
 
-      setTimeout(() => {
-        Array.from(files).forEach((file: File) => {
-          const newDoc: Document = {
-            id: Date.now().toString() + Math.random().toString(36).substring(7),
-            name: file.name,
-            type: file.type || file.name.split('.').pop() || 'unknown',
-            url: 'https://picsum.photos/seed/document/800/600',
-            size: file.size,
-            uploadedAt: new Date().toISOString().split('T')[0],
-            folderId: currentFolderId,
-          };
-          addDocument(newDoc);
-        });
-
-        toast.success(`成功上传 ${files.length} 个文件 (Mock)`);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
+      setIsUploading(true);
+      let succeeded = 0;
+      let firstError: string | null = null;
+      for (const file of list) {
+        await uploadDocument(file, currentFolderId);
+        const error = lastActionError();
+        if (error) {
+          firstError = firstError ?? `${file.name}：${error}`;
+        } else {
+          succeeded += 1;
         }
-      }, 500);
+      }
+      setIsUploading(false);
+
+      if (succeeded > 0) toast.success(`成功上传 ${succeeded} 个文件`);
+      if (firstError) toast.error(`上传失败：${firstError}`);
     },
-    [addDocument, currentFolderId]
+    [uploadDocument, currentFolderId, lastActionError]
   );
 
   const handleCreateSetClick = useCallback(() => {
@@ -153,13 +160,8 @@ export function useDocumentActions() {
       if (editingSet) {
         updateDocumentSet(editingSet.id, { name, description, documentIds: selectedDocIds, printSettings });
       } else {
-        addDocumentSet({
-          id: Date.now().toString(),
-          name,
-          description,
-          documentIds: selectedDocIds,
-          printSettings,
-        });
+        // id 由服务端生成（uuid），前端不再自造
+        addDocumentSet({ name, description, documentIds: selectedDocIds, printSettings });
       }
       setIsSetModalOpen(false);
       setEditingSet(null);
@@ -176,11 +178,8 @@ export function useDocumentActions() {
       if (editingFolder) {
         updateFolder(editingFolder.id, { name });
       } else {
-        addFolder({
-          id: Date.now().toString(),
-          name,
-          parentId: folderParentId,
-        });
+        // id 由服务端生成（uuid），前端不再自造
+        addFolder({ name, parentId: folderParentId });
         if (folderParentId) {
           setExpandedFolders((prev) => new Set(prev).add(folderParentId));
         }
@@ -310,6 +309,7 @@ export function useDocumentActions() {
     setSelectedDocIds,
     printSettings,
     setPrintSettings,
+    isUploading,
     fileInputRef,
     toggleAllModalFolders,
     toggleModalFolder,

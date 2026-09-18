@@ -140,6 +140,9 @@ const POLICIES: Policy[] = [
   // 批量导出会吐出身份证等敏感字段，限制到 HR 及以上
   { pattern: /^\/export\/\b/, methods: "*", minRole: "HR" },
 
+  // 通知出站通道配置含 webhook 回调地址与 SMTP 凭据，仅管理员可读写
+  { pattern: /^\/notify\b/, methods: "*", minRole: "ADMIN" },
+
   // 待办与通知（P2-7）：个人生产力功能，任何登录用户可用；
   // 数据按 username 隔离，且归属/权限在服务端二次校验（见 todosDb/notificationsDb）。
   { pattern: /^\/todos\b/, methods: "*", minRole: "EMPLOYEE" },

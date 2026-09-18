@@ -4,6 +4,7 @@
  */
 import { db } from './db.ts';
 import { randomUUID } from 'node:crypto';
+import { dispatchOutbound } from './notifyDispatch.ts';
 
 export interface NotificationRow {
   id: string;
@@ -97,6 +98,8 @@ export function createNotification(input: NotificationInput) {
     input.type && ALLOWED_TYPES.has(input.type) ? input.type : 'info',
     recipient
   );
+  // 站内落库成功后镜像推送到出站通道（webhook/邮件）；fire-and-forget，失败不影响本请求
+  dispatchOutbound({ title, message, type: input.type ?? 'info', recipient });
   return rowToNotification(getNotificationRaw(id)!);
 }
 

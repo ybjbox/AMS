@@ -85,6 +85,9 @@ export default function BackupPanel() {
         toast.success(
           `已从 ${res.restoredFrom} 恢复${res.safetyBackup ? `（安全备份：${res.safetyBackup}）` : ''}`
         );
+        if (res.uploadsRestored === false) {
+          toast.warning('该备份不含上传文件快照，uploads 目录保持现状未回滚');
+        }
         await load();
       } catch (err) {
         notifySaveFailure({ title: '恢复失败', error: err, retry: () => void handleRestore(b) });
@@ -188,7 +191,21 @@ export default function BackupPanel() {
                   key={b.name}
                   className="border-t border-border  hover:bg-muted dark:hover:bg-muted/40"
                 >
-                  <td className="px-4 py-2.5 font-mono text-xs">{b.name}</td>
+                  <td className="px-4 py-2.5 font-mono text-xs">
+                    {b.name}
+                    {b.withUploads ? (
+                      <span className="ml-2 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px] font-sans">
+                        含文件快照
+                      </span>
+                    ) : (
+                      <span
+                        className="ml-2 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px] font-sans"
+                        title="旧格式备份，仅含数据库；恢复时不会回滚上传文件"
+                      >
+                        仅数据库
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-2.5 text-secondary">
                     {formatDate(b.createdAt)}
                   </td>

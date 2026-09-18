@@ -1,4 +1,5 @@
 import { StoreApi } from 'zustand';
+import { describeSaveError } from './saveFailureCore';
 
 export interface AsyncState {
   isLoading: boolean;
@@ -18,8 +19,9 @@ export async function createAsyncAction<TStore extends AsyncState>(
        set({ isLoading: false } as Partial<TStore>);
     }
   } catch (error: unknown) {
+    // api.ts 拦截器对 4xx/5xx reject 的是 { error } 纯对象，String() 会得到 "[object Object]"
     set({
-      error: error instanceof Error ? error.message : String(error),
+      error: describeSaveError(error, '操作失败'),
       isLoading: false,
     } as Partial<TStore>);
   }

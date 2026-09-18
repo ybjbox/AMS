@@ -35,6 +35,9 @@ const COLUMNS: { header: string; field: string; width: number; required: boolean
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+/** 单次导入行数上限（预览与提交共用；#16 异步化后从 500 放宽到 5000） */
+export const MAX_IMPORT_ROWS = 5000;
+
 export interface ImportRowResult {
   rowNumber: number;
   data: Record<string, string | number>;
@@ -201,7 +204,7 @@ function validateRow(
 export async function previewImport(buffer: Buffer): Promise<ImportPreview> {
   const rows = await parseWorkbookAsync(buffer);
   if (rows.length === 0) throw new Error("文件中没有数据行");
-  if (rows.length > 500) throw new Error("单次最多导入 500 行");
+  if (rows.length > MAX_IMPORT_ROWS) throw new Error(`单次最多导入 ${MAX_IMPORT_ROWS} 行`);
 
   const existing = db
     .prepare("SELECT idCard FROM employees WHERE idCard IS NOT NULL AND idCard != ''")
@@ -225,45 +228,55 @@ export async function previewImport(buffer: Buffer): Promise<ImportPreview> {
   };
 }
 
-/** 提交：服务端二次校验后落库（只插入完全合法的行） */
-export function commitImport(rows: { data: Record<string, string | number> }[]): {
+/** 提交进度状态：跨分块复用（已存在身份证集合 + 累计计数） */
+export interface ImportCommitState {
+  existingIdCards: Set<string>;
+  seenIdCards: Set<string>;
   created: number;
   skipped: number;
   ids: string[];
-} {
+}
+
+/** 开始一次提交：读库内现有身份证构建状态 */
+export function beginImportCommit(): ImportCommitState {
   const existing = db
     .prepare("SELECT idCard FROM employees WHERE idCard IS NOT NULL AND idCard != ''")
     .all()
     .map((r) => asString(r.idCard).toUpperCase());
-  const existingIdCards = new Set(existing);
-  const seenIdCards = new Set<string>();
+  return {
+    existingIdCards: new Set(existing),
+    seenIdCards: new Set<string>(),
+    created: 0,
+    skipped: 0,
+    ids: [],
+  };
+}
 
-  let created = 0;
-  let skipped = 0;
-  const ids: string[] = [];
-
+/** 落库一个分块（服务端二次校验，只插入完全合法的行），结果累计进 state */
+export function commitImportChunk(
+  state: ImportCommitState,
+  rows: { data: Record<string, string | number> }[]
+): void {
   for (const row of rows) {
     const raw: Record<string, string> = {};
     for (const [k, v] of Object.entries(row.data ?? {})) {
       raw[k] = v === null || v === undefined ? "" : String(v);
     }
-    const { data, errors } = validateRow(raw, existingIdCards, seenIdCards);
+    const { data, errors } = validateRow(raw, state.existingIdCards, state.seenIdCards);
     if (errors.length > 0) {
-      skipped++;
+      state.skipped++;
       continue;
     }
     const emp = createEmployee(data);
     if (emp) {
-      created++;
-      ids.push(asString(emp.id));
+      state.created++;
+      state.ids.push(asString(emp.id));
       const ic = typeof data.idCard === "string" ? data.idCard.toUpperCase() : "";
-      if (ic) existingIdCards.add(ic);
+      if (ic) state.existingIdCards.add(ic);
     } else {
-      skipped++;
+      state.skipped++;
     }
   }
-
-  return { created, skipped, ids };
 }
 
 /** 生成导入模板（含示例行与说明） */

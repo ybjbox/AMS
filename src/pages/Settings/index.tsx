@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Activity,
   Megaphone,
+  Send,
 } from 'lucide-react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import DepartmentsPanel from './panels/DepartmentsPanel';
@@ -23,6 +24,7 @@ import ProfilePanel from './panels/ProfilePanel';
 import AppearancePanel from './panels/AppearancePanel';
 import PreferencesPanel from './panels/PreferencesPanel';
 import RemindersPanel from './panels/RemindersPanel';
+import NotifyPanel from './panels/NotifyPanel';
 import ThemesPanel from './panels/ThemesPanel';
 import ScriptsPanel from './panels/ScriptsPanel';
 import LogsPanel from './panels/LogsPanel';
@@ -39,6 +41,7 @@ const tabs = [
   { id: 'appearance', label: '外观设置', icon: Monitor },
   { id: 'preferences', label: '系统偏好', icon: Sliders },
   { id: 'reminders', label: '提醒设置', icon: BellRing },
+  { id: 'notify', label: '通知出站通道', icon: Send },
   { id: 'themes', label: '导出主题管理', icon: Palette },
   { id: 'scripts', label: '导出脚本模板', icon: Code2 },
   { id: 'backup', label: '数据库备份', icon: DatabaseBackup },
@@ -74,6 +77,7 @@ export default function Settings() {
       case 'appearance': return <AppearancePanel />;
       case 'preferences': return <PreferencesPanel />;
       case 'reminders': return <RemindersPanel />;
+      case 'notify': return <NotifyPanel />;
       case 'themes': return <ThemesPanel />;
       case 'scripts': return <ScriptsPanel />;
       case 'backup': return <BackupPanel />;

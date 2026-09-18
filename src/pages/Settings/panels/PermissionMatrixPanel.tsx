@@ -16,7 +16,8 @@ const ROLES: { role: SystemRole; label: string }[] = [
 const OPERATIONS: { label: string; code: string }[] = [
   { label: '员工增删改', code: 'users:manage' },
   { label: '考勤增删改', code: 'attendance:manage' },
-  { label: '考勤编辑', code: 'attendance:edit' },
+  { label: '审批决定', code: 'approvals:approve' },
+  { label: '文档库上传 / 删除', code: 'documents:manage' },
   { label: '部门 / 职位管理', code: 'settings:manage' },
 ];
 
@@ -187,7 +188,9 @@ export default function PermissionMatrixPanel() {
             <code className="mx-1 text-foreground">*</code> 而锁定为全量允许。
           </p>
           <p>
-            权限在前端体验层即时生效（导航、页面、按钮）；若后端启用了独立策略表，需同步在后端调整。
+            本矩阵只控制前端可见性（导航、页面、按钮）；服务端按账号的系统角色强制执行
+            （读默认全员、写默认 HR+，账号 / 审计 / 备份等仅 ADMIN+）。此处收回的权限不会让
+            接口变得可调，反之亦然——两边口径以服务端策略表为最终裁定。
           </p>
         </div>
       </div>

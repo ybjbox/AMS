@@ -1,6 +1,7 @@
 import React from 'react';
 import { hasPermission } from '../utils/permission';
 import { useUserStore } from '../store/useUserStore';
+import { usePermissionsStore } from '../store/permissions';
 
 export interface PermissionProps {
   /**
@@ -23,8 +24,9 @@ export interface PermissionProps {
  *   useUserStore 的 hasPermission 直判（见考勤 Table/Filter 的既有用法）
  */
 export const Permission: React.FC<PermissionProps> = React.memo(({ code, children }) => {
-  // 订阅 userInfo 状态，确保在用户登录/登出或角色变化时，组件能够自动重新渲染
+  // 订阅 userInfo 与权限矩阵，登录态或矩阵修改后即时重渲染
   useUserStore((state) => state.userInfo);
+  usePermissionsStore((state) => state.permissions);
 
   const isAllowed = hasPermission(code);
 

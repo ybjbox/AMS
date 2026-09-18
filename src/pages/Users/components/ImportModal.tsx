@@ -6,6 +6,7 @@ import { withAuthToken } from '@/services/api';
 import {
   previewImport,
   commitImport,
+  getImportJob,
   type ImportPreview,
   type ImportRowResult,
 } from '@/services/userApi';
@@ -21,23 +22,26 @@ function errText(e: unknown, fallback: string): string {
   return (e as { error?: string })?.error || fallback;
 }
 
-type Step = 'upload' | 'preview' | 'done';
+type Step = 'upload' | 'preview' | 'running' | 'done';
 
 /**
- * 员工批量导入（三步）：上传 xlsx → 预览校验结果 → 确认导入。
- * 模板下载、错误行高亮、重复检测说明齐备（对齐 P1 审查建议）。
+ * 员工批量导入（四步）：上传 xlsx → 预览校验结果 → 确认 → 后台任务进度。
+ * 模板下载、错误行高亮、重复检测说明齐备（对齐 P1 审查建议）；
+ * 提交为异步任务（#16），轮询 /import/jobs/:id 展示实时进度。
  */
 export default function ImportModal({ isOpen, onClose, onImported }: ImportModalProps) {
   const [step, setStep] = useState<Step>('upload');
   const [isParsing, setIsParsing] = useState(false);
   const [isCommitting, setIsCommitting] = useState(false);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
+  const [progress, setProgress] = useState<{ processed: number; total: number } | null>(null);
   const [result, setResult] = useState<{ created: number; skipped: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const reset = useCallback(() => {
     setStep('upload');
     setPreview(null);
+    setProgress(null);
     setResult(null);
     if (fileRef.current) fileRef.current.value = '';
   }, []);
@@ -72,13 +76,29 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
     const validRows = preview.rows.filter((r) => r.errors.length === 0);
     if (validRows.length === 0) return;
     setIsCommitting(true);
+    setStep('running');
     try {
-      const res = await commitImport(validRows as ImportRowResult[]);
-      setResult({ created: res.created, skipped: res.skipped });
-      setStep('done');
-      onImported();
+      const { jobId } = await commitImport(validRows as ImportRowResult[]);
+      // 轮询后台任务直至 done/error
+      for (;;) {
+        const job = await getImportJob(jobId);
+        setProgress({ processed: job.processed, total: job.total });
+        if (job.status === 'done') {
+          setResult({ created: job.created, skipped: job.skipped });
+          setStep('done');
+          onImported();
+          break;
+        }
+        if (job.status === 'error') {
+          toast.error(`导入任务出错：${job.error || '未知原因'}`);
+          setStep('preview');
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 700));
+      }
     } catch (e) {
       toast.error(errText(e, '导入失败'));
+      setStep('preview');
     } finally {
       setIsCommitting(false);
     }
@@ -128,7 +148,7 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
                   点击选择 .xlsx 文件
                 </span>
                 <span className="text-xs text-zinc-400 dark:text-zinc-500">
-                  单次最多 500 行，解析后先预览再导入
+                  单次最多 5000 行，解析后先预览再导入
                 </span>
               </>
             )}
@@ -240,7 +260,38 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
         </div>
       )}
 
-      {/* ---------- 第三步：完成 ---------- */}
+      {/* ---------- 第三步：后台导入进度 ---------- */}
+      {step === 'running' && (
+        <div className="py-10 flex flex-col items-center text-center">
+          <RotateCcw className="w-10 h-10 text-brand-500 animate-spin mb-4" aria-hidden="true" />
+          <h4 className="text-base font-semibold text-zinc-900 dark:text-white mb-1">
+            正在后台导入…
+          </h4>
+          <p className="text-sm text-zinc-600 dark:text-zinc-300 mb-4" aria-live="polite">
+            {progress ? `已处理 ${progress.processed} / ${progress.total} 行` : '任务已提交，等待处理…'}
+          </p>
+          <div
+            className="w-full max-w-md h-2 rounded-full bg-zinc-100 dark:bg-zinc-700 overflow-hidden"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={progress?.total ?? 0}
+            aria-valuenow={progress?.processed ?? 0}
+            aria-label="导入进度"
+          >
+            <div
+              className="h-full bg-brand-500 transition-all duration-500"
+              style={{
+                width: progress && progress.total > 0
+                  ? `${Math.round((progress.processed / progress.total) * 100)}%`
+                  : '0%',
+              }}
+            />
+          </div>
+          <p className="mt-4 text-xs text-zinc-400">关闭本窗口不会中断后台导入任务。</p>
+        </div>
+      )}
+
+      {/* ---------- 第四步：完成 ---------- */}
       {step === 'done' && result && (
         <div className="py-8 flex flex-col items-center text-center">
           <CheckCircle2 className="w-12 h-12 text-brand-500 mb-4" aria-hidden="true" />

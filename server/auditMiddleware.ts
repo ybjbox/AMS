@@ -47,6 +47,8 @@ function verb(method: string): string {
 /** 把可能很大的请求体压成「能看懂但不撑爆表」的摘要 */
 function compactBody(body: unknown): unknown {
   if (!body || typeof body !== "object") return body ?? null;
+  // raw() 请求体（Excel 导入）是 Buffer：Object.entries 会按字节索引克隆，2MB 即膨胀数百 MB 堆
+  if (Buffer.isBuffer(body)) return `[二进制内容 ${body.length} 字节，已省略]`;
   if (Array.isArray(body)) {
     return body.length > 5 ? `[共 ${body.length} 项]` : body;
   }

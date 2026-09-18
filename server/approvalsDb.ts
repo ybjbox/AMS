@@ -12,9 +12,11 @@
  *
  * P2 增强：
  *  - 多级审批：leave ≥3 天 requiredRole 升 ADMIN（HR 决定被拦截，提示须 ADMIN 终审）；
- *  - 加班（type='overtime'）：通过后按小时累计进 overtime_ledger（调休额度来源）。
+ *  - 加班（type='overtime'）：通过后按小时累计进 overtime_ledger（调休额度来源）；
+ *  - 调休（leave 且 leaveType='调休'）：通过时从 overtime_ledger 扣减（天数×8h），
+ *    决定与全部领域动作在同一事务内原子提交，失败整体回滚。
  */
-import { db } from "./db.ts";
+import { db, transact } from "./db.ts";
 import { type DbRow, asString, asNullableString, asNumber } from "./sqliteUtil.ts";
 import { randomUUID } from "node:crypto";
 import { createNotification } from "./notificationsDb.ts";
@@ -129,6 +131,14 @@ export function getApproval(id: string): ApprovalRow | undefined {
   return row ? rowToApproval(row) : undefined;
 }
 
+/** 请假天数（含首尾两天；无结束日期按 1 天计）——提交校验与额度扣减共用同一口径 */
+export function leaveDaysBetween(startDate: string, endDate?: string | null): number {
+  const start = Date.parse(`${startDate}T00:00:00Z`);
+  const end = endDate ? Date.parse(`${endDate}T00:00:00Z`) : start;
+  if (Number.isNaN(start) || Number.isNaN(end) || end < start) return 1;
+  return Math.round((end - start) / 86_400_000) + 1;
+}
+
 export function createApproval(input: {
   applicant: string;
   type?: string;
@@ -145,10 +155,7 @@ export function createApproval(input: {
   // P2 多级审批：请假的结束日期 ≥3 天 → 需要 ADMIN 终审
   let requiredRole: SystemRole = "HR";
   if ((input.type ?? "leave") === "leave" && input.endDate) {
-    const days = Math.round(
-      (new Date(input.endDate).getTime() - new Date(input.startDate).getTime()) / 86_400_000
-    ) + 1;
-    if (days >= 3) requiredRole = "ADMIN";
+    if (leaveDaysBetween(input.startDate, input.endDate) >= 3) requiredRole = "ADMIN";
   }
   db.prepare(
     `INSERT INTO approvals (id, applicant, type, leaveType, startDate, endDate, reason, punchDate, punchTime, punchKind, hours, requiredRole)
@@ -219,20 +226,23 @@ export function decideApproval(
     }
   }
 
-  const info = db
-    .prepare(
-      `UPDATE approvals
-       SET status = ?, approver = ?, comment = ?, decidedAt = datetime('now', 'localtime')
-       WHERE id = ? AND status = 'pending'`
-    )
-    .run(decision, approver, comment, id);
-  if (Number(info.changes ?? 0) === 0) return { conflict: true, row };
+  // 决定 + 领域动作 + 通知在同一事务内原子提交：
+  // 任何一步失败整体回滚（路由层得到 500，审批人重试即可），
+  // 杜绝旧实现「决定已落库但补卡/入账丢失、仅控制台 warn」的永久不一致
+  return transact<DecideResult>(() => {
+    const info = db
+      .prepare(
+        `UPDATE approvals
+         SET status = ?, approver = ?, comment = ?, decidedAt = datetime('now', 'localtime')
+         WHERE id = ? AND status = 'pending'`
+      )
+      .run(decision, approver, comment, id);
+    if (Number(info.changes ?? 0) === 0) return { conflict: true, row };
 
-  const updated = getApproval(id)!;
+    const updated = getApproval(id)!;
 
-  // 领域动作：审批通过后自动执行（闭环）
-  if (decision === "approved") {
-    try {
+    // 领域动作：审批通过后自动执行（闭环）
+    if (decision === "approved") {
       if (updated.type === "makeup") {
         applyMakeupPunch(updated);
       } else if (updated.type === "conversion") {
@@ -241,42 +251,41 @@ export function decideApproval(
         applyResign(updated);
       } else if (updated.type === "overtime") {
         applyOvertime(updated);
+      } else if (updated.type === "leave" && updated.leaveType === "调休") {
+        applyCompLeave(updated);
       }
-    } catch (e) {
-      // 领域动作失败不回滚审批（审批决定本身有效），但必须留下告警
-      console.warn(`[approvals] 领域动作失败（${updated.type}）：`, e);
     }
-  }
 
-  // 通知申请人（ recipients=申请人；同内容未读去重由 notificationsDb 负责）
-  const typeLabel: Record<string, string> = {
-    makeup: "补卡",
-    conversion: "转正",
-    resign: "离职",
-    overtime: "加班",
-  };
-  const subject =
-    updated.type === "makeup"
-      ? `你的${updated.punchKind || "补卡"}申请`
-      : updated.type === "overtime"
-        ? `你的加班申请（${updated.hours} 小时）`
-        : `你的${typeLabel[updated.type] ?? updated.leaveType}申请`;
-  const detail =
-    updated.type === "makeup"
-      ? `${updated.punchDate} ${updated.punchTime} 的补卡`
-      : updated.type === "resign"
-        ? `最后工作日 ${updated.startDate}`
+    // 通知申请人（recipients=申请人；同内容未读去重由 notificationsDb 负责）
+    const typeLabel: Record<string, string> = {
+      makeup: "补卡",
+      conversion: "转正",
+      resign: "离职",
+      overtime: "加班",
+    };
+    const subject =
+      updated.type === "makeup"
+        ? `你的${updated.punchKind || "补卡"}申请`
         : updated.type === "overtime"
-          ? `${updated.startDate} 共 ${updated.hours} 小时，已计入调休额度`
-          : `${updated.startDate} 提交的申请`;
-  createNotification({
-    title: `${subject}已${decision === "approved" ? "通过" : "被驳回"}`,
-    message: `${detail}，审批人：${approver}${comment ? `，意见：${comment}` : ""}`,
-    type: decision === "approved" ? "success" : "warning",
-    recipient: updated.applicant,
-  });
+          ? `你的加班申请（${updated.hours} 小时）`
+          : `你的${typeLabel[updated.type] ?? updated.leaveType}申请`;
+    const detail =
+      updated.type === "makeup"
+        ? `${updated.punchDate} ${updated.punchTime} 的补卡`
+        : updated.type === "resign"
+          ? `最后工作日 ${updated.startDate}`
+          : updated.type === "overtime"
+            ? `${updated.startDate} 共 ${updated.hours} 小时，已计入调休额度`
+            : `${updated.startDate} 提交的申请`;
+    createNotification({
+      title: `${subject}已${decision === "approved" ? "通过" : "被驳回"}`,
+      message: `${detail}，审批人：${approver}${comment ? `，意见：${comment}` : ""}`,
+      type: decision === "approved" ? "success" : "warning",
+      recipient: updated.applicant,
+    });
 
-  return { row: updated };
+    return { row: updated };
+  });
 }
 
 /** 申请人账号 → 员工档案映射（accounts.employeeId 关联） */
@@ -325,6 +334,47 @@ export function getCompBalance(employeeId: string): number {
     return asNumber(row?.hours);
   } catch {
     return 0;
+  }
+}
+
+/** 待审「调休」申请已占用的小时数（提交时预占校验用，防止多笔 pending 同时通过余额检查） */
+export function getPendingCompUsedHours(applicant: string): number {
+  const rows = db
+    .prepare(
+      `SELECT startDate, endDate FROM approvals
+        WHERE applicant = ? AND status = 'pending' AND type = 'leave' AND leaveType = '调休'`
+    )
+    .all(applicant) as { startDate: string; endDate: string | null }[];
+  return rows.reduce((sum, r) => sum + leaveDaysBetween(asString(r.startDate), r.endDate) * 8, 0);
+}
+
+/**
+ * 调休领域动作：通过后从 overtime_ledger 扣减（天数 × 8h）。
+ * 此前只校验不扣减，一笔加班可支撑无限次调休——余额只增不减。
+ * 条件更新（hours >= 扣减量）失败意味着并发场景下额度被其他已批申请抢占：
+ * 保留批准结果（人员管理优先），但通知双方需要人工核销。
+ */
+function applyCompLeave(approval: ApprovalRow): void {
+  const hours = leaveDaysBetween(approval.startDate, approval.endDate) * 8;
+  const emp = findApplicantEmployee(approval.applicant);
+  if (!emp || hours <= 0) return;
+  const info = db
+    .prepare(
+      `UPDATE overtime_ledger
+          SET hours = hours - ?, updatedAt = datetime('now', 'localtime')
+        WHERE employeeId = ? AND hours >= ?`
+    )
+    .run(hours, emp.employeeId, hours);
+  if (Number(info.changes ?? 0) === 0) {
+    createNotification({
+      title: "调休余额扣减未成功",
+      message: `你的调休申请已通过，但调休台账余额不足以扣减 ${hours}h（可能被并发申请占用），请联系行政人工核销。`,
+      type: "warning",
+      recipient: approval.applicant,
+    });
+    console.warn(
+      `[approvals] 调休扣减失败（余额不足/并发占用）：approval=${approval.id} need=${hours}h`
+    );
   }
 }
 

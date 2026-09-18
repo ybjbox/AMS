@@ -73,6 +73,13 @@ const SECRET_KEYS = new Set([
   "secret",
   "authorization",
   "cookie",
+  // LLM/第三方服务凭据：/api/ai/config 的 PATCH 体会原样进审计，必须丢弃
+  "apikey",
+  "api_key",
+  "clientsecret",
+  "client_secret",
+  // 通知出站：/api/notify/config 的 webhook 对象含带 access_token 的完整回调地址，整体丢弃
+  "webhook",
 ]);
 
 /** 这些字段体积可能极大（脚本正文、base64 文件），只留长度信息 */
@@ -337,10 +344,17 @@ function toAuditRow(row: DbRow): AuditRow {
     path: asString(row.path),
     targetType: asString(row.targetType),
     targetId: asString(row.targetId),
+    targetName: asString(row.targetName),
+    status: asNumber(row.status),
+    result: asString(row.result),
+    ip: asString(row.ip),
+    ua: asString(row.ua),
     before: parseJson(asString(row.beforeJson)),
     after: parseJson(asString(row.afterJson)),
     changes: parseJson(asString(row.changesJson)) as string[] | null,
-  } as AuditRow;
+    detail: asString(row.detail),
+    durationMs: asNumber(row.durationMs),
+  };
 }
 
 export function queryAuditLogs(query: AuditQuery = {}): {

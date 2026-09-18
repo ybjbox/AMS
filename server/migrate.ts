@@ -9,7 +9,8 @@
  *    删员工时考勤数据自动级联清除，不再残留「幽灵员工」。
  * 2. employees 新增 departmentId 列，外键指向 departments(id) ON DELETE SET NULL，
  *    并把旧数据里用「部门名字符串」存的引用回填成 departmentId。
- * 3. departments.parentId 自引用 CASCADE；roles.departmentId → departments SET NULL。
+ * 3. departments.parentId 自引用 CASCADE；roles.departmentId → departments CASCADE（v6 起，
+ *    此前 SET NULL 与列的 NOT NULL 自相矛盾，删除持有职位的部门必然报错）。
  * 4. folders.parentId 自引用 CASCADE；documents.folderId → folders CASCADE。
  *
  * 整个重建包在事务里，保证原子性；user_version 防止重复执行。
@@ -21,6 +22,10 @@
  *     消除全表扫描。schedules 当前按 employeeId 主键、无 date 列，故不建（审计旧条目已失效）。
  * v5（P2-7）：新增 todos / notifications 两张表，把待办与通知从纯前端接入后端，
  *     支持跨设备同步与「张三给李四派单」式协作。
+ * v6：修复 roles 外键自相矛盾（NOT NULL 列 + ON DELETE SET NULL）→ 改 CASCADE，
+ *     否则「删除仍被职位引用的部门」会让部门树整树替换事务失败（500）。
+ * v7（第二梯队 #11）：清洗 audit_logs 存量里的 apiKey 明文——SECRET_KEYS 此前缺
+ *     apikey/api_key，/api/ai/config 的 PATCH 审计把 LLM 密钥原文写进了 afterJson。
  *
  * 健壮性（修复「全新部署启动崩溃」latent bug）：
  *   `current < 1` 分支要先把全部带 FK 的表建好。但有两个不同前提：
@@ -32,8 +37,10 @@
 import { db } from "./db.ts";
 import { ensureTodosTable } from "./todosDb.ts";
 import { ensureNotificationsTable } from "./notificationsDb.ts";
+import { ensureImportJobsTable } from "./importJobsDb.ts";
 
-const SCHEMA_VERSION = 5;
+/** 当前 schema 版本。导出供回归脚本断言（不要再硬编码数字）。 */
+export const SCHEMA_VERSION = 8;
 
 /** 判断某张表当前是否已存在（用于区分「全新库」与「旧库已有表」两种迁移前提）。 */
 function tableExists(name: string): boolean {
@@ -73,6 +80,13 @@ export function runMigrations(): void {
     ensureIndexes();
     // v5：todos / notifications 两张表（幂等，CREATE TABLE IF NOT EXISTS，作为后续版本的常驻步骤）
     ensureTodosAndNotificationsTables();
+    // v6：重建 roles——departmentId 为 NOT NULL 却声明 ON DELETE SET NULL 自相矛盾
+    //（删除持有职位的部门必然触发约束冲突），改为 CASCADE：部门移除时其职位一并清除
+    if (current < 6) rebuildRoles();
+    // v7：清洗 audit_logs 存量中的 apiKey 明文（与 auditDb.SECRET_KEYS 补齐配对）
+    if (current < 7) cleanseAuditSecrets();
+    // v8：导入任务表（#16 Excel 提交异步化，进度轮询用）
+    if (current < 8) ensureImportJobsTable();
     db.exec("COMMIT");
   } catch (e) {
     db.exec("ROLLBACK");
@@ -135,6 +149,40 @@ function ensureTodosAndNotificationsTables(): void {
   ensureNotificationsTable();
 }
 
+/**
+ * v7：清洗 audit_logs 存量里泄露的密钥明文。
+ *
+ * SECRET_KEYS 此前不含 apikey/api_key，PATCH /api/ai/config 的请求体摘要
+ * （compactBody 对 <200 字符串原样保留）经 toJson 后仍是明文 JSON。
+ * 这里把 beforeJson/afterJson 中密钥键的值统一替换为占位符。幂等。
+ * 导出供回归测试直接对种子数据断言。
+ */
+const SECRET_JSON_KEY = /("(?:apiKey|api_key|clientSecret|client_secret)"\s*:\s*)"(?:[^"\\]|\\.)*"/gi;
+
+export function cleanseAuditSecrets(): void {
+  if (!tableExists("audit_logs")) return;
+  const rows = db
+    .prepare(
+      `SELECT id, beforeJson, afterJson FROM audit_logs
+       WHERE instr(lower(coalesce(beforeJson, '')), 'apikey') > 0
+          OR instr(lower(coalesce(beforeJson, '')), 'api_key') > 0
+          OR instr(lower(coalesce(beforeJson, '')), 'clientsecret') > 0
+          OR instr(lower(coalesce(afterJson, '')), 'apikey') > 0
+          OR instr(lower(coalesce(afterJson, '')), 'api_key') > 0
+          OR instr(lower(coalesce(afterJson, '')), 'clientsecret') > 0`
+    )
+    .all() as Array<{ id: number; beforeJson: string | null; afterJson: string | null }>;
+  const update = db.prepare("UPDATE audit_logs SET beforeJson = ?, afterJson = ? WHERE id = ?");
+  for (const row of rows) {
+    const before = row.beforeJson?.replace(SECRET_JSON_KEY, '$1"[已脱敏]"') ?? row.beforeJson;
+    const after = row.afterJson?.replace(SECRET_JSON_KEY, '$1"[已脱敏]"') ?? row.afterJson;
+    if (before !== row.beforeJson || after !== row.afterJson) {
+      update.run(before, after, row.id);
+    }
+  }
+  if (rows.length > 0) console.log("[migrate] v7 已清洗 %d 条审计日志中的密钥明文", rows.length);
+}
+
 // ---------- 各表 Schema 常量（rebuild 直接建表与 rename 重建共用，避免两份定义漂移） ----------
 const DEPARTMENTS_SCHEMA = `
   id       TEXT PRIMARY KEY,
@@ -149,7 +197,7 @@ const ROLES_SCHEMA = `
   name         TEXT NOT NULL,
   departmentId TEXT NOT NULL,
   priority     INTEGER DEFAULT 0,
-  FOREIGN KEY (departmentId) REFERENCES departments(id) ON DELETE SET NULL
+  FOREIGN KEY (departmentId) REFERENCES departments(id) ON DELETE CASCADE
 `;
 
 const EMPLOYEES_SCHEMA = `

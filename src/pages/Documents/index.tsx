@@ -3,6 +3,8 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { Plus, Upload } from 'lucide-react';
 import { useBodyOverflow } from '@/hooks/useBodyOverflow';
 import { useDocumentStore } from '@/store/useDocumentStore';
+import { usePermissionsStore } from '@/store/permissions';
+import { hasPermission } from '@/utils/permission';
 
 import { FolderTree } from './components/FolderTree';
 import { FileList } from './components/FileList';
@@ -22,6 +24,9 @@ export default function Documents() {
   const documentSets = useDocumentStore((state) => state.documentSets);
   const fetchData = useDocumentStore((state) => state.fetchData);
   const isLoading = useDocumentStore((state) => state.isLoading);
+  // 订阅权限矩阵，使设置页的矩阵修改即时反映到按钮可见性
+  usePermissionsStore((state) => state.permissions);
+  const canManageDocs = hasPermission('documents:manage');
 
   const [activeTab, setActiveTab] = useState<'files' | 'sets'>('sets');
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,6 +59,7 @@ export default function Documents() {
     expandedModalFolders,
     selectedDocIds,
     printSettings,
+    isUploading,
     fileInputRef,
     toggleAllModalFolders,
     toggleModalFolder,
@@ -145,15 +151,16 @@ export default function Documents() {
               文件库
             </button>
           </div>
-          {activeTab === 'files' ? (
+          {canManageDocs && (activeTab === 'files' ? (
             <>
               <input type="file" multiple className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="btn-primary"
+                disabled={isUploading}
               >
                 <Upload className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">上传文件</span>
+                <span className="hidden sm:inline">{isUploading ? '上传中…' : '上传文件'}</span>
               </button>
             </>
           ) : (
@@ -164,7 +171,7 @@ export default function Documents() {
               <Plus className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">新建套件</span>
             </button>
-          )}
+          ))}
         </div>
       </div>
 

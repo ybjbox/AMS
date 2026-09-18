@@ -48,7 +48,7 @@ function usesIndex(db: any, sql: string, params: any[]): boolean {
 /** 场景 A：全新库 → 索引存在 + 查询计划命中索引。 */
 async function runFresh(): Promise<void> {
   const dbMod = await import("../server/db.ts");
-  const { runMigrations, EXPECTED_INDEXES } = await import("../server/migrate.ts");
+  const { runMigrations, EXPECTED_INDEXES, SCHEMA_VERSION } = await import("../server/migrate.ts");
   const db = dbMod.db;
 
   runMigrations();
@@ -58,7 +58,7 @@ async function runFresh(): Promise<void> {
     check(`索引存在：${e.name} ON ${e.table}(${e.columns})`, idxs.includes(e.name));
   }
   const uv = (db.prepare("PRAGMA user_version").get() as any).user_version;
-  check("升级到 user_version=5", uv === 5, `uv=${uv}`);
+  check(`升级到 user_version=${SCHEMA_VERSION}`, uv === SCHEMA_VERSION, `uv=${uv}`);
 
   // 插入足量数据，逼出查询规划器对索引的偏好（行数少时规划器可能选全表扫描）。
   db.exec("BEGIN");
@@ -111,7 +111,7 @@ async function runFresh(): Promise<void> {
 /** 场景 B：模拟已升级到 v3 的旧库，升级到 v4 时索引被重建。 */
 async function runUpgrade(): Promise<void> {
   const dbMod = await import("../server/db.ts");
-  const { runMigrations, EXPECTED_INDEXES } = await import("../server/migrate.ts");
+  const { runMigrations, EXPECTED_INDEXES, SCHEMA_VERSION } = await import("../server/migrate.ts");
   const db = dbMod.db;
 
   runMigrations(); // 现在 v4，索引已建
@@ -125,7 +125,7 @@ async function runUpgrade(): Promise<void> {
 
   runMigrations(); // 重新迁移：current=3 < 4 → 重建索引
   const uv = (db.prepare("PRAGMA user_version").get() as any).user_version;
-  check("再次迁移升级到 user_version=5", uv === 5, `uv=${uv}`);
+  check(`再次迁移升级到 user_version=${SCHEMA_VERSION}`, uv === SCHEMA_VERSION, `uv=${uv}`);
   for (const e of EXPECTED_INDEXES) {
     check(`升级路径重建索引：${e.name}`, existingIndexes(db).includes(e.name));
   }
