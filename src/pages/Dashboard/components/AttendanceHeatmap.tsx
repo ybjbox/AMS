@@ -37,7 +37,7 @@ export default function AttendanceHeatmap({ stats, isLoading }: Props) {
           <CalendarDays className="w-4 h-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
           考勤热力（近 30 天）
         </h2>
-        <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+        <div className="flex items-center gap-2 text-2xs text-zinc-500 dark:text-zinc-400">
           <span>异常少</span>
           <span className="w-3 h-3 rounded-sm bg-emerald-500/85" aria-hidden="true" />
           <span className="w-3 h-3 rounded-sm bg-lime-400/85" aria-hidden="true" />
@@ -63,7 +63,7 @@ export default function AttendanceHeatmap({ stats, isLoading }: Props) {
               );
             })}
           </div>
-          <div className="flex justify-between mt-2 text-[11px] text-zinc-400 dark:text-zinc-500 tabular-nums">
+          <div className="flex justify-between mt-2 text-2xs text-zinc-400 dark:text-zinc-500 tabular-nums">
             <span>{dayLabel(stats.days[0]?.date ?? '')}</span>
             <span>{dayLabel(stats.days[Math.floor(stats.days.length / 2)]?.date ?? '')}</span>
             <span>今天</span>
@@ -82,10 +82,10 @@ export default function AttendanceHeatmap({ stats, isLoading }: Props) {
               );
               return (
                 <>
-                  <div><div className="text-lg font-semibold tabular-nums text-zinc-900 dark:text-white">{total.present}</div><div className="text-[11px] text-zinc-500 dark:text-zinc-400">出勤人次</div></div>
-                  <div><div className="text-lg font-semibold tabular-nums text-amber-600 dark:text-amber-400">{total.late}</div><div className="text-[11px] text-zinc-500 dark:text-zinc-400">迟到</div></div>
-                  <div><div className="text-lg font-semibold tabular-nums text-rose-600 dark:text-rose-400">{total.early}</div><div className="text-[11px] text-zinc-500 dark:text-zinc-400">早退</div></div>
-                  <div><div className="text-lg font-semibold tabular-nums text-zinc-900 dark:text-white">{total.missing}</div><div className="text-[11px] text-zinc-500 dark:text-zinc-400">缺卡</div></div>
+                  <div><div className="text-lg font-semibold tabular-nums text-zinc-900 dark:text-white">{total.present}</div><div className="text-2xs text-zinc-500 dark:text-zinc-400">出勤人次</div></div>
+                  <div><div className="text-lg font-semibold tabular-nums text-amber-600 dark:text-amber-400">{total.late}</div><div className="text-2xs text-zinc-500 dark:text-zinc-400">迟到</div></div>
+                  <div><div className="text-lg font-semibold tabular-nums text-rose-600 dark:text-rose-400">{total.early}</div><div className="text-2xs text-zinc-500 dark:text-zinc-400">早退</div></div>
+                  <div><div className="text-lg font-semibold tabular-nums text-zinc-900 dark:text-white">{total.missing}</div><div className="text-2xs text-zinc-500 dark:text-zinc-400">缺卡</div></div>
                 </>
               );
             })()}

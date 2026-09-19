@@ -1,6 +1,15 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Webhook, Mail, Send, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   fetchNotifyConfig,
   saveNotifyConfig,
@@ -34,9 +43,6 @@ function Field({
     </label>
   );
 }
-
-const inputCls =
-  'w-full rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500';
 
 /**
  * 通知出站通道（#15）：站内通知落库后镜像推送到 webhook / 邮件。
@@ -133,17 +139,22 @@ export default function NotifyPanel() {
             启用 Webhook 通道
           </label>
           <Field label="平台格式">
-            <select
-              className={inputCls}
+            <Select
+              items={WEBHOOK_FORMATS}
               value={config.webhook.format}
-              onChange={(e) => patchWebhook({ format: e.target.value as WebhookFormat })}
+              onValueChange={(val) => patchWebhook({ format: val as WebhookFormat })}
             >
-              {WEBHOOK_FORMATS.map((f) => (
-                <option key={f.value} value={f.value}>
-                  {f.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger aria-label="平台格式" className="w-full justify-between">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {WEBHOOK_FORMATS.map((f) => (
+                  <SelectItem key={f.value} value={f.value}>
+                    {f.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
           <Field
             label="回调地址（Webhook URL）"
@@ -154,10 +165,9 @@ export default function NotifyPanel() {
             }
           >
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="text"
                 autoComplete="off"
-                className={inputCls}
                 value={config.webhook.url === CLEAR_SENTINEL ? '' : config.webhook.url}
                 placeholder="https://oapi.dingtalk.com/robot/send?access_token=…"
                 onChange={(e) => patchWebhook({ url: e.target.value })}
@@ -203,18 +213,16 @@ export default function NotifyPanel() {
             启用邮件通道
           </label>
           <Field label="SMTP 服务器">
-            <input
+            <Input
               type="text"
-              className={inputCls}
               value={config.email.host}
               placeholder="smtp.example.com"
               onChange={(e) => patchEmail({ host: e.target.value })}
             />
           </Field>
           <Field label="端口">
-            <input
+            <Input
               type="number"
-              className={inputCls}
               value={config.email.port}
               onChange={(e) => patchEmail({ port: Number(e.target.value) })}
             />
@@ -229,9 +237,8 @@ export default function NotifyPanel() {
             使用 SSL/TLS（465 端口通常为 true，587 为 false/STARTTLS）
           </label>
           <Field label="登录账号">
-            <input
+            <Input
               type="text"
-              className={inputCls}
               value={config.email.user}
               onChange={(e) => patchEmail({ user: e.target.value })}
             />
@@ -245,10 +252,9 @@ export default function NotifyPanel() {
             }
           >
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="password"
                 autoComplete="new-password"
-                className={inputCls}
                 value={config.email.password === CLEAR_SENTINEL ? '' : config.email.password}
                 onChange={(e) => patchEmail({ password: e.target.value })}
               />
@@ -272,9 +278,8 @@ export default function NotifyPanel() {
             </div>
           </Field>
           <Field label="发件人地址">
-            <input
+            <Input
               type="text"
-              className={inputCls}
               value={config.email.from}
               placeholder="ams@example.com"
               onChange={(e) => patchEmail({ from: e.target.value })}
@@ -284,19 +289,19 @@ export default function NotifyPanel() {
       </div>
 
       <div className="flex items-center gap-3 pt-2">
-        <button type="button" onClick={() => void handleSave()} disabled={isSaving} className="btn-primary">
+        <Button type="button" onClick={() => void handleSave()} disabled={isSaving}>
           <Save className="w-4 h-4 mr-2" />
           {isSaving ? '保存中…' : '保存配置'}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="outline"
           onClick={() => void handleTest()}
           disabled={isTesting}
-          className="btn-secondary"
         >
           <Send className="w-4 h-4 mr-2" />
           {isTesting ? '发送中…' : '发送测试消息'}
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -1,6 +1,9 @@
 import React from 'react';
 import { FileText, ChevronDown, ChevronRight, Folder } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { DocumentSet, Document, Folder as FolderType } from '@/store/useDocumentStore';
 
 interface SetFormModalProps {
@@ -11,7 +14,7 @@ interface SetFormModalProps {
   folders: FolderType[];
   documents: Document[];
   selectedDocIds: string[];
-  onDocToggleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onDocToggleChange: (docId: string, checked: boolean) => void;
   expandedModalFolders: Set<string>;
   toggleAllModalFolders: () => void;
   toggleModalFolder: (id: string) => void;
@@ -68,24 +71,23 @@ export function SetFormModal({
           <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
             套件名称 <span className="text-red-500">*</span>
           </label>
-          <input
+          <Input
             required
             autoFocus
             name="name"
             type="text"
             defaultValue={editingSet?.name}
             placeholder="如：入职文件套件"
-            className="block w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-600/20 focus:border-brand-600 transition duration-200 sm:text-sm"
           />
         </div>
         <div>
           <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">描述说明</label>
-          <textarea
+          <Textarea
             name="description"
             rows={2}
             defaultValue={editingSet?.description}
             placeholder="简要说明该套件的用途"
-            className="block w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-600/20 focus:border-brand-600 transition duration-200 sm:text-sm resize-none"
+            className="field-sizing-fixed resize-y"
           />
         </div>
         <div>
@@ -115,14 +117,14 @@ export function SetFormModal({
                   .map((doc) => (
                     <label
                       key={doc.id}
+                      htmlFor={`doc-toggle-${doc.id}`}
                       className="flex items-center p-2 hover:bg-white dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-md cursor-pointer transition-colors border border-transparent hover:border-zinc-200 dark:border-zinc-700 dark:hover:border-zinc-600"
                     >
-                      <input
-                        type="checkbox"
-                        data-docid={doc.id}
+                      <Checkbox
+                        id={`doc-toggle-${doc.id}`}
                         checked={selectedDocIds.includes(doc.id)}
-                        onChange={onDocToggleChange}
-                        className="h-4 w-4 text-brand-600 focus:ring-brand-600 border-zinc-200 dark:border-zinc-700/80 rounded"
+                        onCheckedChange={(checked) => onDocToggleChange(doc.id, checked)}
+                        className="border-zinc-300 dark:border-zinc-600"
                       />
                       <FileText className="w-4 h-4 ml-3 mr-2 text-zinc-400 dark:text-zinc-500" />
                       <span className="text-sm text-zinc-700 dark:text-zinc-300 truncate">{doc.name}</span>
@@ -153,14 +155,14 @@ export function SetFormModal({
                           {folderDocs.map((doc) => (
                             <label
                               key={doc.id}
+                              htmlFor={`doc-toggle-${doc.id}`}
                               className="flex items-center p-2 hover:bg-white dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-md cursor-pointer transition-colors border border-transparent hover:border-zinc-200 dark:border-zinc-700 dark:hover:border-zinc-600"
                             >
-                              <input
-                                type="checkbox"
-                                data-docid={doc.id}
+                              <Checkbox
+                                id={`doc-toggle-${doc.id}`}
                                 checked={selectedDocIds.includes(doc.id)}
-                                onChange={onDocToggleChange}
-                                className="h-4 w-4 text-brand-600 focus:ring-brand-600 border-zinc-200 dark:border-zinc-700/80 rounded"
+                                onCheckedChange={(checked) => onDocToggleChange(doc.id, checked)}
+                                className="border-zinc-300 dark:border-zinc-600"
                               />
                               <FileText className="w-4 h-4 ml-3 mr-2 text-zinc-400 dark:text-zinc-500" />
                               <span className="text-sm text-zinc-700 dark:text-zinc-300 truncate">{doc.name}</span>

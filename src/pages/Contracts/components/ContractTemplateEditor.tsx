@@ -1,5 +1,6 @@
 import React, { useRef, useCallback, useState } from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
+import { Textarea } from '@/components/ui/textarea';
 import { FileEdit, Upload, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { defaultTemplate } from '@/config/defaultContractTemplate';
@@ -93,11 +94,12 @@ export const ContractTemplateEditor = ({ isOpen, onClose }: ContractTemplateEdit
               恢复默认模板
             </button>
           </div>
-          <textarea
+          <Textarea
             value={editingTemplate}
             onChange={(e) => setEditingTemplate(e.target.value)}
-            className="input-base flex-1 w-full p-4 font-mono resize-none"
+            aria-label="HTML 合同模板源码"
             spellCheck={false}
+            className="field-sizing-fixed flex-1 w-full p-4 font-mono resize-none"
           />
         </div>
         <div className="w-full md:w-1/3 p-4 bg-zinc-50 dark:bg-zinc-800/50 overflow-y-auto">

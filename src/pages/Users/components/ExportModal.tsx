@@ -2,6 +2,9 @@ import React, { useCallback } from 'react';
 import { Printer, Download, RefreshCw, Check, GripVertical, FileCode } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import { User } from '@/types';
 import { ExportColumn, ExportTheme, ExportScript } from '../constants';
 import {
@@ -173,14 +176,15 @@ export function ExportModal({
           >
             取消
           </button>
-          <button
+          <Button
+            variant="outline"
+            size="lg"
             onClick={handlePrintRoster}
             disabled={exportConfig.columns.filter((c: ExportColumn) => c.selected).length === 0}
-            className="inline-flex items-center justify-center px-6 py-2 bg-white dark:bg-zinc-700 border border-zinc-200/80 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 text-sm font-medium rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-600 transition shadow-sm disabled:opacity-50"
           >
             <Printer className="h-4 w-4 mr-2" />
             打印
-          </button>
+          </Button>
           <button
             onClick={() => handleExport(filteredUsersLength)}
             disabled={isExporting || exportConfig.columns.filter((c: ExportColumn) => c.selected).length === 0}
@@ -205,34 +209,25 @@ export function ExportModal({
         <div className="w-full md:w-1/3 p-6 space-y-6 overflow-y-auto border-r border-zinc-100 dark:border-zinc-700 h-full">
           <div>
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">表格大标题</label>
-            <input
+            <Input
               type="text"
               value={exportConfig.title}
               onChange={(e) => setExportConfig((prev: ExportConfig) => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 border border-zinc-200/80 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-brand-600/20 transition duration-200 outline-none bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500"
               placeholder="请输入表格标题"
             />
           </div>
 
           <div className="flex items-center justify-between">
             <div>
-              <label className="flex items-center cursor-pointer group">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={exportConfig.includeResigned}
-                    onChange={(e) => setExportConfig((prev: ExportConfig) => ({ ...prev, includeResigned: e.target.checked }))}
-                  />
-                  <div
-                    className={`block w-10 h-6 rounded-full transition-colors ${exportConfig.includeResigned ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner' : 'bg-zinc-300 dark:bg-zinc-600'}`}
-                  ></div>
-                  <div
-                    className={`absolute left-1 top-1 bg-white dark:bg-zinc-800 w-4 h-4 rounded-full transition-transform ${exportConfig.includeResigned ? 'translate-x-4' : ''}`}
-                  ></div>
-                </div>
-                <span className="ml-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">包含离职人员</span>
-              </label>
+              <div className="flex items-center">
+                <Checkbox
+                  id="export-include-resigned"
+                  checked={exportConfig.includeResigned}
+                  onCheckedChange={(checked) => setExportConfig((prev: ExportConfig) => ({ ...prev, includeResigned: checked }))}
+                  className="border-zinc-300 dark:border-zinc-600"
+                />
+                <label htmlFor="export-include-resigned" className="ml-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer">包含离职人员</label>
+              </div>
             </div>
           </div>
 
@@ -245,7 +240,7 @@ export function ExportModal({
                   value={exportConfig.paperSize}
                   onValueChange={(val) => setExportConfig((prev: ExportConfig) => ({ ...prev, paperSize: val || 'A4' }))}
                 >
-                  <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="选择纸张大小" />
                   </SelectTrigger>
                   <SelectContent>
@@ -260,11 +255,10 @@ export function ExportModal({
                 <Select
                   value={exportConfig.orientation}
                   onValueChange={(val) => setExportConfig((prev: ExportConfig) => ({ ...prev, orientation: val || 'portrait' }))}
+                  items={[{ value: 'portrait', label: '纵向' }, { value: 'landscape', label: '横向' }]}
                 >
-                  <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
-                    <SelectValue placeholder="选择纸张方向">
-                      {(val) => (val === 'portrait' ? '纵向' : val === 'landscape' ? '横向' : '选择纸张方向')}
-                    </SelectValue>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="选择纸张方向" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="portrait">纵向</SelectItem>
@@ -274,23 +268,15 @@ export function ExportModal({
               </div>
             </div>
             <div className="flex items-center justify-between pt-2">
-              <label className="flex items-center cursor-pointer group">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={exportConfig.isDoubleSided}
-                    onChange={(e) => setExportConfig((prev: ExportConfig) => ({ ...prev, isDoubleSided: e.target.checked }))}
-                  />
-                  <div
-                    className={`block w-8 h-5 rounded-full transition-colors ${exportConfig.isDoubleSided ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner' : 'bg-zinc-300 dark:bg-zinc-600'}`}
-                  ></div>
-                  <div
-                    className={`absolute left-0.5 top-0.5 bg-white dark:bg-zinc-800 w-4 h-4 rounded-full transition-transform ${exportConfig.isDoubleSided ? 'translate-x-3' : ''}`}
-                  ></div>
-                </div>
-                <span className="ml-2 text-sm text-zinc-600 dark:text-zinc-400">双面打印 (预留装订边距)</span>
-              </label>
+              <div className="flex items-center">
+                <Checkbox
+                  id="export-double-sided"
+                  checked={exportConfig.isDoubleSided}
+                  onCheckedChange={(checked) => setExportConfig((prev: ExportConfig) => ({ ...prev, isDoubleSided: checked }))}
+                  className="border-zinc-300 dark:border-zinc-600"
+                />
+                <label htmlFor="export-double-sided" className="ml-2 text-sm text-zinc-600 dark:text-zinc-400 cursor-pointer">双面打印 (预留装订边距)</label>
+              </div>
             </div>
           </div>
 
@@ -337,7 +323,7 @@ export function ExportModal({
                       style={{ backgroundColor: `#${theme.headerFill.substring(2)}` }}
                     ></div>
                     <span
-                      className={`text-[10px] font-medium truncate w-full text-center ${exportConfig.themeId === theme.id ? 'text-brand-700 dark:text-brand-400' : 'text-zinc-600 dark:text-zinc-400'}`}
+                      className={`text-3xs font-medium truncate w-full text-center ${exportConfig.themeId === theme.id ? 'text-brand-700 dark:text-brand-400' : 'text-zinc-600 dark:text-zinc-400'}`}
                     >
                       {theme.name}
                     </span>
@@ -369,7 +355,7 @@ export function ExportModal({
                       >
                         {script.name}.js
                       </div>
-                      <div className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate max-w-[200px]">
+                      <div className="text-3xs text-zinc-500 dark:text-zinc-400 truncate max-w-[200px]">
                         {script.code.substring(0, 50)}...
                       </div>
                     </div>
@@ -390,7 +376,7 @@ export function ExportModal({
           <div>
             <div className="flex items-center justify-between mb-3">
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">选择并排序导出列</label>
-              <span className="text-[10px] text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-700 px-2 py-0.5 rounded-full">
+              <span className="text-3xs text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-700 px-2 py-0.5 rounded-full">
                 拖拽左侧图标进行排序
               </span>
             </div>

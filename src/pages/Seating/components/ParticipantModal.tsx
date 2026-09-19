@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { CheckSquare, Square, ChevronRight } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
+import { Checkbox } from '@/components/ui/checkbox';
 
 import { User } from '@/types';
 
@@ -105,20 +106,26 @@ export function ParticipantModal({
               </div>
               {isExpanded && (
                 <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-white dark:bg-zinc-800 border-t border-zinc-200 dark:border-zinc-700">
-                  {deptUsers.map((u) => (
-                    <label key={u.id} className="flex items-center space-x-2 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        checked={selectedUserIds.has(u.id)}
-                        onChange={() => toggleUserSelection(u.id)}
-                        className="rounded border-zinc-200/80 dark:border-zinc-600 text-brand-600 focus:ring-brand-600 bg-white dark:bg-zinc-900"
-                      />
-                      <span className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
-                        {u.name}
-                      </span>
-                      <span className="text-xs text-zinc-400 dark:text-zinc-500">({u.role})</span>
-                    </label>
-                  ))}
+                  {deptUsers.map((u) => {
+                    const checkboxId = `participant-user-${u.id}`;
+                    return (
+                      <label
+                        key={u.id}
+                        htmlFor={checkboxId}
+                        className="flex items-center space-x-2 cursor-pointer group"
+                      >
+                        <Checkbox
+                          id={checkboxId}
+                          checked={selectedUserIds.has(u.id)}
+                          onCheckedChange={() => toggleUserSelection(u.id)}
+                        />
+                        <span className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                          {u.name}
+                        </span>
+                        <span className="text-xs text-zinc-400 dark:text-zinc-500">({u.role})</span>
+                      </label>
+                    );
+                  })}
                 </div>
               )}
             </div>

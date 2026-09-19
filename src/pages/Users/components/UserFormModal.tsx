@@ -5,6 +5,8 @@ import { z } from 'zod';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { TreeSelect } from '@/components/common/TreeSelect';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { User, DepartmentNode, RoleNode, SystemRole } from '@/types';
 
 const userSchema = z.object({
@@ -147,10 +149,10 @@ export function UserFormModal({
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                 姓名 <span className="text-red-500">*</span>
               </label>
-              <input
+              <Input
                 {...register('name')}
                 type="text"
-                className={`input-base mt-1 ${errors.name ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
+                className={`mt-1 ${errors.name ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
               {errors.name && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.name.message}</p>}
             </div>
@@ -158,10 +160,10 @@ export function UserFormModal({
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                 身份证号码 <span className="text-red-500">*</span>
               </label>
-              <input
+              <Input
                 {...register('idCard')}
                 type="text"
-                className={`input-base mt-1 ${errors.idCard ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
+                className={`mt-1 ${errors.idCard ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
               {errors.idCard && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.idCard.message}</p>}
             </div>
@@ -169,10 +171,10 @@ export function UserFormModal({
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                 联系电话 <span className="text-red-500">*</span>
               </label>
-              <input
+              <Input
                 {...register('phone')}
                 type="text"
-                className={`input-base mt-1 ${errors.phone ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
+                className={`mt-1 ${errors.phone ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
               {errors.phone && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.phone.message}</p>}
             </div>
@@ -180,10 +182,10 @@ export function UserFormModal({
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                 户口地址 <span className="text-red-500">*</span>
               </label>
-              <input
+              <Input
                 {...register('registeredAddress')}
                 type="text"
-                className={`input-base mt-1 ${errors.registeredAddress ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
+                className={`mt-1 ${errors.registeredAddress ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
               {errors.registeredAddress && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.registeredAddress.message}</p>}
             </div>
@@ -191,10 +193,10 @@ export function UserFormModal({
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                 现住址 <span className="text-red-500">*</span>
               </label>
-              <input
+              <Input
                 {...register('currentAddress')}
                 type="text"
-                className={`input-base mt-1 ${errors.currentAddress ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
+                className={`mt-1 ${errors.currentAddress ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
               {errors.currentAddress && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.currentAddress.message}</p>}
             </div>
@@ -263,7 +265,7 @@ export function UserFormModal({
               <Select
                 defaultValue={editingUser?.status || '在职'}
               >
-                <SelectTrigger className="w-full mt-1 bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
+                <SelectTrigger className="w-full mt-1">
                   <SelectValue placeholder="选择状态" />
                 </SelectTrigger>
                 <SelectContent>
@@ -277,10 +279,10 @@ export function UserFormModal({
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                 入职时间 <span className="text-red-500">*</span>
               </label>
-              <input
+              <Input
                 {...register('joinDate')}
                 type="date"
-                className={`input-base mt-1 ${errors.joinDate ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
+                className={`mt-1 ${errors.joinDate ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
               {errors.joinDate && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.joinDate.message}</p>}
             </div>
@@ -289,7 +291,7 @@ export function UserFormModal({
                 用工形式 <span className="text-red-500">*</span>
               </label>
               <Select defaultValue={editingUser?.employmentType || '全职'}>
-                <SelectTrigger className="w-full mt-1 bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
+                <SelectTrigger className="w-full mt-1">
                   <SelectValue placeholder="选择用工形式" />
                 </SelectTrigger>
                 <SelectContent>
@@ -305,10 +307,10 @@ export function UserFormModal({
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                 变动情况 <span className="text-red-500">*</span>
               </label>
-              <input
+              <Input
                 {...register('changeStatus')}
                 type="text"
-                className={`input-base mt-1 ${errors.changeStatus ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
+                className={`mt-1 ${errors.changeStatus ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
             </div>
             <div>
@@ -326,7 +328,7 @@ export function UserFormModal({
                         : '普通员工'
                 }
               >
-                <SelectTrigger className="w-full mt-1 bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
+                <SelectTrigger className="w-full mt-1">
                   <SelectValue placeholder="选择系统角色" />
                 </SelectTrigger>
                 <SelectContent>
@@ -346,7 +348,7 @@ export function UserFormModal({
             <div>
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">是否购买社保</label>
               <Select defaultValue={editingUser?.hasSocialSecurity ? '是' : '否'}>
-                <SelectTrigger className="w-full mt-1 bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
+                <SelectTrigger className="w-full mt-1">
                   <SelectValue placeholder="选择是否购买社保" />
                 </SelectTrigger>
                 <SelectContent>
@@ -357,18 +359,18 @@ export function UserFormModal({
             </div>
             <div>
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">合同年限(年)</label>
-              <input
+              <Input
                 {...register('contractYears')}
                 type="number"
-                className="input-base mt-1"
+                className="mt-1"
               />
             </div>
             <div>
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">最新签订时间</label>
-              <input
+              <Input
                 {...register('contractSignDate')}
                 type="date"
-                className="input-base mt-1"
+                className="mt-1"
               />
             </div>
           </div>
@@ -380,7 +382,7 @@ export function UserFormModal({
             <div>
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">是否退役军人</label>
               <Select defaultValue={editingUser?.isVeteran ? '是' : '否'}>
-                <SelectTrigger className="w-full mt-1 bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
+                <SelectTrigger className="w-full mt-1">
                   <SelectValue placeholder="选择是否退役军人" />
                 </SelectTrigger>
                 <SelectContent>
@@ -391,19 +393,19 @@ export function UserFormModal({
             </div>
             <div>
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">原服役单位</label>
-              <input
+              <Input
                 {...register('formerUnit')}
                 type="text"
-                className="input-base mt-1"
+                className="mt-1"
               />
             </div>
             <div>
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">入伍及退役时间</label>
-              <input
+              <Input
                 {...register('militaryDates')}
                 type="text"
                 placeholder="如: 2015-09 至 2017-09"
-                className="input-base mt-1"
+                className="mt-1"
               />
             </div>
           </div>
@@ -411,11 +413,11 @@ export function UserFormModal({
 
         <div>
           <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">备注</label>
-          <textarea
+          <Textarea
             {...register('remarks')}
             rows={2}
-            className="input-base mt-1"
-          ></textarea>
+            className="mt-1 field-sizing-fixed resize-y"
+          />
         </div>
       </form>
     </BaseModal>

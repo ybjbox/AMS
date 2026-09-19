@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { User } from '@/types';
 import { EmptyState } from '@/components/ui/EmptyState';
+import Badge from '@/components/ui/Badge';
 import { Eye, Printer, FileText } from 'lucide-react';
 
 interface ContractTableProps {
@@ -27,7 +28,7 @@ export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: Contr
             <tr>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider relative z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)] bg-zinc-50 dark:bg-zinc-900/50"
+                className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider relative z-30 shadow-sticky-left bg-zinc-50 dark:bg-zinc-900/50"
               >
                 工号
               </th>
@@ -63,7 +64,7 @@ export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: Contr
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-right text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider relative z-30 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.5)] bg-zinc-50 dark:bg-zinc-900/50"
+                className="px-6 py-3 text-right text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider relative z-30 shadow-sticky-right bg-zinc-50 dark:bg-zinc-900/50"
               >
                 操作
               </th>
@@ -88,7 +89,7 @@ export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: Contr
                       key={user.id}
                       className="w-full hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-900 dark:text-white sticky left-0 z-10 bg-white dark:bg-zinc-800 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-700/50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-900 dark:text-white sticky left-0 z-10 bg-white dark:bg-zinc-800 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-700/50 shadow-sticky-left">
                         {user.id}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
@@ -98,17 +99,9 @@ export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: Contr
                         {user.department}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            isExpired
-                              ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                              : isExpiringSoon
-                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
-                                : 'bg-brand-100 text-brand-800 dark:bg-brand-900/30 dark:text-brand-400'
-                          }`}
-                        >
+                        <Badge variant={isExpired ? 'destructive' : isExpiringSoon ? 'warning' : 'primary'}>
                           {isExpired ? '已过期' : isExpiringSoon ? '即将到期' : '正常'}
-                        </span>
+                        </Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
                         {user.contractSignDate || '-'}
@@ -119,7 +112,7 @@ export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: Contr
                           <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">({daysToExpiry}天后)</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium sticky right-0 z-10 bg-white dark:bg-zinc-800 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-700/50 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.5)]">
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium sticky right-0 z-10 bg-white dark:bg-zinc-800 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-700/50 shadow-sticky-right">
                         <div className="flex items-center justify-end space-x-3">
                           <button
                             data-userid={user.id}

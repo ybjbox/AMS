@@ -1,5 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { TableCapacity } from '../hooks/useSeatingArrange';
 
 interface TableConfigProps {
@@ -43,14 +44,14 @@ export function TableConfig({
                 <span className="text-xs text-zinc-500 dark:text-zinc-400 px-2 font-medium whitespace-nowrap">
                   {tc.tableNumber}号桌
                 </span>
-                <input
+                <Input
                   type="number"
                   min="1"
                   max="50"
                   aria-label={`第 ${tc.tableNumber} 桌人数`}
                   value={tc.capacity}
                   onChange={(e) => updateTableCapacity(tc.id, parseInt(e.target.value) || 1)}
-                  className="input-base w-14 py-1 px-1 text-center"
+                  className="w-14 px-1 text-center"
                 />
                 {tableCapacities.length > 1 && (
                   <button
@@ -67,13 +68,13 @@ export function TableConfig({
             <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
               跳过桌号：
             </label>
-            <input
+            <Input
               type="text"
               value={skippedNumbers}
               onChange={(e) => setSkippedNumbers(e.target.value)}
               placeholder="例如：4, 14, 24"
               aria-label="跳过桌号（用逗号分隔）"
-              className="input-base flex-1 max-w-xs py-1.5"
+              className="flex-1 max-w-xs"
             />
             <span className="text-xs text-zinc-500 dark:text-zinc-400">（用逗号分隔，如：4, 14）</span>
           </div>

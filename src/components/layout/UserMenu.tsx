@@ -80,7 +80,7 @@ export default function UserMenu({
   );
 
   const unreadBadge = unreadCount > 0 && (
-    <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-0.5 items-center justify-center rounded-full bg-red-500 ring-2 ring-white dark:ring-zinc-800 text-[10px] font-bold text-white">
+    <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-0.5 items-center justify-center rounded-full bg-red-500 ring-2 ring-white dark:ring-zinc-800 text-3xs font-bold text-white">
       {unreadCount > 99 ? '99+' : unreadCount}
     </span>
   );
@@ -149,7 +149,7 @@ export default function UserMenu({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.12, ease: 'easeIn' } }}
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className={`absolute z-50 bg-white dark:bg-zinc-700 rounded-xl border border-zinc-300/80 dark:border-zinc-500/70 ring-1 ring-black/5 dark:ring-white/10 shadow-[0_12px_36px_-10px_rgba(24,24,27,0.35)] overflow-hidden ${
+            className={`absolute z-50 bg-white dark:bg-zinc-700 rounded-xl border border-zinc-300/80 dark:border-zinc-500/70 ring-1 ring-black/5 dark:ring-white/10 shadow-popover overflow-hidden ${
               isCollapsed
                 ? 'left-full bottom-0 ml-2 w-52 origin-bottom-left'
                 : 'left-0 right-0 bottom-full mb-2 origin-bottom-left'

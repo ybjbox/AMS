@@ -49,7 +49,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   prefers-reduced-motion 由 index.css 的全局媒体查询统一降级。 */}
               <div
                 key={location.pathname}
-                className="flex-1 flex flex-col min-h-full animate-in fade-in slide-in-from-right-2 duration-250 ease-[var(--ease-smooth-out)]"
+                className="flex-1 flex flex-col min-h-full animate-in fade-in slide-in-from-right-2 duration-250 ease-smooth-out"
               >
                 {children}
               </div>

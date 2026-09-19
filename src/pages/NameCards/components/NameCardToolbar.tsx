@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Upload, ChevronDown, FileDown, FileText, Users, Printer } from 'lucide-react';
 import { User } from '@/types';
+import { Button } from '@/components/ui/button';
 
 interface NameCardToolbarProps {
   uploadedUsers: User[] | null;
@@ -57,26 +58,28 @@ export default function NameCardToolbar({
           </button>
           {isUploadMenuOpen && (
             <div className="absolute right-0 mt-1 w-36 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-700 py-1 z-50">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => {
                   handleDownloadTemplate();
                   setIsUploadMenuOpen(false);
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center"
+                className="h-auto w-full justify-start gap-0 rounded-none px-4 py-2 text-zinc-700 dark:text-zinc-200"
               >
                 <FileDown className="w-4 h-4 mr-2" />
                 下载模板
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
                 onClick={() => {
                   setIsManualInputOpen(true);
                   setIsUploadMenuOpen(false);
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center"
+                className="h-auto w-full justify-start gap-0 rounded-none px-4 py-2 text-zinc-700 dark:text-zinc-200"
               >
                 <FileText className="w-4 h-4 mr-2" />
                 手动输入
-              </button>
+              </Button>
               <label className="w-full text-left px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center cursor-pointer mb-0">
                 <Upload className="w-4 h-4 mr-2" />
                 上传文件

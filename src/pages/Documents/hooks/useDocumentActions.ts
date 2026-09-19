@@ -63,9 +63,7 @@ export function useDocumentActions() {
     });
   }, []);
 
-  const handleDocToggle = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const docId = e.target.value;
-    const checked = e.target.checked;
+  const handleDocToggle = useCallback((docId: string, checked: boolean) => {
     if (checked) {
       setSelectedDocIds((prev) => [...prev, docId]);
       setPrintSettings((prev) => ({ ...prev, [docId]: { duplex: false, color: false, copies: 1 } }));

@@ -4,6 +4,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { AlertTriangle, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/Pagination';
 import { UseAttendanceReturn } from '../hooks/useAttendance';
 
@@ -159,12 +160,12 @@ export default function Table({
           <div className="flex items-center space-x-4 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-72">
               <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-zinc-400" />
-              <input
+              <Input
                 type="text"
                 placeholder="搜索姓名或工号…"
                 value={scheduleSearchQuery}
                 onChange={(e) => setScheduleSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 text-sm border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-600/20 transition duration-200"
+                className="w-full pl-10"
               />
             </div>
             {schedules.length > 0 && hasPermission('attendance:manage') && (

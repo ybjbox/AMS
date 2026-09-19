@@ -173,6 +173,33 @@ main,
   --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
 }
 
+/* ===== 语义阴影/字号令牌（MASTER v3 elevations & 微字号）===== */
+@theme {
+  --shadow-popover: 0 12px 36px -10px rgba(24,24,27,0.35);
+  --shadow-inset-glow: inset 0 1px 0 rgba(255,255,255,0.06);
+  /* 微字号（数据密集表格/热力图/角标专用，MASTER v3 排版下限）；
+     刻意不定义 --*-line-height，行高沿用 inherit，与原 text-[10px]/[11px] 行为一致 */
+  --text-2xs: 0.6875rem;   /* 11px */
+  --text-3xs: 0.625rem;    /* 10px */
+}
+
+/* 列冻结阴影：@theme 会把值内联（.dark 覆盖失效），故用 @utility 显式引 var，
+   亮/暗在 :root/.dark 切换强度（暗色底需 0.5 alpha 才可见） */
+:root {
+  --shadow-sticky-left: 2px 0 5px -2px rgba(0,0,0,0.1);
+  --shadow-sticky-right: -2px 0 5px -2px rgba(0,0,0,0.1);
+}
+.dark {
+  --shadow-sticky-left: 2px 0 5px -2px rgba(0,0,0,0.5);
+  --shadow-sticky-right: -2px 0 5px -2px rgba(0,0,0,0.5);
+}
+@utility shadow-sticky-left {
+  box-shadow: var(--shadow-sticky-left);
+}
+@utility shadow-sticky-right {
+  box-shadow: var(--shadow-sticky-right);
+}
+
 :root {
   /* ===== 设计基准 · 亮色主题（v2 品牌蓝版） =====
      品牌主色 = Logo #005BA8（唯一品牌锚点）；绿退为纯语义 success 色；
@@ -254,19 +281,20 @@ main,
 
 @layer components {
   .input-base {
-    @apply w-full px-3 py-2 text-sm border border-zinc-200/80 dark:border-zinc-600 
-    rounded-lg bg-white dark:bg-zinc-700/60 text-zinc-900 dark:text-white 
-    focus:outline-none focus:ring-4 focus:ring-brand-500/25 focus:border-brand-500
-    transition-[color,background-color,border-color,box-shadow] duration-200;
+    @apply w-full h-9 px-2.5 text-sm border border-zinc-300 dark:border-zinc-600 
+    rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white 
+    outline-none focus:border-brand-600 dark:focus:border-brand-400 focus:ring-4 focus:ring-brand-600/20 dark:focus:ring-brand-400/20
+    placeholder:text-zinc-400 dark:placeholder:text-zinc-500
+    transition-[color,background-color,border-color,box-shadow] duration-200 dark:[color-scheme:dark];
   }
   
   .btn-primary {
-    /* 品牌 CTA：Logo 蓝 #005BA8（brand-600），白字对比 6.9:1 */
+    /* 品牌 CTA：实色 Logo 蓝 #005BA8（brand-600），白字对比 6.9:1（MASTER v3 扁平契约） */
     @apply inline-flex items-center justify-center px-4 py-2 text-sm
-    bg-gradient-to-b from-brand-500 to-brand-700 shadow-inner 
-    text-white font-semibold rounded-lg 
-    hover:from-brand-400 hover:to-brand-600 
-    active:scale-95 transition-transform shadow-sm;
+    bg-brand-600 dark:bg-brand-500
+    text-white font-medium rounded-lg
+    hover:bg-brand-700 dark:hover:bg-brand-400
+    active:scale-95 transition-[background-color,transform] duration-200 shadow-sm;
   }
   
   .btn-secondary {
@@ -303,7 +331,7 @@ main,
   .card-base {
     /* 基准玻璃卡：暗色内高光边（border-white/10）+ 内阴影，玻璃拟态实体化 */
     @apply bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 
-    dark:border-white/10 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]
+    dark:border-white/10 dark:shadow-inset-glow
     rounded-2xl;
   }
 

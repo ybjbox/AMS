@@ -1,5 +1,7 @@
 import React from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PrintSettings } from '../hooks/usePrintSettings';
 import { Table } from '../hooks/useSeatingArrange';
@@ -69,7 +71,7 @@ export function PrintSettingsModal({
                   }));
                 }}
               >
-                <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="选择样式">
                     {printSettings.cardStyle === 'style1'
                       ? '样式1 (经典双列)'
@@ -88,20 +90,18 @@ export function PrintSettingsModal({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">台卡标题</label>
-                  <input
+                  <Input
                     type="text"
                     value={printSettings.cardTitle}
                     onChange={(e) => setPrintSettings((prev) => ({ ...prev, cardTitle: e.target.value }))}
-                    className="input-base py-1.5 px-2"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">底部文字</label>
-                  <input
+                  <Input
                     type="text"
                     value={printSettings.footerText}
                     onChange={(e) => setPrintSettings((prev) => ({ ...prev, footerText: e.target.value }))}
-                    className="input-base py-1.5 px-2"
                   />
                 </div>
               </div>
@@ -109,6 +109,7 @@ export function PrintSettingsModal({
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">主题颜色</label>
               <div className="flex items-center space-x-3">
+                {/* 原生 color 取色器：ui 库无对应原语（契约仅覆盖 text/date/number/tel/email），保留原生 */}
                 <input
                   type="color"
                   value={printSettings.themeColor}
@@ -122,7 +123,7 @@ export function PrintSettingsModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">宽度 (cm)</label>
-              <input
+              <Input
                 type="number"
                 step="0.1"
                 value={printSettings.cardWidth / 10}
@@ -132,12 +133,11 @@ export function PrintSettingsModal({
                     cardWidth: Math.round(parseFloat(e.target.value) * 10) || 210,
                   }))
                 }
-                className="input-base py-1.5 px-2"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">高度 (cm)</label>
-              <input
+              <Input
                 type="number"
                 step="0.1"
                 value={printSettings.cardHeight / 10}
@@ -147,7 +147,6 @@ export function PrintSettingsModal({
                     cardHeight: Math.round(parseFloat(e.target.value) * 10) || 297,
                   }))
                 }
-                className="input-base py-1.5 px-2"
               />
             </div>
           </div>
@@ -155,7 +154,7 @@ export function PrintSettingsModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">标题字号 (px)</label>
-              <input
+              <Input
                 type="number"
                 value={printSettings.titleFontSize}
                 onChange={(e) =>
@@ -164,18 +163,16 @@ export function PrintSettingsModal({
                     titleFontSize: parseInt(e.target.value) || (prev.cardStyle === 'style2' ? 30 : 24),
                   }))
                 }
-                className="input-base py-1.5 px-2"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">桌号字号 (px)</label>
-              <input
+              <Input
                 type="number"
                 value={printSettings.numberFontSize}
                 onChange={(e) =>
                   setPrintSettings((prev) => ({ ...prev, numberFontSize: parseInt(e.target.value) || 48 }))
                 }
-                className="input-base py-1.5 px-2"
               />
             </div>
           </div>
@@ -186,7 +183,7 @@ export function PrintSettingsModal({
                 value={printSettings.titleFontFamily}
                 onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, titleFontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif' }))}
               >
-                <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="选择字体">
                     {printSettings.titleFontFamily === '"Noto Serif SC", "SimSun", serif'
                       ? '思源宋体 / 宋体'
@@ -213,7 +210,7 @@ export function PrintSettingsModal({
                 value={printSettings.numberFontFamily}
                 onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, numberFontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif' }))}
               >
-                <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="选择字体">
                     {printSettings.numberFontFamily === '"Noto Serif SC", "SimSun", serif'
                       ? '思源宋体 / 宋体'
@@ -240,7 +237,7 @@ export function PrintSettingsModal({
                 value={printSettings.contentFontFamily}
                 onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, contentFontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif' }))}
               >
-                <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="选择字体">
                     {printSettings.contentFontFamily === '"Noto Serif SC", "SimSun", serif'
                       ? '思源宋体 / 宋体'
@@ -268,7 +265,7 @@ export function PrintSettingsModal({
                   value={printSettings.footerFontFamily}
                   onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, footerFontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif' }))}
                 >
-                  <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="选择字体">
                       {printSettings.footerFontFamily === '"Noto Serif SC", "SimSun", serif'
                         ? '思源宋体 / 宋体'
@@ -294,41 +291,37 @@ export function PrintSettingsModal({
           <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-700">
             {printSettings.cardStyle === 'style1' && (
               <>
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
+                <label htmlFor="print-show-members" className="flex items-center space-x-2 cursor-pointer">
+                  <Checkbox
+                    id="print-show-members"
                     checked={printSettings.showMembers}
-                    onChange={(e) => setPrintSettings((prev) => ({ ...prev, showMembers: e.target.checked }))}
-                    className="rounded border-zinc-200/80 dark:border-zinc-600 text-brand-600 focus:ring-brand-600 dark:bg-zinc-700"
+                    onCheckedChange={(checked) => setPrintSettings((prev) => ({ ...prev, showMembers: checked }))}
                   />
                   <span className="text-sm text-zinc-700 dark:text-zinc-300">显示成员名单</span>
                 </label>
                 {printSettings.showMembers && (
                   <div className="pl-6 space-y-2">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
+                    <label htmlFor="print-show-index" className="flex items-center space-x-2 cursor-pointer">
+                      <Checkbox
+                        id="print-show-index"
                         checked={printSettings.showIndex}
-                        onChange={(e) => setPrintSettings((prev) => ({ ...prev, showIndex: e.target.checked }))}
-                        className="rounded border-zinc-200/80 dark:border-zinc-600 text-brand-600 focus:ring-brand-600 dark:bg-zinc-700"
+                        onCheckedChange={(checked) => setPrintSettings((prev) => ({ ...prev, showIndex: checked }))}
                       />
                       <span className="text-sm text-zinc-700 dark:text-zinc-300">显示序号</span>
                     </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
+                    <label htmlFor="print-show-department" className="flex items-center space-x-2 cursor-pointer">
+                      <Checkbox
+                        id="print-show-department"
                         checked={printSettings.showDepartment}
-                        onChange={(e) => setPrintSettings((prev) => ({ ...prev, showDepartment: e.target.checked }))}
-                        className="rounded border-zinc-200/80 dark:border-zinc-600 text-brand-600 focus:ring-brand-600 dark:bg-zinc-700"
+                        onCheckedChange={(checked) => setPrintSettings((prev) => ({ ...prev, showDepartment: checked }))}
                       />
                       <span className="text-sm text-zinc-700 dark:text-zinc-300">显示部门</span>
                     </label>
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
+                    <label htmlFor="print-show-role" className="flex items-center space-x-2 cursor-pointer">
+                      <Checkbox
+                        id="print-show-role"
                         checked={printSettings.showRole}
-                        onChange={(e) => setPrintSettings((prev) => ({ ...prev, showRole: e.target.checked }))}
-                        className="rounded border-zinc-200/80 dark:border-zinc-600 text-brand-600 focus:ring-brand-600 dark:bg-zinc-700"
+                        onCheckedChange={(checked) => setPrintSettings((prev) => ({ ...prev, showRole: checked }))}
                       />
                       <span className="text-sm text-zinc-700 dark:text-zinc-300">显示职位</span>
                     </label>
@@ -337,13 +330,12 @@ export function PrintSettingsModal({
                         <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
                           内容字号 (px)
                         </label>
-                        <input
+                        <Input
                           type="number"
                           value={printSettings.contentFontSize}
                           onChange={(e) =>
                             setPrintSettings((prev) => ({ ...prev, contentFontSize: parseInt(e.target.value) || 30 }))
                           }
-                          className="input-base py-1.5"
                         />
                       </div>
                       <div>
@@ -354,7 +346,7 @@ export function PrintSettingsModal({
                           value={printSettings.textAlign}
                           onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, textAlign: (val || 'left') as 'left' | 'center' | 'right' }))}
                         >
-                          <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
+                          <SelectTrigger className="w-full">
                             <SelectValue placeholder="选择对齐方式">
                               {printSettings.textAlign === 'left'
                                 ? '居左'
@@ -383,13 +375,12 @@ export function PrintSettingsModal({
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                   内容字号 (px)
                 </label>
-                <input
+                <Input
                   type="number"
                   value={printSettings.contentFontSize}
                   onChange={(e) =>
                     setPrintSettings((prev) => ({ ...prev, contentFontSize: parseInt(e.target.value) || 30 }))
                   }
-                  className="input-base"
                 />
               </div>
             )}

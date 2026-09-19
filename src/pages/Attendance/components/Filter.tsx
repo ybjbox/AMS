@@ -3,6 +3,9 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { FileSpreadsheet, ChevronDown, Search, Plus, AlertTriangle } from 'lucide-react';
 import { EmployeeSchedule, Shift } from '@/store/useAttendanceStore';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { UseAttendanceReturn } from '../hooks/useAttendance';
 
 export type FilterProps = Pick<
@@ -124,16 +127,13 @@ export default function Filter({
     }
   }, []);
 
-  const onShiftCheckboxChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const shiftId = e.currentTarget.dataset.shiftid;
-    if (shiftId) {
-      if (e.target.checked) {
-        setSelectedShiftIds((prev) => [...prev, shiftId]);
-      } else {
-        setSelectedShiftIds((prev) => prev.filter((id) => id !== shiftId));
-      }
-    }
-  }, []);
+  const onShiftCheckboxChange = useCallback(
+    (shiftId: string) => (checked: boolean) => {
+      if (!shiftId) return;
+      setSelectedShiftIds((prev) => (checked ? [...prev, shiftId] : prev.filter((id) => id !== shiftId)));
+    },
+    []
+  );
 
   const onShiftNameChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -243,12 +243,12 @@ export default function Filter({
                   <div className="p-2 border-b border-zinc-100 dark:border-zinc-700">
                     <div className="relative">
                       <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
-                      <input
+                      <Input
                         type="text"
                         placeholder="搜索姓名或工号…"
                         value={employeeSearchQuery}
                         onChange={(e) => setEmployeeSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 text-sm border-none rounded-lg bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-600/20 transition duration-200"
+                        className="pl-9"
                         onClick={(e) => e.stopPropagation()}
                         autoFocus
                       />
@@ -288,13 +288,15 @@ export default function Filter({
               </label>
               <div className="flex flex-wrap gap-3">
                 {shifts.map((s) => (
-                  <label key={s.id} className="flex items-center space-x-2 cursor-pointer group">
-                    <input
-                      type="checkbox"
-                      data-shiftid={s.id}
+                  <label
+                    key={s.id}
+                    htmlFor={`shift-${s.id}`}
+                    className="flex items-center space-x-2 cursor-pointer group"
+                  >
+                    <Checkbox
+                      id={`shift-${s.id}`}
                       checked={selectedShiftIds.includes(s.id)}
-                      onChange={onShiftCheckboxChange}
-                      className="w-4 h-4 text-brand-600 border-zinc-300 rounded focus:ring-brand-600/30 transition-colors"
+                      onCheckedChange={onShiftCheckboxChange(s.id)}
                     />
                     <span className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
                       {s.name} ({s.startTime}-{s.endTime})
@@ -323,30 +325,27 @@ export default function Filter({
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">班次名称</label>
-              <input
+              <Input
                 type="text"
                 value={editingShift ? editingShift.name : ''}
                 onChange={onShiftNameChange}
                 placeholder="如: 早班, 晚班"
-                className="w-full p-2.5 border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-600/20 transition duration-200"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">上班时间</label>
-              <input
+              <Input
                 type="time"
                 value={editingShift ? editingShift.startTime : '09:00'}
                 onChange={onShiftStartTimeChange}
-                className="w-full p-2.5 border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-600/20 transition duration-200"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">下班时间</label>
-              <input
+              <Input
                 type="time"
                 value={editingShift ? editingShift.endTime : '18:00'}
                 onChange={onShiftEndTimeChange}
-                className="w-full p-2.5 border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-600/20 transition duration-200"
               />
             </div>
             <div className="flex space-x-3">
@@ -359,12 +358,9 @@ export default function Filter({
                 保存
               </button>
               {editingShift && (
-                <button
-                  onClick={onCancelEditShiftClick}
-                  className="px-4 py-2.5 bg-zinc-100 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-600 active:scale-95 transition duration-300 text-sm font-medium whitespace-nowrap"
-                >
+                <Button type="button" variant="secondary" size="lg" onClick={onCancelEditShiftClick}>
                   取消
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -378,24 +374,21 @@ export default function Filter({
         <div className="mb-6 bg-white dark:bg-zinc-800 p-6 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center">
             <Permission code="attendance:manage">
-              <button
-                onClick={handleAnalyze}
-                className="flex items-center px-5 py-2.5 bg-success text-white rounded-lg hover:bg-success/90 transition duration-300 text-sm font-medium shadow-sm"
-              >
-                <AlertTriangle className="w-4 h-4 mr-2" />
+              <Button type="button" size="lg" className="px-5" onClick={handleAnalyze}>
+                <AlertTriangle />
                 一键分析异常
-              </button>
+              </Button>
             </Permission>
           </div>
 
           <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 transform -translate-y-1/2 text-zinc-400" />
-            <input
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+            <Input
               type="text"
               placeholder="搜索姓名或工号…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2.5 w-full text-sm border-none rounded-xl bg-zinc-100/50 dark:bg-zinc-900/50 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-600/20 transition duration-200"
+              className="w-full pl-10"
             />
           </div>
         </div>

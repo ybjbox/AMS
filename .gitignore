@@ -16,3 +16,6 @@ data-test/
 e2e/.auth/
 playwright-report/
 test-results/
+
+# Design QA 工作区（截图证据/扫描报告/插件副本/临时脚本，不入库）
+.design-qa/

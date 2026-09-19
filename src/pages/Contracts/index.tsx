@@ -6,12 +6,21 @@ import { useEmployeeStore } from '@/store/useEmployeeStore';
 import { Search, Filter, FileEdit } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User } from '@/types';
+import { Input } from '@/components/ui/input';
 import { ContractTable } from './components/ContractTable';
 import { Pagination } from '@/components/ui/Pagination';
 import { ContractPreviewModal } from './components/ContractPreviewModal';
 import { ContractTemplateEditor } from './components/ContractTemplateEditor';
 import { useContractPrint } from './hooks/useContractPrint';
 import { ContractTemplate } from './components/ContractTemplate';
+
+// 状态筛选选项（value 与展示文案不一致，交由 ui/Select 的 items 映射）
+const STATUS_OPTIONS = [
+  { value: 'ALL', label: '所有状态' },
+  { value: '在职', label: '在职' },
+  { value: '试用期', label: '试用期' },
+  { value: '离职', label: '离职' },
+];
 
 export default function ContractsPage() {
   const users = useEmployeeStore((state) => state.users);
@@ -92,7 +101,7 @@ export default function ContractsPage() {
           <div className="shrink-0 p-4 border-b border-zinc-200 dark:border-zinc-700 flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-              <input
+              <Input
                 type="text"
                 placeholder="搜索员工姓名、工号或部门…"
                 aria-label="搜索员工姓名、工号或部门"
@@ -100,34 +109,27 @@ export default function ContractsPage() {
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                 }}
-                className="input-base pl-10"
+                className="pl-10"
               />
             </div>
             <div className="flex items-center space-x-2 shrink-0">
               <Filter className="w-4 h-4 text-zinc-400" />
-              <Select value={filterStatus} onValueChange={(val) => {
-                setFilterStatus(val || 'ALL');
-              }}>
-                <SelectTrigger aria-label="筛选员工状态" className="w-[180px] text-sm border-zinc-200/80 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white">
-                  <SelectValue placeholder="选择状态">
-                    {(val) =>
-                      val === 'ALL'
-                        ? '所有状态'
-                        : val === '在职'
-                          ? '在职'
-                          : val === '试用期'
-                            ? '试用期'
-                            : val === '离职'
-                              ? '离职'
-                              : '选择状态'
-                    }
-                  </SelectValue>
+              <Select
+                value={filterStatus}
+                onValueChange={(val) => {
+                  setFilterStatus(val || 'ALL');
+                }}
+                items={STATUS_OPTIONS}
+              >
+                <SelectTrigger aria-label="筛选员工状态" className="w-[180px]">
+                  <SelectValue placeholder="选择状态" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">所有状态</SelectItem>
-                  <SelectItem value="在职">在职</SelectItem>
-                  <SelectItem value="试用期">试用期</SelectItem>
-                  <SelectItem value="离职">离职</SelectItem>
+                  {STATUS_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

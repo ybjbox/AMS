@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { Image as ImageIcon, Monitor, Moon, Palette, Sun, Upload } from 'lucide-react';
 import { DEFAULT_SYSTEM_ICON } from '@/config/constants';
 import { useAppSettings } from '@/store/appSettings';
+import { Button } from '@/components/ui/button';
 
 export default function AppearancePanel() {
   const theme = useAppSettings((state) => state.theme);
@@ -118,12 +119,9 @@ export default function AppearancePanel() {
                   />
                 </label>
                 {systemIcon && (
-                  <button
-                    onClick={() => setSystemIcon(null)}
-                    className="px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-sm font-medium"
-                  >
+                  <Button type="button" variant="destructive" size="sm" onClick={() => setSystemIcon(null)}>
                     恢复默认
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -160,12 +158,9 @@ export default function AppearancePanel() {
                   />
                 </label>
                 {loginBackground && (
-                  <button
-                    onClick={() => setLoginBackground(null)}
-                    className="px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-sm font-medium"
-                  >
+                  <Button type="button" variant="destructive" size="sm" onClick={() => setLoginBackground(null)}>
                     恢复默认
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>

@@ -3,6 +3,7 @@ import { Database, Download, History, RotateCcw, Trash2, Plus } from 'lucide-rea
 import { toast } from 'sonner';
 import { useConfirm } from '@/hooks/useConfirm';
 import { notifySaveFailure } from '@/store/saveFailure';
+import { Button } from '@/components/ui/button';
 import {
   fetchBackups,
   createBackup,
@@ -194,12 +195,12 @@ export default function BackupPanel() {
                   <td className="px-4 py-2.5 font-mono text-xs">
                     {b.name}
                     {b.withUploads ? (
-                      <span className="ml-2 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px] font-sans">
+                      <span className="ml-2 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-3xs font-sans">
                         含文件快照
                       </span>
                     ) : (
                       <span
-                        className="ml-2 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px] font-sans"
+                        className="ml-2 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-3xs font-sans"
                         title="旧格式备份，仅含数据库；恢复时不会回滚上传文件"
                       >
                         仅数据库
@@ -214,32 +215,40 @@ export default function BackupPanel() {
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex justify-end gap-1.5">
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon-sm"
                         title="下载"
-                        className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 dark:hover:bg-primary/30"
+                        aria-label={`下载备份：${b.name}`}
                         onClick={() => handleDownload(b.name)}
                       >
                         <Download className="size-4" />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon-sm"
                         title="恢复"
-                        className="p-1.5 rounded-md text-muted-foreground hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30"
+                        aria-label={`从备份恢复：${b.name}`}
+                        className="hover:bg-amber-50 dark:hover:bg-amber-900/30 hover:text-amber-600"
                         onClick={() => void handleRestore(b)}
                         disabled={busy}
                       >
                         <RotateCcw className="size-4" />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon-sm"
                         title="删除"
-                        className="p-1.5 rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30"
+                        aria-label={`删除备份：${b.name}`}
+                        className="hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600"
                         onClick={() => void handleDelete(b)}
                         disabled={busy}
                       >
                         <Trash2 className="size-4" />
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>

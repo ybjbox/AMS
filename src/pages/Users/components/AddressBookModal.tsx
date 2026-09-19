@@ -2,6 +2,8 @@ import React, { useCallback } from 'react';
 import { Printer, Check, GripVertical } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { User } from '@/types';
 import { ExportColumn, TABLE_STYLE, TD_DEPT_STYLE, DEPT_COUNT_STYLE, TD_CENTER_STYLE } from '../constants';
 import {
@@ -217,36 +219,27 @@ export function AddressBookModal({
         <div className="w-full md:w-1/3 p-6 space-y-6 overflow-y-auto border-r border-zinc-100 dark:border-zinc-700 h-full bg-white dark:bg-zinc-800">
           <div>
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">通讯录大标题</label>
-            <input
+            <Input
               type="text"
               value={addressBookConfig.title}
               onChange={(e) => setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 border border-zinc-200/80 dark:border-zinc-600 rounded-lg focus:outline-none focus:ring-4 focus:ring-brand-600/20 transition duration-200 outline-none bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500"
               placeholder="请输入通讯录标题"
             />
           </div>
 
           <div className="flex items-center justify-between">
             <div>
-              <label className="flex items-center cursor-pointer group">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={addressBookConfig.includeResigned}
-                    onChange={(e) =>
-                      setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, includeResigned: e.target.checked }))
-                    }
-                  />
-                  <div
-                    className={`block w-10 h-6 rounded-full transition-colors ${addressBookConfig.includeResigned ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner' : 'bg-zinc-300 dark:bg-zinc-600'}`}
-                  ></div>
-                  <div
-                    className={`absolute left-1 top-1 bg-white dark:bg-zinc-800 w-4 h-4 rounded-full transition-transform ${addressBookConfig.includeResigned ? 'translate-x-4' : ''}`}
-                  ></div>
-                </div>
-                <span className="ml-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">包含离职人员</span>
-              </label>
+              <div className="flex items-center">
+                <Checkbox
+                  id="ab-include-resigned"
+                  checked={addressBookConfig.includeResigned}
+                  onCheckedChange={(checked) =>
+                    setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, includeResigned: checked }))
+                  }
+                  className="border-zinc-300 dark:border-zinc-600"
+                />
+                <label htmlFor="ab-include-resigned" className="ml-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer">包含离职人员</label>
+              </div>
             </div>
           </div>
 
@@ -259,7 +252,7 @@ export function AddressBookModal({
                   value={addressBookConfig.paperSize}
                   onValueChange={(val) => setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, paperSize: val || 'A4' }))}
                 >
-                  <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="选择纸张大小" />
                   </SelectTrigger>
                   <SelectContent>
@@ -274,11 +267,10 @@ export function AddressBookModal({
                 <Select
                   value={addressBookConfig.orientation}
                   onValueChange={(val) => setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, orientation: val || 'portrait' }))}
+                  items={[{ value: 'portrait', label: '纵向' }, { value: 'landscape', label: '横向' }]}
                 >
-                  <SelectTrigger className="w-full bg-white dark:bg-zinc-700 border-zinc-200/80 dark:border-zinc-600">
-                    <SelectValue placeholder="选择纸张方向">
-                      {(val) => (val === 'portrait' ? '纵向' : val === 'landscape' ? '横向' : '选择纸张方向')}
-                    </SelectValue>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="选择纸张方向" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="portrait">纵向</SelectItem>
@@ -288,72 +280,48 @@ export function AddressBookModal({
               </div>
             </div>
             <div className="flex items-center justify-between pt-2">
-              <label className="flex items-center cursor-pointer group">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={addressBookConfig.isDoubleSided}
-                    onChange={(e) =>
-                      setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, isDoubleSided: e.target.checked }))
-                    }
-                  />
-                  <div
-                    className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.isDoubleSided ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner' : 'bg-zinc-300 dark:bg-zinc-600'}`}
-                  ></div>
-                  <div
-                    className={`absolute left-0.5 top-0.5 bg-white dark:bg-zinc-800 w-4 h-4 rounded-full transition-transform ${addressBookConfig.isDoubleSided ? 'translate-x-3' : ''}`}
-                  ></div>
-                </div>
-                <span className="ml-2 text-sm text-zinc-600 dark:text-zinc-400">双面打印 (预留装订边距)</span>
-              </label>
+              <div className="flex items-center">
+                <Checkbox
+                  id="ab-double-sided"
+                  checked={addressBookConfig.isDoubleSided}
+                  onCheckedChange={(checked) =>
+                    setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, isDoubleSided: checked }))
+                  }
+                  className="border-zinc-300 dark:border-zinc-600"
+                />
+                <label htmlFor="ab-double-sided" className="ml-2 text-sm text-zinc-600 dark:text-zinc-400 cursor-pointer">双面打印 (预留装订边距)</label>
+              </div>
             </div>
             <div className="flex items-center justify-between pt-2">
-              <label className="flex items-center cursor-pointer group">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={addressBookConfig.isTwoColumn}
-                    onChange={(e) => setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, isTwoColumn: e.target.checked }))}
-                  />
-                  <div
-                    className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.isTwoColumn ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner' : 'bg-zinc-300 dark:bg-zinc-600'}`}
-                  ></div>
-                  <div
-                    className={`absolute left-0.5 top-0.5 bg-white dark:bg-zinc-800 w-4 h-4 rounded-full transition-transform ${addressBookConfig.isTwoColumn ? 'translate-x-3' : ''}`}
-                  ></div>
-                </div>
-                <span className="ml-2 text-sm text-zinc-600 dark:text-zinc-400">双栏排版 (适合字段较少)</span>
-              </label>
+              <div className="flex items-center">
+                <Checkbox
+                  id="ab-two-column"
+                  checked={addressBookConfig.isTwoColumn}
+                  onCheckedChange={(checked) => setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, isTwoColumn: checked }))}
+                  className="border-zinc-300 dark:border-zinc-600"
+                />
+                <label htmlFor="ab-two-column" className="ml-2 text-sm text-zinc-600 dark:text-zinc-400 cursor-pointer">双栏排版 (适合字段较少)</label>
+              </div>
             </div>
             <div className="flex items-center justify-between pt-2">
-              <label className="flex items-center cursor-pointer group">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={addressBookConfig.mergeDepartments}
-                    onChange={(e) =>
-                      setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, mergeDepartments: e.target.checked }))
-                    }
-                  />
-                  <div
-                    className={`block w-8 h-5 rounded-full transition-colors ${addressBookConfig.mergeDepartments ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner' : 'bg-zinc-300 dark:bg-zinc-600'}`}
-                  ></div>
-                  <div
-                    className={`absolute left-0.5 top-0.5 bg-white dark:bg-zinc-800 w-4 h-4 rounded-full transition-transform ${addressBookConfig.mergeDepartments ? 'translate-x-3' : ''}`}
-                  ></div>
-                </div>
-                <span className="ml-2 text-sm text-zinc-600 dark:text-zinc-400">按部门合并并统计人数</span>
-              </label>
+              <div className="flex items-center">
+                <Checkbox
+                  id="ab-merge-depts"
+                  checked={addressBookConfig.mergeDepartments}
+                  onCheckedChange={(checked) =>
+                    setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, mergeDepartments: checked }))
+                  }
+                  className="border-zinc-300 dark:border-zinc-600"
+                />
+                <label htmlFor="ab-merge-depts" className="ml-2 text-sm text-zinc-600 dark:text-zinc-400 cursor-pointer">按部门合并并统计人数</label>
+              </div>
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-3">
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">选择并排序导出列</label>
-              <span className="text-[10px] text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-700 px-2 py-0.5 rounded-full">
+              <span className="text-3xs text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-700 px-2 py-0.5 rounded-full">
                 拖拽左侧图标进行排序
               </span>
             </div>

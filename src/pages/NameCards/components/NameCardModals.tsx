@@ -1,5 +1,7 @@
 import React, { useCallback } from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import { FileText, CheckSquare, Square, ChevronRight } from 'lucide-react';
 import { User } from '@/types';
 
@@ -49,16 +51,6 @@ export default function NameCardModals({
       }
     },
     [toggleDepartmentSelection]
-  );
-
-  const onToggleUserSelectionChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const id = e.currentTarget.dataset.id;
-      if (id) {
-        toggleUserSelection(id);
-      }
-    },
-    [toggleUserSelection]
   );
 
   const onToggleDeptExpandClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
@@ -154,20 +146,25 @@ export default function NameCardModals({
                 </div>
                 {isExpanded && (
                   <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-white dark:bg-zinc-800 border-t border-zinc-200 dark:border-zinc-700">
-                    {deptUsers.map((u) => (
-                      <label key={u.id} className="flex items-center space-x-2.5 cursor-pointer group min-h-11 -my-1 py-1">
-                        <input
-                          type="checkbox"
-                          data-id={u.id}
-                          checked={selectedUserIds.has(u.id)}
-                          onChange={onToggleUserSelectionChange}
-                          className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-brand-600 focus:ring-brand-600 bg-white dark:bg-zinc-700"
-                        />
-                        <span className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white">
-                          {u.name}
-                        </span>
-                      </label>
-                    ))}
+                    {deptUsers.map((u) => {
+                      const checkboxId = `namecard-participant-user-${u.id}`;
+                      return (
+                        <label
+                          key={u.id}
+                          htmlFor={checkboxId}
+                          className="flex items-center space-x-2.5 cursor-pointer group min-h-11 -my-1 py-1"
+                        >
+                          <Checkbox
+                            id={checkboxId}
+                            checked={selectedUserIds.has(u.id)}
+                            onCheckedChange={() => toggleUserSelection(u.id)}
+                          />
+                          <span className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white">
+                            {u.name}
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -211,9 +208,9 @@ export default function NameCardModals({
                 <br />
                 <span className="font-mono bg-zinc-100 dark:bg-zinc-700 px-1 rounded">张三 技术部 工程师</span>
               </p>
-              <textarea
+              <Textarea
                 rows={10}
-                className="w-full border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-brand-600/20 focus:border-brand-600 transition duration-200 sm:text-sm font-mono bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white"
+                className="field-sizing-fixed w-full resize-y font-mono"
                 placeholder="张三 技术部 工程师&#10;李四 市场部 总监"
                 value={manualInputText}
                 onChange={(e) => setManualInputText(e.target.value)}

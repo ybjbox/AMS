@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trash2, ChevronRight } from 'lucide-react';
 import { Table } from '../hooks/useSeatingArrange';
+import { Button } from '@/components/ui/button';
 
 interface TableCardProps {
   table: Table;
@@ -22,13 +23,16 @@ export function TableCard({ table, viewMode, onRemove }: TableCardProps) {
           <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-700 px-2 py-1 rounded-full border border-zinc-200 dark:border-zinc-600">
             {table.members.length} 人
           </span>
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={() => onRemove(table.number)}
-            className="p-1.5 text-zinc-400 dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
             title="删除此桌"
+            aria-label={`删除 ${table.number} 号桌`}
+            className="text-zinc-400 hover:bg-red-50 hover:text-red-500 dark:text-zinc-500 dark:hover:bg-red-900/20 dark:hover:text-red-400"
           >
             <Trash2 className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
       </div>
       <div className="p-4 flex-1">
@@ -40,7 +44,7 @@ export function TableCard({ table, viewMode, onRemove }: TableCardProps) {
                 className="p-2 bg-zinc-50 dark:bg-zinc-900/50 rounded-lg border border-zinc-100 dark:border-zinc-700"
               >
                 <div className="text-sm font-bold text-zinc-900 dark:text-white truncate">{m.name}</div>
-                <div className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
+                <div className="text-3xs text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
                   {m.department} · {m.role}
                 </div>
               </div>
@@ -57,7 +61,7 @@ export function TableCard({ table, viewMode, onRemove }: TableCardProps) {
                   <span className="text-xs text-zinc-400 dark:text-zinc-500 w-4">{idx + 1}.</span>
                   <div>
                     <div className="text-sm font-bold text-zinc-900 dark:text-white">{m.name}</div>
-                    <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                    <div className="text-3xs text-zinc-500 dark:text-zinc-400">
                       {m.department} · {m.role}
                     </div>
                   </div>

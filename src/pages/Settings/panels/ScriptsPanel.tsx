@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { AnimatePresence, motion } from 'motion/react';
 import { exportApi } from '@/services/exportApi';
 import { describeSaveError } from '@/store/saveFailureCore';
+import { Button } from '@/components/ui/button';
 
 export default function ScriptsPanel() {
   const [scripts, setScripts] = useState<{ name: string; code: string }[]>([]);
@@ -86,13 +87,10 @@ export default async function applyTemplate(worksheet, data, config) {
           </p>
         </div>
         {!editingScript && (
-          <button
-            onClick={handleAdd}
-            className="btn-primary"
-          >
+          <Button onClick={handleAdd}>
             <Plus className="w-4 h-4 mr-2" />
             创建脚本
-          </button>
+          </Button>
         )}
       </div>
 
@@ -119,20 +117,13 @@ export default async function applyTemplate(worksheet, data, config) {
                 <span className="text-zinc-400 font-mono text-sm">.js</span>
               </div>
               <div className="flex items-center space-x-2">
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="flex items-center px-3 py-1.5 bg-brand-600 text-white rounded-lg hover:bg-brand-700 active:scale-95 transition-transform text-xs font-medium"
-                >
+                <Button size="sm" onClick={handleSave} disabled={saving}>
                   <Save className="w-3.5 h-3.5 mr-1.5" />
                   {saving ? '保存中…' : '保存脚本'}
-                </button>
-                <button
-                  onClick={() => setEditingScript(null)}
-                  className="btn-secondary text-xs py-1.5"
-                >
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setEditingScript(null)}>
                   取消
-                </button>
+                </Button>
               </div>
             </div>
             <div className="p-0">
@@ -143,7 +134,7 @@ export default async function applyTemplate(worksheet, data, config) {
                 spellCheck={false}
               />
             </div>
-            <div className="p-3 bg-zinc-800 text-[10px] text-zinc-400 font-mono border-t border-zinc-700">
+            <div className="p-3 bg-zinc-800 text-3xs text-zinc-400 font-mono border-t border-zinc-700">
               提示: 脚本必须使用 export default 导出一个异步函数。
             </div>
           </motion.div>
@@ -166,18 +157,12 @@ export default async function applyTemplate(worksheet, data, config) {
                     <FileCode className="w-6 h-6 text-brand-600 dark:text-brand-400" />
                   </div>
                   <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => setEditingScript(script)}
-                      className="p-1.5 text-zinc-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-md transition-colors"
-                    >
+                    <Button variant="ghost" size="icon-sm" onClick={() => setEditingScript(script)}>
                       <Palette className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(script.name)}
-                      className="p-1.5 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-md transition-colors"
-                    >
+                    </Button>
+                    <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(script.name)}>
                       <Trash2 className="w-4 h-4" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 <h3 className="font-semibold text-zinc-900 dark:text-white truncate">{script.name}.js</h3>
@@ -191,13 +176,10 @@ export default async function applyTemplate(worksheet, data, config) {
                   description="点击右上角创建"
                   icon={FileCode}
                   action={
-                    <button
-                      onClick={handleAdd}
-                      className="btn-primary"
-                    >
+                    <Button onClick={handleAdd}>
                       <Plus className="w-4 h-4 mr-2" />
                       立即创建
-                    </button>
+                    </Button>
                   }
                 />
               </div>

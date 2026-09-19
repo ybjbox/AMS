@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { CalendarDays, Download, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
 import {
   attendanceApi,
   type MonthlySummaryRow,
@@ -86,12 +87,7 @@ export default function MonthlyReport() {
         <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
           <CalendarDays className="w-4 h-4 text-zinc-400" aria-hidden="true" />
           月份
-          <input
-            type="month"
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-            className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-900 dark:text-white"
-          />
+          <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-auto" />
         </label>
         <button
           onClick={() => void load(month)}

@@ -11,6 +11,7 @@ import {
   Settings2,
   Printer,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface SeatingToolbarProps {
   viewMode: 'grid' | 'list';
@@ -94,16 +95,17 @@ export function SeatingToolbar({
           </button>
           {isUploadMenuOpen && (
             <div className="absolute left-0 sm:right-0 sm:left-auto mt-1 w-36 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-700 py-1 z-50">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => {
                   handleDownloadTemplate();
                   setIsUploadMenuOpen(false);
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center"
+                className="h-auto w-full justify-start gap-0 rounded-none px-4 py-2 text-zinc-700 dark:text-zinc-300"
               >
                 <FileDown className="w-4 h-4 mr-2" />
                 下载模板
-              </button>
+              </Button>
               <label className="w-full text-left px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center cursor-pointer mb-0">
                 <Upload className="w-4 h-4 mr-2" />
                 上传文件

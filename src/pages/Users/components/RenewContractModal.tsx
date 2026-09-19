@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { FileSignature, History } from 'lucide-react';
 import { toast } from 'sonner';
 import { BaseModal } from '@/components/ui/BaseModal';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User } from '@/types';
 import { renewContract, fetchContractRenewals, type ContractRenewal } from '@/services/userApi';
 
@@ -109,35 +111,42 @@ export default function RenewContractModal({ isOpen, onClose, user, onRenewed }:
         <div className="grid grid-cols-2 gap-3">
           <label className="block col-span-2 sm:col-span-1">
             <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">续签年限 <span className="text-red-500" aria-hidden="true">*</span></span>
-            <select
+            <Select
               value={form.contractYears}
-              onChange={(e) => handleYearsChange(parseInt(e.target.value, 10))}
-              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white"
+              onValueChange={(val) => {
+                if (val !== null) handleYearsChange(val);
+              }}
+              items={[1, 2, 3, 4, 5].map((y) => ({ value: y, label: `${y} 年` }))}
             >
-              {[1, 2, 3, 4, 5].map((y) => (
-                <option key={y} value={y}>{y} 年</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="选择年限" />
+              </SelectTrigger>
+              <SelectContent>
+                {[1, 2, 3, 4, 5].map((y) => (
+                  <SelectItem key={y} value={y}>
+                    {y} 年
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
           <label className="block col-span-2 sm:col-span-1">
             <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">签订日期 <span className="text-red-500" aria-hidden="true">*</span></span>
-            <input
+            <Input
               type="date"
               required
               value={form.contractSignDate}
               onChange={(e) => handleSignDateChange(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white"
             />
           </label>
           <label className="block col-span-2">
             <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">到期日期 <span className="text-red-500" aria-hidden="true">*</span>（按年限自动推算，可微调）</span>
-            <input
+            <Input
               type="date"
               required
               min={form.contractSignDate || undefined}
               value={form.contractExpiry}
               onChange={(e) => setForm({ ...form, contractExpiry: e.target.value })}
-              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white"
             />
           </label>
         </div>

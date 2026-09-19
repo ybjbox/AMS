@@ -224,7 +224,7 @@ export default function Settings() {
               <nav className="space-y-5" role="tablist" aria-label="设置导航" aria-orientation="vertical">
                 {groups.map((group) => (
                   <div key={group.title}>
-                    <p className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                    <p className="px-3 mb-1.5 text-2xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
                       {group.title}
                     </p>
                     <div className="space-y-1">{group.tabs.map((tab) => renderTabButton(tab, false))}</div>
@@ -249,7 +249,7 @@ export default function Settings() {
               role="tabpanel"
               id={`panel-${activeTab}`}
               aria-labelledby={`tab-${activeTab}`}
-              className="flex-1 flex flex-col min-h-0 overflow-hidden animate-in fade-in slide-in-from-right-2 duration-250 ease-[var(--ease-smooth-out)]"
+              className="flex-1 flex flex-col min-h-0 overflow-hidden animate-in fade-in slide-in-from-right-2 duration-250 ease-smooth-out"
             >
               {renderContent()}
             </div>

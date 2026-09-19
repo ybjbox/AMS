@@ -3,6 +3,9 @@ import { Megaphone, Plus, RefreshCw, Trash2, Pin } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfirm } from '@/hooks/useConfirm';
 import { announcementApi, type Announcement } from '@/services/announcementApi';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 function errText(e: unknown, fallback: string): string {
   return (e as { error?: string })?.error || fallback;
@@ -112,10 +115,10 @@ export default function AnnouncementsPanel() {
             发布的公告将展示在全员控制台「系统公告」区（重要公告置顶）
           </p>
         </div>
-        <button onClick={() => void load()} disabled={isLoading} className="btn-secondary" aria-label="刷新公告列表">
+        <Button variant="outline" onClick={() => void load()} disabled={isLoading} aria-label="刷新公告列表">
           <RefreshCw className={`h-4 w-4 sm:mr-2 ${isLoading ? 'animate-spin' : ''}`} />
           <span className="hidden sm:inline">刷新</span>
-        </button>
+        </Button>
       </div>
 
       {/* 发布表单 */}
@@ -126,35 +129,33 @@ export default function AnnouncementsPanel() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <label className="block sm:col-span-2">
             <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">标题 <span className="text-red-500" aria-hidden="true">*</span></span>
-            <input
+            <Input
               type="text"
               required
               maxLength={120}
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="公告标题"
-              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white"
             />
           </label>
           <label className="block">
             <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">有效期（可选）</span>
-            <input
+            <Input
               type="date"
               value={form.expiresAt}
               onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
-              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white"
             />
           </label>
         </div>
         <label className="block">
           <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">正文</span>
-          <textarea
+          <Textarea
             rows={3}
             maxLength={5000}
             value={form.content}
             onChange={(e) => setForm({ ...form, content: e.target.value })}
             placeholder="公告内容（可选）"
-            className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white resize-y"
+            className="field-sizing-fixed resize-y"
           />
         </label>
         <div className="flex flex-wrap items-center gap-4">
@@ -177,13 +178,9 @@ export default function AnnouncementsPanel() {
             同时通知全员
           </label>
           <div className="flex-1" />
-          <button
-            type="submit"
-            disabled={submitting || !form.title.trim()}
-            className="btn-primary disabled:opacity-60 disabled:cursor-not-allowed"
-          >
+          <Button type="submit" disabled={submitting || !form.title.trim()}>
             {submitting ? '发布中…' : '发布公告'}
-          </button>
+          </Button>
         </div>
       </form>
 
@@ -211,7 +208,7 @@ export default function AnnouncementsPanel() {
                       )}
                       <span className="text-sm font-medium text-zinc-900 dark:text-white truncate">{item.title}</span>
                       {!item.active && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">已停用</span>
+                        <span className="text-3xs px-1.5 py-0.5 rounded-full bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">已停用</span>
                       )}
                     </div>
                     {item.content && (
@@ -223,20 +220,18 @@ export default function AnnouncementsPanel() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => void handleToggle(item)}
-                      className="text-xs px-2.5 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-600 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors"
-                    >
+                    <Button variant="outline" size="sm" onClick={() => void handleToggle(item)}>
                       {item.active ? '停用' : '启用'}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={() => void handleDelete(item)}
-                      className="p-2 text-zinc-400 hover:text-red-500 dark:text-zinc-500 dark:hover:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                       aria-label={`删除公告：${item.title}`}
                       title="删除"
                     >
                       <Trash2 className="w-4 h-4" />
-                    </button>
+                    </Button>
                   </div>
                 </li>
               ))}

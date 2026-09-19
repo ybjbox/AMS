@@ -62,14 +62,14 @@ export default function WorkforceTrend({ stats, isLoading }: Props) {
                     aria-label={`${monthLabel(m)} 离职 ${stats.departures[i]} 人`}
                   />
                 </div>
-                <span className="text-[11px] text-zinc-500 dark:text-zinc-400">{monthLabel(m)}</span>
+                <span className="text-2xs text-zinc-500 dark:text-zinc-400">{monthLabel(m)}</span>
               </div>
             ))}
           </div>
           {/* 数值行（扫读对比） */}
           <div className="flex justify-between gap-2 mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
             {stats.months.map((m, i) => (
-              <div key={m} className="flex-1 text-center text-[11px] tabular-nums text-zinc-500 dark:text-zinc-400">
+              <div key={m} className="flex-1 text-center text-2xs tabular-nums text-zinc-500 dark:text-zinc-400">
                 <span className="text-emerald-700 dark:text-emerald-400">{stats.hires[i]}</span>
                 {' / '}
                 <span className="text-rose-600 dark:text-rose-400">{stats.departures[i]}</span>

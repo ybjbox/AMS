@@ -64,7 +64,7 @@ export default function PreferencesPanel() {
           >
             <span
               aria-hidden="true"
-              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white dark:bg-zinc-800 shadow ring-0 transition duration-250 ease-[var(--ease-smooth-out)] ${
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white dark:bg-zinc-800 shadow ring-0 transition duration-250 ease-smooth-out ${
                 enableStrictPermission ? 'translate-x-5' : 'translate-x-0'
               }`}
             />

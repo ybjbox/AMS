@@ -1,5 +1,6 @@
 import React from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
+import { Input } from '@/components/ui/input';
 import { DeptModalState } from '../hooks/useDepartments';
 import { DepartmentNode } from '@/types';
 
@@ -40,11 +41,11 @@ export function DepartmentModal({ modal, onClose, onSubmit, flatDepts }: Departm
         {modal.mode === 'add' && modal.parentId && (
           <div>
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">上级部门</label>
-            <input
+            <Input
               type="text"
               disabled
               value={flatDepts.find((d) => d.id === modal.parentId)?.name || ''}
-              className="block w-full border border-zinc-200 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-700 rounded-md shadow-sm py-2 px-3 text-zinc-500 dark:text-zinc-400 sm:text-sm"
+              className="block w-full"
             />
           </div>
         )}
@@ -52,24 +53,24 @@ export function DepartmentModal({ modal, onClose, onSubmit, flatDepts }: Departm
           <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
             部门名称 <span className="text-red-500">*</span>
           </label>
-          <input
+          <Input
             required
             autoFocus
             name="name"
             type="text"
             defaultValue={modal.defaultName}
             placeholder="请输入部门名称"
-            className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-brand-600/20 focus:border-brand-600 transition duration-200 sm:text-sm"
+            className="block w-full"
           />
         </div>
         <div>
           <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">优先级</label>
-          <input
+          <Input
             name="priority"
             type="number"
             defaultValue={modal.defaultPriority}
             placeholder="数字越大越靠前"
-            className="block w-full border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-4 focus:ring-brand-600/20 focus:border-brand-600 transition duration-200 sm:text-sm"
+            className="block w-full"
           />
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">数字越大，在列表中的排序越靠前</p>
         </div>

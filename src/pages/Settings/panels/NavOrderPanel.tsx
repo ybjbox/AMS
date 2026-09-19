@@ -4,6 +4,7 @@ import { useAppSettings } from '@/store/appSettings';
 import { useUserStore } from '@/store/useUserStore';
 import { usePermissionsStore } from '@/store/permissions';
 import { routeConfig, applyNavOrder } from '@/config/routes';
+import { Button } from '@/components/ui/button';
 
 /**
  * 功能模块排序：自定义侧边栏导航顺序，调整后即时生效。
@@ -67,14 +68,15 @@ export default function NavOrderPanel() {
               </p>
             </div>
           </div>
-          <button
-            onClick={reset}
-            disabled={isDefault}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 disabled:opacity-40 disabled:pointer-events-none transition-colors"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            恢复默认顺序
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            {isDefault && (
+              <span className="text-2xs text-zinc-400 dark:text-zinc-500">当前已是默认顺序</span>
+            )}
+            <Button type="button" variant="outline" size="sm" onClick={reset} disabled={isDefault}>
+              <RotateCcw />
+              恢复默认顺序
+            </Button>
+          </div>
         </div>
 
         <ul className="mt-5 space-y-1.5">

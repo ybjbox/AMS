@@ -20,6 +20,8 @@ import {
 } from '@/services/auditApi';
 import { describeSaveError } from '@/store/saveFailureCore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { EmptyState } from './ui/EmptyState';
 import { formatDateTime } from '@/utils/dateUtils';
 
@@ -137,9 +139,6 @@ export default function SystemLogs() {
     }
   };
 
-  const selectClass =
-    'h-9 text-sm border border-zinc-200/80 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-600/20';
-
   return (
     <div className="animate-in fade-in duration-400 h-full flex flex-col">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -164,18 +163,19 @@ export default function SystemLogs() {
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-              <input
+              <Input
                 type="text"
                 placeholder="搜索操作、操作人、对象、详情、路径…"
+                aria-label="搜索审计日志"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm border border-zinc-200/80 dark:border-zinc-600 rounded-lg bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-600/20 focus:border-brand-600 transition duration-200"
+                className="w-full pl-9"
               />
             </div>
             <div className="flex items-center space-x-2">
               <Filter className="w-4 h-4 text-zinc-400 shrink-0" />
               <Select value={filters.level} onValueChange={(v) => patchFilters({ level: v ?? "ALL" })}>
-                <SelectTrigger className={`w-[130px] ${selectClass}`}>
+                <SelectTrigger className="w-[130px]" aria-label="按等级筛选">
                   <SelectValue placeholder="所有等级" />
                 </SelectTrigger>
                 <SelectContent>
@@ -186,7 +186,7 @@ export default function SystemLogs() {
                 </SelectContent>
               </Select>
               <Select value={filters.result} onValueChange={(v) => patchFilters({ result: v ?? "ALL" })}>
-                <SelectTrigger className={`w-[120px] ${selectClass}`}>
+                <SelectTrigger className="w-[120px]" aria-label="按结果筛选">
                   <SelectValue placeholder="所有结果" />
                 </SelectTrigger>
                 <SelectContent>
@@ -199,7 +199,7 @@ export default function SystemLogs() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Select value={filters.category} onValueChange={(v) => patchFilters({ category: v ?? "ALL" })}>
-              <SelectTrigger className={`w-[150px] ${selectClass}`}>
+              <SelectTrigger className="w-[150px]" aria-label="按分类筛选">
                 <SelectValue placeholder="全部分类" />
               </SelectTrigger>
               <SelectContent>
@@ -212,7 +212,7 @@ export default function SystemLogs() {
               </SelectContent>
             </Select>
             <Select value={filters.action} onValueChange={(v) => patchFilters({ action: v ?? "ALL" })}>
-              <SelectTrigger className={`w-[160px] ${selectClass}`}>
+              <SelectTrigger className="w-[160px]" aria-label="按操作筛选">
                 <SelectValue placeholder="全部操作" />
               </SelectTrigger>
               <SelectContent>
@@ -225,7 +225,7 @@ export default function SystemLogs() {
               </SelectContent>
             </Select>
             <Select value={filters.actor} onValueChange={(v) => patchFilters({ actor: v ?? "ALL" })}>
-              <SelectTrigger className={`w-[150px] ${selectClass}`}>
+              <SelectTrigger className="w-[150px]" aria-label="按操作人筛选">
                 <SelectValue placeholder="全部操作人" />
               </SelectTrigger>
               <SelectContent>
@@ -237,19 +237,19 @@ export default function SystemLogs() {
                 ))}
               </SelectContent>
             </Select>
-            <input
+            <Input
               type="date"
               value={filters.from}
               onChange={(e) => patchFilters({ from: e.target.value })}
-              className={`px-3 ${selectClass}`}
+              className="w-[150px]"
               aria-label="起始日期"
             />
             <span className="text-sm text-zinc-400">至</span>
-            <input
+            <Input
               type="date"
               value={filters.to}
               onChange={(e) => patchFilters({ to: e.target.value })}
-              className={`px-3 ${selectClass}`}
+              className="w-[150px]"
               aria-label="结束日期"
             />
             <button
@@ -380,23 +380,27 @@ export default function SystemLogs() {
             共 {total} 条{from > 0 ? `，显示第 ${from}–${to} 条` : ''}
           </span>
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0 || loading}
-              className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-600 disabled:opacity-40 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
             >
               上一页
-            </button>
+            </Button>
             <span className="tabular-nums">
               {page + 1} / {totalPages}
             </span>
-            <button
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1 || loading}
-              className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-600 disabled:opacity-40 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
             >
               下一页
-            </button>
+            </Button>
           </div>
         </div>
       </div>

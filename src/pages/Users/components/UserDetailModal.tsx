@@ -2,6 +2,7 @@ import { Permission } from "@/components/Permission";
 import React from 'react';
 import { Printer, Edit, FileSignature } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
+import { Button } from '@/components/ui/button';
 import { User, SystemRole } from '@/types';
 import { formatPhone } from '@/utils/dateUtils';
 
@@ -241,14 +242,15 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit, onR
                 </div>
                 {selectedUser && (
                   <Permission code="users:manage">
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
+                      className="w-full"
                       onClick={() => onRenew(selectedUser)}
-                      className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-3 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors"
                     >
                       <FileSignature className="w-3.5 h-3.5" aria-hidden="true" />
                       合同续签
-                    </button>
+                    </Button>
                   </Permission>
                 )}
               </div>

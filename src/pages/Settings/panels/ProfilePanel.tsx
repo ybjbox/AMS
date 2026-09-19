@@ -9,6 +9,8 @@ import { authService, toUserInfo } from '@/services/auth';
 import { useUserStore } from '@/store/useUserStore';
 import { useConfirm } from '@/hooks/useConfirm';
 import { DEFAULT_USER_AVATAR } from '@/config/constants';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const profileSchema = z.object({
   displayName: z.string().trim().min(1, '请输入显示名称').max(30, '显示名称最多 30 个字符'),
@@ -210,14 +212,14 @@ export default function ProfilePanel() {
             />
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => avatarInputRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-1.5 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors"
                 >
                   <Camera className="w-3.5 h-3.5" />
                   上传头像
-                </button>
+                </Button>
                 {avatar && (
                   <button
                     type="button"
@@ -247,11 +249,10 @@ export default function ProfilePanel() {
             <label htmlFor="displayName" className="block text-sm text-zinc-600 dark:text-zinc-300 mb-1.5">
               显示名称
             </label>
-            <input
+            <Input
               id="displayName"
               autoComplete="nickname"
               {...profileForm.register('displayName')}
-              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/40"
             />
             {profileForm.formState.errors.displayName && (
               <p className="text-xs text-red-500 mt-1">{profileForm.formState.errors.displayName.message}</p>
@@ -261,28 +262,33 @@ export default function ProfilePanel() {
             <label htmlFor="profileEmail" className="block text-sm text-zinc-600 dark:text-zinc-300 mb-1.5">
               邮箱（用于接收通知，可留空）
             </label>
-            <input
+            <Input
               id="profileEmail"
               type="email"
               autoComplete="email"
               {...profileForm.register('email')}
-              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/40"
             />
             {profileForm.formState.errors.email && (
               <p className="text-xs text-red-500 mt-1">{profileForm.formState.errors.email.message}</p>
             )}
           </div>
           <div className="pt-1 flex items-center justify-between">
-            <span className="text-xs text-zinc-400 dark:text-zinc-500">
-              登录账号：{userInfo?.username ?? '-'}（用户名由管理员维护，不可自助修改）
-            </span>
-            <button
+            {profileForm.formState.isDirty ? (
+              <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                登录账号：{userInfo?.username ?? '-'}（用户名由管理员维护，不可自助修改）
+              </span>
+            ) : (
+              <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                {savingProfile ? '正在保存…' : '修改上方信息后即可保存（用户名由管理员维护，不可自助修改）'}
+              </span>
+            )}
+            <Button
               type="submit"
               disabled={savingProfile || !profileForm.formState.isDirty}
-              className="rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2 text-sm font-medium text-white transition-colors"
+              title={profileForm.formState.isDirty ? undefined : '暂无修改，内容变更后可保存'}
             >
               {savingProfile ? '保存中…' : '保存资料'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -297,12 +303,11 @@ export default function ProfilePanel() {
             <label htmlFor="currentPassword" className="block text-sm text-zinc-600 dark:text-zinc-300 mb-1.5">
               当前密码
             </label>
-            <input
+            <Input
               id="currentPassword"
               type="password"
               autoComplete="current-password"
               {...register('currentPassword')}
-              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/40"
             />
             {errors.currentPassword && (
               <p className="text-xs text-red-500 mt-1">{errors.currentPassword.message}</p>
@@ -312,12 +317,11 @@ export default function ProfilePanel() {
             <label htmlFor="newPassword" className="block text-sm text-zinc-600 dark:text-zinc-300 mb-1.5">
               新密码（至少 10 位，含字母和数字）
             </label>
-            <input
+            <Input
               id="newPassword"
               type="password"
               autoComplete="new-password"
               {...register('newPassword')}
-              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/40"
             />
             {errors.newPassword && (
               <p className="text-xs text-red-500 mt-1">{errors.newPassword.message}</p>
@@ -327,12 +331,11 @@ export default function ProfilePanel() {
             <label htmlFor="confirmPassword" className="block text-sm text-zinc-600 dark:text-zinc-300 mb-1.5">
               确认新密码
             </label>
-            <input
+            <Input
               id="confirmPassword"
               type="password"
               autoComplete="new-password"
               {...register('confirmPassword')}
-              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/40"
             />
             {errors.confirmPassword && (
               <p className="text-xs text-red-500 mt-1">{errors.confirmPassword.message}</p>
@@ -342,13 +345,9 @@ export default function ProfilePanel() {
             <span className="text-xs text-zinc-400 dark:text-zinc-500">
               当前账号：{userInfo?.username ?? '-'}
             </span>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2 text-sm font-medium text-white transition-colors"
-            >
+            <Button type="submit" disabled={submitting}>
               {submitting ? '提交中…' : '修改密码'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

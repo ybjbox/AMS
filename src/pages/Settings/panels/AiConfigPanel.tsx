@@ -2,6 +2,10 @@ import { useState, useEffect, useRef, type ChangeEvent, type ReactNode } from 'r
 import { Save, Bot, RotateCcw, RefreshCw, Upload, X, ChevronDown } from 'lucide-react';
 import { STORAGE_KEYS } from '@/config/constants';
 import { AI_ICON_OPTIONS, resolveAiIcon, DEFAULT_AI_NAME } from '@/config/aiIcons';
+import { Button } from '@/components/ui/button';
+import Badge from '@/components/ui/Badge';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -60,9 +64,6 @@ function authHeaders(): Record<string, string> {
     ...(t ? { Authorization: `Bearer ${t}` } : {}),
   };
 }
-
-const inputCls =
-  'w-full px-3 py-2 text-sm border border-border/80 dark:border-border rounded-lg bg-muted dark:bg-background text-foreground focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary transition duration-200';
 
 export default function AiConfigPanel() {
   const [form, setForm] = useState<ConfigForm>(EMPTY);
@@ -271,13 +272,12 @@ export default function AiConfigPanel() {
               <label className="mb-1.5 block text-sm font-medium text-foreground">
                 每人每日提问上限
               </label>
-              <input
+              <Input
                 type="number"
                 min={0}
                 max={100000}
                 value={form.dailyQuota}
                 onChange={(e) => update({ dailyQuota: Number(e.target.value) })}
-                className={inputCls}
               />
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed sm:pt-7">
@@ -290,13 +290,10 @@ export default function AiConfigPanel() {
               <div className="mb-1.5 text-xs text-muted-foreground">今日系统额度用量</div>
               <div className="flex flex-wrap gap-1.5">
                 {usage.map((u) => (
-                  <span
-                    key={u.username}
-                    className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs text-foreground"
-                  >
+                  <Badge key={u.username} variant="neutral">
                     {u.username}
                     <span className="font-medium tabular-nums">{u.used} 次</span>
-                  </span>
+                  </Badge>
                 ))}
               </div>
             </div>
@@ -350,12 +347,11 @@ export default function AiConfigPanel() {
           <label className="mb-1.5 block text-sm font-medium text-foreground">
             助手名称
           </label>
-          <input
+          <Input
             value={form.assistantName}
             onChange={(e) => update({ assistantName: e.target.value })}
             placeholder={DEFAULT_AI_NAME}
             maxLength={20}
-            className={inputCls}
           />
           <p className="mt-1.5 text-xs text-muted-foreground">
             留空则使用默认名称「{DEFAULT_AI_NAME}」。
@@ -391,7 +387,7 @@ export default function AiConfigPanel() {
                   }`}
                 >
                   <Icon className="size-5" />
-                  <span className="text-[11px] leading-none">{o.label}</span>
+                  <span className="text-2xs leading-none">{o.label}</span>
                 </button>
               );
             })}
@@ -413,7 +409,7 @@ export default function AiConfigPanel() {
                 ) : (
                   <Upload className="size-5" />
                 )}
-                <span className="text-[11px] leading-none">{form.assistantLogo ? '更换 Logo' : '上传 Logo'}</span>
+                <span className="text-2xs leading-none">{form.assistantLogo ? '更换 Logo' : '上传 Logo'}</span>
               </button>
               {form.assistantLogo && (
                 <button
@@ -441,11 +437,10 @@ export default function AiConfigPanel() {
           <label className="mb-1.5 block text-sm font-medium text-foreground">
             API Base URL
           </label>
-          <input
+          <Input
             value={form.baseUrl}
             onChange={(e) => update({ baseUrl: e.target.value })}
             placeholder="https://api.openai.com/v1"
-            className={inputCls}
           />
         </div>
 
@@ -465,7 +460,7 @@ export default function AiConfigPanel() {
                   }
                 }}
               >
-                <SelectTrigger className="w-full text-sm border border-border/80 dark:border-border rounded-lg bg-muted dark:bg-background text-foreground">
+                <SelectTrigger className="w-full justify-between">
                   <SelectValue placeholder="从列表中选择模型" />
                 </SelectTrigger>
                 <SelectContent>
@@ -478,22 +473,22 @@ export default function AiConfigPanel() {
                 </SelectContent>
               </Select>
             ) : (
-              <input
+              <Input
                 value={form.model}
                 onChange={(e) => update({ model: e.target.value })}
                 placeholder="gpt-4o-mini"
-                className={inputCls}
               />
             )}
-            <button
+            <Button
               type="button"
+              variant="outline"
+              className="shrink-0"
               onClick={fetchModels}
               disabled={fetching || !form.baseUrl.trim()}
-              className="btn-secondary inline-flex items-center gap-1.5 shrink-0"
             >
               <RefreshCw className={`size-4 ${fetching ? 'animate-spin' : ''}`} />
               {fetching ? '获取中' : models.length ? '刷新' : '获取模型'}
-            </button>
+            </Button>
           </div>
           {models.length > 0 && !customModel && (
             <button
@@ -524,12 +519,11 @@ export default function AiConfigPanel() {
           <label className="mb-1.5 block text-sm font-medium text-foreground">
             API Key
           </label>
-          <input
+          <Input
             type="password"
             value={form.apiKey}
             onChange={(e) => update({ apiKey: e.target.value })}
             placeholder={loaded ? '留空表示不修改现有密钥' : '输入密钥'}
-            className={inputCls}
           />
           <p className="mt-1.5 text-xs text-muted-foreground">
             密钥仅保存在本系统配置中（单租户内部管理工具）。留空则不改动已存密钥。
@@ -547,12 +541,12 @@ export default function AiConfigPanel() {
         <p className="text-xs text-muted-foreground">
           自定义发给大模型的系统提示词，用于约束 AI 的角色、语气与回答范围。留空则使用内置默认提示。
         </p>
-        <textarea
+        <Textarea
           value={form.systemPrompt}
           onChange={(e) => update({ systemPrompt: e.target.value })}
           placeholder="例如：你是一名资深 HR 助理，只使用系统内的真实数据回答，语气亲切专业。"
           rows={5}
-          className={`${inputCls} resize-y leading-relaxed`}
+          className="field-sizing-fixed resize-y leading-relaxed"
         />
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>{form.systemPrompt.trim() ? `已填写 ${form.systemPrompt.trim().length} 字` : '未填写，将使用默认提示'}</span>
@@ -574,7 +568,7 @@ export default function AiConfigPanel() {
           设置保留天数后，系统每天自动删除超过该天数的 AI 对话记录（全员生效）。设为 0 表示不自动清理。
         </p>
         <div className="flex items-center gap-3">
-          <input
+          <Input
             type="number"
             min={0}
             max={3650}
@@ -582,7 +576,7 @@ export default function AiConfigPanel() {
             onChange={(e) =>
               update({ conversationRetentionDays: Math.max(0, Math.floor(Number(e.target.value) || 0)) })
             }
-            className={`${inputCls} w-32`}
+            className="w-32"
           />
           <span className="text-sm text-muted-foreground">天（0 = 关闭自动清理）</span>
         </div>
@@ -601,23 +595,14 @@ export default function AiConfigPanel() {
       )}
 
       <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={save}
-          disabled={saving}
-          className="btn-primary inline-flex items-center gap-2"
-        >
+        <Button type="button" onClick={save} disabled={saving}>
           <Save className="h-4 w-4" />
           {saving ? '保存中…' : '保存配置'}
-        </button>
-        <button
-          type="button"
-          onClick={resetForm}
-          className="btn-secondary inline-flex items-center gap-2"
-        >
+        </Button>
+        <Button type="button" variant="outline" onClick={resetForm}>
           <RotateCcw className="h-4 w-4" />
           重置
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -652,19 +637,19 @@ function Section({
         <span className="flex items-center gap-2 min-w-0">
           <h2 className="subsection-title shrink-0">{title}</h2>
           {badge && !open && (
-            <span className="truncate rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+            <span className="truncate rounded-full bg-muted px-2 py-0.5 text-2xs text-muted-foreground">
               {badge}
             </span>
           )}
         </span>
         <ChevronDown
-          className={`size-4 shrink-0 text-muted-foreground transition-transform duration-250 ease-[var(--ease-smooth-out)] ${
+          className={`size-4 shrink-0 text-muted-foreground transition-transform duration-250 ease-smooth-out ${
             open ? 'rotate-180' : ''
           }`}
         />
       </button>
       <div
-        className={`grid transition-[grid-template-rows] duration-250 ease-[var(--ease-smooth-out)] ${
+        className={`grid transition-[grid-template-rows] duration-250 ease-smooth-out ${
           open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
         }`}
       >

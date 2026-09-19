@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useTreeExpand, TreeNode } from '@/hooks/useTreeExpand';
+import { Input } from '@/components/ui/input';
 
 export type { TreeNode };
 
@@ -200,11 +201,11 @@ export function TreeSelect({
   return (
     <div className="relative mt-1" ref={wrapperRef} onKeyDown={handleKeyDown}>
       <div className="relative cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
-        <input
+        <Input
           type="text"
           value={value}
           readOnly
-          className="block w-full bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-600 rounded-md shadow-sm py-2 px-3 pr-8 focus:outline-none focus:ring-4 focus:ring-brand-600/20 focus:border-brand-600 transition duration-200 sm:text-sm cursor-pointer text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500"
+          className="cursor-pointer pr-8"
           placeholder={placeholder}
           required={required}
           aria-haspopup="tree"
@@ -217,7 +218,7 @@ export function TreeSelect({
 
       {isOpen && (
         <div
-          className="absolute z-10 mt-1 w-full bg-white dark:bg-zinc-800 shadow-lg max-h-60 rounded-md ring-1 ring-black ring-opacity-5 dark:ring-white/10 flex flex-col focus:outline-none sm:text-sm origin-top animate-in fade-in-0 zoom-in-97 duration-250 ease-[var(--ease-smooth-out)]"
+          className="absolute z-10 mt-1 w-full bg-white dark:bg-zinc-800 shadow-lg max-h-60 rounded-md ring-1 ring-black ring-opacity-5 dark:ring-white/10 flex flex-col focus:outline-none sm:text-sm origin-top animate-in fade-in-0 zoom-in-97 duration-250 ease-smooth-out"
           role="tree"
           tabIndex={-1}
         >

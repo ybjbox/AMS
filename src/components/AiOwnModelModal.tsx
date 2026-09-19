@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { X, Loader2, Trash2 } from 'lucide-react';
 import { STORAGE_KEYS } from '@/config/constants';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 /**
  * 个人模型配置弹窗（员工自助，BYOD）。
@@ -21,9 +23,6 @@ function authHeaders(): Record<string, string> {
     ...(t ? { Authorization: `Bearer ${t}` } : {}),
   };
 }
-
-const inputCls =
-  'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary';
 
 export default function AiOwnModelModal({ onClose, onChanged }: Props) {
   const [baseUrl, setBaseUrl] = useState('');
@@ -107,14 +106,16 @@ export default function AiOwnModelModal({ onClose, onChanged }: Props) {
       >
         <div className="mb-1 flex items-center justify-between">
           <h3 className="text-sm font-semibold">个人模型配置</h3>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={onClose}
             aria-label="关闭"
-            className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="text-muted-foreground"
           >
             <X className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
         <p className="mb-4 text-xs leading-relaxed text-muted-foreground">
           使用本人凭据调用自选的 OpenAI 兼容模型。配置齐全后，对话将通过个人模型进行，
@@ -129,31 +130,24 @@ export default function AiOwnModelModal({ onClose, onChanged }: Props) {
           <div className="space-y-3">
             <div>
               <label className="mb-1 block text-xs font-medium">API Base URL</label>
-              <input
+              <Input
                 value={baseUrl}
                 onChange={(e) => setBaseUrl(e.target.value)}
                 placeholder="https://api.openai.com/v1"
-                className={inputCls}
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium">模型名</label>
-              <input
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                placeholder="gpt-4o-mini"
-                className={inputCls}
-              />
+              <Input value={model} onChange={(e) => setModel(e.target.value)} placeholder="gpt-4o-mini" />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium">API Key</label>
-              <input
+              <Input
                 type="password"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder={apiKeySet ? `已保存（${apiKeyMasked}），留空则不修改` : 'sk-…'}
                 autoComplete="off"
-                className={inputCls}
               />
             </div>
 
@@ -161,35 +155,28 @@ export default function AiOwnModelModal({ onClose, onChanged }: Props) {
 
             <div className="flex items-center justify-between pt-1">
               {apiKeySet || baseUrl || model ? (
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={clear}
                   disabled={saving}
-                  className="inline-flex items-center gap-1 rounded-lg px-2.5 py-2 text-xs text-muted-foreground transition-colors hover:text-destructive disabled:opacity-50"
+                  className="gap-1 text-muted-foreground hover:text-destructive"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   清除配置
-                </button>
+                </Button>
               ) : (
                 <span />
               )}
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted"
-                >
+                <Button type="button" variant="outline" size="sm" onClick={onClose} className="text-muted-foreground">
                   取消
-                </button>
-                <button
-                  type="button"
-                  onClick={save}
-                  disabled={saving}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-medium text-primary-foreground transition-opacity disabled:opacity-50"
-                >
+                </Button>
+                <Button type="button" size="sm" onClick={save} disabled={saving} className="gap-1.5 px-3.5">
                   {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   保存
-                </button>
+                </Button>
               </div>
             </div>
           </div>

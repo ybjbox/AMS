@@ -49,10 +49,12 @@ export function TreeFilter({ nodes, selectedValues, onToggle, getDisplayName = (
               <div
                 className={`flex items-center space-x-2 ${isSelected ? 'text-brand-600 dark:text-brand-400 font-medium' : 'text-zinc-700 dark:text-zinc-200'}`}
               >
+                {/* 契约复选框：16px / 圆角 4px / 选中实色 brand（MASTER v3 扁平，禁渐变） */}
                 <div
-                  className={`w-4 h-4 rounded border flex items-center justify-center ${isSelected ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner border-brand-600' : 'border-zinc-200/80 dark:border-zinc-600'}`}
+                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border ${isSelected ? 'border-brand-600 bg-brand-600 text-white dark:border-brand-400 dark:bg-brand-400' : 'border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-900'}`}
+                  aria-hidden="true"
                 >
-                  {isSelected && <Check className="w-3 h-3 text-white" />}
+                  {isSelected && <Check className="w-3 h-3" />}
                 </div>
                 <span>{displayName}</span>
               </div>

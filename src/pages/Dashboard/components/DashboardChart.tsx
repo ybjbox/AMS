@@ -112,7 +112,7 @@ export default function DashboardChart({ data, isLoading }: DashboardChartProps)
                   backgroundColor: popoverColor,
                   borderRadius: '8px',
                   border: `1px solid ${borderColor}`,
-                  boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                  boxShadow: 'var(--shadow-md)',
                 }}
                 itemStyle={{ color: fgColor, fontWeight: 500 }}
               />

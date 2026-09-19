@@ -3,6 +3,7 @@ import { Check, KeyRound, Eye, Info, RotateCcw, Lock } from 'lucide-react';
 import { routeConfig } from '@/config/routes';
 import { SystemRole } from '@/types';
 import { usePermissionsStore } from '@/store/permissions';
+import { Checkbox } from '@/components/ui/checkbox';
 
 /** 角色列（顺序即表格列顺序） */
 const ROLES: { role: SystemRole; label: string }[] = [
@@ -22,7 +23,8 @@ const OPERATIONS: { label: string; code: string }[] = [
 
 type CellRenderer = (role: SystemRole, code: string) => React.ReactNode;
 
-function ToggleCell({
+/** 矩阵单元格：ui/Checkbox 授予态（禁用不了的场景由外层锁定分支处理） */
+function MatrixCheck({
   checked,
   onToggle,
   label,
@@ -32,22 +34,12 @@ function ToggleCell({
   label: string;
 }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
+    <Checkbox
+      checked={checked}
+      onCheckedChange={() => onToggle()}
       aria-label={label}
-      onClick={onToggle}
-      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 ${
-        checked ? 'bg-brand-500 dark:bg-brand-500' : 'bg-muted'
-      }`}
-    >
-      <span
-        className={`inline-block size-4 transform rounded-full bg-card shadow ring-0 transition ${
-          checked ? 'translate-x-4' : 'translate-x-0.5'
-        }`}
-      />
-    </button>
+      className="border-zinc-300 dark:border-zinc-600"
+    />
   );
 }
 
@@ -115,7 +107,7 @@ export default function PermissionMatrixPanel() {
       return <Check className="size-4 text-brand-600 dark:text-brand-400" strokeWidth={2.5} />;
     }
     return (
-      <ToggleCell
+      <MatrixCheck
         checked={roleHas(role, code)}
         onToggle={() => togglePermission(role, code)}
         label={`${ROLES.find((r) => r.role === role)?.label ?? role} · ${code}`}
@@ -179,8 +171,10 @@ export default function PermissionMatrixPanel() {
         <Info className="size-5 text-muted-foreground mt-0.5 shrink-0" />
         <div className="text-xs text-muted-foreground space-y-1.5 leading-relaxed">
           <p>
-            <span className="inline-flex h-5 w-9 items-center rounded-full bg-brand-500 mr-1 align-middle" />
-            绿色开关表示已授予；灰色表示未授予。
+            <span className="mr-1 inline-flex size-4 items-center justify-center rounded-[4px] border border-zinc-300 bg-primary align-middle text-primary-foreground dark:border-zinc-600">
+              <Check className="size-3" strokeWidth={3} />
+            </span>
+            勾选表示已授予；未勾选表示未授予。
           </p>
           <p>
             人事主管与普通员工的权限可逐项编辑；超级管理员 / 管理员因持有

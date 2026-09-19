@@ -4,6 +4,8 @@ import { useTodoStore } from '../store/useTodoStore';
 import { CheckCircle2, Circle, Clock, Plus, Trash2, Calendar, ListTodo } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { formatDateTime } from '@/utils/dateUtils';
 import { useConfirm } from '@/hooks/useConfirm';
 
@@ -95,32 +97,34 @@ export default function Todos() {
             <form onSubmit={handleAdd} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">标题</label>
-                  <input
+                  <label htmlFor="todo-title" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">标题</label>
+                  <Input
+                    id="todo-title"
                     type="text"
                     required
                     value={newTodo.title}
                     onChange={(e) => setNewTodo({ ...newTodo, title: e.target.value })}
-                    className="input-base"
                     placeholder="要做什么？"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">截止日期</label>
-                  <input
+                  <label htmlFor="todo-due-date" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">截止日期</label>
+                  <Input
+                    id="todo-due-date"
                     type="date"
                     value={newTodo.dueDate}
                     onChange={(e) => setNewTodo({ ...newTodo, dueDate: e.target.value })}
-                    className="input-base"
                   />
                 </div>
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">描述</label>
-                <textarea
+                <label htmlFor="todo-description" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">描述</label>
+                <Textarea
+                  id="todo-description"
+                  rows={3}
+                  className="field-sizing-fixed resize-y"
                   value={newTodo.description}
                   onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
-                  className="input-base h-20 resize-none"
                   placeholder="添加更多细节…"
                 />
               </div>
@@ -199,7 +203,7 @@ export default function Todos() {
                       </div>
                       {todo.type !== 'manual' && (
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          className={`px-2 py-0.5 rounded-full text-3xs font-bold uppercase tracking-wider ${
                             todo.type === 'contract' ? 'bg-amber-100 text-amber-700' : 'bg-brand-100 text-brand-700'
                           }`}
                         >

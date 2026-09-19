@@ -4,16 +4,20 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { useUserStore } from '@/store/useUserStore';
 import { CheckCircle2, Clock, FileCheck2, Send, XCircle, CalendarClock, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import { approvalApi, Approval, ApprovalStatus } from '@/services/approvalApi';
 
 const LEAVE_TYPES = ['事假', '病假', '年假', '调休'] as const;
 const PUNCH_KINDS = ['上班卡', '下班卡'] as const;
 
-const STATUS_META: Record<ApprovalStatus, { label: string; className: string }> = {
-  pending: { label: '待审批', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
-  approved: { label: '已通过', className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
-  rejected: { label: '已驳回', className: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
+const STATUS_META: Record<ApprovalStatus, { label: string; variant: BadgeVariant }> = {
+  pending: { label: '待审批', variant: 'warning' },
+  approved: { label: '已通过', variant: 'success' },
+  rejected: { label: '已驳回', variant: 'destructive' },
 };
 
 function errText(e: unknown, fallback: string): string {
@@ -22,11 +26,7 @@ function errText(e: unknown, fallback: string): string {
 
 function StatusBadge({ status }: { status: ApprovalStatus }) {
   const meta = STATUS_META[status] ?? STATUS_META.pending;
-  return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${meta.className}`}>
-      {meta.label}
-    </span>
-  );
+  return <Badge variant={meta.variant}>{meta.label}</Badge>;
 }
 
 /** 审批条目的单行摘要（按类型展示关键信息） */
@@ -209,7 +209,7 @@ export default function Approvals() {
                 · 事由：{item.reason}
               </p>
               {item.type === 'leave' && item.requiredRole === 'ADMIN' && item.status === 'pending' && (
-                <p className="text-[11px] mt-0.5 inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                <p className="text-2xs mt-0.5 inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
                   <ShieldCheck className="w-3 h-3" aria-hidden="true" /> ≥3 天假期，需管理员终审
                 </p>
               )}
@@ -222,18 +222,12 @@ export default function Approvals() {
             </div>
             {tab === 'pending' && item.status === 'pending' && (
               <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => handleDecide(item, 'approved')}
-                  className="inline-flex items-center gap-1 rounded-lg bg-brand-600 hover:bg-brand-700 px-3 py-1.5 text-xs font-medium text-white transition-colors"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" /> 通过
-                </button>
-                <button
-                  onClick={() => handleDecide(item, 'rejected')}
-                  className="inline-flex items-center gap-1 rounded-lg bg-red-600 hover:bg-red-700 px-3 py-1.5 text-xs font-medium text-white transition-colors"
-                >
-                  <XCircle className="w-3.5 h-3.5" /> 驳回
-                </button>
+                <Button size="sm" onClick={() => handleDecide(item, 'approved')}>
+                  <CheckCircle2 /> 通过
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => handleDecide(item, 'rejected')}>
+                  <XCircle /> 驳回
+                </Button>
               </div>
             )}
           </li>
@@ -293,15 +287,22 @@ export default function Approvals() {
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
                 <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">类型 <span className="text-red-500" aria-hidden="true">*</span></span>
-                <select
+                <Select
                   value={form.leaveType}
-                  onChange={(e) => setForm({ ...form, leaveType: e.target.value })}
-                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white"
+                  onValueChange={(val) => setForm({ ...form, leaveType: String(val) })}
                 >
-                  {LEAVE_TYPES.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
+                  <SelectTrigger
+                    aria-label="请假类型"
+                    className="w-full justify-between"
+                  >
+                    <SelectValue>{(val) => String(val ?? '')}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LEAVE_TYPES.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </label>
               <label className="block">
                 <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">开始日期 <span className="text-red-500" aria-hidden="true">*</span></span>
@@ -310,7 +311,7 @@ export default function Approvals() {
                   required
                   value={form.startDate}
                   onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white"
+                  className="input-base"
                 />
               </label>
               <label className="block col-span-2">
@@ -320,7 +321,7 @@ export default function Approvals() {
                   value={form.endDate}
                   min={form.startDate || undefined}
                   onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white"
+                  className="input-base"
                 />
               </label>
             </div>
@@ -335,7 +336,7 @@ export default function Approvals() {
                   required
                   value={form.punchDate}
                   onChange={(e) => setForm({ ...form, punchDate: e.target.value })}
-                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white"
+                  className="input-base"
                 />
               </label>
               <label className="block">
@@ -345,22 +346,29 @@ export default function Approvals() {
                   required
                   value={form.punchTime}
                   onChange={(e) => setForm({ ...form, punchTime: e.target.value })}
-                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white"
+                  className="input-base"
                 />
               </label>
               <label className="block col-span-2">
                 <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">卡类型 <span className="text-red-500" aria-hidden="true">*</span></span>
-                <select
+                <Select
                   value={form.punchKind}
-                  onChange={(e) => setForm({ ...form, punchKind: e.target.value as (typeof PUNCH_KINDS)[number] })}
-                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white"
+                  onValueChange={(val) => setForm({ ...form, punchKind: val as (typeof PUNCH_KINDS)[number] })}
                 >
-                  {PUNCH_KINDS.map((k) => (
-                    <option key={k} value={k}>{k}</option>
-                  ))}
-                </select>
+                  <SelectTrigger
+                    aria-label="补卡类型"
+                    className="w-full justify-between"
+                  >
+                    <SelectValue>{(val) => String(val ?? '')}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PUNCH_KINDS.map((k) => (
+                      <SelectItem key={k} value={k}>{k}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </label>
-              <p className="col-span-2 text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              <p className="col-span-2 text-2xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
                 补卡审批通过后，将自动补写对应打卡记录并更新考勤异常分析。
               </p>
             </div>
@@ -368,7 +376,7 @@ export default function Approvals() {
 
           {formType === 'conversion' && (
             <div className="space-y-2">
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              <p className="text-2xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
                 转正申请需满足：账号已关联员工档案，且当前状态为「试用期」。
                 审批通过后，员工状态将自动变更为「在职」。
               </p>
@@ -384,10 +392,10 @@ export default function Approvals() {
                   required
                   value={form.resignDate}
                   onChange={(e) => setForm({ ...form, resignDate: e.target.value })}
-                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white"
+                  className="input-base"
                 />
               </label>
-              <p className="col-span-2 text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              <p className="col-span-2 text-2xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
                 离职审批通过后：员工状态变更为「离职」，登录账号将被停用（此操作不可逆，请谨慎提交）。
               </p>
             </div>
@@ -402,7 +410,7 @@ export default function Approvals() {
                   required
                   value={form.startDate}
                   onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white"
+                  className="input-base"
                 />
               </label>
               <label className="block">
@@ -415,10 +423,10 @@ export default function Approvals() {
                   step={0.5}
                   value={form.overtimeHours}
                   onChange={(e) => setForm({ ...form, overtimeHours: e.target.value })}
-                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white"
+                  className="input-base"
                 />
               </label>
-              <p className="col-span-2 text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              <p className="col-span-2 text-2xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
                 加班审批通过后，时长将自动计入你的调休额度（8 小时 = 1 天）；申请「调休」假时将校验余额。
               </p>
             </div>
@@ -429,7 +437,7 @@ export default function Approvals() {
             <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
               {formType === 'resign' ? '离职原因' : '事由'} <span className="text-red-500" aria-hidden="true">*</span>
             </span>
-            <textarea
+            <Textarea
               required
               rows={3}
               value={form.reason}
@@ -445,16 +453,12 @@ export default function Approvals() {
                         ? '请说明加班事由（如：项目上线支援）'
                         : '请简要说明申请原因'
               }
-              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-sm text-zinc-900 dark:text-white resize-y md:resize-y"
+              className="field-sizing-fixed resize-y"
             />
           </label>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-60 disabled:cursor-not-allowed px-4 py-2 text-sm font-medium text-white transition-colors"
-          >
+          <Button type="submit" disabled={submitting} className="w-full">
             {submitting ? '提交中…' : '提交申请'}
-          </button>
+          </Button>
         </form>
 
         {/* 列表 */}
@@ -477,7 +481,7 @@ export default function Approvals() {
               >
                 <Clock className="w-4 h-4" /> {t.label}
                 {t.id === 'pending' && pending.length > 0 && (
-                  <span className="rounded-full bg-red-500 text-white text-[10px] px-1.5 leading-4">
+                  <span className="rounded-full bg-red-500 text-white text-3xs px-1.5 leading-4">
                     {pending.length}
                   </span>
                 )}

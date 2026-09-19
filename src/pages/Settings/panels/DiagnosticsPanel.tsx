@@ -171,7 +171,7 @@ export default function DiagnosticsPanel() {
                       </span>
                     </td>
                     <td className="px-3 py-2 tabular-nums whitespace-nowrap text-zinc-700 dark:text-zinc-300">
-                      {e.durationMs}ms{e.slow && <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">慢</span>}
+                      {e.durationMs}ms{e.slow && <span className="ml-1.5 text-3xs px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">慢</span>}
                     </td>
                     <td className="px-3 py-2 text-zinc-500 dark:text-zinc-400 whitespace-nowrap">{e.actor || '—'}</td>
                   </tr>
@@ -198,7 +198,7 @@ export default function DiagnosticsPanel() {
             {Object.entries(data.tableCounts).map(([table, count]) => (
               <div key={table} className="text-center p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
                 <div className="text-sm font-bold text-zinc-900 dark:text-white tabular-nums">{count < 0 ? '—' : `${count} 条`}</div>
-                <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate" title={table}>{TABLE_LABELS[table] ?? table}</div>
+                <div className="text-2xs text-zinc-500 dark:text-zinc-400 truncate" title={table}>{TABLE_LABELS[table] ?? table}</div>
               </div>
             ))}
           </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Search, Trash2, Eye, X, MessagesSquare, User as UserIcon, Clock } from 'lucide-react';
 import { STORAGE_KEYS } from '@/config/constants';
+import { Button } from '@/components/ui/button';
 
 /**
  * AI 对话历史（仅超级管理员可见）。
@@ -146,23 +147,19 @@ export default function AiHistoryPanel() {
         <div className="text-xs text-muted-foreground whitespace-nowrap">
           共 {list.length} 条对话 {query && `· 匹配 ${filtered.length} 条`}
         </div>
-        <button
+        <Button
           type="button"
+          variant="destructive"
           onClick={clearAll}
           disabled={clearingAll || list.length === 0}
-          className="text-destructive border border-destructive/40 hover:bg-destructive/10 px-3 py-2 rounded-lg text-sm inline-flex items-center gap-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           title="清空全部对话"
         >
           <Trash2 className="size-4" />
           {clearingAll ? '清空中…' : '清空全部'}
-        </button>
-        <button
-          type="button"
-          onClick={load}
-          className="btn-secondary text-sm px-3 py-2"
-        >
+        </Button>
+        <Button type="button" variant="outline" onClick={load}>
           刷新
-        </button>
+        </Button>
       </div>
 
       {/* 列表 */}
@@ -201,25 +198,27 @@ export default function AiHistoryPanel() {
                     </span>
                   </div>
                 </div>
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="xs"
                   onClick={() => openDetail(c.id)}
-                  className="btn-secondary text-xs px-2.5 py-1.5 inline-flex items-center gap-1"
                   title="查看详情"
                 >
                   <Eye className="size-3.5" />
                   查看
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="destructive"
+                  size="xs"
                   onClick={() => remove(c.id)}
                   disabled={deletingId === c.id}
-                  className="text-destructive hover:bg-destructive/10 px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1 text-xs transition-colors"
                   title="删除对话"
                 >
                   <Trash2 className="size-3.5" />
                   {deletingId === c.id ? '删除中' : '删除'}
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
@@ -233,7 +232,7 @@ export default function AiHistoryPanel() {
           onClick={() => setDetail(null)}
         >
           <div
-            className="w-full max-w-lg h-full bg-card shadow-xl flex flex-col animate-in slide-in-from-right duration-400 ease-[var(--ease-smooth-out)]"
+            className="w-full max-w-lg h-full bg-card shadow-xl flex flex-col animate-in slide-in-from-right duration-400 ease-smooth-out"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
@@ -245,14 +244,16 @@ export default function AiHistoryPanel() {
                   用户 {detail.username} · 更新于 {fmt(detail.updatedAt)}
                 </div>
               </div>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="ml-3"
                 onClick={() => setDetail(null)}
-                className="ml-3 p-1.5 rounded-lg hover:bg-muted text-muted-foreground"
                 title="关闭"
               >
                 <X className="size-5" />
-              </button>
+              </Button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-5 space-y-3">
@@ -280,15 +281,15 @@ export default function AiHistoryPanel() {
             </div>
 
             <div className="px-5 py-3 border-t border-border shrink-0 flex justify-end">
-              <button
+              <Button
                 type="button"
+                variant="destructive"
                 onClick={() => remove(detail.id)}
                 disabled={deletingId === detail.id}
-                className="btn-secondary text-sm px-3 py-2 inline-flex items-center gap-1.5 text-destructive"
               >
                 <Trash2 className="size-4" />
                 {deletingId === detail.id ? '删除中…' : '删除此对话'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

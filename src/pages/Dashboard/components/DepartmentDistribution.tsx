@@ -57,7 +57,7 @@ export default function DepartmentDistribution({ stats, isLoading }: Props) {
             </div>
           ))}
           {total > 0 && (
-            <p className="text-[11px] text-zinc-400 dark:text-zinc-500 pt-1 border-t border-zinc-100 dark:border-zinc-800">
+            <p className="text-2xs text-zinc-400 dark:text-zinc-500 pt-1 border-t border-zinc-100 dark:border-zinc-800">
               共 {total} 名在册员工（不含离职）
             </p>
           )}

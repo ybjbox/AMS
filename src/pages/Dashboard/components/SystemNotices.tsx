@@ -3,6 +3,7 @@ import { Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { UseDashboardReturn } from '../hooks/useDashboard';
 import { EmptyState } from '@/components/ui/EmptyState';
+import Badge from '@/components/ui/Badge';
 import { useUserStore } from '@/store/useUserStore';
 
 export type SystemNoticesProps = Pick<UseDashboardReturn, 'notices' | 'isLoading'>;
@@ -58,9 +59,7 @@ export default function SystemNotices({ notices, isLoading }: SystemNoticesProps
                 </p>
               </div>
               {notice.isNew && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400">
-                  最新
-                </span>
+                <Badge variant="primary">最新</Badge>
               )}
             </div>
           ))}

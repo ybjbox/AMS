@@ -8,6 +8,8 @@ import { z } from 'zod';
 import { useAppSettings, useLoadingStore } from '../store/appSettings';
 import { useUserStore } from '../store/useUserStore';
 import { authService, toUserInfo } from '../services/auth';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 
 const loginSchema = z.object({
   username: z.string().min(1, '请输入用户名'),
@@ -18,6 +20,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const globalLoading = useLoadingStore((state) => state.globalLoading);
   const setLoading = useLoadingStore((state) => state.setLoading);
   const loading = globalLoading;
@@ -121,13 +124,14 @@ export default function Login() {
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <User className="h-5 w-5 text-zinc-400" />
                 </div>
-                <input
+                <Input
                   {...register('username')}
                   id="username"
                   type="text"
                   autoComplete="username"
                   spellCheck={false}
-                  className={`input-base pl-10 py-2.5 sm:text-sm ${errors.username ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
+                  aria-invalid={Boolean(errors.username)}
+                  className="pl-10"
                   placeholder="请输入用户名"
                 />
               </div>
@@ -142,12 +146,13 @@ export default function Login() {
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-zinc-400" />
                 </div>
-                <input
+                <Input
                   {...register('password')}
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
-                  className={`input-base pl-10 pr-10 py-2.5 sm:text-sm ${errors.password ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
+                  aria-invalid={Boolean(errors.password)}
+                  className="pl-10 pr-10"
                   placeholder="请输入密码"
                 />
                 <button
@@ -164,11 +169,11 @@ export default function Login() {
 
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <input
+                <Checkbox
                   id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-brand-600 focus:ring-brand-600 border-zinc-200/80 dark:border-zinc-600 rounded cursor-pointer"
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => setRememberMe(checked === true)}
+                  className="border-zinc-300 dark:border-zinc-600"
                 />
                 <label
                   htmlFor="remember-me"

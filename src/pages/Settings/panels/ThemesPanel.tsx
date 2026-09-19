@@ -4,6 +4,8 @@ import { Plus, Trash2, Save, RotateCcw, Palette } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { exportApi } from '@/services/exportApi';
 import { describeSaveError } from '@/store/saveFailureCore';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface Theme {
   id: string;
@@ -91,13 +93,10 @@ export default function ThemesPanel() {
           <h2 className="text-lg font-medium text-zinc-900 dark:text-white">导出主题管理</h2>
           <p className="text-sm text-zinc-500 mt-1">自定义 Excel 导出的配色方案，包括标题、表头及隔行变色</p>
         </div>
-        <button
-          onClick={handleAddTheme}
-          className="btn-primary"
-        >
+        <Button onClick={handleAddTheme}>
           <Plus className="w-4 h-4 mr-2" />
           新增主题
-        </button>
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-6">
@@ -130,49 +129,43 @@ export default function ThemesPanel() {
                     <h3 className="font-semibold text-zinc-900 dark:text-white">{theme.name}</h3>
                   )}
                   {(theme.id === 'default' || theme.id === 'theme_1') && (
-                    <span className="text-[10px] bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400 px-2 py-0.5 rounded-full font-bold">默认</span>
+                    <span className="text-3xs bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400 px-2 py-0.5 rounded-full font-bold">默认</span>
                   )}
                 </div>
 
                 <div className="flex items-center space-x-2">
                   {editingId === theme.id ? (
                     <>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={() => handleSave()}
                         disabled={saving}
-                        className="p-2 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-lg transition-colors"
                         title="保存"
                       >
                         <Save className="w-4 h-4" />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={() => {
                           setEditingId(null);
                           fetchThemes();
                         }}
-                        className="p-2 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-lg transition-colors"
                         title="取消"
                       >
                         <RotateCcw className="w-4 h-4" />
-                      </button>
+                      </Button>
                     </>
                   ) : (
                     <>
-                      <button
-                        onClick={() => setEditingId(theme.id)}
-                        className="p-2 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-lg transition-colors"
-                        title="编辑"
-                      >
+                      <Button variant="ghost" size="icon-sm" onClick={() => setEditingId(theme.id)} title="编辑">
                         <Palette className="w-4 h-4" />
-                      </button>
+                      </Button>
                       {theme.id !== 'default' && theme.id !== 'theme_1' && (
-                        <button
-                          onClick={() => handleDeleteTheme(theme.id)}
-                          className="p-2 text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
-                          title="删除"
-                        >
+                        <Button variant="ghost" size="icon-sm" onClick={() => handleDeleteTheme(theme.id)} title="删除">
                           <Trash2 className="w-4 h-4" />
-                        </button>
+                        </Button>
                       )}
                     </>
                   )}
@@ -185,14 +178,14 @@ export default function ThemesPanel() {
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">大标题背景色</label>
                     <div className="flex items-center space-x-3">
-                      <input
+                      <Input
                         type="color"
                         value={`#${theme.titleFill.substring(2)}`}
                         disabled={editingId !== theme.id}
                         onChange={(e) =>
                           handleUpdateTheme(theme.id, 'titleFill', `FF${e.target.value.substring(1).toUpperCase()}`)
                         }
-                        className="w-10 h-10 rounded-lg border-0 p-0 cursor-pointer disabled:cursor-not-allowed bg-transparent"
+                        className="w-10 h-10 border-0 p-0 cursor-pointer bg-transparent"
                       />
                       <span className="text-sm font-mono text-zinc-600 dark:text-zinc-400">#{theme.titleFill.substring(2)}</span>
                     </div>
@@ -202,14 +195,14 @@ export default function ThemesPanel() {
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">表头背景色</label>
                     <div className="flex items-center space-x-3">
-                      <input
+                      <Input
                         type="color"
                         value={`#${theme.headerFill.substring(2)}`}
                         disabled={editingId !== theme.id}
                         onChange={(e) =>
                           handleUpdateTheme(theme.id, 'headerFill', `FF${e.target.value.substring(1).toUpperCase()}`)
                         }
-                        className="w-10 h-10 rounded-lg border-0 p-0 cursor-pointer disabled:cursor-not-allowed bg-transparent"
+                        className="w-10 h-10 border-0 p-0 cursor-pointer bg-transparent"
                       />
                       <span className="text-sm font-mono text-zinc-600 dark:text-zinc-400">#{theme.headerFill.substring(2)}</span>
                     </div>
@@ -219,14 +212,14 @@ export default function ThemesPanel() {
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">表头文字颜色</label>
                     <div className="flex items-center space-x-3">
-                      <input
+                      <Input
                         type="color"
                         value={`#${theme.headerFontColor.substring(2)}`}
                         disabled={editingId !== theme.id}
                         onChange={(e) =>
                           handleUpdateTheme(theme.id, 'headerFontColor', `FF${e.target.value.substring(1).toUpperCase()}`)
                         }
-                        className="w-10 h-10 rounded-lg border-0 p-0 cursor-pointer disabled:cursor-not-allowed bg-transparent"
+                        className="w-10 h-10 border-0 p-0 cursor-pointer bg-transparent"
                       />
                       <span className="text-sm font-mono text-zinc-600 dark:text-zinc-400">#{theme.headerFontColor.substring(2)}</span>
                     </div>
@@ -236,14 +229,14 @@ export default function ThemesPanel() {
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">隔行变色填充</label>
                     <div className="flex items-center space-x-3">
-                      <input
+                      <Input
                         type="color"
                         value={`#${theme.zebraFill.substring(2)}`}
                         disabled={editingId !== theme.id}
                         onChange={(e) =>
                           handleUpdateTheme(theme.id, 'zebraFill', `FF${e.target.value.substring(1).toUpperCase()}`)
                         }
-                        className="w-10 h-10 rounded-lg border-0 p-0 cursor-pointer disabled:cursor-not-allowed bg-transparent"
+                        className="w-10 h-10 border-0 p-0 cursor-pointer bg-transparent"
                       />
                       <span className="text-sm font-mono text-zinc-600 dark:text-zinc-400">#{theme.zebraFill.substring(2)}</span>
                     </div>
@@ -262,7 +255,7 @@ export default function ThemesPanel() {
                     </div>
                     <div className="h-8 grid grid-cols-3 gap-px bg-zinc-200 dark:bg-zinc-700">
                       <div
-                        className="flex items-center justify-center text-[10px] font-bold"
+                        className="flex items-center justify-center text-3xs font-bold"
                         style={{
                           backgroundColor: `#${theme.headerFill.substring(2)}`,
                           color: `#${theme.headerFontColor.substring(2)}`,
@@ -271,7 +264,7 @@ export default function ThemesPanel() {
                         工号
                       </div>
                       <div
-                        className="flex items-center justify-center text-[10px] font-bold"
+                        className="flex items-center justify-center text-3xs font-bold"
                         style={{
                           backgroundColor: `#${theme.headerFill.substring(2)}`,
                           color: `#${theme.headerFontColor.substring(2)}`,
@@ -280,7 +273,7 @@ export default function ThemesPanel() {
                         姓名
                       </div>
                       <div
-                        className="flex items-center justify-center text-[10px] font-bold"
+                        className="flex items-center justify-center text-3xs font-bold"
                         style={{
                           backgroundColor: `#${theme.headerFill.substring(2)}`,
                           color: `#${theme.headerFontColor.substring(2)}`,
@@ -290,25 +283,25 @@ export default function ThemesPanel() {
                       </div>
                     </div>
                     <div className="h-6 grid grid-cols-3 gap-px bg-zinc-200 dark:bg-zinc-700">
-                      <div className="bg-white dark:bg-zinc-900 flex items-center px-2 text-[10px]">001</div>
-                      <div className="bg-white dark:bg-zinc-900 flex items-center px-2 text-[10px]">张三</div>
-                      <div className="bg-white dark:bg-zinc-900 flex items-center px-2 text-[10px]">技术部</div>
+                      <div className="bg-white dark:bg-zinc-900 flex items-center px-2 text-3xs">001</div>
+                      <div className="bg-white dark:bg-zinc-900 flex items-center px-2 text-3xs">张三</div>
+                      <div className="bg-white dark:bg-zinc-900 flex items-center px-2 text-3xs">技术部</div>
                     </div>
                     <div className="h-6 grid grid-cols-3 gap-px bg-zinc-200 dark:bg-zinc-700">
                       <div
-                        className="flex items-center px-2 text-[10px] text-zinc-900 dark:text-zinc-200"
+                        className="flex items-center px-2 text-3xs text-zinc-900 dark:text-zinc-200"
                         style={{ backgroundColor: `#${theme.zebraFill.substring(2)}` }}
                       >
                         002
                       </div>
                       <div
-                        className="flex items-center px-2 text-[10px] text-zinc-900 dark:text-zinc-200"
+                        className="flex items-center px-2 text-3xs text-zinc-900 dark:text-zinc-200"
                         style={{ backgroundColor: `#${theme.zebraFill.substring(2)}` }}
                       >
                         李四
                       </div>
                       <div
-                        className="flex items-center px-2 text-[10px] text-zinc-900 dark:text-zinc-200"
+                        className="flex items-center px-2 text-3xs text-zinc-900 dark:text-zinc-200"
                         style={{ backgroundColor: `#${theme.zebraFill.substring(2)}` }}
                       >
                         人事部

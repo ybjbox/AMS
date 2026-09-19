@@ -1,0 +1,90 @@
+project:
+  name: ams
+  baseUrl: http://127.0.0.1:3001
+  outputDir: .design-qa
+
+design:
+  designMd: design-system/ams/MASTER.md
+  screenSpec: docs/DESIGN-REVIEW.md
+
+screens:
+  - name: login-desktop
+    mode: conformance
+    expected:
+      type: image
+      path: .design-qa/expected/login-desktop.png
+    app:
+      url: /login
+      viewport:
+        width: 1370
+        height: 770
+      deviceScaleFactor: 1
+      fullPage: false
+      waitUntil: networkidle
+      waitForSelector: body
+
+uiAlignment:
+  runVisualComparison: false
+  runComponentAudit: true
+  runDebtAudit: true
+  runA11yAudit: true
+  measurementTolerancePx: 1
+
+code:
+  include:
+    - src/**/*.{ts,tsx,js,jsx,css,scss,html}
+  exclude:
+    - node_modules/**
+    - dist/**
+    - .design-qa/**
+
+components:
+  libraryImportPatterns:
+    - '@/components/ui'
+  rawElementPolicy:
+    button: prefer-design-system
+    input: prefer-design-system
+    select: prefer-design-system
+    textarea: prefer-design-system
+    dialog: prefer-design-system
+  allowedRawElementFiles:
+    - '**/components/ui/**'
+
+a11y:
+  disabledRules: []
+  excludeSelectors:
+    - '[data-a11y-ignore]'
+
+debt:
+  maxHardCodedColors: 0
+  maxArbitraryTailwindValues: 5
+  maxInlineStyles: 0
+  allowedColorValues:
+    - '#000'
+    - '#fff'
+    - '#000000'
+    - '#ffffff'
+    - transparent
+  # 人工审阅后的债务扫描豁免（理由记录于此；扫描器输出 exemptedFiles 保持透明）
+  excludeFiles:
+    # 设计系统原语本身：tokens/shadows/几何在这里定义，功能代码不应再出现
+    - src/components/ui/**
+    # 全局契约与令牌定义文件（品牌色阶、print 媒体查询、滚动条等）
+    - src/index.css
+    # 测试夹具里的样例 HTML/色值不是 UI 代码
+    - 'src/**/*.test.ts'
+    - 'src/**/*.test.tsx'
+    - 'src/**/__tests__/**'
+    # 打印/导出链路：纸张尺寸必须用绝对 px/mm 与内联样式（打印窗口无 Tailwind 运行时），
+    # 台卡/席位卡的 style 绑定是用户可配置值（themeColor/fontSize），内联是正确实现
+    - src/pages/Documents/components/DocumentsPrintTemplate.tsx
+    - src/pages/Seating/components/PrintPreview.tsx
+    - src/pages/Seating/components/PrintSettingsModal.tsx
+    - src/pages/NameCards/components/NameCardPreview.tsx
+    - src/pages/Users/utils/printHtml.ts
+    - src/pages/Users/components/PrintTemplates.tsx
+    - src/pages/Users/hooks/useExport.ts
+    # 台卡主题色默认值与打印 document.write 模板串（打印窗口无设计系统运行时）
+    - src/pages/NameCards/constants.ts
+    - src/pages/Users/constants.ts
+    - src/pages/Users/components/UserDetailModal.tsx

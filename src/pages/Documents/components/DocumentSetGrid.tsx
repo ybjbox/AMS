@@ -2,6 +2,7 @@ import React from 'react';
 import { Folder, Edit2, Trash2, FileText, Printer, Plus } from 'lucide-react';
 import { DocumentSet, Document } from '@/store/useDocumentStore';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Button } from '@/components/ui/button';
 import { usePermissionsStore } from '@/store/permissions';
 import { hasPermission } from '@/utils/permission';
 
@@ -108,14 +109,15 @@ export function DocumentSetGrid({
               </ul>
             </div>
             <div className="p-4 border-t border-zinc-100 dark:border-zinc-700 bg-white dark:bg-zinc-800">
-              <button
+              <Button
                 onClick={() => onPrintSetClick(set)}
                 disabled={set.documentIds.length === 0}
-                className="w-full flex items-center justify-center px-4 py-2.5 bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 rounded-lg hover:bg-brand-100 dark:hover:bg-brand-900/50 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                size="lg"
+                className="w-full"
               >
                 <Printer className="w-4 h-4 mr-2" />
                 一键打印套件
-              </button>
+              </Button>
             </div>
           </div>
         ))

@@ -2,6 +2,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import { Download, FileSpreadsheet, UploadCloud, CheckCircle2, AlertCircle, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { BaseModal } from '@/components/ui/BaseModal';
+import { Button } from '@/components/ui/button';
 import { withAuthToken } from '@/services/api';
 import {
   previewImport,
@@ -189,13 +190,9 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
               </span>
             )}
             <div className="flex-1" />
-            <button
-              type="button"
-              onClick={reset}
-              className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 dark:border-zinc-600 px-3 py-1.5 font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors"
-            >
+            <Button type="button" variant="outline" size="sm" onClick={reset}>
               <RotateCcw className="w-3.5 h-3.5" /> 重新选择
-            </button>
+            </Button>
           </div>
 
           <div className="max-h-[45vh] overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">

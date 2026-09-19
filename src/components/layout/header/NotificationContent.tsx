@@ -40,7 +40,7 @@ const NotificationContent = React.memo(function NotificationContent({ onClose }:
         <h3 className="flex items-center gap-1.5 text-xs font-semibold text-zinc-800 dark:text-white">
           通知
           {unreadCount > 0 && (
-            <span className="px-1.5 h-4 flex items-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+            <span className="px-1.5 h-4 flex items-center rounded-full bg-red-500 text-3xs font-bold text-white">
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
@@ -93,11 +93,11 @@ const NotificationContent = React.memo(function NotificationContent({ onClose }:
                 >
                   {notification.title}
                 </h4>
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 whitespace-nowrap">
+                <span className="text-3xs text-zinc-400 dark:text-zinc-500 whitespace-nowrap">
                   {formatNotificationTime(notification.time)}
                 </span>
               </div>
-              <p className={`mt-0.5 pl-3 text-[11px] leading-snug truncate ${notification.read ? 'text-zinc-400 dark:text-zinc-500' : 'text-zinc-500 dark:text-zinc-400'}`}>
+              <p className={`mt-0.5 pl-3 text-2xs leading-snug truncate ${notification.read ? 'text-zinc-400 dark:text-zinc-500' : 'text-zinc-500 dark:text-zinc-400'}`}>
                 {notification.message}
               </p>
             </button>

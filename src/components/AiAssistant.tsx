@@ -4,6 +4,8 @@ import { X, Send, Square, Plus, History, Trash2, MessageSquare, Loader2, Sliders
 import { useAiChat } from '@/hooks/useAiChat';
 import { resolveAiIcon, resolveAiName } from '@/config/aiIcons';
 import AiOwnModelModal from '@/components/AiOwnModelModal';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 
 /**
  * 流式回复中的打字指示器。
@@ -197,7 +199,7 @@ export default function AiAssistant() {
           transform: tucked ? 'translateX(calc(50% + 24px))' : undefined,
         }}
         className={
-          "fixed z-50 flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-[transform,opacity] duration-300 ease-[var(--ease-smooth-out)] hover:scale-105 active:scale-95" +
+          "fixed z-50 flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-[transform,opacity] duration-300 ease-smooth-out hover:scale-105 active:scale-95" +
           (tucked ? " opacity-50" : "") +
           (isFloatable ? " cursor-grab" : " bottom-6 right-6") +
           (dragging ? " cursor-grabbing" : "")
@@ -223,7 +225,7 @@ export default function AiAssistant() {
                 <span className="shrink-0 text-sm font-semibold">{assistantLabel}</span>
                 <span
                   title={hasOwnModel ? '当前使用个人模型（自有凭据，不占用系统额度）' : '系统模型的当日剩余额度'}
-                  className="truncate rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
+                  className="truncate rounded-full bg-muted px-2 py-0.5 text-3xs text-muted-foreground"
                 >
                   {hasOwnModel
                     ? '个人模型 · 不占额度'
@@ -381,13 +383,16 @@ export default function AiAssistant() {
 
                 {/* 底部：开关 + 输入 */}
                 <div className="border-t border-border px-4 py-3">
-                  <label className="mb-2 flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                    <input
-                      type="checkbox"
+                  <label
+                    htmlFor="ai-assistant-use-data"
+                    className="mb-2 flex cursor-pointer items-center gap-2 text-xs text-muted-foreground"
+                  >
+                    <Checkbox
+                      id="ai-assistant-use-data"
                       checked={useData}
                       disabled={streaming}
-                      onChange={(e) => setUseData(e.target.checked)}
-                      className="h-3.5 w-3.5 accent-primary disabled:opacity-40"
+                      onCheckedChange={(checked) => setUseData(checked === true)}
+                      className="size-3.5 shrink-0"
                     />
                     读取业务数据（基于系统现有数据回答）
                   </label>
@@ -400,7 +405,7 @@ export default function AiAssistant() {
                   )}
 
                   <div className="flex items-end gap-2">
-                    <textarea
+                    <Textarea
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       onKeyDown={(e) => {
@@ -411,6 +416,7 @@ export default function AiAssistant() {
                       }}
                       rows={1}
                       disabled={!aiEnabled || streaming}
+                      aria-label="输入问题"
                       placeholder={
                         !aiEnabled
                           ? 'AI 助手已关闭'
@@ -418,7 +424,7 @@ export default function AiAssistant() {
                           ? 'AI 正在回复，请稍候…'
                           : '输入问题，Enter 发送…'
                       }
-                      className="max-h-24 min-h-[40px] flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary disabled:opacity-50"
+                      className="min-h-[40px] max-h-24 flex-1 field-sizing-fixed resize-y"
                     />
                     {streaming ? (
                       <button

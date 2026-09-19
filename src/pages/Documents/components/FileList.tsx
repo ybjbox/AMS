@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { File, FileText, ImageIcon, FileArchive, Search, ChevronRight } from 'lucide-react';
 import { Document } from '@/store/useDocumentStore';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Input } from '@/components/ui/input';
 import { formatFileSize } from '@/utils/fileUtils';
 import { withAuthToken } from '@/services/api';
 import { usePermissionsStore } from '@/store/permissions';
@@ -77,12 +78,13 @@ export function FileList({
         </div>
         <div className="relative">
           <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400" />
-          <input
+          <Input
             type="text"
             placeholder="搜索文件名称或类型…"
+            aria-label="搜索文件名称或类型"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="input-base pl-10 w-full sm:w-64"
+            className="pl-10 w-full sm:w-64"
           />
         </div>
       </div>

@@ -15,6 +15,8 @@ import { Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Users, Phone, Briefcase,
 import { formatPhone, maskPhone } from '@/utils/dateUtils';
 import { TableSkeleton } from '../ui/Skeleton';
 import { EmptyState } from '../ui/EmptyState';
+import { Button } from '../ui/button';
+import Badge from '../ui/Badge';
 
 interface UserTableProps {
   data: User[];
@@ -97,17 +99,9 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
         cell: ({ row }) => {
           const status = row.original.status;
           return (
-            <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                status === '在职'
-                  ? 'bg-emerald-50 text-emerald-700 dark:bg-success/10 dark:text-success'
-                  : status === '试用期'
-                    ? 'bg-amber-50 text-amber-700 dark:bg-warning/10 dark:text-warning'
-                    : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
-              }`}
-            >
+            <Badge variant={status === '在职' ? 'success' : status === '试用期' ? 'warning' : 'neutral'}>
               {status}
-            </span>
+            </Badge>
           );
         },
         size: 90,
@@ -291,15 +285,9 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                     <p className="font-medium text-zinc-900 dark:text-white text-sm">{user.name}</p>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{user.id}</p>
                   </div>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    user.status === '在职'
-                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                      : user.status === '试用期'
-                      ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                      : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-400'
-                  }`}>
+                  <Badge variant={user.status === '在职' ? 'success' : user.status === '试用期' ? 'warning' : 'neutral'}>
                     {user.status}
-                  </span>
+                  </Badge>
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400 mb-3">
                   {user.department && (
@@ -320,18 +308,26 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                 </div>
                 {hasPermission('users:manage') && (
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="flex-1"
+                      aria-label={`编辑：${user.name}`}
                       onClick={(e) => { e.stopPropagation(); onEdit(user); }}
-                      className="flex-1 py-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-700 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors"
                     >
                       编辑
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="flex-1"
+                      aria-label={`删除：${user.name}`}
                       onClick={(e) => { e.stopPropagation(); onDelete(user); }}
-                      className="flex-1 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                     >
                       删除
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>
@@ -362,11 +358,11 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                             }
                             className={`group px-4 py-2 text-xs font-medium text-zinc-500 uppercase tracking-wider bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-100 dark:border-zinc-800 sticky top-0 z-20 ${
                               isFirst
-                                ? 'left-0 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]'
+                                ? 'left-0 z-30 shadow-sticky-left'
                                 : ''
                             } ${
                               isLast
-                                ? 'right-0 z-30 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.5)]'
+                                ? 'right-0 z-30 shadow-sticky-right'
                                 : ''
                             }`}
                             style={{
@@ -412,11 +408,11 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                               key={cell.id}
                               className={`px-4 whitespace-nowrap text-sm bg-white dark:bg-zinc-800 group-hover/row:bg-zinc-50/80 dark:group-hover/row:bg-zinc-700/30 transition-colors ${
                                 isFirst
-                                  ? 'sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]'
+                                  ? 'sticky left-0 z-10 shadow-sticky-left'
                                   : ''
                               } ${
                                 isLast
-                                  ? 'sticky right-0 z-10 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.5)]'
+                                  ? 'sticky right-0 z-10 shadow-sticky-right'
                                   : ''
                               } border-b border-zinc-50 dark:border-zinc-800/50`}
                               style={{
