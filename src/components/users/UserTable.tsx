@@ -12,7 +12,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { User } from '@/types';
 import { useUserStore } from '@/store/useUserStore';
 import { Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Users, Phone, Briefcase, Building2 } from 'lucide-react';
-import { formatPhone, maskPhone } from '@/utils/dateUtils';
+import { maskPhone } from '@/utils/dateUtils';
 import { TableSkeleton } from '../ui/Skeleton';
 import { EmptyState } from '../ui/EmptyState';
 import { Button } from '../ui/button';

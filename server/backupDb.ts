@@ -107,7 +107,7 @@ export function createBackup(label?: string): BackupMeta {
     } catch {
       /* ignore */
     }
-    throw new Error(`备份失败：${e instanceof Error ? e.message : e}`);
+    throw new Error(`备份失败：${e instanceof Error ? e.message : e}`, { cause: e });
   }
   const stat = fs.statSync(target);
   return { name, path: target, size: stat.size, createdAt: new Date().toISOString(), withUploads };

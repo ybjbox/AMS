@@ -60,6 +60,9 @@ export function ensureTodosTable(): void {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_todos_createdBy ON todos(createdBy)`);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_todos_assignee ON todos(assignee)`);
 }
+// 与其它 *Db 模块一致：加载即建表。此前只有 migrate 会建，导致「没跑过迁移就 import」
+// 的进程（精简启动、单个测试文件）里 createTodo / 清理语句直接抛 no such table: todos。
+ensureTodosTable();
 
 export function rowToTodo(row: TodoRow) {
   return {

@@ -23,7 +23,6 @@ const ADMIN_PW = 'AdminPass123';
 const ALICE_PW = 'Password123';
 
 const BASE = `http://127.0.0.1:${process.env.PORT}`;
-const DATA_DIR = process.env.DATA_DIR;
 
 let pass = 0;
 let fail = 0;

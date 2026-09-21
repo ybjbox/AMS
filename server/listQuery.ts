@@ -20,7 +20,7 @@ export interface Paging {
 }
 
 /** 从任意 query 对象（Express req.query 为字符串）解析分页参数 */
-export function resolvePaging(query: Record<string, any> | null | undefined): Paging {
+export function resolvePaging(query: Record<string, unknown> | null | undefined): Paging {
   const q = query || {};
   const rawPage = Number(q.page);
   const rawSize = Number(q.pageSize);

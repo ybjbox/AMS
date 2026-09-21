@@ -47,7 +47,10 @@ async function probeOnce(): Promise<ProbeResult> {
 }
 
 export function useBackendStatus(pollInterval = POLL_INTERVAL_MS): BackendStatus {
-  const [status, setStatus] = useState<BackendStatus>('checking');
+  // 浏览器已经报告离线时直接以 offline 起手，省掉「检查中 → 立刻改口」的那一帧
+  const [status, setStatus] = useState<BackendStatus>(() =>
+    typeof navigator !== 'undefined' && navigator.onLine === false ? 'offline' : 'checking'
+  );
   const mountedRef = useRef(true);
 
   const probe = useCallback(async () => {
@@ -63,6 +66,9 @@ export function useBackendStatus(pollInterval = POLL_INTERVAL_MS): BackendStatus
 
   useEffect(() => {
     mountedRef.current = true;
+    // 挂载即探一次是本 hook 的语义（状态灯要在进入应用时就亮起来）；
+    // 探到的结果异步落回状态，同步分支只有上面那一条已离线的短路
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void probe();
 
     const interval = setInterval(() => void probe(), pollInterval);

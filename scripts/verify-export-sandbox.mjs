@@ -248,7 +248,6 @@ async function main() {
     console.log("\n=== 8. 正常模板功能未被破坏（default_script） ===");
     {
       const ws = await exportWith("default_script");
-      const text = dumpText(ws);
       ok("标题行存在", ws.getRow(1).getCell(1).value === "员工花名册", `-> ${ws.getRow(1).getCell(1).value}`);
       ok("标题行已合并", ws.getRow(1).getCell(1).isMerged === true);
       ok("标题字号 22 生效", ws.getRow(1).getCell(1).font?.size === 22, JSON.stringify(ws.getRow(1).getCell(1).font));

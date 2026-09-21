@@ -39,14 +39,8 @@ function collectFiles(dir: string, out: SrcFile[] = []): SrcFile[] {
 
 const allFiles = collectFiles(SRC_ROOT);
 
-/** 其它文件（排除自身与测试）中是否出现词边界形式的 token */
-function isReferenced(base: string, self: string): boolean {
-  const re = new RegExp(`\\b${base}\\b`);
-  return allFiles.some((f) => f.rel !== self && re.test(f.content));
-}
-
 /**
- * 比 isReferenced 更严格：忽略 import 行。
+ * 判定「是否真被别处使用」：忽略 import 行 ——
  * 「import 了但从未渲染/调用」同样是死 UI（如某面板被移出 switch 却忘了删 import）。
  */
 function isUsed(base: string, self: string): boolean {

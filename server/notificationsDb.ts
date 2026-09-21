@@ -50,6 +50,8 @@ export function ensureNotificationsTable(): void {
     `CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON notifications(recipient)`
   );
 }
+// 加载即建表，理由同 todosDb：不能把建表责任留给 migrate 的调用顺序。
+ensureNotificationsTable();
 
 export function rowToNotification(row: NotificationRow) {
   return {

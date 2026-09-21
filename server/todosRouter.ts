@@ -8,7 +8,6 @@ import {
   createTodo,
   updateTodo,
   deleteTodo,
-  type TodoType,
 } from './todosDb.ts';
 import { ROLE_LEVEL, type SystemRole } from './authDb.ts';
 import { validateBody, todoCreateSchema, todoUpdateSchema, errMessage } from './validation.ts';

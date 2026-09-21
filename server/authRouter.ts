@@ -14,7 +14,6 @@ import {
   deleteAccount,
   getAccount,
   getLockRemainingMs,
-  isSystemRole,
   listAccounts,
   recordLoginFailure,
   recordLoginSuccess,

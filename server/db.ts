@@ -7,7 +7,7 @@ import path from "path";
 import fs from "fs";
 import { resolvePaging, toListResult } from "./listQuery.ts";
 import { instrumentDatabase } from "./sqliteUtil.ts";
-import { type DbRow, asString, asNumber, asNullableString, asCount } from "./sqliteUtil.ts";
+import { asString, asNumber, asCount } from "./sqliteUtil.ts";
 
 export const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), "data");
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -31,8 +31,8 @@ export let db = new DatabaseSync(DB_PATH);
  */
 function applyConnectionPragmas(conn: DatabaseSync): void {
   conn.exec(`
-    PRAGMA journal_mode = WAL;
     PRAGMA busy_timeout = 5000;
+    PRAGMA journal_mode = WAL;
     PRAGMA synchronous = NORMAL;
     PRAGMA cache_size = -20000;
     PRAGMA temp_store = MEMORY;
@@ -98,6 +98,7 @@ export function closeDb(): void {
 export function reloadDb(): void {
   closeDb();
   db = new DatabaseSync(DB_PATH);
+  resetSchemaProbes();
   applyConnectionPragmas(db);
   for (const hook of reloadHooks) {
     try {
@@ -254,7 +255,7 @@ export function rowToUser(row: unknown): User | null {
 /** 从写入载荷里解析出 departmentId：优先用显式 id，否则按部门名反查 */
 function resolveDepartmentId(input: Record<string, unknown>): string | null {
   if (input && input.departmentId) return String(input.departmentId);
-  if (input && input.department) {
+  if (input && input.department && hasDepartmentsTable()) {
     const row = db.prepare("SELECT id FROM departments WHERE name = ?").get(input.department as string);
     return row ? (row as { id: string }).id : null;
   }
@@ -262,11 +263,17 @@ function resolveDepartmentId(input: Record<string, unknown>): string | null {
 }
 
 /**
- * accounts 表由 authDb 负责建，db.ts 只联查它的 systemRole。
- * 进程里 authDb 可能还没加载（例如只跑导入任务的场景），此时退化为不联查，
- * 而不是让整条员工查询抛 "no such table: accounts"。确认后不再重复探测。
+ * accounts / departments 分别由 authDb、departmentsDb 建表，db.ts 只联查
+ * systemRole 与部门名。只加载本模块的进程（员工导入、提醒扫描、单测）里
+ * 它们可能还没建，此时必须退化为少联查/读缓存列，而不是让整条员工查询抛
+ * "no such table"。探测到一次存在就不再重复探测；换连接时由 reloadDb 归零。
  */
 let accountsTableReady = false;
+let departmentsTableReady = false;
+function resetSchemaProbes(): void {
+  accountsTableReady = false;
+  departmentsTableReady = false;
+}
 function accountsJoin(): { join: string; select: string } {
   if (!accountsTableReady) {
     try {
@@ -277,6 +284,38 @@ function accountsJoin(): { join: string; select: string } {
     }
   }
   return { join: "LEFT JOIN accounts a ON a.employeeId = e.id", select: ", a.systemRole AS accountRole" };
+}
+
+/** 按 id 取部门名，用于回填 employees.department 缓存列 */
+function deptNameById(deptId: string): string {
+  return (db.prepare("SELECT name FROM departments WHERE id = ?").get(deptId) as { name: string } | undefined)?.name ?? "";
+}
+
+function hasDepartmentsTable(): boolean {
+  if (departmentsTableReady) return true;
+  try {
+    db.prepare("SELECT 1 FROM departments LIMIT 0").get();
+    departmentsTableReady = true;
+  } catch {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * 员工查询的公共片段：JOIN 与 SELECT 都按「外部表是否已建」拼装。
+ * deptFilter 是部门名匹配的 SQL 表达式，供关键字搜索复用。
+ */
+function employeeQueryParts(): { base: string; select: string; deptFilter: string } {
+  const { join, select } = accountsJoin();
+  if (!hasDepartmentsTable()) {
+    return { base: `FROM employees e ${join}`, select, deptFilter: "e.department" };
+  }
+  return {
+    base: `FROM employees e LEFT JOIN departments d ON d.id = e.departmentId ${join}`,
+    select: `, d.name AS deptName${select}`,
+    deptFilter: "COALESCE(d.name, '')",
+  };
 }
 
 const FIELDS = [
@@ -308,42 +347,33 @@ export type EmployeeListResult = ReturnType<typeof rowToUser>[] | import("./list
 export function listEmployees(query: Record<string, unknown> = {}): EmployeeListResult {
   const paging = resolvePaging(query);
   const keyword = typeof query.keyword === "string" ? query.keyword.trim() : "";
+  const { base, select, deptFilter } = employeeQueryParts();
   const where = keyword
-    ? `WHERE e.name LIKE ? OR e.phone LIKE ? OR COALESCE(d.name, '') LIKE ?`
+    ? `WHERE e.name LIKE ? OR e.phone LIKE ? OR ${deptFilter} LIKE ?`
     : "";
   const params = keyword ? [`%${keyword}%`, `%${keyword}%`, `%${keyword}%`] : [];
-  const { join, select } = accountsJoin();
-  const base = `FROM employees e LEFT JOIN departments d ON d.id = e.departmentId ${join}`;
 
   const total = asCount(db.prepare(`SELECT COUNT(*) AS c ${base} ${where}`).get(...params)?.c);
 
   if (!paging.requested) {
     // 向后兼容：未请求分页时返回完整数组
     const rows = db
-      .prepare(`SELECT e.*, d.name AS deptName${select} ${base} ${where} ORDER BY e.id`)
+      .prepare(`SELECT e.*${select} ${base} ${where} ORDER BY e.id`)
       .all(...params);
     return rows.map((r) => rowToUser(r)).filter((u): u is NonNullable<typeof u> => u !== null);
   }
 
   const rows = db
     .prepare(
-      `SELECT e.*, d.name AS deptName${select} ${base} ${where} ORDER BY e.id LIMIT ? OFFSET ?`
+      `SELECT e.*${select} ${base} ${where} ORDER BY e.id LIMIT ? OFFSET ?`
     )
     .all(...params, paging.limit, paging.offset);
   return toListResult(rows.map((r) => rowToUser(r)).filter((u): u is NonNullable<typeof u> => u !== null), total, paging);
 }
 
 export function getEmployee(id: string) {
-  const { join, select } = accountsJoin();
-  const row = db
-    .prepare(
-      `SELECT e.*, d.name AS deptName${select}
-         FROM employees e
-         LEFT JOIN departments d ON d.id = e.departmentId
-         ${join}
-        WHERE e.id = ?`
-    )
-    .get(id);
+  const { base, select } = employeeQueryParts();
+  const row = db.prepare(`SELECT e.*${select} ${base} WHERE e.id = ?`).get(id);
   return rowToUser(row);
 }
 
@@ -395,10 +425,10 @@ export function createEmployee(input: Record<string, unknown>) {
     db.prepare(sql).run(id, ...keys.map(k => data[k]));
 
     // 维护部门外键：按名称或显式 id 解析出 departmentId，并同步缓存部门名
-    const deptId = resolveDepartmentId(input);
+    // （没有部门表时跳过维护，保留调用方写进来的部门名文本）
+    const deptId = hasDepartmentsTable() ? resolveDepartmentId(input) : null;
     if (deptId) {
-      const deptName = (db.prepare("SELECT name FROM departments WHERE id = ?").get(deptId) as { name: string } | undefined)?.name ?? "";
-      db.prepare("UPDATE employees SET departmentId = ?, department = ? WHERE id = ?").run(deptId, deptName, id);
+      db.prepare("UPDATE employees SET departmentId = ?, department = ? WHERE id = ?").run(deptId, deptNameById(deptId), id);
     }
     db.exec("COMMIT");
   } catch (e) {
@@ -447,11 +477,10 @@ export function updateEmployee(id: string, input: Record<string, unknown>) {
     }
 
     // 部门变更：显式 id 或部门名变动时，重新解析并维护 departmentId / 部门名
-    if (input.departmentId !== undefined || input.department !== undefined) {
+    if ((input.departmentId !== undefined || input.department !== undefined) && hasDepartmentsTable()) {
       const deptId = resolveDepartmentId(input);
       if (deptId) {
-        const deptName = (db.prepare("SELECT name FROM departments WHERE id = ?").get(deptId) as { name: string } | undefined)?.name ?? "";
-        db.prepare("UPDATE employees SET departmentId = ?, department = ? WHERE id = ?").run(deptId, deptName, id);
+        db.prepare("UPDATE employees SET departmentId = ?, department = ? WHERE id = ?").run(deptId, deptNameById(deptId), id);
       } else {
         db.prepare("UPDATE employees SET departmentId = NULL, department = '' WHERE id = ?").run(id);
       }

@@ -5,20 +5,27 @@
 import { db } from "./db.ts";
 import { type DbRow, asString, asNumber } from "./sqliteUtil.ts";
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS departments (
-    id       TEXT PRIMARY KEY,
-    name     TEXT NOT NULL,
-    priority INTEGER DEFAULT 0,
-    parentId TEXT
-  );
-  CREATE TABLE IF NOT EXISTS roles (
-    id           TEXT PRIMARY KEY,
-    name         TEXT NOT NULL,
-    departmentId TEXT NOT NULL,
-    priority     INTEGER DEFAULT 0
-  );
-`);
+/**
+ * departments / roles 建表。加载即建（与其它 *Db 模块一致），同时导出给迁移的常驻步骤：
+ * 恢复备份后库可能缺这两张表，而 syncDisplaySnapshots 要读 departments。
+ */
+export function ensureOrgTables(): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS departments (
+      id       TEXT PRIMARY KEY,
+      name     TEXT NOT NULL,
+      priority INTEGER DEFAULT 0,
+      parentId TEXT
+    );
+    CREATE TABLE IF NOT EXISTS roles (
+      id           TEXT PRIMARY KEY,
+      name         TEXT NOT NULL,
+      departmentId TEXT NOT NULL,
+      priority     INTEGER DEFAULT 0
+    );
+  `);
+}
+ensureOrgTables();
 
 type DeptNode = { id?: string; name: string; priority?: number; children?: DeptNode[] };
 

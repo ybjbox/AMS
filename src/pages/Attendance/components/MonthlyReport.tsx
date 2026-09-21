@@ -135,7 +135,6 @@ export default function MonthlyReport() {
             </thead>
             <tbody>
               {rows.map((r) => {
-                const abnormal = r.lateCount || r.earlyLeaveCount || r.missingCount;
                 return (
                   <tr key={r.employeeId} className="border-t border-zinc-100 dark:border-zinc-800">
                     <td className="px-4 py-2.5 text-zinc-500 dark:text-zinc-400 font-mono text-xs tabular-nums">{r.employeeId}</td>

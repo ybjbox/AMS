@@ -16,7 +16,7 @@ const MAX_OPS = 200000;
 
 const WORKER_PATH = fileURLToPath(new URL("./sandboxWorker.mjs", import.meta.url));
 
-export type SandboxOp = Record<string, any>;
+export type SandboxOp = Record<string, unknown>;
 
 export interface SandboxOutcome {
   ops: SandboxOp[];

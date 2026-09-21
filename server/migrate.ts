@@ -38,6 +38,7 @@ import { db } from "./db.ts";
 import { ensureTodosTable } from "./todosDb.ts";
 import { ensureNotificationsTable } from "./notificationsDb.ts";
 import { ensureImportJobsTable } from "./importJobsDb.ts";
+import { ensureOrgTables } from "./departmentsDb.ts";
 
 /** 当前 schema 版本。导出供回归脚本断言（不要再硬编码数字）。 */
 export const SCHEMA_VERSION = 13;
@@ -161,10 +162,13 @@ function ensureIndexes(): void {
   }
 }
 
-/** v5（P2-7）：确保 todos / notifications 表及其索引存在。幂等，作为常驻步骤。 */
+/** v5（P2-7）：确保 todos / notifications / departments+roles 表及索引存在。幂等，作为常驻步骤。 */
 function ensureTodosAndNotificationsTables(): void {
   ensureTodosTable();
   ensureNotificationsTable();
+  // 常驻维护里的 syncDisplaySnapshots 要读 departments：恢复来的旧备份缺这张表时，
+  // 不能让整个进程启动崩在 "no such table: departments"
+  ensureOrgTables();
 }
 
 /**

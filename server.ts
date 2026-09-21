@@ -241,7 +241,7 @@ async function startServer() {
       // 业务逻辑：过滤离职人员
       let exportData = data;
       if (!includeResigned) {
-        exportData = data.filter((item: any) => item.status !== "离职" && item.status !== "inactive");
+        exportData = data.filter((item: { status?: string }) => item.status !== "离职" && item.status !== "inactive");
       }
 
       const workbook = new ExcelJS.Workbook();
@@ -257,16 +257,17 @@ async function startServer() {
           const stats = applyTemplateOps(worksheet, ops);
           if (logs.length) console.log(`[export] 模板日志: ${logs.join(" | ")}`);
           console.log(`[export] 模板回放: 应用 ${stats.applied} 条，跳过 ${stats.skipped} 条`);
-        } catch (scriptError: any) {
+        } catch (scriptError) {
           console.error("Script template error:", scriptError);
-          worksheet.addRow(["脚本执行失败: " + (scriptError?.message ?? String(scriptError))]);
+          worksheet.addRow(["脚本执行失败: " + (scriptError instanceof Error ? scriptError.message : String(scriptError))]);
         }
       } else {
         // 使用传统主题模式
-        const theme = (dynamicThemes as any)[themeId] || dynamicThemes.default;
+        const theme = dynamicThemes[themeId] ?? dynamicThemes.default;
+        const argb = (key: string) => String(theme[key] ?? "");
 
         // 动态定义列
-        worksheet.columns = columns.map((col: any) => ({
+        worksheet.columns = columns.map((col: { header: string; key: string }) => ({
           header: col.header,
           key: col.key,
           width: col.key === "department" || col.key === "role" ? 25 : 15,
@@ -282,17 +283,17 @@ async function startServer() {
         titleRow.getCell(1).fill = {
           type: "pattern",
           pattern: "solid",
-          fgColor: { argb: theme.titleFill },
+          fgColor: { argb: argb("titleFill") },
         };
 
         // 设置表头样式 (现在是第2行)
         const headerRow = worksheet.getRow(2);
         headerRow.eachCell((cell) => {
-          cell.font = { bold: true, color: { argb: theme.headerFontColor } };
+          cell.font = { bold: true, color: { argb: argb("headerFontColor") } };
           cell.fill = {
             type: "pattern",
             pattern: "solid",
-            fgColor: { argb: theme.headerFill },
+            fgColor: { argb: argb("headerFill") },
           };
           cell.alignment = { vertical: "middle", horizontal: "center" };
         });
@@ -320,7 +321,7 @@ async function startServer() {
                 cell.fill = {
                   type: "pattern",
                   pattern: "solid",
-                  fgColor: { argb: theme.zebraFill },
+                  fgColor: { argb: argb("zebraFill") },
                 };
               });
             }

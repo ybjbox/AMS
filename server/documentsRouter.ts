@@ -8,7 +8,7 @@
 import { Router, json } from "express";
 import {
   listFolders, createFolder, updateFolder, deleteFolderCascade,
-  listDocuments, getDocumentRaw, createDocumentFromUpload, createDocumentFromUploadedFile, updateDocument, deleteDocument,
+  listDocuments, getDocumentRaw, createDocumentFromUploadedFile, updateDocument, deleteDocument,
   listDocumentSets, createDocumentSet, updateDocumentSet, deleteDocumentSet,
   UPLOADS_DIR,
 } from "./documentsDb.ts";
@@ -17,7 +17,7 @@ import { buildPrintPart } from "./documentPrint.ts";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
-import { validateBody, folderCreateSchema, folderUpdateSchema, documentUpdateSchema, documentSetCreateSchema, documentSetUpdateSchema, errMessage } from "./validation.ts";
+import { validateBody, folderCreateSchema, folderUpdateSchema, documentUpdateSchema, documentSetCreateSchema, documentSetUpdateSchema } from "./validation.ts";
 
 export const foldersRouter = Router();
 foldersRouter.use(json());

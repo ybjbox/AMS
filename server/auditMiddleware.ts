@@ -389,20 +389,30 @@ export const auditGate: RequestHandler = (req: Request, res: Response, next: Nex
 
 /** 给几类高价值动作补一句人话描述，日志列表里一眼能看懂 */
 function describe(action: string, req: Request, body: unknown): string {
-  const b = (req.body ?? {}) as Record<string, any>;
+  // 只声明描述文案真正读到的那几项；审计描述不该因为请求体里某个字段形状意外就抛错
+  const b = (req.body ?? {}) as {
+    data?: unknown;
+    config?: { includeResigned?: boolean; title?: string };
+    departments?: unknown;
+    roles?: unknown;
+    records?: unknown;
+    schedules?: unknown;
+  };
+  const count = (v: unknown) => (Array.isArray(v) ? v.length : 0);
   switch (action) {
     case "export.employees":
       return `导出 ${Array.isArray(b.data) ? b.data.length : "?"} 条员工数据（${
         b.config?.includeResigned ? "含离职" : "不含离职"
       }，标题「${b.config?.title ?? ""}」）`;
     case "department.replace_tree":
-      return `提交部门树，共 ${Array.isArray(b.departments) ? b.departments.length : 0} 个顶层节点`;
+      return `提交部门树，共 ${count(b.departments)} 个顶层节点`;
     case "role.replace":
-      return `提交职位列表，共 ${Array.isArray(b.roles) ? b.roles.length : 0} 项`;
+      return `提交职位列表，共 ${count(b.roles)} 项`;
     case "punchRecord.bulk_replace":
-      return `整表导入打卡记录 ${Array.isArray(b.records ?? b) ? (b.records ?? b).length : 0} 条`;
+      // 请求体既可能是 { records: [...] }，也可能直接就是数组
+      return `整表导入打卡记录 ${count(b.records ?? req.body)} 条`;
     case "schedule.bulk_upsert":
-      return `批量提交排班 ${Array.isArray(b.schedules ?? b) ? (b.schedules ?? b).length : 0} 条`;
+      return `批量提交排班 ${count(b.schedules ?? req.body)} 条`;
     case "attendance.analyze":
       return "触发考勤异常分析";
     case "document.download":

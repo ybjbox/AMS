@@ -57,16 +57,19 @@ export default function SystemLogs() {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 300);
+    // 搜索词稳定下来后再回到第一页：与防抖赋值放在同一个定时器回调里，
+    // 不再单开一个「观察到 query 变了再 setPage」的 effect（多一次渲染）
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery.trim());
+      setPage(0);
+    }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
   useEffect(() => {
-    if (debouncedQuery) setPage(0);
-  }, [debouncedQuery]);
-
-  useEffect(() => {
     let cancelled = false;
+    // 拉取前先把面板切到 loading：这是挂载/筛选变化时的初始化，不是「从渲染里派生状态」
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(null);
     fetchAuditLogs({ ...filters, q: debouncedQuery, limit: PAGE_SIZE, offset: page * PAGE_SIZE })

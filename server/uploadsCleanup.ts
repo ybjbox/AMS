@@ -24,7 +24,7 @@ export function listReferencedStoredPaths(): Set<string> {
 
 /** 扫描 UPLOADS_DIR，返回未被任何文档引用的磁盘文件绝对路径（孤儿）。 */
 export function findOrphanUploads(): string[] {
-  let entries: string[] = [];
+  let entries: string[];
   try {
     entries = fs.readdirSync(UPLOADS_DIR);
   } catch {

@@ -14,7 +14,6 @@ import { createReadStream } from "fs";
 import {
   createBackup,
   listBackups,
-  pruneBackups,
   restoreBackup,
   deleteBackup,
   getBackupConfig,

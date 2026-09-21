@@ -91,7 +91,6 @@ function lastDays(n: number): string[] {
 
 statsRouter.get("/attendance", (_req, res) => {
   const days = lastDays(30);
-  const dayRows = days.map((d) => `${d}%`);
 
   // 班次与排班（判定迟到/早退/缺卡的口径与异常分析一致）
   const shifts = db.prepare("SELECT id, startTime, endTime FROM shifts").all();

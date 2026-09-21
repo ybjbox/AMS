@@ -35,7 +35,7 @@ export default async function applyTemplate(worksheet, data, config) {
   });
 
   // 4. 填充数据并应用自定义逻辑
-  data.forEach((item, index) => {
+  data.forEach((item) => {
     const row = worksheet.addRow(item);
     
     // 逻辑：如果是人力资源中心，背景设为浅绿色

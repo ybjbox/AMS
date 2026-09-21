@@ -15,8 +15,11 @@ import { test, expect } from '@playwright/test';
  *       用新会话跑矩阵 → 收尾删除账号。
  */
 
-const ADMIN_PASSWORD = process.env.AMS_ADMIN_PASSWORD || 'Ams-Debug#2026';
-const BASE = process.env.BASE_URL || 'http://127.0.0.1:3000';
+const ADMIN_PASSWORD = process.env.AMS_ADMIN_PASSWORD;
+if (!ADMIN_PASSWORD) {
+  // 本文件不落默认口令：宁可这里说清缺什么，也不要拿硬编码凭据去撞别人机器上的库
+  throw new Error("运行本用例需要 AMS_ADMIN_PASSWORD（本地见 .env.local，CI 见 workflow env）");
+}
 
 const TEST_PASSWORD_1 = 'E2e-Matrix#2026';
 const TEST_PASSWORD_2 = 'E2e-Matrix#2027';

@@ -351,7 +351,7 @@ async function main() {
   // 轮询等待沙箱内异步流程结束。只读取原始值，绝不 await 沙箱的 thenable。
   const deadline = Date.now() + totalTimeoutMs;
   for (;;) {
-    let done = false;
+    let done;
     try {
       done = vm.runInContext("__done === true", context, { timeout: 200 });
     } catch {
@@ -362,8 +362,8 @@ async function main() {
     await new Promise((r) => setTimeout(r, 2));
   }
 
-  let sandboxError = null;
-  let resultJson = null;
+  let sandboxError;
+  let resultJson;
   try {
     sandboxError = vm.runInContext('typeof __error === "string" ? __error : null', context, {
       timeout: 200,
