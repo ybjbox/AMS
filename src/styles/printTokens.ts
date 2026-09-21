@@ -2,7 +2,7 @@
  * C3：打印专用灰阶令牌（从界面 zinc/gray 灰阶派生，集中定义，避免与界面灰阶漂移）。
  *
  * 使用方：
- * - 主文档打印（DocumentsPrintTemplate / PrintTemplates / constants.ts 的内联 style）：
+ * - 主文档打印（PrintTemplates / constants.ts 的内联 style）：
  *   由 main.tsx 在启动时把本块注入到主文档 :root，故这些组件可直接用 var(--print-*)。
  * - 独立打印窗口（printHtml.ts 的 buildLabel/ContactCard/Roster/AddressBook）：
  *   因是单独 document，printHtml.ts 在生成 <style> 时内联同一份变量。

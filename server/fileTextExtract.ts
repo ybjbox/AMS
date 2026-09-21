@@ -10,6 +10,9 @@ export const MAX_TEXT_CHARS = 20_000;
 /** 提取失败时抛出；router 按 400 返回给前端。 */
 export class ExtractError extends Error {}
 
+/** PDF 无文字层（扫描版/图片型）；noticeRouter 捕获后回退到视觉模型 OCR。 */
+export class NoTextLayerError extends ExtractError {}
+
 const SUPPORTED = /\.(txt|md|csv|xlsx|docx|pdf)$/i;
 
 function extension(filename: string): string {
@@ -117,11 +120,18 @@ async function extractDocx(buffer: Buffer): Promise<string> {
 }
 
 async function extractPdf(buffer: Buffer): Promise<string> {
+  let text: string;
   try {
     const doc = await getDocumentProxy(new Uint8Array(buffer));
-    const text = await extractText(doc, { mergePages: true });
-    return Array.isArray(text) ? text.join("\n") : String(text);
+    // unpdf ≥1.3 返回 { text: string[], totalPages }；旧版直接返回 string[]
+    const result = (await extractText(doc, { mergePages: true })) as string[] | { text?: string[] | string };
+    const pages = Array.isArray(result) ? result : result.text ?? [];
+    text = Array.isArray(pages) ? pages.join("\n") : String(pages);
   } catch {
-    throw new ExtractError("PDF 文件无法解析（扫描版图片 PDF 暂不支持提取文字）");
+    throw new ExtractError("PDF 文件无法解析（已损坏或受密码保护）");
   }
+  if (!text.replace(/\s+/g, "")) {
+    throw new NoTextLayerError("该 PDF 没有文字层（扫描版/图片型）");
+  }
+  return text;
 }

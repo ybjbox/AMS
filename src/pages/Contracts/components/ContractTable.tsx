@@ -81,8 +81,11 @@ export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: Contr
                 {rowVirtualizer.getVirtualItems().map((virtualRow) => {
                   const user = filteredUsers[virtualRow.index];
                   const daysToExpiry = user.daysToExpiry;
-                  const isExpiringSoon = daysToExpiry <= 30 && daysToExpiry > 0;
-                  const isExpired = daysToExpiry <= 0;
+                  // 没有登记到期日就不能断言「已过期」：未填合同的老员工、以及
+                  // 被服务端读侧裁掉合同字段的低权限账号，daysToExpiry 都是 0
+                  const hasExpiry = Boolean(user.contractExpiry);
+                  const isExpiringSoon = hasExpiry && daysToExpiry <= 30 && daysToExpiry > 0;
+                  const isExpired = hasExpiry && daysToExpiry <= 0;
 
                   return (
                     <tr
@@ -99,8 +102,8 @@ export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: Contr
                         {user.department}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge variant={isExpired ? 'destructive' : isExpiringSoon ? 'warning' : 'primary'}>
-                          {isExpired ? '已过期' : isExpiringSoon ? '即将到期' : '正常'}
+                        <Badge variant={hasExpiry ? (isExpired ? 'destructive' : isExpiringSoon ? 'warning' : 'primary') : 'neutral'}>
+                          {hasExpiry ? (isExpired ? '已过期' : isExpiringSoon ? '即将到期' : '正常') : '未登记'}
                         </Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">

@@ -26,7 +26,7 @@ notificationsRouter.get('/', (req, res) => {
 });
 
 notificationsRouter.post('/', validateBody(notificationCreateSchema), (req, res) => {
-  const { title, message, type, recipient } = req.body;
+  const { title, message, type, recipient, refKey } = req.body;
   // 收敛 recipient：非 HR/ADMIN 不能给别人发通知，避免垃圾/伪造通知
   const effectiveRecipient =
     recipient && recipient !== req.auth!.username && canTargetOthers(req.auth!.systemRole)
@@ -38,6 +38,7 @@ notificationsRouter.post('/', validateBody(notificationCreateSchema), (req, res)
       message: message ?? '',
       type,
       recipient: effectiveRecipient,
+      refKey,
     });
     res.status(201).json(notification);
   } catch (error) {

@@ -3,7 +3,7 @@ import React, { useCallback } from 'react';
 import { useConfirm } from '@/hooks/useConfirm';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { AlertTriangle, Search } from 'lucide-react';
+import { AlertTriangle, Search, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/Pagination';
 import { UseAttendanceReturn } from '../hooks/useAttendance';
@@ -20,8 +20,10 @@ export type TableProps = Pick<
   | 'anomalies'
   | 'shifts'
   | 'isLoading'
-  | 'setRecords'
-  | 'setSchedules'
+  | 'removeRecord'
+  | 'clearRecords'
+  | 'removeSchedule'
+  | 'clearSchedules'
   | 'deleteShift'
   | 'hasPermission'
   | 'filteredAnomalies'
@@ -43,8 +45,10 @@ export default function Table({
   anomalies,
   shifts,
   isLoading,
-  setRecords,
-  setSchedules,
+  removeRecord,
+  clearRecords,
+  removeSchedule,
+  clearSchedules,
   deleteShift,
   hasPermission,
   filteredAnomalies,
@@ -81,16 +85,51 @@ export default function Table({
   );
 
   const onRemoveScheduleClick = useCallback(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
-      const indexStr = e.currentTarget.dataset.index;
-      if (indexStr !== undefined) {
-        const index = parseInt(indexStr, 10);
-        const newSchedules = [...schedules];
-        newSchedules.splice(index, 1);
-        setSchedules(newSchedules);
-      }
+    async (e: React.MouseEvent<HTMLButtonElement>) => {
+      const employeeId = e.currentTarget.dataset.employeeid;
+      if (!employeeId) return;
+      const ok = await confirm({
+        title: '确定要移除该员工的排班吗？',
+        description: '移除后该员工不再按班次判定考勤异常。',
+        variant: 'danger',
+      });
+      if (ok) removeSchedule(employeeId);
     },
-    [schedules, setSchedules]
+    [confirm, removeSchedule]
+  );
+
+  // 整表清空对应服务端 DELETE /schedules 与 /records（仅 ADMIN）：
+  // 此前它们走 PUT 批量替换，records 传空数组会清库、schedules 传空数组则什么都删不掉。
+  const onClearSchedules = useCallback(async () => {
+    const ok = await confirm({
+      title: `确定要清空全部 ${schedules.length} 条排班吗？`,
+      description: '此操作不可恢复，建议先导出花名册留底。',
+      variant: 'danger',
+    });
+    if (ok) clearSchedules();
+  }, [confirm, clearSchedules, schedules.length]);
+
+  const onClearRecords = useCallback(async () => {
+    const ok = await confirm({
+      title: `确定要清空全部 ${records.length} 条打卡记录吗？`,
+      description: '月报与异常分析将随之失效，需重新导入打卡数据，此操作不可恢复。',
+      variant: 'danger',
+    });
+    if (ok) clearRecords();
+  }, [confirm, clearRecords, records.length]);
+
+  const onRemoveRecordClick = useCallback(
+    async (e: React.MouseEvent<HTMLButtonElement>) => {
+      const id = e.currentTarget.dataset.recordid;
+      if (!id) return;
+      const ok = await confirm({
+        title: '确定要删除这条打卡记录吗？',
+        description: '删除后需重新导入才能恢复。',
+        variant: 'danger',
+      });
+      if (ok) removeRecord(id);
+    },
+    [confirm, removeRecord]
   );
 
   if (activeTab === 'records') {
@@ -98,12 +137,12 @@ export default function Table({
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">已导入记录 ({records.length})</h2>
-          {records.length > 0 && hasPermission('attendance:manage') && (
+          {records.length > 0 && hasPermission('attendance:purge') && (
             <button
-              onClick={() => setRecords([])}
+              onClick={() => void onClearRecords()}
               className="text-sm text-destructive hover:text-destructive/80 transition-colors"
             >
-              清空记录
+              清空全部记录
             </button>
           )}
         </div>
@@ -115,11 +154,14 @@ export default function Table({
                 <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">姓名</th>
                 <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">日期</th>
                 <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">时间</th>
+                {hasPermission('attendance:manage') && (
+                  <th className="px-6 py-2 text-right text-xs font-medium text-zinc-500 uppercase tracking-wider">操作</th>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-50 dark:divide-zinc-800/50">
               {isLoading ? (
-                <TableSkeleton columns={4} rows={5} />
+                <TableSkeleton columns={hasPermission('attendance:manage') ? 5 : 4} rows={5} />
               ) : (
                 records.slice((recordsPage - 1) * ITEMS_PER_PAGE, recordsPage * ITEMS_PER_PAGE).map((record) => (
                   <tr key={record.id} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-700/30 transition-colors">
@@ -135,6 +177,20 @@ export default function Table({
                     <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
                       {record.time}
                     </td>
+                    {hasPermission('attendance:manage') && (
+                      <td className="px-6 py-2 whitespace-nowrap text-right">
+                        <button
+                          type="button"
+                          data-recordid={record.id}
+                          onClick={(e) => void onRemoveRecordClick(e)}
+                          className="p-1.5 -m-1.5 text-zinc-400 hover:text-destructive rounded-md transition-colors"
+                          title="删除该条打卡记录"
+                          aria-label={`删除打卡记录：${record.employeeName} ${record.date} ${record.time}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
@@ -168,12 +224,12 @@ export default function Table({
                 className="w-full pl-10"
               />
             </div>
-            {schedules.length > 0 && hasPermission('attendance:manage') && (
+            {schedules.length > 0 && hasPermission('attendance:purge') && (
               <button
-                onClick={() => setSchedules([])}
+                onClick={() => void onClearSchedules()}
                 className="text-sm text-destructive hover:text-destructive/80 whitespace-nowrap transition-colors"
               >
-                清空排班
+                清空全部排班
               </button>
             )}
           </div>
@@ -194,8 +250,8 @@ export default function Table({
               {isLoading ? (
                 <TableSkeleton columns={4} rows={5} />
               ) : (
-                filteredSchedules.slice((schedulesPage - 1) * ITEMS_PER_PAGE, schedulesPage * ITEMS_PER_PAGE).map((schedule, idx) => (
-                  <tr key={idx} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-700/30 transition-colors">
+                filteredSchedules.slice((schedulesPage - 1) * ITEMS_PER_PAGE, schedulesPage * ITEMS_PER_PAGE).map((schedule) => (
+                  <tr key={schedule.employeeId} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-700/30 transition-colors">
                     <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-200">
                       {schedule.employeeId}
                     </td>
@@ -222,9 +278,11 @@ export default function Table({
                     <td className="px-6 py-2 whitespace-nowrap text-right text-sm font-medium">
                       <Permission code="attendance:manage">
                         <button
-                          data-index={idx}
-                          onClick={onRemoveScheduleClick}
+                          type="button"
+                          data-employeeid={schedule.employeeId}
+                          onClick={(e) => void onRemoveScheduleClick(e)}
                           className="text-destructive hover:text-destructive/80 transition-colors"
+                          aria-label={`移除排班：${schedule.employeeName}`}
                         >
                           删除
                         </button>

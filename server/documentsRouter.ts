@@ -13,6 +13,7 @@ import {
   UPLOADS_DIR,
 } from "./documentsDb.ts";
 import { asString } from "./sqliteUtil.ts";
+import { buildPrintPart } from "./documentPrint.ts";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
@@ -136,6 +137,16 @@ documentsRouter.put("/:id", json(), validateBody(documentUpdateSchema), (req, re
 documentsRouter.delete("/:id", (req, res) => {
   if (!deleteDocument(req.params.id)) return res.status(404).json({ error: "Document not found" });
   res.json({ success: true });
+});
+
+/**
+ * 「一键打包打印」的内容装配：按类型返回可打印片段（文本 / 表格 / 图片页）。
+ * 读权限与 /api/files/:id 下载同档（默认策略 EMPLOYEE 可读），不额外放宽也不额外收紧。
+ */
+documentsRouter.get("/:id/print-part", async (req, res) => {
+  const part = await buildPrintPart(req.params.id);
+  if (!part) return res.status(404).json({ error: "Document not found" });
+  res.json(part);
 });
 
 export const documentSetsRouter = Router();

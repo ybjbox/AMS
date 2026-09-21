@@ -16,9 +16,10 @@ export default function Departments() {
   
   useBodyOverflow(logic.modal.isOpen || logic.roleModal.isOpen);
 
-  // 与页面入口同码：departments:view 即 HR+（后端部门写操作 = HR+），
-  // 不再用幽灵权限码 settings:manage（矩阵中不存在，严格模式下会误伤 HR）
-  const canManage = hasPermission('departments:view');
+  // 后端对 /departments 的 POST|PUT|PATCH|DELETE 定的是 ADMIN（authMiddleware.ts:138），
+  // 所以写操作单独用 departments:manage（仅 '*' 角色持有）；此前复用 departments:view
+  // 让 HR 看得到新增/编辑按钮，点下去必然 403。
+  const canManage = hasPermission('departments:manage');
 
   return (
     <PageContainer className="space-y-6">

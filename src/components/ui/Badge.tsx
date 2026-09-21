@@ -22,6 +22,7 @@ export interface BadgeProps {
   variant?: BadgeVariant;
   children: React.ReactNode;
   className?: string;
+  title?: string;
 }
 
 /**
@@ -29,9 +30,10 @@ export interface BadgeProps {
  * `inline-flex px-3 py-1 rounded-full text-xs font-medium` + 散落语义色。
  * 暗色由令牌（success/warning/... 在 .dark 均有定义）自动切换，无需 dark: 前缀。
  */
-export function Badge({ variant = 'neutral', children, className = '' }: BadgeProps) {
+export function Badge({ variant = 'neutral', children, className = '', title }: BadgeProps) {
   return (
     <span
+      title={title}
       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${variantClasses[variant]} ${className}`}
     >
       {children}

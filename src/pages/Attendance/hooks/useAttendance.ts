@@ -30,8 +30,13 @@ export interface UseAttendanceReturn {
   filteredSchedules: EmployeeSchedule[];
 
   // Store Actions
+  fetchData: () => Promise<void>;
   setRecords: (records: PunchRecord[]) => void;
   setSchedules: (schedules: EmployeeSchedule[]) => void;
+  removeSchedule: (employeeId: string) => void;
+  clearSchedules: () => void;
+  removeRecord: (id: string) => void;
+  clearRecords: () => void;
   analyzeAnomalies: () => void;
   addShift: (shift: Shift) => void;
   updateShift: (id: string, shift: Partial<Shift>) => void;
@@ -68,6 +73,10 @@ export function useAttendance(): UseAttendanceReturn {
 
   const setRecords = useAttendanceStore((state) => state.setRecords);
   const setSchedules = useAttendanceStore((state) => state.setSchedules);
+  const removeSchedule = useAttendanceStore((state) => state.removeSchedule);
+  const clearSchedules = useAttendanceStore((state) => state.clearSchedules);
+  const removeRecord = useAttendanceStore((state) => state.removeRecord);
+  const clearRecords = useAttendanceStore((state) => state.clearRecords);
   const analyzeAnomalies = useAttendanceStore((state) => state.analyzeAnomalies);
   const addShift = useAttendanceStore((state) => state.addShift);
   const updateShift = useAttendanceStore((state) => state.updateShift);
@@ -126,6 +135,10 @@ export function useAttendance(): UseAttendanceReturn {
 
     setRecords,
     setSchedules,
+    fetchData,
+    removeSchedule,    clearSchedules,
+    removeRecord,
+    clearRecords,
     analyzeAnomalies,
     addShift,
     updateShift,

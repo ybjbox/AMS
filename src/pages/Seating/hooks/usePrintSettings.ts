@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useServerPrefs } from '@/hooks/useServerPrefs';
 
 export interface PrintSettings {
   cardStyle: string;
@@ -42,8 +42,16 @@ export const defaultPrintSettings: PrintSettings = {
   showRole: true,
 };
 
+/**
+ * 座次卡打印参数：存在服务端（每个账号一份），刷新与换设备都不丢。
+ * 首帧先渲染默认值，服务端值回来后覆盖 —— 期间用户改了参数也不会被回覆盖
+ * （见 useServerPrefs：未 ready 前不回写）。
+ */
 export function usePrintSettings() {
-  const [printSettings, setPrintSettings] = useState<PrintSettings>(defaultPrintSettings);
+  const { value: printSettings, setValue: setPrintSettings } = useServerPrefs<PrintSettings>(
+    'seating-prefs',
+    defaultPrintSettings
+  );
 
   return {
     printSettings,

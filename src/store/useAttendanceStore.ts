@@ -49,6 +49,10 @@ interface AttendanceState {
 
   setSchedules: (schedules: EmployeeSchedule[]) => Promise<void>;
   setRecords: (records: PunchRecord[]) => Promise<void>;
+  removeSchedule: (employeeId: string) => Promise<void>;
+  clearSchedules: () => Promise<void>;
+  removeRecord: (id: string) => Promise<void>;
+  clearRecords: () => Promise<void>;
 
   analyzeAnomalies: () => Promise<void>;
 }
@@ -109,6 +113,38 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
     return createAsyncAction(set, async () => {
       const updatedRecords = await attendanceApi.updateRecords(records);
       return { records: updatedRecords };
+    });
+  },
+
+  /** 删除单个员工排班：必须走 DELETE（PUT 批量是 upsert-only，删了会原地复活） */
+  removeSchedule: async (employeeId) => {
+    return createAsyncAction(set, async () => {
+      await attendanceApi.deleteSchedule(employeeId);
+      return { schedules: get().schedules.filter((s) => s.employeeId !== employeeId) };
+    });
+  },
+
+  /** 清空全部排班（服务端仅 ADMIN） */
+  clearSchedules: async () => {
+    return createAsyncAction(set, async () => {
+      const schedules = await attendanceApi.clearSchedules();
+      return { schedules };
+    });
+  },
+
+  /** 删除单条打卡记录 */
+  removeRecord: async (id) => {
+    return createAsyncAction(set, async () => {
+      await attendanceApi.deleteRecord(id);
+      return { records: get().records.filter((r) => r.id !== id) };
+    });
+  },
+
+  /** 清空全部打卡记录（服务端仅 ADMIN；PUT /records 传空数组已被服务端拒） */
+  clearRecords: async () => {
+    return createAsyncAction(set, async () => {
+      const records = await attendanceApi.clearRecords();
+      return { records };
     });
   },
 

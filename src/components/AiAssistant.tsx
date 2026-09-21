@@ -231,7 +231,7 @@ export default function AiAssistant() {
                     ? '个人模型 · 不占额度'
                     : dailyQuota > 0
                     ? `今日剩余 ${Math.max(0, dailyQuota - quotaUsed)} 次`
-                    : '系统模型'}
+                    : '系统模型 · 不限额'}
                 </span>
               </div>
               <div className="flex items-center gap-1">

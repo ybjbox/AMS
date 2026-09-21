@@ -149,6 +149,9 @@ export function useSeatingArrange(
     tables,
     skippedNumbers,
     setSkippedNumbers,
+    // 载入方案 / 恢复草稿时由页面整体覆盖这两个状态
+    setTableCapacities,
+    setTables,
     addTableCapacity,
     updateTableCapacity,
     removeTableCapacity,

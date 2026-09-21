@@ -75,39 +75,9 @@ main,
   transition: none !important;
 }
 
-@media print {
-  @page {
-    size: A4;
-    margin: 0;
-  }
-  body {
-    margin: 0;
-    padding: 0;
-    background: white;
-  }
-
-  /* Hide everything by default in print */
-  #root > * {
-    display: none !important;
-  }
-
-  /* Only show the printable area */
-  #printable-area {
-    display: flex !important;
-    flex-wrap: wrap;
-    gap: 10mm;
-    justify-content: center;
-    align-items: flex-start;
-    padding: 10mm;
-    width: 100%;
-    background: white;
-  }
-
-  /* Documents 文件套件打印模板 */
-  #documents-print-template {
-    display: block !important;
-  }
-}
+/* 打印版面不在这里定义：所有打印都走 src/utils/printWindow.ts 的独立文档
+   （iframe / 新窗口）。旧的全局 `@media print { #root > * { display:none } }`
+   连祖先一起隐藏，后代无法再显形，实测排座与台卡印出来是空白纸，故删除。 */
 
 @theme inline {
   /* 设计基准（design-system/ams/MASTER.md）：

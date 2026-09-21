@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { useEmployeeStore } from '../store/useEmployeeStore';
 import { useTodoStore } from '../store/useTodoStore';
 import { useUserStore } from '../store/useUserStore';
-import { useEmployeeReminders } from './useEmployeeReminders';
 
 export function useInitData() {
   const userInfo = useUserStore((state) => state.userInfo);
@@ -16,7 +15,4 @@ export function useInitData() {
       fetchTodos();
     }
   }, [userInfo, fetchUsers, fetchTodos]);
-
-  // Handle employee reminders
-  useEmployeeReminders();
 }

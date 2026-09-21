@@ -20,7 +20,29 @@ db.exec(`
   );
 `);
 
-type DeptNode = { id: string; name: string; priority?: number; children?: DeptNode[] };
+type DeptNode = { id?: string; name: string; priority?: number; children?: DeptNode[] };
+
+/** 入参本身不合法（重名主键、空 id 等）——路由据此回 400，而不是让 SQLite 抛约束错误变 500 */
+export class DeptDataError extends Error {
+  readonly status = 400;
+}
+
+/**
+ * 整棵树的 id 必须齐备且互不相同。
+ *
+ * 前端曾经用 Date.now().toString() 给新增节点造 id，同一毫秒内建两个部门就会撞成同一个主键：
+ * 部门侧是 upsert，第二条静默覆盖第一条；职位侧是裸 INSERT，直接撞 UNIQUE 让整次保存变 500。
+ * 两种后果都是「用户以为存下了」，所以在写库前先拒。
+ */
+function assertUniqueIds(rows: { id?: string }[], label: string): asserts rows is { id: string }[] {
+  const seen = new Set<string>();
+  for (const row of rows) {
+    const id = typeof row.id === "string" ? row.id.trim() : "";
+    if (!id) throw new DeptDataError(`${label}存在缺少 id 的节点`);
+    if (seen.has(id)) throw new DeptDataError(`${label}存在重复 id：${id}`);
+    seen.add(id);
+  }
+}
 
 // ---------- Departments（树 <-> 扁平） ----------
 export function listDepartmentsTree(): DeptNode[] {
@@ -70,6 +92,7 @@ export function listDepartmentsTree(): DeptNode[] {
  */
 export function replaceDepartmentsTree(tree: DeptNode[]): DeptNode[] {
   const incoming = flattenTree(tree);
+  assertUniqueIds(incoming, "部门树");
   const existingIds = new Set(
     (db.prepare("SELECT id FROM departments").all() as { id: string }[]).map((r) => r.id)
   );
@@ -126,8 +149,11 @@ function flattenTree(
 ): { id: string; name: string; priority: number; parentId: string | null }[] {
   const out: { id: string; name: string; priority: number; parentId: string | null }[] = [];
   for (const n of nodes || []) {
-    out.push({ id: n.id, name: n.name, priority: n.priority ?? 0, parentId });
-    if (n.children?.length) out.push(...flattenTree(n.children, n.id));
+    // 缺 id 的新节点先按空串占位，统一由 assertUniqueIds 拒掉（不能让服务端替它猜一个：
+    // 整树替换是幂等写，凭空发号会让前端下一次提交对不上号）
+    const id = typeof n.id === "string" ? n.id : "";
+    out.push({ id, name: n.name, priority: n.priority ?? 0, parentId });
+    if (n.children?.length) out.push(...flattenTree(n.children, id));
   }
   return out;
 }
@@ -154,6 +180,7 @@ export function listRoles(): RoleNode[] {
 }
 
 export function replaceRoles(roles: RoleNode[]): RoleNode[] {
+  assertUniqueIds(roles, "职位列表");
   const insert = db.prepare("INSERT INTO roles (id, name, departmentId, priority) VALUES (?, ?, ?, ?)");
   db.exec("BEGIN");
   try {

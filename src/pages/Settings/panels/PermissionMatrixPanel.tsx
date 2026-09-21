@@ -17,6 +17,8 @@ const ROLES: { role: SystemRole; label: string }[] = [
 const OPERATIONS: { label: string; code: string }[] = [
   { label: '员工增删改', code: 'users:manage' },
   { label: '考勤增删改', code: 'attendance:manage' },
+  { label: '考勤整表清空（排班/打卡记录）', code: 'attendance:purge' },
+  { label: '部门结构与职位编辑', code: 'departments:manage' },
   { label: '审批决定', code: 'approvals:approve' },
   { label: '文档库上传 / 删除', code: 'documents:manage' },
 ];

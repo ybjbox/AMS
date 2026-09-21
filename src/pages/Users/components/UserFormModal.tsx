@@ -2,12 +2,15 @@ import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { toast } from 'sonner';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { TreeSelect } from '@/components/common/TreeSelect';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { User, DepartmentNode, RoleNode, SystemRole } from '@/types';
+import { User, DepartmentNode, RoleNode } from '@/types';
+import * as userApi from '@/services/userApi';
+import { useEmployeeStore } from '@/store/useEmployeeStore';
 
 const userSchema = z.object({
   name: z.string().min(1, '请输入姓名'),
@@ -17,7 +20,11 @@ const userSchema = z.object({
   currentAddress: z.string().optional(),
   department: z.string().min(1, '请选择部门'),
   role: z.string().optional(),
+  status: z.string().min(1, '请选择状态'),
   joinDate: z.string().min(1, '请选择入职日期'),
+  employmentType: z.string().min(1, '请选择用工形式'),
+  hasSocialSecurity: z.string().optional(),
+  isVeteran: z.string().optional(),
   changeStatus: z.string().optional(),
   contractYears: z.any().optional(),
   formerUnit: z.string().optional(),
@@ -55,6 +62,7 @@ export function UserFormModal({
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
     reset,
   } = useForm<UserFormValues>({
@@ -67,7 +75,11 @@ export function UserFormModal({
       currentAddress: '',
       department: '',
       role: '',
+      status: '在职',
       joinDate: '',
+      employmentType: '全职',
+      hasSocialSecurity: '否',
+      isVeteran: '否',
       changeStatus: '无',
       contractYears: 3,
       formerUnit: '',
@@ -77,26 +89,31 @@ export function UserFormModal({
     },
   });
 
+  // 只按「打开时编辑谁」重置：部门/职位的变化由下面两个 setValue effect 同步。
+  // 若把 selectedDeptName 放进依赖，用户改部门时会把其他已填字段一起打回原值。
   useEffect(() => {
-    if (isOpen) {
-      reset({
-        name: editingUser?.name || '',
-        idCard: editingUser?.idCard || '',
-        phone: editingUser?.phone || '',
-        registeredAddress: editingUser?.registeredAddress || '',
-        currentAddress: editingUser?.currentAddress || '',
-        department: selectedDeptName || '',
-        role: selectedRoleName || '',
-        joinDate: editingUser?.joinDate || '',
-        changeStatus: editingUser?.changeStatus || '无',
-        contractYears: editingUser?.contractYears || 3,
-        formerUnit: editingUser?.formerUnit || '',
-        militaryDates: editingUser?.militaryDates || '',
-        remarks: editingUser?.remarks || '',
-        contractSignDate: editingUser?.contractSignDate || '',
-      });
-    }
-  }, [isOpen, editingUser, selectedDeptName, selectedRoleName, reset]);
+    if (!isOpen) return;
+    reset({
+      name: editingUser?.name || '',
+      idCard: editingUser?.idCard || '',
+      phone: editingUser?.phone || '',
+      registeredAddress: editingUser?.registeredAddress || '',
+      currentAddress: editingUser?.currentAddress || '',
+      department: editingUser?.department || '',
+      role: editingUser?.role || '',
+      status: editingUser?.status || '在职',
+      joinDate: editingUser?.joinDate || '',
+      employmentType: editingUser?.employmentType || '全职',
+      hasSocialSecurity: editingUser?.hasSocialSecurity ? '是' : '否',
+      isVeteran: editingUser?.isVeteran ? '是' : '否',
+      changeStatus: editingUser?.changeStatus || '无',
+      contractYears: editingUser?.contractYears || 3,
+      formerUnit: editingUser?.formerUnit || '',
+      militaryDates: editingUser?.militaryDates || '',
+      remarks: editingUser?.remarks || '',
+      contractSignDate: editingUser?.contractSignDate || '',
+    });
+  }, [isOpen, editingUser, reset]);
 
   useEffect(() => {
     setValue('department', selectedDeptName, { shouldValidate: !!selectedDeptName });
@@ -106,13 +123,42 @@ export function UserFormModal({
     setValue('role', selectedRoleName);
   }, [selectedRoleName, setValue]);
 
-  const onSubmit = async () => {
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        onClose();
-        resolve();
-      }, 500);
-    });
+  const errText = (e: unknown, fallback: string) => (e as { error?: string })?.error || fallback;
+
+  const onSubmit = async (data: UserFormValues) => {
+    const fields = {
+      name: data.name.trim(),
+      idCard: data.idCard.trim(),
+      phone: data.phone.trim(),
+      registeredAddress: data.registeredAddress || '',
+      currentAddress: data.currentAddress || '',
+      department: data.department,
+      role: data.role || '',
+      status: data.status as User['status'],
+      joinDate: data.joinDate,
+      employmentType: data.employmentType as User['employmentType'],
+      hasSocialSecurity: data.hasSocialSecurity === '是',
+      isVeteran: data.isVeteran === '是',
+      changeStatus: (data.changeStatus || '无') as User['changeStatus'],
+      contractYears: Number(data.contractYears) || 0,
+      contractSignDate: data.contractSignDate || '',
+      formerUnit: data.formerUnit || '',
+      militaryDates: data.militaryDates || '',
+      remarks: data.remarks || '',
+    };
+    try {
+      const saved = editingUser
+        ? await userApi.updateUser(editingUser.id, fields)
+        : // 表单不含性别/年龄/合同到期等派生项：新建时留给服务端默认值与「合同续签」流程维护
+          await userApi.createUser(fields as unknown as Omit<User, 'id'>);
+      useEmployeeStore.setState((s) => ({
+        users: editingUser ? s.users.map((u) => (u.id === saved.id ? saved : u)) : [saved, ...s.users],
+      }));
+      toast.success(editingUser ? '员工信息已保存' : '员工已建档');
+      onClose();
+    } catch (e) {
+      toast.error(errText(e, editingUser ? '保存失败' : '建档失败'));
+    }
   };
 
   return (
@@ -263,7 +309,8 @@ export function UserFormModal({
                 状态 <span className="text-red-500">*</span>
               </label>
               <Select
-                defaultValue={editingUser?.status || '在职'}
+                value={watch('status')}
+                onValueChange={(v) => setValue('status', String(v), { shouldValidate: true })}
               >
                 <SelectTrigger className="w-full mt-1">
                   <SelectValue placeholder="选择状态" />
@@ -290,7 +337,10 @@ export function UserFormModal({
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                 用工形式 <span className="text-red-500">*</span>
               </label>
-              <Select defaultValue={editingUser?.employmentType || '全职'}>
+              <Select
+                value={watch('employmentType')}
+                onValueChange={(v) => setValue('employmentType', String(v), { shouldValidate: true })}
+              >
                 <SelectTrigger className="w-full mt-1">
                   <SelectValue placeholder="选择用工形式" />
                 </SelectTrigger>
@@ -313,32 +363,8 @@ export function UserFormModal({
                 className={`mt-1 ${errors.changeStatus ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                系统角色 <span className="text-red-500">*</span>
-              </label>
-              <Select
-                defaultValue={
-                  editingUser?.systemRole === SystemRole.SUPER_ADMIN
-                    ? '超级管理员'
-                    : editingUser?.systemRole === SystemRole.ADMIN
-                      ? '管理员'
-                      : editingUser?.systemRole === SystemRole.HR
-                        ? '人事主管'
-                        : '普通员工'
-                }
-              >
-                <SelectTrigger className="w-full mt-1">
-                  <SelectValue placeholder="选择系统角色" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="超级管理员">超级管理员</SelectItem>
-                  <SelectItem value="管理员">管理员</SelectItem>
-                  <SelectItem value="人事主管">人事主管</SelectItem>
-                  <SelectItem value="普通员工">普通员工</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* 系统角色不在此编辑：真实角色只存 accounts，
+                由员工档案的「系统账号」区块开通/关联，写员工表那列不改变任何权限 */}
           </div>
         </div>
 
@@ -347,7 +373,10 @@ export function UserFormModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">是否购买社保</label>
-              <Select defaultValue={editingUser?.hasSocialSecurity ? '是' : '否'}>
+              <Select
+                value={watch('hasSocialSecurity')}
+                onValueChange={(v) => setValue('hasSocialSecurity', String(v))}
+              >
                 <SelectTrigger className="w-full mt-1">
                   <SelectValue placeholder="选择是否购买社保" />
                 </SelectTrigger>
@@ -381,7 +410,10 @@ export function UserFormModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">是否退役军人</label>
-              <Select defaultValue={editingUser?.isVeteran ? '是' : '否'}>
+              <Select
+                value={watch('isVeteran')}
+                onValueChange={(v) => setValue('isVeteran', String(v))}
+              >
                 <SelectTrigger className="w-full mt-1">
                   <SelectValue placeholder="选择是否退役军人" />
                 </SelectTrigger>

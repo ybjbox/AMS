@@ -14,6 +14,8 @@ export interface NotificationRow {
   read: number; // 0 | 1
   recipient: string;
   createdAt: string;
+  /** 同类提醒的归并键（如 `contract:EMP0034`）；空串表示一次性通知，不参与归并 */
+  refKey: string;
 }
 
 export interface NotificationInput {
@@ -21,6 +23,11 @@ export interface NotificationInput {
   message: string;
   type?: 'info' | 'warning' | 'success' | 'error';
   recipient: string;
+  /**
+   * 归并键。带 refKey 的通知按「接收人 + refKey」唯一：再次触发时刷新未读条目的文案而不是新增，
+   * 用于「剩余 N 天」这类每天变化的周期提醒（否则全文去重会失效，未读数只增不减）。
+   */
+  refKey?: string;
 }
 
 const ALLOWED_TYPES = new Set(['info', 'warning', 'success', 'error']);
@@ -35,7 +42,8 @@ export function ensureNotificationsTable(): void {
       type      TEXT DEFAULT 'info',
       read      INTEGER DEFAULT 0,
       recipient TEXT NOT NULL,
-      createdAt TEXT DEFAULT (datetime('now'))
+      createdAt TEXT DEFAULT (datetime('now')),
+      refKey    TEXT DEFAULT ''
     );
   `);
   db.exec(
@@ -55,6 +63,7 @@ export function rowToNotification(row: NotificationRow) {
       | 'error',
     read: !!row.read,
     time: row.createdAt,
+    refKey: row.refKey || undefined,
   };
 }
 
@@ -74,32 +83,51 @@ export function listNotifications(username: string) {
   return rows.map(rowToNotification);
 }
 
-/** 创建一条通知，返回归一化对象。同接收人+标题+内容且未读时去重（避免多设备/重复触发刷屏）。 */
+/**
+ * 创建一条通知，返回归一化对象。
+ * - 带 refKey：按「接收人 + refKey」归并未读条目，命中则刷新文案/类型（保持首次时间，不重复推送出站通道）。
+ * - 不带 refKey：按「接收人 + 标题 + 内容」且未读去重（避免多设备/重复触发刷屏）。
+ */
 export function createNotification(input: NotificationInput) {
   if (!input.title?.trim()) throw new Error('通知标题不能为空');
   if (!input.recipient?.trim()) throw new Error('通知接收人不能为空');
   const title = input.title.trim();
   const message = input.message ?? '';
   const recipient = input.recipient;
-  const dup = db
-    .prepare(
-      `SELECT * FROM notifications WHERE recipient = ? AND title = ? AND message = ? AND read = 0 LIMIT 1`
-    )
-    .get(recipient, title, message) as NotificationRow | undefined;
-  if (dup) return rowToNotification(dup);
+  const type = input.type && ALLOWED_TYPES.has(input.type) ? input.type : 'info';
+  const refKey = input.refKey?.trim() ?? '';
+
+  const existing = refKey
+    ? (db
+        .prepare(
+          `SELECT * FROM notifications WHERE recipient = ? AND refKey = ? AND read = 0
+           ORDER BY createdAt DESC, id DESC LIMIT 1`
+        )
+        .get(recipient, refKey) as unknown as NotificationRow | undefined)
+    : (db
+        .prepare(
+          `SELECT * FROM notifications WHERE recipient = ? AND title = ? AND message = ? AND read = 0 LIMIT 1`
+        )
+        .get(recipient, title, message) as unknown as NotificationRow | undefined);
+  if (existing) {
+    if (refKey && (existing.message !== message || existing.type !== type)) {
+      db.prepare(`UPDATE notifications SET message = ?, type = ? WHERE id = ?`).run(
+        message,
+        type,
+        existing.id
+      );
+      return rowToNotification(getNotificationRaw(existing.id)!);
+    }
+    return rowToNotification(existing);
+  }
+
   const id = randomUUID();
   db.prepare(
-    `INSERT INTO notifications (id, title, message, type, recipient, createdAt)
-     VALUES (?, ?, ?, ?, ?, datetime('now'))`
-  ).run(
-    id,
-    title,
-    message,
-    input.type && ALLOWED_TYPES.has(input.type) ? input.type : 'info',
-    recipient
-  );
+    `INSERT INTO notifications (id, title, message, type, recipient, createdAt, refKey)
+     VALUES (?, ?, ?, ?, ?, datetime('now'), ?)`
+  ).run(id, title, message, type, recipient, refKey);
   // 站内落库成功后镜像推送到出站通道（webhook/邮件）；fire-and-forget，失败不影响本请求
-  dispatchOutbound({ title, message, type: input.type ?? 'info', recipient });
+  dispatchOutbound({ title, message, type, recipient });
   return rowToNotification(getNotificationRaw(id)!);
 }
 

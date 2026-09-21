@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useUserStore } from '@/store/useUserStore';
 import { useNotificationStore } from '@/store/useNotificationStore';
 import { authService } from '@/services/auth';
+import { clearNoticeCache } from '@/services/noticeApi';
 import { DEFAULT_USER_AVATAR } from '@/config/constants';
 import ThemeToggle from './header/ThemeToggle';
 import NotificationContent from './header/NotificationContent';
@@ -12,7 +13,7 @@ import { getRoleDisplayName } from '@/utils/roleUtils';
 import BackendStatusIndicator from '@/components/BackendStatusIndicator';
 
 /** 按账号隔离前会残留的本地缓存（P1-8）：登出时统一清除 */
-const LOCAL_CACHE_KEYS = ['todo-storage', 'ams-notifications', 'ams_permissions', 'contract-storage'];
+const LOCAL_CACHE_KEYS = ['todo-storage', 'ams-notifications', 'ams_permissions', 'contract-storage', 'wechat_notice_history'];
 
 /**
  * 侧边栏底部账户区：点击账户行弹出向上展开的菜单（通知 / 主题设置 / 设置入口 / 退出登录）。
@@ -68,6 +69,8 @@ export default function UserMenu({
       setIsOpen(false);
       // 先吊销服务端会话；失败（如网络断开/会话已过期）也继续本地登出
       try {
+        // 文件解析临时缓存随会话清除：必须在吊销会话**之前**（并行会被 401 挡掉）
+        await clearNoticeCache().catch(() => undefined);
         await authService.logout();
       } catch {
         /* 忽略服务端登出错误 */

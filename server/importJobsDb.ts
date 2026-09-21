@@ -10,7 +10,7 @@
 import { db } from "./db.ts";
 import { randomUUID } from "node:crypto";
 import { asString, asNumber } from "./sqliteUtil.ts";
-import { beginImportCommit, commitImportChunk, type ImportCommitState } from "./employeeImportDb.ts";
+import { beginImportCommit, commitImportChunk } from "./employeeImportDb.ts";
 
 export type ImportJobStatus = "running" | "done" | "error";
 
@@ -70,10 +70,26 @@ export function getImportJob(id: string): ImportJob | undefined {
 
 const CHUNK_SIZE = 100;
 
-function updateProgress(state: ImportCommitState, jobId: string, processed: number): void {
+export function markJobProgress(jobId: string, processed: number, created: number, skipped: number): void {
   db.prepare(
     `UPDATE import_jobs SET processed = ?, created = ?, skipped = ?, updatedAt = datetime('now','localtime') WHERE id = ?`
-  ).run(processed, state.created, state.skipped, jobId);
+  ).run(processed, created, skipped, jobId);
+}
+
+export function markJobDone(jobId: string): void {
+  db.prepare(`UPDATE import_jobs SET status = 'done', updatedAt = datetime('now','localtime') WHERE id = ?`).run(jobId);
+}
+
+/** 任务自身的失败也要落库；连这条都写不进去（库不可用）时只能放弃记录 */
+export function markJobError(jobId: string, message: string): void {
+  try {
+    db.prepare(`UPDATE import_jobs SET status = 'error', error = ?, updatedAt = datetime('now','localtime') WHERE id = ?`).run(
+      message.slice(0, 500),
+      jobId
+    );
+  } catch {
+    console.error("[import] 无法写入任务失败状态：", jobId);
+  }
 }
 
 /**
@@ -85,22 +101,14 @@ export async function runImportJob(jobId: string, rows: { data: Record<string, s
     const state = beginImportCommit();
     for (let offset = 0; offset < rows.length; offset += CHUNK_SIZE) {
       commitImportChunk(state, rows.slice(offset, offset + CHUNK_SIZE));
-      updateProgress(state, jobId, Math.min(offset + CHUNK_SIZE, rows.length));
+      markJobProgress(jobId, Math.min(offset + CHUNK_SIZE, rows.length), state.created, state.skipped);
       // 让出事件循环：轮询请求与其他业务请求可以插队进来
       await new Promise((resolve) => setImmediate(resolve));
     }
-    db.prepare(
-      `UPDATE import_jobs SET status = 'done', updatedAt = datetime('now','localtime') WHERE id = ?`
-    ).run(jobId);
+    markJobDone(jobId);
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     console.error("[import] 后台导入任务失败：", jobId, e);
-    try {
-      db.prepare(
-        `UPDATE import_jobs SET status = 'error', error = ?, updatedAt = datetime('now','localtime') WHERE id = ?`
-      ).run(message.slice(0, 500), jobId);
-    } catch {
-      /* 数据库本身不可用时只能放弃记录 */
-    }
+    markJobError(jobId, message);
   }
 }

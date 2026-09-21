@@ -2,6 +2,10 @@ import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useDocumentStore, DocumentSet, Folder as FolderType } from '@/store/useDocumentStore';
+import { documentApi } from '@/services/documentApi';
+import { printInIframe } from '@/utils/printWindow';
+import { buildDocumentSetPrintHtml, type PrintJobItem } from '../lib/printHtml';
+import type { PrintPart } from '@/types/document';
 
 export function useDocumentActions() {
   const confirm = useConfirm();
@@ -147,6 +151,66 @@ export function useDocumentActions() {
     setPrintingSet(set);
     setIsPrintModalOpen(true);
   }, []);
+
+  /**
+   * 真内容打包打印：逐份向服务端要「打印片段」（文本/表格/图片页），拼成一页一份的
+   * A4 版面后送进打印对话框。份数与彩色/黑白在版面里真实生效；双面只能镜像页边距，
+   * 真正的双面开关仍需在打印对话框里选（浏览器无法代驱动设置）。
+   */
+  const handlePrintSet = useCallback(async () => {
+    if (!printingSet) return;
+    const ids = printingSet.documentIds;
+    if (ids.length === 0) {
+      toast.error('套件里没有文件');
+      return;
+    }
+    setIsPrinting(true);
+    const pendingToast = toast.loading(`正在准备 ${ids.length} 份文件的内容…`);
+    try {
+      const items: PrintJobItem[] = await Promise.all(
+        ids.map(async (id) => {
+          const doc = documents.find((d) => d.id === id);
+          const settings = printingSet.printSettings?.[id] || {
+            duplex: false,
+            color: false,
+            copies: 1,
+          };
+          let part: PrintPart | null;
+          try {
+            part = await documentApi.getPrintPart(id);
+          } catch {
+            part = null;
+          }
+          return { documentId: id, name: doc?.name || id, settings, part };
+        })
+      );
+      toast.dismiss(pendingToast);
+
+      const printable = items.filter((i) => i.part && i.part.kind !== 'unsupported').length;
+      if (printable === 0) {
+        const reason =
+          items.map((i) => (i.part?.kind === 'unsupported' ? i.part.note : null)).find(Boolean) ||
+          '文件内容读取失败';
+        toast.error(`没有可打印的内容：${reason}`);
+        return;
+      }
+
+      const html = buildDocumentSetPrintHtml(
+        printingSet,
+        items,
+        new Date().toLocaleString('zh-CN', { hour12: false })
+      );
+      await printInIframe(html);
+      setIsPrintModalOpen(false);
+      if (printable < items.length) {
+        toast.message(`${printable}/${items.length} 份已输出正文，其余在打印页上标注了原因`);
+      } else {
+        toast.success('已送往打印对话框');
+      }
+    } finally {
+      setIsPrinting(false);
+    }
+  }, [printingSet, documents, setIsPrintModalOpen]);
 
   const handleSaveSet = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
@@ -319,6 +383,7 @@ export function useDocumentActions() {
     handleEditSetClick,
     handleDeleteSetClick,
     handlePrintSetClick,
+    handlePrintSet,
     handleSaveSet,
     handleSaveFolder,
     handleMoveFile,

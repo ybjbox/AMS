@@ -12,6 +12,7 @@ import {
   Building2,
   FileCheck2,
   MessageSquareText,
+  ClipboardList,
 } from 'lucide-react';
 
 const Dashboard = lazy(() => import('../pages/Dashboard/index'));
@@ -26,6 +27,7 @@ const Attendance = lazy(() => import('../pages/Attendance/index'));
 const Contracts = lazy(() => import('../pages/Contracts/index'));
 const DepartmentsPage = lazy(() => import('../pages/Departments/index'));
 const WeChatNotice = lazy(() => import('../pages/WeChatNotice/index'));
+const BusinessForms = lazy(() => import('../pages/BusinessForms/index'));
 
 export interface RouteConfig {
   path: string;
@@ -48,6 +50,7 @@ export const routeConfig: RouteConfig[] = [
   { path: '/todos', label: '待办事项', icon: ListTodo, permission: 'todos:view', component: Todos },
   { path: '/approvals', label: '审批中心', icon: FileCheck2, permission: 'approvals:view', component: Approvals },
   { path: '/wechat-notice', label: '微信通知', icon: MessageSquareText, permission: 'notice:view', component: WeChatNotice },
+  { path: '/business-forms', label: '业务单据', icon: ClipboardList, permission: 'forms:view', component: BusinessForms },
   { path: '/settings', label: '系统设置', icon: Settings, permission: 'settings:view', component: SettingsPage },
 ];
 

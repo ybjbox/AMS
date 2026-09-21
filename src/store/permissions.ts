@@ -36,7 +36,7 @@ export const usePermissionsStore = create<PermissionsState>()(
     }),
     {
       name: 'ams_permissions',
-      version: 2,
+      version: 3,
       migrate: (persisted, version) => {
         const state = persisted as { permissions?: Record<string, string[]> };
         // v0 → v1：微信通知生成器上线时，已持久化旧矩阵的客户端补发 notice:view
@@ -62,6 +62,16 @@ export const usePermissionsStore = create<PermissionsState>()(
             grant('HR', 'settings:view');
             grant('HR', 'departments:view');
             grant('EMPLOYEE', 'settings:view');
+          }
+        }
+        // v2 → v3：业务单据生成上线，员工自助办单，与 notice:view 同档下发
+        if (version < 3) {
+          const perms = state?.permissions;
+          for (const role of ['HR', 'EMPLOYEE']) {
+            const list = perms?.[role];
+            if (Array.isArray(list) && !list.includes('forms:view') && !list.includes('*')) {
+              perms![role] = [...list, 'forms:view'];
+            }
           }
         }
         return state as PermissionsState;

@@ -17,6 +17,8 @@ import {
   Send,
   ChevronDown,
   ListOrdered,
+  BellRing,
+  KeyRound,
 } from 'lucide-react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useUserStore } from '@/store/useUserStore';
@@ -34,6 +36,8 @@ import AiHistoryPanel from './panels/AiHistoryPanel';
 import PermissionMatrixPanel from './panels/PermissionMatrixPanel';
 import DiagnosticsPanel from './panels/DiagnosticsPanel';
 import AnnouncementsPanel from './panels/AnnouncementsPanel';
+import RemindersPanel from './panels/RemindersPanel';
+import AccountsPanel from './panels/AccountsPanel';
 import NavOrderPanel from './panels/NavOrderPanel';
 
 /**
@@ -70,6 +74,7 @@ const TAB_GROUPS: { title: string; tabs: SettingsTab[] }[] = [
   {
     title: '通知与公告',
     tabs: [
+      { id: 'reminders', label: '到期提醒', icon: BellRing, minRole: SystemRole.HR },
       { id: 'notify', label: '通知出站通道', icon: Send, minRole: SystemRole.ADMIN },
       { id: 'announcements', label: '公告管理', icon: Megaphone, minRole: SystemRole.ADMIN },
     ],
@@ -86,6 +91,7 @@ const TAB_GROUPS: { title: string; tabs: SettingsTab[] }[] = [
     title: '系统管理',
     tabs: [
       { id: 'preferences', label: '系统偏好', icon: Sliders, minRole: SystemRole.ADMIN },
+      { id: 'accounts', label: '账号管理', icon: KeyRound, minRole: SystemRole.ADMIN },
       { id: 'permissions', label: '权限矩阵', icon: ShieldCheck, minRole: SystemRole.ADMIN },
       { id: 'diagnostics', label: '运行诊断', icon: Activity, minRole: SystemRole.ADMIN },
       { id: 'logs', label: '系统日志', icon: TerminalSquare, minRole: SystemRole.ADMIN },
@@ -152,12 +158,14 @@ export default function Settings() {
       case 'nav-order': return <NavOrderPanel />;
       case 'preferences': return <PreferencesPanel />;
       case 'notify': return <NotifyPanel />;
+      case 'reminders': return <RemindersPanel />;
       case 'themes': return <ThemesPanel />;
       case 'scripts': return <ScriptsPanel />;
       case 'backup': return <BackupPanel />;
       case 'ai': return <AiConfigPanel />;
       case 'ai-history': return <AiHistoryPanel />;
       case 'permissions': return <PermissionMatrixPanel />;
+      case 'accounts': return <AccountsPanel />;
       case 'announcements': return <AnnouncementsPanel />;
       case 'diagnostics': return <DiagnosticsPanel />;
       case 'logs': return <LogsPanel />;

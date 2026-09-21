@@ -1,16 +1,11 @@
 import React from 'react';
-import { X, Upload, ChevronDown, FileDown, FileText, Users, Printer } from 'lucide-react';
+import { X, FileText, Users, Printer } from 'lucide-react';
 import { User } from '@/types';
-import { Button } from '@/components/ui/button';
 
 interface NameCardToolbarProps {
   uploadedUsers: User[] | null;
   setUploadedUsers: React.Dispatch<React.SetStateAction<User[] | null>>;
-  isUploadMenuOpen: boolean;
-  setIsUploadMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setIsManualInputOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  handleDownloadTemplate: () => void;
-  handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   setIsParticipantModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
   selectedUserIds: Set<string>;
   handlePrint: () => void;
@@ -19,11 +14,7 @@ interface NameCardToolbarProps {
 export default function NameCardToolbar({
   uploadedUsers,
   setUploadedUsers,
-  isUploadMenuOpen,
-  setIsUploadMenuOpen,
   setIsManualInputOpen,
-  handleDownloadTemplate,
-  handleFileUpload,
   setIsParticipantModalOpen,
   selectedUserIds,
   handlePrint,
@@ -47,55 +38,17 @@ export default function NameCardToolbar({
             清除名单
           </button>
         )}
-        <div className="relative upload-dropdown">
-          <button
-            onClick={() => setIsUploadMenuOpen(!isUploadMenuOpen)}
-            className="btn-secondary"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            导入名单
-            <ChevronDown className="h-4 w-4 ml-1" />
-          </button>
-          {isUploadMenuOpen && (
-            <div className="absolute right-0 mt-1 w-36 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-700 py-1 z-50">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  handleDownloadTemplate();
-                  setIsUploadMenuOpen(false);
-                }}
-                className="h-auto w-full justify-start gap-0 rounded-none px-4 py-2 text-zinc-700 dark:text-zinc-200"
-              >
-                <FileDown className="w-4 h-4 mr-2" />
-                下载模板
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setIsManualInputOpen(true);
-                  setIsUploadMenuOpen(false);
-                }}
-                className="h-auto w-full justify-start gap-0 rounded-none px-4 py-2 text-zinc-700 dark:text-zinc-200"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                手动输入
-              </Button>
-              <label className="w-full text-left px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center cursor-pointer mb-0">
-                <Upload className="w-4 h-4 mr-2" />
-                上传文件
-                <input
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  className="hidden"
-                  onChange={(e) => {
-                    handleFileUpload(e);
-                    setIsUploadMenuOpen(false);
-                  }}
-                />
-              </label>
-            </div>
-          )}
-        </div>
+        <button
+          onClick={() => setIsManualInputOpen(true)}
+          className="btn-secondary"
+          title="粘贴一份「姓名 部门 职位」名单，只为这次做台卡"
+        >
+          <FileText className="h-4 w-4 mr-2" />
+          粘贴名单
+        </button>
+        {uploadedUsers && (
+          <span className="text-xs text-zinc-400">当前名单为粘贴内容，非员工档案</span>
+        )}
         <button
           onClick={() => setIsParticipantModalOpen(true)}
           className="btn-secondary"

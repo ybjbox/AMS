@@ -276,7 +276,8 @@ export function listRecords(query: Record<string, unknown> = {}): PunchRecordRow
  */
 export function replaceRecords(records: { id?: string; employeeId: string; employeeName: string; date: string; time: string }[]): PunchRecordRow[] | ListResult<PunchRecordRow> {
   const insert = db.prepare(
-    "INSERT INTO punch_records (id, employeeId, employeeName, date, time, version) VALUES (?, ?, ?, ?, ?, 1)"
+    `INSERT INTO punch_records (id, employeeId, employeeName, date, time, version) VALUES (?, ?, ?, ?, ?, 1)
+     ON CONFLICT(employeeId, date, time) DO NOTHING`
   );
   db.exec("BEGIN");
   try {
@@ -294,6 +295,19 @@ export function replaceRecords(records: { id?: string; employeeId: string; emplo
 
 /** 增量：新增或更新单条打卡记录（按 id 幂等 upsert，version 自增） */
 /** 增量：新增或更新单条打卡记录（id 缺省自动生成；expectedVersion 启用乐观锁，见 upsertSchedule） */
+/** 同人同日同时刻已有记录：唯一索引 (employeeId,date,time) 命中，由路由翻成 400 而非 500 */
+export class DuplicatePunchError extends Error {
+  constructor() {
+    super("该员工在这一分钟已有打卡记录");
+    this.name = "DuplicatePunchError";
+  }
+}
+
+function isUniqueViolation(e: unknown): boolean {
+  const msg = e instanceof Error ? e.message : String(e);
+  return /UNIQUE constraint failed|CONSTRAINT_UNIQUE/i.test(msg);
+}
+
 export function upsertRecord(r: {
   id?: string;
   employeeId: string;
@@ -303,27 +317,44 @@ export function upsertRecord(r: {
   expectedVersion?: number;
 }): PunchRecordRow {
   const id = r.id ?? crypto.randomUUID();
-  const existingRow = db
-    .prepare("SELECT version FROM punch_records WHERE id = ?")
-    .get(id);
-  const existingVersion = existingRow ? asNumber(existingRow.version) : undefined;
+  const existingRow = db.prepare("SELECT version FROM punch_records WHERE id = ?").get(id) as
+    | { version: number | bigint }
+    | undefined;
 
-  if (existingVersion !== undefined) {
+  if (existingRow) {
+    const existingVersion = Number(existingRow.version);
     if (r.expectedVersion !== undefined && r.expectedVersion !== existingVersion) {
       throw new VersionConflictError();
     }
-    db.prepare(
-      `UPDATE punch_records SET employeeId = ?, employeeName = ?, date = ?, time = ?, version = version + 1
-       WHERE id = ?`
-    ).run(r.employeeId, r.employeeName, r.date, r.time, id);
+    try {
+      db.prepare(
+        `UPDATE punch_records SET employeeId = ?, employeeName = ?, date = ?, time = ?, version = version + 1
+         WHERE id = ?`
+      ).run(r.employeeId, r.employeeName, r.date, r.time, id);
+    } catch (e) {
+      // 把这条记录改到与另一条同一分钟
+      if (isUniqueViolation(e)) throw new DuplicatePunchError();
+      throw e;
+    }
   } else {
-    db.prepare(
-      `INSERT INTO punch_records (id, employeeId, employeeName, date, time, version) VALUES (?, ?, ?, ?, ?, 1)`
-    ).run(id, r.employeeId, r.employeeName, r.date, r.time);
+    // 无 id 即"记一笔打卡"：同一分钟重复提交必须落到同一行（补卡审批重跑、导入重跑都靠这条）
+    const res = db
+      .prepare(
+        `INSERT INTO punch_records (id, employeeId, employeeName, date, time, version) VALUES (?, ?, ?, ?, ?, 1)
+         ON CONFLICT(employeeId, date, time) DO NOTHING`
+      )
+      .run(id, r.employeeId, r.employeeName, r.date, r.time);
+    if (res.changes === 0) {
+      const hit = db
+        .prepare("SELECT * FROM punch_records WHERE employeeId = ? AND date = ? AND time = ?")
+        .get(r.employeeId, r.date, r.time) as DbRow | undefined;
+      if (hit) return rowToRecord(hit);
+      throw new DuplicatePunchError();
+    }
   }
   const row = db.prepare("SELECT * FROM punch_records WHERE id = ?").get(id);
   if (!row) throw new Error(`upsertRecord: upsert 后未找到打卡记录 ${id}`);
-  return rowToRecord(row);
+  return rowToRecord(row as unknown as DbRow);
 }
 
 /** 增量：删除单条打卡记录 */
@@ -387,9 +418,10 @@ export function monthlySummary(month: string): MonthlySummaryRow[] {
   const rows = db
     .prepare(
       `SELECT p.employeeId AS employeeId, p.employeeName AS employeeName, p.date AS date, p.time AS time,
-              COALESCE(e.department, '') AS department
+              COALESCE(d.name, NULLIF(e.department, ''), '') AS department
          FROM punch_records p
          LEFT JOIN employees e ON e.id = p.employeeId
+         LEFT JOIN departments d ON d.id = e.departmentId
         WHERE p.date LIKE ?`
     )
     .all(prefix);

@@ -29,11 +29,7 @@ export default function NameCards() {
         <NameCardToolbar
           uploadedUsers={state.uploadedUsers}
           setUploadedUsers={state.setUploadedUsers}
-          isUploadMenuOpen={state.isUploadMenuOpen}
-          setIsUploadMenuOpen={state.setIsUploadMenuOpen}
           setIsManualInputOpen={state.setIsManualInputOpen}
-          handleDownloadTemplate={state.handleDownloadTemplate}
-          handleFileUpload={state.handleFileUpload}
           setIsParticipantModalOpen={state.setIsParticipantModalOpen}
           selectedUserIds={state.selectedUserIds}
           handlePrint={state.handlePrint}
@@ -46,6 +42,7 @@ export default function NameCards() {
             handlePaperOrientationChange={state.handlePaperOrientationChange}
           />
           <NameCardPreview
+            containerRef={state.printAreaRef}
             printSettings={state.printSettings}
             pages={pages}
             cardsToPrint={state.cardsToPrint}

@@ -1,11 +1,11 @@
 import PageContainer from "@/components/PageContainer";
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
+import { printReactTree } from '@/utils/printWindow';
 import { useBodyOverflow } from '@/hooks/useBodyOverflow';
 import { useEmployeeStore } from '@/store/useEmployeeStore';
 import { useDepartments } from '@/store/useDepartmentStore';
-import { Armchair, Printer, RefreshCw } from 'lucide-react';
-import { BaseModal } from '@/components/ui/BaseModal';
+import { Armchair, RefreshCw } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { User } from '@/types';
 
@@ -15,8 +15,10 @@ import { TableCard } from './components/TableCard';
 import { ParticipantModal } from './components/ParticipantModal';
 import { PrintSettingsModal } from './components/PrintSettingsModal';
 import { PrintPreview } from './components/PrintPreview';
+import { PlansModal } from './components/PlansModal';
 
-import { useSeatingArrange } from './hooks/useSeatingArrange';
+import { useSeatingArrange, type Table, type TableCapacity } from './hooks/useSeatingArrange';
+import { useSeatingPlans } from './hooks/useSeatingPlans';
 import { usePrintSettings } from './hooks/usePrintSettings';
 
 export default function Seating() {
@@ -24,18 +26,14 @@ export default function Seating() {
   const departments = useDepartments((state) => state.departments);
   const roles = useDepartments((state) => state.roles);
 
+  const printAreaRef = useRef<HTMLDivElement>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [isUploadMenuOpen, setIsUploadMenuOpen] = useState(false);
-  const [uploadedUsers, setUploadedUsers] = useState<User[] | null>(null);
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
-  const [isPrintWarningOpen, setIsPrintWarningOpen] = useState(false);
+  const [isPlansModalOpen, setIsPlansModalOpen] = useState(false);
 
-  const activeUsers = useMemo(() => {
-    if (uploadedUsers) return uploadedUsers;
-    return users.filter((u) => u.status !== '离职');
-  }, [users, uploadedUsers]);
+  const activeUsers = useMemo(() => users.filter((u) => u.status !== '离职'), [users]);
 
   const { printSettings, setPrintSettings } = usePrintSettings();
   const {
@@ -43,6 +41,8 @@ export default function Seating() {
     tables,
     skippedNumbers,
     setSkippedNumbers,
+    setTableCapacities,
+    setTables,
     addTableCapacity,
     updateTableCapacity,
     removeTableCapacity,
@@ -51,50 +51,31 @@ export default function Seating() {
     removeTable,
   } = useSeatingArrange(activeUsers, selectedUserIds, departments, roles);
 
+  const applyPlanState = useCallback(
+    (state: { tableCapacities: TableCapacity[]; tables: Table[]; skippedNumbers: string }) => {
+      if (state.tableCapacities.length) setTableCapacities(state.tableCapacities);
+      setTables(state.tables);
+      setSkippedNumbers(state.skippedNumbers);
+    },
+    [setTableCapacities, setTables, setSkippedNumbers]
+  );
+
+  const seatingPlans = useSeatingPlans({
+    users: activeUsers,
+    tableCapacities,
+    tables,
+    skippedNumbers,
+    onApply: applyPlanState,
+  });
+
   useEffect(() => {
-    if (!uploadedUsers && activeUsers.length > 0 && selectedUserIds.size === 0) {
+    if (activeUsers.length > 0 && selectedUserIds.size === 0) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedUserIds(new Set(activeUsers.map((u) => u.id)));
     }
-  }, [activeUsers, uploadedUsers, selectedUserIds.size]);
+  }, [activeUsers, selectedUserIds.size]);
 
-  useBodyOverflow(isParticipantModalOpen || isPrintModalOpen || isPrintWarningOpen);
-
-  const handleDownloadTemplate = useCallback(() => {
-    toast.info('请求后端下载模板 (Mock)');
-  }, []);
-
-  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    // TODO(backend): 接入真实的 Excel 解析 API（推荐使用已安装的 xlsx 库）
-    // 当前为演示模式：忽略文件内容，返回固定测试数据
-    setTimeout(() => {
-      const demoUsers = [
-        {
-          id: `demo-${Date.now()}-1`,
-          name: '张三（演示）',
-          department: '技术部',
-          role: '前端工程师',
-          status: '在职' as const,
-          joinDate: new Date().toISOString(),
-        },
-        {
-          id: `demo-${Date.now()}-2`,
-          name: '李四（演示）',
-          department: '市场部',
-          role: '市场总监',
-          status: '在职' as const,
-          joinDate: new Date().toISOString(),
-        },
-      ] as User[];
-      setUploadedUsers(demoUsers);
-      setSelectedUserIds(new Set(demoUsers.map((u) => u.id)));
-      // 警告用户当前为演示数据，非真实文件解析
-      toast.warning(`"${file.name}" 已上传，当前使用演示数据（文件内容未实际解析）`);
-    }, 500);
-    e.target.value = '';
-  }, []);
+  useBodyOverflow(isParticipantModalOpen || isPrintModalOpen || isPlansModalOpen);
 
   const groupedUsers = useMemo(() => {
     const groups: Record<string, User[]> = {};
@@ -147,14 +128,8 @@ export default function Seating() {
   );
 
   const handlePrint = useCallback(() => {
-    try {
-      if (window.self !== window.top) {
-        setIsPrintWarningOpen(true);
-      } else {
-        window.print();
-      }
-    } catch {
-      setIsPrintWarningOpen(true);
+    if (printReactTree(printAreaRef.current) === false) {
+      toast.error('还没有生成座次卡，请先「自动排座」');
     }
   }, []);
 
@@ -180,17 +155,37 @@ export default function Seating() {
           setViewMode={setViewMode}
           hasTables={tables.length > 0}
           handleClear={handleClear}
-          hasUploadedUsers={!!uploadedUsers}
-          clearUploadedUsers={() => setUploadedUsers(null)}
-          isUploadMenuOpen={isUploadMenuOpen}
-          setIsUploadMenuOpen={setIsUploadMenuOpen}
-          handleDownloadTemplate={handleDownloadTemplate}
-          handleFileUpload={handleFileUpload}
           setIsParticipantModalOpen={setIsParticipantModalOpen}
           selectedCount={selectedUserIds.size}
           setIsPrintModalOpen={setIsPrintModalOpen}
+          setIsPlansModalOpen={setIsPlansModalOpen}
           handlePrint={handlePrint}
+          unsaved={seatingPlans.isDirty || seatingPlans.neverSaved}
         />
+
+        {seatingPlans.restorable && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-brand-200 dark:border-brand-900/60 bg-brand-50/60 dark:bg-brand-900/15 px-4 py-3">
+            <p className="text-sm text-zinc-700 dark:text-zinc-300">
+              上次保存的方案是
+              <strong className="mx-1">「{seatingPlans.restorable.name}」</strong>
+              （{seatingPlans.restorable.payload?.tables?.length ?? 0} 桌 · {seatingPlans.restorable.updatedAt}），当前画布是空的。
+            </p>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => seatingPlans.restore(seatingPlans.restorable!)}
+                className="btn-primary px-3 py-1.5 text-sm"
+              >
+                载入该方案
+              </button>
+              <button
+                onClick={() => seatingPlans.refresh()}
+                className="btn-secondary px-3 py-1.5 text-sm"
+              >
+                刷新列表
+              </button>
+            </div>
+          </div>
+        )}
 
         <TableConfig
           tableCapacities={tableCapacities}
@@ -230,6 +225,20 @@ export default function Seating() {
         toggleDepartmentSelection={toggleDepartmentSelection}
       />
 
+      <PlansModal
+        isOpen={isPlansModalOpen}
+        onClose={() => setIsPlansModalOpen(false)}
+        plans={seatingPlans.plans}
+        listing={seatingPlans.listing}
+        saving={seatingPlans.saving}
+        onSave={seatingPlans.save}
+        onRestore={(p) => {
+          seatingPlans.restore(p);
+          setIsPlansModalOpen(false);
+        }}
+        onRemove={(id) => void seatingPlans.remove(id)}
+      />
+
       <PrintSettingsModal
         isOpen={isPrintModalOpen}
         onClose={() => setIsPrintModalOpen(false)}
@@ -241,52 +250,9 @@ export default function Seating() {
         renderJustifiedName={renderJustifiedName}
       />
 
-      <BaseModal
-        isOpen={isPrintWarningOpen}
-        onClose={() => setIsPrintWarningOpen(false)}
-        title="打印功能受限"
-        size="md"
-        footer={
-          <>
-            <button
-              type="button"
-              onClick={() => setIsPrintWarningOpen(false)}
-              className="btn-secondary sm:w-auto w-full"
-            >
-              我知道了
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setIsPrintWarningOpen(false);
-                window.print();
-              }}
-              className="btn-primary sm:w-auto w-full"
-            >
-              仍然尝试打印
-            </button>
-          </>
-        }
-      >
-        <div className="sm:flex sm:items-start">
-          <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-amber-100 dark:bg-amber-900/30 sm:mx-0 sm:h-10 sm:w-10">
-            <Printer className="h-6 w-6 text-amber-600" />
-          </div>
-          <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-            <div className="mt-2">
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                由于您当前处于预览模式，浏览器的打印功能可能无法正常工作。
-                <br />
-                <br />
-                请点击右上角的<strong className="text-zinc-700 dark:text-zinc-300">“在新标签页中打开”</strong>
-                按钮，或者复制当前网址到新标签页中打开，然后再进行打印。
-              </p>
-            </div>
-          </div>
-        </div>
-      </BaseModal>
 
       <PrintPreview
+        containerRef={printAreaRef}
         tables={tables}
         printSettings={printSettings}
         getTableDepartments={getTableDepartments}

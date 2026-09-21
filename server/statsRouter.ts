@@ -52,10 +52,14 @@ statsRouter.get("/workforce", (_req, res) => {
   const depMap = new Map(depRows.map((r) => [asString(r.m), asNumber(r.c)]));
 
   // 部门人数分布（不含离职）
+  // 部门名一律按 departmentId 关联得出：employees.department 是写入时抄的副本，
+  // 部门改名后不会自己更新，读它会让看板和档案列表各说一套。
   const deptRows = db
     .prepare(
-      `SELECT COALESCE(NULLIF(department, ''), '未分配') AS dept, COUNT(*) AS c
-         FROM employees WHERE status != '离职'
+      `SELECT COALESCE(NULLIF(d.name, ''), NULLIF(e.department, ''), '未分配') AS dept, COUNT(*) AS c
+         FROM employees e
+         LEFT JOIN departments d ON d.id = e.departmentId
+        WHERE e.status != '离职'
         GROUP BY dept ORDER BY c DESC`
     )
     .all();
@@ -100,8 +104,15 @@ statsRouter.get("/attendance", (_req, res) => {
     return (h || 0) * 60 + (m || 0);
   };
 
-  // 部门归属（用于部门出勤率）
-  const deptRows = db.prepare("SELECT id, COALESCE(NULLIF(department, ''), '未分配') AS dept FROM employees WHERE status != '离职'").all();
+  // 部门归属（用于部门出勤率）——同样按 departmentId 联查，避免读到改名前的陈旧副本
+  const deptRows = db
+    .prepare(
+      `SELECT e.id AS id, COALESCE(NULLIF(d.name, ''), NULLIF(e.department, ''), '未分配') AS dept
+         FROM employees e
+         LEFT JOIN departments d ON d.id = e.departmentId
+        WHERE e.status != '离职'`
+    )
+    .all();
   const deptOf = new Map(deptRows.map((r) => [asString(r.id), asString(r.dept)]));
 
   // 打卡记录按 员工+日期 分组

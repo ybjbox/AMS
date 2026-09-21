@@ -1,8 +1,10 @@
 import { Permission } from "@/components/Permission";
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { FileSpreadsheet, ChevronDown, Search, Plus, AlertTriangle } from 'lucide-react';
+import { FileSpreadsheet, ChevronDown, Search, Plus, AlertTriangle, Download } from 'lucide-react';
 import { EmployeeSchedule, Shift } from '@/store/useAttendanceStore';
+import { punchImportTemplateUrl } from '@/services/attendanceApi';
+import PunchImportDialog from './PunchImportDialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -22,6 +24,7 @@ export type FilterProps = Pick<
   | 'shifts'
   | 'setRecords'
   | 'setSchedules'
+  | 'fetchData'
   | 'analyzeAnomalies'
   | 'addShift'
   | 'updateShift'
@@ -42,11 +45,14 @@ export default function Filter({
   analyzeAnomalies,
   addShift,
   updateShift,
+  fetchData,
   users,
   hasPermission,
 }: FilterProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
   const [selectedShiftIds, setSelectedShiftIds] = useState<string[]>([]);
@@ -70,9 +76,9 @@ export default function Filter({
         fileInputRef.current.value = '';
       }
       if (!file) return;
-      // 后端暂未提供 Excel 解析接口（见 docs/DESIGN-REVIEW.md 改造路线图），
-      // 为避免假数据伪装成导入成功，这里如实提示。
-      toast.info('Excel 批量导入功能即将上线：后端解析接口尚未开放，可先手动添加打卡记录');
+      // 解析与校验都在服务端（/api/attendance/records/import），这里只把文件交给导入向导
+      setImportFile(file);
+      setImportOpen(true);
     },
     []
   );
@@ -191,10 +197,20 @@ export default function Filter({
       {activeTab === 'records' && hasPermission('attendance:manage') && (
         <div className="mb-6 bg-white dark:bg-zinc-800 p-6 rounded-2xl shadow-sm">
           <div className="w-full max-w-2xl">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">上传 Excel 文件</h2>
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">导入打卡记录</h2>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-              支持 .xls 和 .xlsx 格式。表头需包含：工号、姓名、日期、时间（或打卡时间）。
+              服务端解析 .xlsx，表头需含「日期」「时间」，工号或姓名至少一项；先预览校验结果再确认导入。
+              同一员工同一分钟的重复行会自动跳过。
             </p>
+            <div className="mb-4">
+              <a
+                href={punchImportTemplateUrl()}
+                className="inline-flex items-center gap-1.5 text-sm text-brand-700 dark:text-brand-300 hover:underline"
+              >
+                <Download className="w-3.5 h-3.5" aria-hidden="true" />
+                下载导入模板
+              </a>
+            </div>
             <div
               className={`border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl p-8 text-center transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer`}
               onClick={() => fileInputRef.current?.click()}
@@ -205,12 +221,12 @@ export default function Filter({
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 点击选择 Excel 文件
               </p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">支持 .xls, .xlsx</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">支持 .xlsx，单次最多 5000 行</p>
               <input
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileUpload}
-                accept=".xls,.xlsx"
+                accept=".xlsx"
                 aria-label="上传 Excel 打卡记录"
                 className="hidden"
               />
@@ -393,6 +409,16 @@ export default function Filter({
           </div>
         </div>
       )}
+
+      <PunchImportDialog
+        isOpen={importOpen}
+        initialFile={importFile}
+        onClose={() => {
+          setImportOpen(false);
+          setImportFile(null);
+        }}
+        onImported={() => void fetchData()}
+      />
     </>
   );
 }

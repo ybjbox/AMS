@@ -11,6 +11,8 @@ interface NameCardPreviewProps {
   cols: number;
   rows: number;
   actualCardHeight: number;
+  /** 打印时整棵打印区子树会被 printReactTree 搬进独立文档 */
+  containerRef?: React.Ref<HTMLDivElement>;
 }
 
 export default function NameCardPreview({
@@ -19,6 +21,7 @@ export default function NameCardPreview({
   cols,
   rows,
   actualCardHeight,
+  containerRef,
 }: NameCardPreviewProps) {
   const renderJustifiedName = useCallback(
     (name: string, fontSize: number, isVertical: boolean = false) => {
@@ -287,7 +290,7 @@ export default function NameCardPreview({
       `}</style>
 
       {/* Actual Printable Area */}
-      <div className="hidden print:block w-full bg-white dark:bg-zinc-800">
+      <div ref={containerRef} className="hidden print:block w-full bg-white dark:bg-zinc-800">
         {pages.map((pageCards, pageIdx) => (
           <div
             key={`print-page-${pageIdx}`}

@@ -32,16 +32,21 @@ body { margin: 0; padding: 0; width: 17cm; height: 4cm; display: flex; align-ite
 </body></html>`;
 }
 
-/** 联系卡打印：name 经编码；bodyHtml 来自 React 渲染的 DOM（innerHTML 已被 React 转义，安全透传）。 */
+/**
+ * 联系卡打印：name 经编码；bodyHtml 来自 React 渲染的 DOM（innerHTML 已被 React 转义，安全透传）。
+ *
+ * 样式选择器刻意跟随档案弹窗实际渲染出来的类名（bg-zinc-50 / text-zinc-500 / …），
+ * 因为打印文档是独立 document，拿不到主应用的 Tailwind；取值与 printTokens 一一对应。
+ */
 export function buildContactCardPrintHtml(name: string, bodyHtml: string): string {
   const safeName = escapeHtml(name);
   return `<html><head><title>打印联系卡</title><style>${printTokensCss}
 body { font-family: sans-serif; padding: 20px; }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.bg-muted { background-color: var(--print-muted-bg); padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+.bg-zinc-50 { background-color: var(--print-muted-bg); padding: 15px; border-radius: 8px; margin-bottom: 15px; }
 .flex { display: flex; justify-content: space-between; margin-bottom: 8px; }
 .text-sm { font-size: 14px; }
-.text-muted-foreground { color: var(--print-muted-fg); }
+.text-zinc-500 { color: var(--print-muted-fg); }
 .font-medium { font-weight: 500; }
 h4 { margin-top: 0; margin-bottom: 10px; color: var(--print-heading); }
 @media print { .md\\:col-span-2 { grid-column: span 2; } }

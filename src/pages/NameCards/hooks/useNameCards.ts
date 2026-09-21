@@ -1,5 +1,7 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
+import { printReactTree } from '@/utils/printWindow';
+import { useServerPrefs } from '@/hooks/useServerPrefs';
 import { useEmployeeStore } from '@/store/useEmployeeStore';
 import { User } from '@/types';
 import { PrintSettings, DEFAULT_PRINT_SETTINGS } from '../constants';
@@ -12,7 +14,6 @@ export function useNameCards() {
     fetchUsers();
   }, [fetchUsers]);
 
-  const [isUploadMenuOpen, setIsUploadMenuOpen] = useState(false);
   const [isManualInputOpen, setIsManualInputOpen] = useState(false);
   const [manualInputText, setManualInputText] = useState('');
   const [uploadedUsers, setUploadedUsers] = useState<User[] | null>(null);
@@ -26,23 +27,11 @@ export function useNameCards() {
   const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
   const [expandedDepts, setExpandedDepts] = useState<Set<string>>(new Set());
 
-  const [printSettings, setPrintSettings] = useState<PrintSettings>(DEFAULT_PRINT_SETTINGS);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest('.upload-dropdown')) {
-        setIsUploadMenuOpen(false);
-      }
-    };
-
-    if (isUploadMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isUploadMenuOpen]);
+  // 台卡打印参数存服务端（每账号一份），刷新与换设备都不丢
+  const { value: printSettings, setValue: setPrintSettings } = useServerPrefs<PrintSettings>(
+    'namecards-prefs',
+    DEFAULT_PRINT_SETTINGS
+  );
 
   useEffect(() => {
     if (!uploadedUsers && activeUsers.length > 0 && selectedUserIds.size === 0) {
@@ -50,27 +39,6 @@ export function useNameCards() {
       setSelectedUserIds(new Set(activeUsers.map((u) => u.id)));
     }
   }, [activeUsers, uploadedUsers, selectedUserIds.size]);
-
-  const handleDownloadTemplate = useCallback(() => {
-    toast.info('请求后端下载模板 (Mock)');
-  }, []);
-
-  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setTimeout(() => {
-      const newUsers = [
-        { id: `uploaded-${Date.now()}-1`, name: '张三', department: '技术部', role: '前端工程师', status: '在职' },
-        { id: `uploaded-${Date.now()}-2`, name: '李四', department: '市场部', role: '市场总监', status: '在职' },
-      ] as User[];
-      setUploadedUsers(newUsers);
-      setSelectedUserIds(new Set(newUsers.map((u) => u.id)));
-      toast.success('成功从后端获取到名单 (Mock)');
-    }, 500);
-
-    e.target.value = '';
-  }, []);
 
   const handleManualInputSubmit = useCallback(() => {
     if (!manualInputText.trim()) {
@@ -138,8 +106,13 @@ export function useNameCards() {
     });
   }, [groupedUsers]);
 
+  /** 打印区子树（屏上隐藏、只在打印媒体下出现），搬进独立文档才能真正印出来 */
+  const printAreaRef = useRef<HTMLDivElement>(null);
+
   const handlePrint = useCallback(() => {
-    window.print();
+    if (printReactTree(printAreaRef.current) === false) {
+      toast.error('还没有可打印的台卡，请先选择人员或粘贴名单');
+    }
   }, []);
 
   const selectedUsers = useMemo(() => {
@@ -156,7 +129,8 @@ export function useNameCards() {
     return cards;
   }, [selectedUsers, printSettings.copiesPerName]);
 
-  const handlePaperSizeChange = useCallback((size: 'A4' | 'A5' | 'custom') => {
+  // 参数写回服务端由 useServerPrefs 防抖处理，这里不再包 useCallback
+  const handlePaperSizeChange = (size: 'A4' | 'A5' | 'custom') => {
     setPrintSettings((prev) => {
       let width = prev.paperWidth;
       let height = prev.paperHeight;
@@ -169,9 +143,9 @@ export function useNameCards() {
       }
       return { ...prev, paperSize: size, paperWidth: width, paperHeight: height };
     });
-  }, []);
+  };
 
-  const handlePaperOrientationChange = useCallback((orientation: 'portrait' | 'landscape') => {
+  const handlePaperOrientationChange = (orientation: 'portrait' | 'landscape') => {
     setPrintSettings((prev) => {
       let width = prev.paperWidth;
       let height = prev.paperHeight;
@@ -189,21 +163,18 @@ export function useNameCards() {
       }
       return { ...prev, paperOrientation: orientation, paperWidth: width, paperHeight: height };
     });
-  }, []);
+  };
 
   return {
+    printAreaRef,
     users,
     activeUsers,
     uploadedUsers,
     setUploadedUsers,
-    isUploadMenuOpen,
-    setIsUploadMenuOpen,
     isManualInputOpen,
     setIsManualInputOpen,
     manualInputText,
     setManualInputText,
-    handleDownloadTemplate,
-    handleFileUpload,
     handleManualInputSubmit,
     selectedUserIds,
     setSelectedUserIds,

@@ -176,6 +176,8 @@ export interface EmployeeRow {
   createdAt: string;
   updatedAt: string;
   deptName?: string;
+  /** 绑定账号的系统角色（真实权限来源）；未绑定账号时为空 */
+  accountRole?: string;
 }
 
 /** 对外暴露的员工对象：布尔列已归一化为 boolean。 */
@@ -240,7 +242,9 @@ export function rowToUser(row: unknown): User | null {
     formerUnit: r.formerUnit,
     militaryDates: r.militaryDates,
     remarks: r.remarks,
-    systemRole: r.systemRole,
+    // 真实系统角色只存在于 accounts（employees.systemRole 是历史遗留列，不再读写）；
+    // 空串表示该员工尚未绑定登录账号，由界面显示成「未开通账号」。
+    systemRole: r.accountRole ?? "",
     departmentId: r.departmentId ?? null,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
@@ -257,12 +261,31 @@ function resolveDepartmentId(input: Record<string, unknown>): string | null {
   return null;
 }
 
+/**
+ * accounts 表由 authDb 负责建，db.ts 只联查它的 systemRole。
+ * 进程里 authDb 可能还没加载（例如只跑导入任务的场景），此时退化为不联查，
+ * 而不是让整条员工查询抛 "no such table: accounts"。确认后不再重复探测。
+ */
+let accountsTableReady = false;
+function accountsJoin(): { join: string; select: string } {
+  if (!accountsTableReady) {
+    try {
+      db.prepare("SELECT 1 FROM accounts LIMIT 0").get();
+      accountsTableReady = true;
+    } catch {
+      return { join: "", select: "" };
+    }
+  }
+  return { join: "LEFT JOIN accounts a ON a.employeeId = e.id", select: ", a.systemRole AS accountRole" };
+}
+
 const FIELDS = [
   "name", "idCard", "gender", "age", "phone", "department", "role", "status",
   "joinDate", "yearsOfService", "employmentType", "hasSocialSecurity",
   "contractYears", "contractSignDate", "contractExpiry", "daysToExpiry",
   "changeStatus", "registeredAddress", "currentAddress", "isVeteran",
-  "formerUnit", "militaryDates", "remarks", "systemRole",
+  "formerUnit", "militaryDates", "remarks",
+  // 刻意不含 systemRole：真实角色只存 accounts，员工表那列是遗留死列（写它不改变任何权限）
 ] as const;
 
 function normalize(input: Record<string, unknown>) {
@@ -289,32 +312,35 @@ export function listEmployees(query: Record<string, unknown> = {}): EmployeeList
     ? `WHERE e.name LIKE ? OR e.phone LIKE ? OR COALESCE(d.name, '') LIKE ?`
     : "";
   const params = keyword ? [`%${keyword}%`, `%${keyword}%`, `%${keyword}%`] : [];
-  const base = `FROM employees e LEFT JOIN departments d ON d.id = e.departmentId`;
+  const { join, select } = accountsJoin();
+  const base = `FROM employees e LEFT JOIN departments d ON d.id = e.departmentId ${join}`;
 
   const total = asCount(db.prepare(`SELECT COUNT(*) AS c ${base} ${where}`).get(...params)?.c);
 
   if (!paging.requested) {
     // 向后兼容：未请求分页时返回完整数组
     const rows = db
-      .prepare(`SELECT e.*, d.name AS deptName ${base} ${where} ORDER BY e.id`)
+      .prepare(`SELECT e.*, d.name AS deptName${select} ${base} ${where} ORDER BY e.id`)
       .all(...params);
     return rows.map((r) => rowToUser(r)).filter((u): u is NonNullable<typeof u> => u !== null);
   }
 
   const rows = db
     .prepare(
-      `SELECT e.*, d.name AS deptName ${base} ${where} ORDER BY e.id LIMIT ? OFFSET ?`
+      `SELECT e.*, d.name AS deptName${select} ${base} ${where} ORDER BY e.id LIMIT ? OFFSET ?`
     )
     .all(...params, paging.limit, paging.offset);
   return toListResult(rows.map((r) => rowToUser(r)).filter((u): u is NonNullable<typeof u> => u !== null), total, paging);
 }
 
 export function getEmployee(id: string) {
+  const { join, select } = accountsJoin();
   const row = db
     .prepare(
-      `SELECT e.*, d.name AS deptName
+      `SELECT e.*, d.name AS deptName${select}
          FROM employees e
          LEFT JOIN departments d ON d.id = e.departmentId
+         ${join}
         WHERE e.id = ?`
     )
     .get(id);
@@ -382,6 +408,32 @@ export function createEmployee(input: Record<string, unknown>) {
   return getEmployee(id);
 }
 
+/**
+ * 员工姓名在各子表里都是展示用快照（历史留痕时抄下的），改名后必须一起跟着走，
+ * 否则会出现「档案已改名，月报/异常列表还是旧名」，而按新名在打卡记录里搜索还会搜不到
+ * （listRecords 的 employeeName LIKE 用的就是这份快照）。
+ * 表若无外键约束（renewals / business_forms / overtime_ledger），列名也各不相同，逐条列明。
+ */
+export function syncEmployeeNameSnapshots(employeeId: string, name: string): void {
+  const trimmed = name.trim();
+  if (!trimmed) return;
+  const updates: string[] = [
+    `UPDATE schedules SET employeeName = ? WHERE employeeId = ?`,
+    `UPDATE punch_records SET employeeName = ? WHERE employeeId = ?`,
+    `UPDATE anomalies SET employeeName = ? WHERE employeeId = ?`,
+    `UPDATE overtime_ledger SET employeeName = ? WHERE employeeId = ?`,
+    `UPDATE contract_renewals SET employeeName = ? WHERE employeeId = ?`,
+    `UPDATE business_forms SET employeeName = ? WHERE employeeId = ?`,
+  ];
+  for (const sql of updates) {
+    try {
+      db.prepare(sql).run(trimmed, employeeId);
+    } catch {
+      /* 该表尚未创建（模块加载早期 / 精简库）时跳过，不影响主写入 */
+    }
+  }
+}
+
 export function updateEmployee(id: string, input: Record<string, unknown>) {
   const data = normalize(input);
   const keys = Object.keys(data);
@@ -404,6 +456,11 @@ export function updateEmployee(id: string, input: Record<string, unknown>) {
         db.prepare("UPDATE employees SET departmentId = NULL, department = '' WHERE id = ?").run(id);
       }
     }
+
+    // 改名与姓名快照同步放在同一事务里，避免"档案改了、子表没改"的半截状态
+    if (typeof data.name === "string" && data.name.trim()) {
+      syncEmployeeNameSnapshots(id, data.name);
+    }
     db.exec("COMMIT");
   } catch (e) {
     db.exec("ROLLBACK");
@@ -415,11 +472,44 @@ export function updateEmployee(id: string, input: Record<string, unknown>) {
 export function deleteEmployee(id: string) {
   db.exec("BEGIN");
   try {
+    // 登录账号必须一起解绑：否则员工删了账号还在，且带着一个指向空气的 employeeId，
+    // 转正/加班/补卡的领域动作会落在一个已不存在的档案上
+    try {
+      db.prepare("UPDATE accounts SET employeeId = NULL WHERE employeeId = ?").run(id);
+    } catch {
+      /* accounts 由 authDb 建表，模块加载早期可能还不存在 */
+    }
     // 续签历史无外键约束，需显式清理（避免孤儿记录被后续同 ID 引用）
     try {
       db.prepare("DELETE FROM contract_renewals WHERE employeeId = ?").run(id);
     } catch {
       /* 续签表尚未创建时忽略（模块加载早期） */
+    }
+    try {
+      db.prepare("DELETE FROM business_forms WHERE employeeId = ?").run(id);
+    } catch {
+      /* 同上：业务单归档表 */
+    }
+    try {
+      // 加班/调休台账以 employeeId 为主键且无外键，不清会留下一个「已不存在的人的余额」
+      db.prepare("DELETE FROM overtime_ledger WHERE employeeId = ?").run(id);
+    } catch {
+      /* 同上：审批表尚未创建时忽略 */
+    }
+    try {
+      // 指向该员工的提醒待办（合同到期 / 试用期转正）：人已不在，催它没有意义
+      db.prepare("DELETE FROM todos WHERE targetId = ?").run(id);
+    } catch {
+      /* todos 表由 todosDb 建，模块加载早期可能还不存在 */
+    }
+    try {
+      // 归并键指向该员工的周期提醒通知（remindersDb 用 contract:{id} / probation:{id}）
+      db.prepare("DELETE FROM notifications WHERE refKey IN (?, ?)").run(
+        `contract:${id}`,
+        `probation:${id}`
+      );
+    } catch {
+      /* 同上：notifications 表由 notificationsDb 建 */
     }
     const result = db.prepare("DELETE FROM employees WHERE id = ?").run(id);
     db.exec("COMMIT");

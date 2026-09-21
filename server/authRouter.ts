@@ -28,9 +28,28 @@ import {
 } from "./authDb.ts";
 import { clientIp, listSecurityEvents, logSecurityEvent, requireRole } from "./authMiddleware.ts";
 import { validateBody, loginSchema, changePasswordSchema, accountCreateSchema, accountUpdateSchema, profileUpdateSchema } from "./validation.ts";
+import { db, getEmployee } from "./db.ts";
+import { asString } from "./sqliteUtil.ts";
 
 export const authRouter = express.Router();
 authRouter.use(express.json({ limit: "64kb" }));
+
+/**
+ * 员工绑定前置校验：employeeId 必须指向真实档案，且不能被别的账号占用。
+ * 不拦的话：绑定不存在的工号会撞唯一索引变成 500；而"一个员工两个账号"会让
+ * approvalsDb / attendanceRouter 里 `SELECT ... WHERE employeeId = ?` 的 .get()
+ * 任取其一，另一个账号永远收不到转正/补卡/考勤异常通知 —— 静默失效最难查。
+ */
+function accountBindingError(employeeId: unknown, selfUsername: string): string | null {
+  if (employeeId === undefined || employeeId === null || employeeId === "") return null;
+  const id = String(employeeId);
+  if (!getEmployee(id)) return `员工档案不存在：${id}`;
+  const holder = db
+    .prepare("SELECT username FROM accounts WHERE employeeId = ? AND username <> ?")
+    .get(id, selfUsername);
+  const occupied = asString((holder as { username?: string } | undefined)?.username);
+  return occupied ? `该员工已绑定账号 ${occupied}，请先在对方账号上解除绑定` : null;
+}
 
 // ---------------------------------------------------------------- 登录限流
 
@@ -201,6 +220,8 @@ authRouter.post("/accounts", requireRole("ADMIN"), validateBody(accountCreateSch
     if (systemRole === "SUPER_ADMIN" && req.auth?.systemRole !== "SUPER_ADMIN") {
       return res.status(403).json({ error: "只有超级管理员才能创建超级管理员账号" });
     }
+    const bindError = accountBindingError(employeeId, username);
+    if (bindError) return res.status(400).json({ error: bindError });
     // 注：systemRole 已由 zod 枚举收口，非法值直接 400，无需再手写 !isSystemRole 判断。
 
     const account = createAccount({
@@ -227,6 +248,8 @@ authRouter.put("/accounts/:username", requireRole("ADMIN"), validateBody(account
     if (patch.systemRole === "SUPER_ADMIN" && req.auth?.systemRole !== "SUPER_ADMIN") {
       return res.status(403).json({ error: "只有超级管理员才能授予超级管理员角色" });
     }
+    const bindError = accountBindingError(patch.employeeId, target);
+    if (bindError) return res.status(400).json({ error: bindError });
     // 防止管理员把自己降权或停用，导致系统再没有人能管
     if (target === req.auth?.username && (patch.systemRole !== undefined || patch.enabled === false)) {
       return res.status(400).json({ error: "不能修改自己的角色或停用自己的账号" });

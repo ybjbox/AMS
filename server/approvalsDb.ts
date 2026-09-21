@@ -479,3 +479,73 @@ function applyMakeupPunch(approval: ApprovalRow): void {
   // 刷新异常分析：新增打卡后，相应缺卡异常自动消除
   analyzeAnomalies();
 }
+
+/**
+ * 审批台账（HR+）：按状态 / 月份 / 申请人筛选。
+ * 月份取的是"处理月份"——已决定的按 decidedAt，未决定的按 createdAt，
+ * 这样"这个月批掉了哪些"和"这个月还压着哪些"能被同一次查询覆盖。
+ * 默认 200 条、上限 500：审批历史只增不减，不给上限迟早把首屏拖垮。
+ */
+export function listApprovals(
+  query: { status?: unknown; month?: unknown; applicant?: unknown; limit?: unknown } = {}
+): ApprovalRow[] {
+  const clauses: string[] = [];
+  const params: (string | number)[] = [];
+
+  const status = typeof query.status === "string" ? query.status : "";
+  if (["pending", "approved", "rejected", "withdrawn"].includes(status)) {
+    clauses.push("status = ?");
+    params.push(status);
+  } else if (status === "decided") {
+    clauses.push("status IN ('approved','rejected','withdrawn')");
+  }
+
+  const month = typeof query.month === "string" ? query.month : "";
+  if (/^\d{4}-\d{2}$/.test(month)) {
+    clauses.push("strftime('%Y-%m', COALESCE(decidedAt, createdAt)) = ?");
+    params.push(month);
+  }
+
+  const applicant = typeof query.applicant === "string" ? query.applicant.trim() : "";
+  if (applicant) {
+    clauses.push("applicant = ?");
+    params.push(applicant);
+  }
+
+  let limit = Number(query.limit);
+  if (!Number.isFinite(limit) || limit <= 0) limit = 200;
+  limit = Math.min(500, Math.round(limit));
+
+  const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+  return db
+    .prepare(
+      `SELECT * FROM approvals ${where}
+        ORDER BY COALESCE(decidedAt, createdAt) DESC, id DESC
+        LIMIT ?`
+    )
+    .all(...params, limit)
+    .map(rowToApproval);
+}
+
+/**
+ * 撤回自己的申请：只有本人、且仍在待审时可撤。
+ * 撤回不触发任何领域动作（调休额度本来就只是"预占"，status 一旦离开 pending 就自动释放），
+ * decidedAt 记时间是为了让它落进对应月份的台账里。
+ */
+export function withdrawApproval(
+  id: string,
+  username: string
+): { row?: ApprovalRow; notFound?: boolean; forbidden?: boolean; conflict?: boolean } {
+  const row = getApproval(id);
+  if (!row) return { notFound: true };
+  if (row.applicant !== username) return { forbidden: true };
+  if (row.status !== "pending") return { conflict: true };
+
+  db.prepare(
+    `UPDATE approvals
+        SET status = 'withdrawn', decidedAt = datetime('now', 'localtime'),
+            comment = CASE WHEN comment = '' THEN '本人撤回' ELSE comment END
+      WHERE id = ? AND status = 'pending'`
+  ).run(id);
+  return { row: getApproval(id)! };
+}

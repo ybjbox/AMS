@@ -1,5 +1,4 @@
-import { http } from './api';
-import { STORAGE_KEYS } from '../config/constants';
+import { http, sendBinary } from './api';
 import { User } from '../types';
 
 /**
@@ -75,28 +74,7 @@ export interface ImportJob {
   error: string;
 }
 
-/** 二进制上传（raw body）——axios 拦截器面向 JSON，这里用 fetch 直传 Buffer 语义 */
-async function sendBinary<T>(url: string, blob: Blob): Promise<T> {
-  const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/octet-stream',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: blob,
-  });
-  if (!res.ok) {
-    let err: unknown;
-    try {
-      err = await res.json();
-    } catch {
-      err = { error: `HTTP ${res.status}` };
-    }
-    throw err;
-  }
-  return (await res.json()) as T;
-}
+/** 二进制上传已上移到 services/api.ts 的 sendBinary（考勤导入共用同一份实现） */
 
 /** 上传 Excel → 解析 + 校验 + 预览 */
 export const previewImport = (file: File): Promise<ImportPreview> =>

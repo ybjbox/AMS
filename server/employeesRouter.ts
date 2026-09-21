@@ -42,6 +42,14 @@ function maskPhone(phone: string): string {
   return phone ? "****" : "";
 }
 
+/**
+ * 合同与社保一并纳入裁剪（第 13 批）。
+ *
+ * 此前只裁身份证/住址/手机号，于是任何登录账号仍能读到全员的合同起止日、年限、
+ * 剩余天数与是否参保 —— 而合同续签台账（GET /users/:id/contract-renewals）早已按
+ * canViewPii 收口，同一类信息两套口径，留着的这套就成了绕过的入口。
+ * 到期看板的聚合统计走 /api/stats，不依赖这些逐人字段，因此收权不影响看板。
+ */
 export function redactPii(u: EmployeeView): EmployeeView {
   return {
     ...u,
@@ -49,6 +57,11 @@ export function redactPii(u: EmployeeView): EmployeeView {
     registeredAddress: "",
     currentAddress: "",
     phone: maskPhone(String(u.phone ?? "")),
+    contractYears: 0,
+    contractSignDate: "",
+    contractExpiry: "",
+    daysToExpiry: 0,
+    hasSocialSecurity: false,
   };
 }
 

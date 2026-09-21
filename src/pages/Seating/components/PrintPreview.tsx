@@ -9,12 +9,14 @@ interface PrintPreviewProps {
   printSettings: PrintSettings;
   getTableDepartments: (members: User[]) => string;
   renderJustifiedName: (name: string, fontSize: number) => React.ReactNode;
+  /** 打印时整棵子树会被 printReactTree 搬进独立文档，故需要一个引用 */
+  containerRef?: React.Ref<HTMLDivElement>;
 }
 
-export function PrintPreview({ tables, printSettings, getTableDepartments, renderJustifiedName }: PrintPreviewProps) {
+export function PrintPreview({ tables, printSettings, getTableDepartments, renderJustifiedName, containerRef }: PrintPreviewProps) {
   return (
     <div
-      id="printable-area"
+      ref={containerRef}
       className="hidden print:flex print:flex-wrap print:gap-[10mm] print:justify-center print:items-start print:p-[10mm] print:w-full print:bg-white dark:bg-zinc-800"
     >
       {tables.map((table) => (

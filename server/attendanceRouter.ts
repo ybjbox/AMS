@@ -1,12 +1,17 @@
 /**
  * 考勤管理 API（/api/attendance/*）：
  *   GET/POST/PUT/DELETE /shifts     — 班次 CRUD
- *   GET/PUT             /schedules  — 排班（整体替换）
- *   GET/PUT             /records    — 打卡记录（整体替换，前端解析 Excel 后提交）
- *   GET                 /anomalies  — 异常列表
- *   POST                /analyze    — 触发真实异常分析
+ *   GET/PUT  /schedules             — 批量排班（upsert-only，未出现的行不删）
+ *   POST/PUT/DELETE /schedules[/:employeeId] — 单条排班增删改；DELETE /schedules 清空（仅 ADMIN）
+ *   GET/PUT  /records               — Excel 导入语义的整表替换（空数组被拒）
+ *   POST/PUT/DELETE /records[/:id]  — 单条打卡记录增删改；DELETE /records 清空（仅 ADMIN）
+ *   GET      /anomalies /summary    — 异常列表 / 月报
+ *   POST     /analyze               — 触发真实异常分析
+ *
+ * 删除永远走 DELETE，不要用 PUT 批量：PUT /schedules 删不掉行、PUT /records 会清库，
+ * 这两条语义差异曾直接造成「排班删了又复活」与「一键清空全员打卡史」。
  */
-import { Router, json } from "express";
+import { Router, json, raw } from "express";
 import {
   listShifts, createShift, updateShift, deleteShift,
   listSchedules, replaceSchedules,
@@ -18,7 +23,16 @@ import {
 import { db } from "./db.ts";
 import { asString } from "./sqliteUtil.ts";
 import { requireRole } from "./authMiddleware.ts";
+import { ROLE_LEVEL } from "./authDb.ts";
 import { createNotification } from "./notificationsDb.ts";
+import { serverErrorResponse } from "./errorHandler.ts";
+import { createImportJob, getImportJob } from "./importJobsDb.ts";
+import {
+  MAX_PUNCH_IMPORT_ROWS,
+  buildAttendanceTemplate,
+  previewAttendanceImport,
+  runAttendanceImportJob,
+} from "./attendanceImportDb.ts";
 
 /**
  * P2 考勤异常通知：分析完成后按员工汇总当日异常，发给已关联账号的当事员工。
@@ -144,10 +158,15 @@ attendanceRouter.get("/records", (req, res) => {
 });
 
 // 整表替换（Excel 导入语义）：清空后整体写入——考勤页导入功能的承载端点，
-// 维持默认写策略（HR+）；如需收紧到 ADMIN，须同步调整前端导入入口的角色门槛
+// 维持默认写策略（HR+）；如需收紧到 ADMIN，须同步调整前端导入入口的角色门槛。
+// 空数组在这里被拒：它是「全库打卡记录清零」的唯一整表入口，而清空本有
+// DELETE /records（仅 ADMIN）这条带角色门槛的路，不该由导入语义顺带触发。
 attendanceRouter.put("/records", (req, res) => {
   const { records } = req.body || {};
   if (!Array.isArray(records)) return res.status(400).json({ error: "records array is required" });
+  if (records.length === 0) {
+    return res.status(400).json({ error: "导入清单为空，已取消；确需清空全部打卡记录请用「全部清空打卡记录」" });
+  }
   res.json(replaceRecords(records));
 });
 
@@ -202,6 +221,66 @@ attendanceRouter.delete("/records/:id", (req, res) => {
 attendanceRouter.delete("/records", requireRole("ADMIN"), (_req, res) => {
   clearRecords();
   res.json({ success: true });
+});
+
+// ---- 打卡记录批量导入（服务端解析，流程与员工导入一致）----
+// 注意注册在 /records/:id 之前不存在冲突：这里只有 GET /records/import/template 与两个 POST。
+
+// GET /records/import/template — 下载导入模板
+attendanceRouter.get("/records/import/template", async (_req, res) => {
+  try {
+    const buffer = await buildAttendanceTemplate();
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename*=UTF-8''" + encodeURIComponent("打卡记录导入模板.xlsx")
+    );
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.send(buffer);
+  } catch (error) {
+    serverErrorResponse(res, error);
+  }
+});
+
+// POST /records/import — 上传 xlsx（binary）→ 解析 + 逐行校验 + 预览
+attendanceRouter.post("/records/import", raw({ type: "*/*", limit: "10mb" }), async (req, res) => {
+  try {
+    const buffer = req.body as Buffer;
+    if (!buffer || !Buffer.isBuffer(buffer) || buffer.length === 0) {
+      return res.status(400).json({ error: "未接收到文件内容" });
+    }
+    res.json(await previewAttendanceImport(buffer));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    res.status(400).json({ error: `解析失败：${message}` });
+  }
+});
+
+// POST /records/import/commit — 确认导入：立即返回 jobId，后台分块落库（同一分钟重复行自动跳过）
+attendanceRouter.post("/records/import/commit", (req, res) => {
+  try {
+    const { rows } = req.body || {};
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({ error: "rows 不能为空" });
+    }
+    if (rows.length > MAX_PUNCH_IMPORT_ROWS) {
+      return res.status(400).json({ error: `单次最多导入 ${MAX_PUNCH_IMPORT_ROWS} 行` });
+    }
+    const jobId = createImportJob(req.auth!.username, rows.length);
+    void runAttendanceImportJob(jobId, rows);
+    res.status(202).json({ jobId });
+  } catch (error) {
+    serverErrorResponse(res, error);
+  }
+});
+
+// GET /records/import/jobs/:id — 轮询导入进度（仅任务创建者或 ADMIN+）
+attendanceRouter.get("/records/import/jobs/:id", (req, res) => {
+  const job = getImportJob(req.params.id);
+  if (!job) return res.status(404).json({ error: "导入任务不存在" });
+  if (job.username !== req.auth!.username && ROLE_LEVEL[req.auth!.systemRole] < ROLE_LEVEL.ADMIN) {
+    return res.status(403).json({ error: "无权查看该导入任务" });
+  }
+  res.json(job);
 });
 
 // ---- Anomalies ----

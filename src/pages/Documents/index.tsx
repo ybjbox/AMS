@@ -1,5 +1,5 @@
 import PageContainer from "@/components/PageContainer";
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Plus, Upload } from 'lucide-react';
 import { useBodyOverflow } from '@/hooks/useBodyOverflow';
 import { useDocumentStore } from '@/store/useDocumentStore';
@@ -15,7 +15,6 @@ import { MoveFileModal } from './components/MoveFileModal';
 import { PrintSetModal } from './components/PrintSetModal';
 
 import { useDocumentActions } from './hooks/useDocumentActions';
-import { DocumentsPrintTemplate } from './components/DocumentsPrintTemplate';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export default function Documents() {
@@ -55,7 +54,6 @@ export default function Documents() {
     setIsPrintModalOpen,
     printingSet,
     isPrinting,
-    setIsPrinting,
     expandedModalFolders,
     selectedDocIds,
     printSettings,
@@ -71,6 +69,7 @@ export default function Documents() {
     handleEditSetClick,
     handleDeleteSetClick,
     handlePrintSetClick,
+    handlePrintSet,
     handleSaveSet,
     handleSaveFolder,
     handleMoveFile,
@@ -85,8 +84,6 @@ export default function Documents() {
     onSetCopiesClick,
     onTargetFolderChange,
   } = useDocumentActions();
-
-  const documentsPrintRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchData();
@@ -113,17 +110,6 @@ export default function Documents() {
       return d.folderId === currentFolderId;
     });
   }, [documents, searchQuery, currentFolderId]);
-
-  const handlePrint = useCallback(() => {
-    setIsPrinting(true);
-    // 使用 React 渲染的隐藏模板，通过 window.print() 触发打印
-    // CSS @media print 规则确保只有打印模板显示
-    setTimeout(() => {
-      setIsPrinting(false);
-      setIsPrintModalOpen(false);
-      window.print();
-    }, 300);
-  }, [setIsPrinting, setIsPrintModalOpen]);
 
   return (
     <PageContainer className="space-y-6 animate-in fade-in duration-400">
@@ -253,14 +239,7 @@ export default function Documents() {
         onClose={() => setIsPrintModalOpen(false)}
         printingSet={printingSet}
         isPrinting={isPrinting}
-        handlePrint={handlePrint}
-        documents={documents}
-      />
-
-      {/* 打印模板（screen 时隐藏，print 时显示） */}
-      <DocumentsPrintTemplate
-        printRef={documentsPrintRef}
-        printingSet={printingSet}
+        handlePrint={handlePrintSet}
         documents={documents}
       />
     </PageContainer>

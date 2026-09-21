@@ -1,3 +1,4 @@
+import { genId } from '@/utils/id';
 import { useState, useCallback, useEffect } from 'react';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useDepartments as useDepartmentStore, flattenDepartments } from '@/store/useDepartmentStore';
@@ -102,21 +103,22 @@ export function useDepartmentsLogic() {
               children: n.children ? deleteNode(n.children) : undefined,
             }));
         };
-        setDepartments(deleteNode(departments));
+        await setDepartments(deleteNode(departments));
       }
     },
     [departments, setDepartments, confirm]
   );
 
   const handleModalSubmit = useCallback(
-    (e: React.FormEvent<HTMLFormElement>) => {
+    async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       const formData = new FormData(e.currentTarget);
       const name = formData.get('name') as string;
       const priority = parseInt(formData.get('priority') as string) || 0;
 
       if (modal.mode === 'add') {
-        const newNode: DepartmentNode = { id: Date.now().toString(), name, priority };
+        // id 用 uuid（同毫秒连建两个节点不再撞主键，见 server/departmentsDb.ts 的 assertUniqueIds）
+        const newNode: DepartmentNode = { id: genId(), name, priority };
         if (modal.parentId) {
           const addNode = (nodes: DepartmentNode[]): DepartmentNode[] => {
             return nodes.map((n) => {
@@ -126,10 +128,10 @@ export function useDepartmentsLogic() {
               return { ...n, children: n.children ? addNode(n.children) : undefined };
             });
           };
-          setDepartments(addNode(departments));
+          if (!(await setDepartments(addNode(departments)))) return;
           setExpandedIds((prev) => new Set(prev).add(modal.parentId!));
         } else {
-          setDepartments([...departments, newNode]);
+          if (!(await setDepartments([...departments, newNode]))) return;
         }
       } else if (modal.mode === 'edit' && modal.targetId) {
         const editNode = (nodes: DepartmentNode[]): DepartmentNode[] => {
@@ -140,7 +142,7 @@ export function useDepartmentsLogic() {
             return { ...n, children: n.children ? editNode(n.children) : undefined };
           });
         };
-        setDepartments(editNode(departments));
+        if (!(await setDepartments(editNode(departments)))) return;
       }
 
       setModal((prev) => ({ ...prev, isOpen: false }));
@@ -175,23 +177,23 @@ export function useDepartmentsLogic() {
   const handleDeleteRole = useCallback(
     async (id: string) => {
       if (await confirm({ title: '确定要删除该职位吗？', description: '此操作不可恢复。', variant: 'danger' })) {
-        setRoles(roles.filter((r) => r.id !== id));
+        await setRoles(roles.filter((r) => r.id !== id));
       }
     },
     [roles, setRoles, confirm]
   );
 
   const handleRoleModalSubmit = useCallback(
-    (e: React.FormEvent<HTMLFormElement>) => {
+    async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       const formData = new FormData(e.currentTarget);
       const name = formData.get('name') as string;
       const priority = parseInt(formData.get('priority') as string) || 0;
 
       if (roleModal.mode === 'add' && roleModal.departmentId) {
-        setRoles([...roles, { id: Date.now().toString(), name, departmentId: roleModal.departmentId, priority }]);
+        if (!(await setRoles([...roles, { id: genId(), name, departmentId: roleModal.departmentId, priority }]))) return;
       } else if (roleModal.mode === 'edit' && roleModal.targetId) {
-        setRoles(roles.map((r) => (r.id === roleModal.targetId ? { ...r, name, priority } : r)));
+        if (!(await setRoles(roles.map((r) => (r.id === roleModal.targetId ? { ...r, name, priority } : r))))) return;
       }
       setRoleModal((prev) => ({ ...prev, isOpen: false }));
     },

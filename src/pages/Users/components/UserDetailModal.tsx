@@ -5,6 +5,11 @@ import { BaseModal } from '@/components/ui/BaseModal';
 import { Button } from '@/components/ui/button';
 import { User, SystemRole } from '@/types';
 import { formatPhone } from '@/utils/dateUtils';
+import { toast } from 'sonner';
+import { printInWindow } from '@/utils/printWindow';
+import { buildContactCardPrintHtml, buildLabelPrintHtml } from '../utils/printHtml';
+import { BusinessFormRecords } from './BusinessFormRecords';
+import { UserAccountSection } from './UserAccountSection';
 
 interface UserDetailModalProps {
   isOpen: boolean;
@@ -41,44 +46,8 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit, onR
             type="button"
             onClick={() => {
               if (!selectedUser) return;
-              const printWindow = window.open('', '', 'height=400,width=800');
-              if (printWindow) {
-                printWindow.document.write('<html><head><title>打印档案标签</title>');
-                printWindow.document.write('<style>');
-                printWindow.document.write('@page { size: 17cm 4cm; margin: 0; }');
-                printWindow.document.write(
-                  'body { margin: 0; padding: 0; width: 17cm; height: 4cm; display: flex; align-items: center; justify-content: center; font-family: "SimSun", "STSong", serif; }'
-                );
-                printWindow.document.write(
-                  '.label-container { width: 16.6cm; height: 3.6cm; box-sizing: border-box; padding: 0.3cm 0.5cm; display: flex; flex-direction: column; justify-content: flex-start; border: 1px solid #000; }'
-                );
-                printWindow.document.write(
-                  '.row { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-bottom: 0.3cm; }'
-                );
-                printWindow.document.write('.text-item { font-size: 32px; letter-spacing: 1px; }');
-                printWindow.document.write('.dept { flex: 1; text-align: left; }');
-                printWindow.document.write('.name { flex: 1; text-align: center; }');
-                printWindow.document.write('.role { flex: 1; text-align: right; }');
-                printWindow.document.write('.phone { font-size: 32px; letter-spacing: 1px; text-align: left; }');
-                printWindow.document.write('</style>');
-                printWindow.document.write('</head><body>');
-                printWindow.document.write('<div class="label-container">');
-                printWindow.document.write('<div class="row">');
-                printWindow.document.write(`<div class="text-item dept">${selectedUser.department}</div>`);
-                printWindow.document.write(`<div class="text-item name">${selectedUser.name}</div>`);
-                printWindow.document.write(`<div class="text-item role">${selectedUser.role}</div>`);
-                printWindow.document.write('</div>');
-                printWindow.document.write('<div class="row">');
-                printWindow.document.write(`<div class="phone">${selectedUser.phone}</div>`);
-                printWindow.document.write('</div>');
-                printWindow.document.write('</div>');
-                printWindow.document.write('</body></html>');
-                printWindow.document.close();
-                printWindow.focus();
-                setTimeout(() => {
-                  printWindow.print();
-                  printWindow.close();
-                }, 250);
+              if (!printInWindow(buildLabelPrintHtml(selectedUser), 'height=400,width=800')) {
+                toast.error('打印窗口被浏览器拦截，请允许弹窗后重试');
               }
             }}
             className="btn-primary w-full sm:w-auto"
@@ -89,38 +58,12 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit, onR
           <button
             type="button"
             onClick={() => {
-              if (!selectedUser) return;
               const printContent = document.getElementById('printable-contact-card');
-              if (printContent) {
-                const printWindow = window.open('', '', 'height=600,width=800');
-                if (printWindow) {
-                  printWindow.document.write('<html><head><title>打印联系卡</title>');
-                  printWindow.document.write('<style>');
-                  printWindow.document.write('body { font-family: sans-serif; padding: 20px; }');
-                  printWindow.document.write('.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }');
-                  printWindow.document.write(
-                    '.bg-zinc-50 { background-color: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; }'
-                  );
-                  printWindow.document.write(
-                    '.flex { display: flex; justify-content: space-between; margin-bottom: 8px; }'
-                  );
-                  printWindow.document.write('.text-sm { font-size: 14px; }');
-                  printWindow.document.write('.text-zinc-500 { color: #64748b; }');
-                  printWindow.document.write('.font-medium { font-weight: 500; }');
-                  printWindow.document.write('h4 { margin-top: 0; margin-bottom: 10px; color: #475569; }');
-                  printWindow.document.write('@media print { .md\\:col-span-2 { grid-column: span 2; } }');
-                  printWindow.document.write('</style>');
-                  printWindow.document.write('</head><body>');
-                  printWindow.document.write(`<h2>${selectedUser.name} - 联系卡</h2>`);
-                  printWindow.document.write(printContent.innerHTML);
-                  printWindow.document.write('</body></html>');
-                  printWindow.document.close();
-                  printWindow.focus();
-                  setTimeout(() => {
-                    printWindow.print();
-                    printWindow.close();
-                  }, 250);
-                }
+              if (!selectedUser || !printContent) return;
+              if (
+                !printInWindow(buildContactCardPrintHtml(selectedUser.name, printContent.innerHTML), 'height=600,width=800')
+              ) {
+                toast.error('打印窗口被浏览器拦截，请允许弹窗后重试');
               }
             }}
             className="btn-primary w-full sm:w-auto"
@@ -237,7 +180,9 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit, onR
                         ? '管理员'
                         : selectedUser.systemRole === SystemRole.HR
                           ? '人事主管'
-                          : '普通员工'}
+                          : selectedUser.systemRole === SystemRole.EMPLOYEE
+                            ? '普通员工'
+                            : '未开通账号'}
                   </span>
                 </div>
                 {selectedUser && (
@@ -258,6 +203,9 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit, onR
           </div>
         </div>
       )}
+      {/* 账号与业务单据两块都在打印卡片之外，避免被「打印联系卡」带进纸张 */}
+      {selectedUser && <UserAccountSection employee={selectedUser} />}
+      {selectedUser && <BusinessFormRecords employee={selectedUser} />}
     </BaseModal>
   );
 }

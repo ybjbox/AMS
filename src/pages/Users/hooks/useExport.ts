@@ -4,6 +4,8 @@ import { User } from '@/types';
 import { DEFAULT_ROSTER_COLUMNS, DEFAULT_ADDRESS_BOOK_COLUMNS, ExportTheme, ExportScript } from '../constants';
 import { exportApi, downloadEmployeeExport, type EmployeeExportConfig } from '@/services/exportApi';
 import { describeSaveError } from '@/store/saveFailureCore';
+import { printInIframe } from '@/utils/printWindow';
+import { buildAddressBookPrintHtml, buildRosterPrintHtml } from '../utils/printHtml';
 
 export function useExport(users: User[]) {
   const [isExporting, setIsExporting] = useState(false);
@@ -180,78 +182,30 @@ export function useExport(users: User[]) {
     [users, exportConfig]
   );
 
-  const handlePrintRoster = useCallback(() => {
+  const handlePrintRoster = useCallback(async () => {
     if (!rosterPrintRef.current) return;
-    const printContent = rosterPrintRef.current.innerHTML;
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
-    const printDocument = iframe.contentWindow?.document;
-    if (printDocument) {
-      printDocument.write(`
-        <html>
-          <head>
-            <title>${exportConfig.title}</title>
-            <style>
-              @page { size: ${exportConfig.paperSize} ${exportConfig.orientation}; margin: 10mm; }
-              ${exportConfig.isDoubleSided ? `@page :left { margin-left: 15mm; margin-right: 10mm; } @page :right { margin-left: 10mm; margin-right: 15mm; }` : ''}
-              body { font-family: 'SimSun', 'Songti SC', serif; font-size: 10pt; color: #000; }
-              table { width: 100%; border-collapse: collapse; font-size: 9pt; }
-              th, td { border: 1px solid #000; padding: 4px 6px; text-align: left; word-break: break-all; }
-              th { background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: bold; }
-              h1 { text-align: center; font-size: 16pt; margin-bottom: 10px; font-weight: bold; }
-            </style>
-          </head>
-          <body>${printContent}</body>
-        </html>
-      `);
-      printDocument.close();
-      iframe.contentWindow?.focus();
-      setTimeout(() => {
-        iframe.contentWindow?.print();
-        setTimeout(() => {
-          document.body.removeChild(iframe);
-          setIsExportModalOpen(false);
-        }, 1000);
-      }, 250);
-    }
+    await printInIframe(
+      buildRosterPrintHtml(rosterPrintRef.current.innerHTML, {
+        title: exportConfig.title,
+        paperSize: exportConfig.paperSize,
+        orientation: exportConfig.orientation,
+        isDoubleSided: exportConfig.isDoubleSided,
+      })
+    );
+    setIsExportModalOpen(false);
   }, [exportConfig]);
 
-  const handlePrintAddressBook = useCallback(() => {
+  const handlePrintAddressBook = useCallback(async () => {
     if (!addressBookPrintRef.current) return;
-    const printContent = addressBookPrintRef.current.innerHTML;
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
-    const printDocument = iframe.contentWindow?.document;
-    if (printDocument) {
-      printDocument.write(`
-        <html>
-          <head>
-            <title>${addressBookConfig.title}</title>
-            <style>
-              @page { size: ${addressBookConfig.paperSize} ${addressBookConfig.orientation}; margin: 10mm; }
-              ${addressBookConfig.isDoubleSided ? `@page :left { margin-left: 15mm; margin-right: 10mm; } @page :right { margin-left: 10mm; margin-right: 15mm; }` : ''}
-              body { font-family: 'SimSun', 'Songti SC', serif; font-size: 10pt; color: #000; }
-              table { width: 100%; border-collapse: collapse; font-size: 9pt; }
-              th, td { border: 1px solid #000; padding: 4px 6px; text-align: left; word-break: break-all; }
-              th { background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: bold; }
-              h1 { text-align: center; font-size: 16pt; margin-bottom: 10px; font-weight: bold; }
-            </style>
-          </head>
-          <body>${printContent}</body>
-        </html>
-      `);
-      printDocument.close();
-      iframe.contentWindow?.focus();
-      setTimeout(() => {
-        iframe.contentWindow?.print();
-        setTimeout(() => {
-          document.body.removeChild(iframe);
-          setIsAddressBookModalOpen(false);
-        }, 1000);
-      }, 250);
-    }
+    await printInIframe(
+      buildAddressBookPrintHtml(addressBookPrintRef.current.innerHTML, {
+        title: addressBookConfig.title,
+        paperSize: addressBookConfig.paperSize,
+        orientation: addressBookConfig.orientation,
+        isDoubleSided: addressBookConfig.isDoubleSided,
+      })
+    );
+    setIsAddressBookModalOpen(false);
   }, [addressBookConfig]);
 
   return {

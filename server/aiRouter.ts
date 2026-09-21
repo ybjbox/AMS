@@ -4,6 +4,7 @@ import { buildDataContext } from "./aiContext.ts";
 import {
   getAiConfig,
   setAiConfig,
+  quotaLimitForRole,
   type AiConfig,
 } from "./aiConfigDb.ts";
 import {
@@ -19,7 +20,7 @@ import {
   pruneConversations,
   type StoredMsg,
 } from "./aiDb.ts";
-import { ROLE_LEVEL } from "./authDb.ts";
+import { ROLE_LEVEL, getAccount } from "./authDb.ts";
 import {
   getUserAiConfig,
   setUserAiConfig,
@@ -44,6 +45,7 @@ import {
  * - PUT  /api/ai/conversations/:id   更新（标题/消息）
  * - DELETE /api/ai/conversations/:id 删除某对话
  * - GET  /api/ai/models        仅超级管理员：从服务商 /models 端点拉取可用模型（需 baseUrl + apiKey）
+ * - POST /api/ai/test          仅超级管理员：连接可用性检测（一次最小对话请求）
  * - GET  /api/ai/config        仅超级管理员：读取配置（apiKey 脱敏）
  * - PUT  /api/ai/config        仅超级管理员：保存配置
  * - GET  /api/ai/logo          登录用户：自定义 Logo 图片字节流（替代内置图标）
@@ -265,6 +267,7 @@ aiRouter.get("/config", (req: Request, res: ExpressResponse) => {
     assistantDraggable: !!c.assistantDraggable,
     conversationRetentionDays: c.conversationRetentionDays ?? 0,
     dailyQuota: c.dailyQuota ?? 0,
+    adminDailyQuota: c.adminDailyQuota ?? 0,
     allowPersonalModel: !!c.allowPersonalModel,
     apiKeySet: !!c.apiKey,
     apiKeyMasked: masked,
@@ -329,6 +332,109 @@ aiRouter.get("/models", async (req: Request, res: ExpressResponse) => {
   }
 });
 
+/** 连接可用性检测：向服务商发一次最小对话请求，验证 baseUrl / apiKey / model 三者是否真正可用 */
+aiRouter.post("/test", async (req: Request, res: ExpressResponse) => {
+  if (!isSuperAdmin(req)) {
+    return res.status(403).json({ error: "仅超级管理员可访问" });
+  }
+  const cfg = getAiConfig();
+  const b = (req.body ?? {}) as { baseUrl?: unknown; apiKey?: unknown; model?: unknown };
+  const baseUrl =
+    (typeof b.baseUrl === "string" && b.baseUrl.trim()) || cfg.baseUrl;
+  const apiKey = (typeof b.apiKey === "string" && b.apiKey.trim()) || cfg.apiKey;
+  const model =
+    (typeof b.model === "string" && b.model.trim()) || cfg.model;
+  if (!baseUrl) {
+    return res.status(400).json({ error: "请先填写 API Base URL" });
+  }
+  if (!apiKey) {
+    return res
+      .status(400)
+      .json({ error: "请先填写 API Key（或在配置中已保存密钥）" });
+  }
+  if (!model) {
+    return res.status(400).json({ error: "请先选择或填写模型" });
+  }
+  const validated = validateOutboundBaseUrl(baseUrl);
+  if (!validated.ok) {
+    return res.status(400).json({ error: validated.reason });
+  }
+  const started = Date.now();
+  try {
+    const r = await fetch(
+      `${validated.url.toString().replace(/\/$/, "")}/chat/completions`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "user", content: "这是一次连接检测，请只回复两个字：正常" },
+          ],
+          max_tokens: 16,
+          temperature: 0,
+          stream: false,
+        }),
+        signal: AbortSignal.timeout(15_000),
+      }
+    );
+    const latencyMs = Date.now() - started;
+    if (!r.ok) {
+      const txt = await r.text().catch(() => "");
+      const reason =
+        r.status === 401 || r.status === 403
+          ? "API Key 无效或无权限"
+          : r.status === 404
+            ? "模型或接口不存在，请检查 Base URL 与模型名"
+            : r.status === 429
+              ? "服务商限流（429），请稍后重试"
+              : `服务商返回 ${r.status}`;
+      return res.status(200).json({
+        ok: false,
+        latencyMs,
+        error: `${reason}${txt ? `（${truncateTestSnippet(txt)}）` : ""}`,
+      });
+    }
+    const json: unknown = await r.json();
+    // 上游响应为外部数据：窄化读取 choices[0].message.content
+    const choices =
+      json && typeof json === "object" && "choices" in json
+        ? (json as { choices?: unknown }).choices
+        : undefined;
+    const first = Array.isArray(choices) ? choices[0] : undefined;
+    const reply =
+      first && typeof first === "object" && "message" in first
+        ? (first as { message?: { content?: unknown } }).message?.content
+        : undefined;
+    res.json({
+      ok: true,
+      latencyMs,
+      model,
+      reply:
+        typeof reply === "string" && reply.trim()
+          ? truncateTestSnippet(reply.trim())
+          : "（已响应，但回复内容为空）",
+    });
+  } catch (e) {
+    if ((e as { name?: string })?.name === "TimeoutError") {
+      return res
+        .status(200)
+        .json({ ok: false, error: "连接超时（15 秒），请检查网络或服务商状态" });
+    }
+    res.status(200).json({
+      ok: false,
+      error: "无法连接服务商，请检查 Base URL 与网络",
+    });
+  }
+});
+
+function truncateTestSnippet(s: string): string {
+  return s.length > 60 ? `${s.slice(0, 60)}…` : s;
+}
+
 aiRouter.put("/config", (req: Request, res: ExpressResponse) => {
   if (!isSuperAdmin(req)) {
     return res.status(403).json({ error: "仅超级管理员可访问" });
@@ -362,12 +468,14 @@ aiRouter.put("/config", (req: Request, res: ExpressResponse) => {
       }
     }
   }
-  // 系统额度：0 = 不限，上限防误配
-  if (b.dailyQuota !== undefined) {
-    const q = Number(b.dailyQuota);
+  // 系统额度（员工档 / 管理档，超级管理员不受限）：0 = 不限，上限防误配
+  for (const field of ["dailyQuota", "adminDailyQuota"] as const) {
+    if (b[field] === undefined) continue;
+    const q = Number(b[field]);
     if (!Number.isFinite(q) || q < 0 || q > 100000) {
       return res.status(400).json({ error: "每日额度需为 0～100000 之间的数字（0 表示不限）" });
     }
+    b[field] = Math.floor(q) as AiConfig[typeof field];
   }
   const next = setAiConfig({
     enabled: b.enabled,
@@ -383,6 +491,7 @@ aiRouter.put("/config", (req: Request, res: ExpressResponse) => {
     assistantDraggable: b.assistantDraggable,
     conversationRetentionDays: b.conversationRetentionDays,
     dailyQuota: b.dailyQuota !== undefined ? Math.floor(Number(b.dailyQuota)) : undefined,
+    adminDailyQuota: b.adminDailyQuota !== undefined ? Math.floor(Number(b.adminDailyQuota)) : undefined,
     allowPersonalModel: b.allowPersonalModel,
   });
   res.json({
@@ -397,6 +506,8 @@ aiRouter.put("/config", (req: Request, res: ExpressResponse) => {
     assistantIcon: next.assistantIcon,
     assistantDraggable: next.assistantDraggable,
     conversationRetentionDays: next.conversationRetentionDays,
+    dailyQuota: next.dailyQuota,
+    adminDailyQuota: next.adminDailyQuota,
     apiKeySet: !!next.apiKey,
   });
 });
@@ -448,14 +559,25 @@ aiRouter.delete(
   }
 );
 
-/** 超管审计：今日各用户的系统额度使用次数 + 额度上限 + 已配置个人模型的用户名单。 */
+/** 超管审计：今日各用户的系统额度使用次数 + 本人额度档位 + 已配置个人模型的用户名单。 */
 aiRouter.get("/admin/usage", (req: Request, res: ExpressResponse) => {
   if (!isSuperAdmin(req)) {
     return res.status(403).json({ error: "仅超级管理员可访问" });
   }
+  const config = getAiConfig();
+  const users = listTodayUsage().map((u) => {
+    const role = getAccount(u.username)?.systemRole ?? "EMPLOYEE";
+    const limit = quotaLimitForRole(config, role);
+    return {
+      ...u,
+      role,
+      limit,
+      remaining: limit > 0 ? Math.max(0, limit - u.used) : null,
+    };
+  });
   res.json({
-    limit: getAiConfig().dailyQuota ?? 0,
-    users: listTodayUsage(),
+    limits: { employee: config.dailyQuota ?? 0, admin: config.adminDailyQuota ?? 0 },
+    users,
     personalModelUsers: listPersonalModelUsers(),
   });
 });
@@ -527,6 +649,8 @@ aiRouter.get("/status", (req: Request, res: ExpressResponse) => {
   const c = getAiConfig();
   const user = req.auth?.username;
   const quotaUsed = user ? getUsageToday(user) : 0;
+  // dailyQuota 回显「当前用户按角色档位生效的上限」（0 = 不限），前端直接展示剩余次数
+  const limit = quotaLimitForRole(c, req.auth?.systemRole);
   res.json({
     enabled: c.enabled,
     allowNonAdmin: c.allowNonAdmin,
@@ -537,9 +661,9 @@ aiRouter.get("/status", (req: Request, res: ExpressResponse) => {
     assistantIcon: c.assistantIcon ?? "",
     hasLogo: !!c.assistantLogo,
     assistantDraggable: !!c.assistantDraggable,
-    dailyQuota: c.dailyQuota ?? 0,
+    dailyQuota: limit,
     quotaUsed,
-    quotaRemaining: c.dailyQuota > 0 ? Math.max(0, c.dailyQuota - quotaUsed) : null,
+    quotaRemaining: limit > 0 ? Math.max(0, limit - quotaUsed) : null,
     allowPersonalModel: !!c.allowPersonalModel,
     hasOwnModel: !!c.allowPersonalModel && isUserAiConfigUsable(user ? getUserAiConfig(user) : null),
   });
@@ -672,17 +796,17 @@ aiRouter.post("/chat", async (req: Request, res: ExpressResponse) => {
       return res.status(400).json({ error: "messages 不能为空" });
     }
 
-    // 3) 凭据来源：个人模型（不占额度，需管理员启用）优先，否则走系统配置并接受每日额度限制
+    // 3) 凭据来源：个人模型（不占额度，需管理员启用）优先，否则走系统配置并按角色档位受每日额度约束
     const user = req.auth?.username ?? "";
     const own = user ? getUserAiConfig(user) : null;
     const useOwn = config.allowPersonalModel && isUserAiConfigUsable(own);
     const effective: AiConfig = useOwn
       ? { ...config, baseUrl: own!.baseUrl.trim(), apiKey: own!.apiKey.trim(), model: own!.model.trim() }
       : config;
-    if (!useOwn && config.apiKey && (config.dailyQuota ?? 0) > 0) {
-      // 仅真实调用系统大模型时计额度；占位演示模式与不限额（0）不计数
-      const limit = config.dailyQuota ?? 0;
-      if (getUsageToday(user) >= limit) {
+    if (!useOwn && config.apiKey) {
+      // 个人模型不计数；系统模型一律计数（不限额档位也计数，供超管用量视图参考）
+      const limit = quotaLimitForRole(config, role);
+      if (limit > 0 && getUsageToday(user) >= limit) {
         res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
         res.setHeader("Cache-Control", "no-cache, no-transform");
         res.flushHeaders?.();

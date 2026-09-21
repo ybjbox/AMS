@@ -10,56 +10,23 @@ interface DepartmentState {
   departments: DepartmentNode[];
   roles: RoleNode[];
   initialized: boolean;
+  /** 整树替换请求在途（两棵树各自独立，保存期间禁用对应提交） */
+  savingDepartments: boolean;
+  savingRoles: boolean;
   fetchDepartments: () => Promise<void>;
-  setDepartments: (newDepts: DepartmentNode[]) => void;
-  setRoles: (newRoles: RoleNode[]) => void;
+  /** 返回 false 表示服务端没接受这次改动，本地已回滚到改前状态 */
+  setDepartments: (newDepts: DepartmentNode[]) => Promise<boolean>;
+  setRoles: (newRoles: RoleNode[]) => Promise<boolean>;
 }
 
-const initialDepartments: DepartmentNode[] = [
-  {
-    id: '1',
-    name: '集团总部',
-    priority: 100,
-    children: [
-      { id: '2', name: '总经办', priority: 90 },
-      { id: '3', name: '财务中心', priority: 80 },
-      { id: '4', name: '人力资源中心', priority: 70 },
-      { id: '5', name: '法务部', priority: 60 },
-      { id: '6', name: '行政部', priority: 50 },
-    ],
-  },
-  {
-    id: '7',
-    name: '北京分公司',
-    priority: 90,
-    children: [
-      { id: '8', name: '研发部', priority: 90 },
-      { id: '9', name: '产品部', priority: 80 },
-      { id: '10', name: '设计部', priority: 70 },
-      { id: '11', name: '市场部', priority: 60 },
-    ],
-  },
-  {
-    id: '12',
-    name: '上海分公司',
-    priority: 80,
-    children: [
-      { id: '13', name: '销售部', priority: 90 },
-      { id: '14', name: '客户成功部', priority: 80 },
-      { id: '15', name: '运营部', priority: 70 },
-    ],
-  },
-];
+/**
+ * 本地不留演示数据：组织架构的真值是服务端 departments/roles 两张表，
+ * 首次进入由 fetchDepartments 拉取。曾经这里硬编码一棵演示树，
+ * 拉取失败时界面照旧显示它，用户再点一次保存就把这棵假树整树写进库里。
+ */
+const initialDepartments: DepartmentNode[] = [];
 
-const initialRoles: RoleNode[] = [
-  { id: '1', name: '前端工程师', departmentId: '8', priority: 10 },
-  { id: '2', name: '后端工程师', departmentId: '8', priority: 20 },
-  { id: '3', name: '产品经理', departmentId: '9', priority: 10 },
-  { id: '4', name: 'UI设计师', departmentId: '10', priority: 10 },
-  { id: '5', name: 'HR', departmentId: '4', priority: 10 },
-  { id: '6', name: '财务经理', departmentId: '3', priority: 10 },
-  { id: '7', name: '销售总监', departmentId: '13', priority: 10 },
-];
+const initialRoles: RoleNode[] = [];
 
 const sortDepartments = (nodes: DepartmentNode[]): DepartmentNode[] => {
   return [...nodes]
@@ -79,9 +46,11 @@ function errText(e: unknown, fallback: string): string {
 }
 
 export const useDepartmentStore = create<DepartmentState>((set, get) => ({
-  departments: sortDepartments(initialDepartments),
-  roles: sortRoles(initialRoles),
+  departments: initialDepartments,
+  roles: initialRoles,
   initialized: false,
+  savingDepartments: false,
+  savingRoles: false,
 
   /** 从后端加载组织架构（树 + 职位）。
    *  - initialized 去重：已加载过直接跳过（编辑后由 setDepartments/setRoles 增量同步，无需重拉）；
@@ -100,7 +69,9 @@ export const useDepartmentStore = create<DepartmentState>((set, get) => ({
           initialized: true,
         });
       } catch (e) {
+        // 拉不到就是拉不到：保持空树并明说，绝不能让用户在"看起来有数据"的空档上做整树替换
         console.error('[departments] 组织架构加载失败：', e);
+        toast.error(errText(e, '组织架构加载失败，请先刷新或检查后端是否在线'));
       } finally {
         departmentsInflight = null;
       }
@@ -108,28 +79,44 @@ export const useDepartmentStore = create<DepartmentState>((set, get) => ({
     return departmentsInflight;
   },
 
-  // 保持同步签名（调用方在编辑回调里直接用）：本地先生效，再整树持久化到后端
-  setDepartments: (newDepts) => {
-    set({ departments: sortDepartments(newDepts) });
-    http.put('/departments/tree', { departments: newDepts }).catch((e) => {
-      toast.error(errText(e, '组织架构保存失败'));
-    });
+  /** 本地先生效（乐观更新），再整树持久化；服务端没接受就退回改前的树。 */
+  setDepartments: async (newDepts) => {
+    const prev = get().departments;
+    set({ departments: sortDepartments(newDepts), savingDepartments: true });
+    try {
+      await http.put('/departments/tree', { departments: newDepts });
+      return true;
+    } catch (e) {
+      set({ departments: prev });
+      toast.error(`${errText(e, '组织架构保存失败')}，本地已还原`);
+      return false;
+    } finally {
+      set({ savingDepartments: false });
+    }
   },
 
-  setRoles: (newRoles) => {
-    set({ roles: sortRoles(newRoles) });
-    http.put('/departments/roles', { roles: newRoles }).catch((e) => {
-      toast.error(errText(e, '职位保存失败'));
-    });
+  setRoles: async (newRoles) => {
+    const prev = get().roles;
+    set({ roles: sortRoles(newRoles), savingRoles: true });
+    try {
+      await http.put('/departments/roles', { roles: newRoles });
+      return true;
+    } catch (e) {
+      set({ roles: prev });
+      toast.error(`${errText(e, '职位保存失败')}，本地已还原`);
+      return false;
+    } finally {
+      set({ savingRoles: false });
+    }
   },
 }));
 
 // Export departmentStore for backwards compatibility with non-react code if needed
 export const departmentStore = {
   getDepartments: () => useDepartmentStore.getState().departments,
-  setDepartments: (newDepts: DepartmentNode[]) => useDepartmentStore.getState().setDepartments(newDepts),
+  setDepartments: (newDepts: DepartmentNode[]) => void useDepartmentStore.getState().setDepartments(newDepts),
   getRoles: () => useDepartmentStore.getState().roles,
-  setRoles: (newRoles: RoleNode[]) => useDepartmentStore.getState().setRoles(newRoles),
+  setRoles: (newRoles: RoleNode[]) => void useDepartmentStore.getState().setRoles(newRoles),
   subscribe: (listener: () => void) => useDepartmentStore.subscribe(listener),
 };
 

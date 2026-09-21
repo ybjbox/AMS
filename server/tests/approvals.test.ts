@@ -8,8 +8,9 @@
  *
  * 运行环境：vitest server project，DATA_DIR=data-test，与开发库完全隔离。
  */
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { db } from "../db.ts";
+import { asString } from "../sqliteUtil.ts";
 import { runMigrations } from "../migrate.ts";
 import { createAccount } from "../authDb.ts";
 import {
@@ -18,6 +19,9 @@ import {
   getCompBalance,
   getPendingCompUsedHours,
   leaveDaysBetween,
+  listApprovals,
+  listPending,
+  withdrawApproval,
 } from "../approvalsDb.ts";
 import {
   listShifts,
@@ -194,5 +198,144 @@ describe("v6 外键：删除部门级联删除其职位", () => {
     db.prepare("DELETE FROM departments WHERE id = ?").run("dept-fk-test");
     const orphan = db.prepare("SELECT id FROM roles WHERE id = ?").get("role-fk-test");
     expect(orphan).toBeUndefined(); // CASCADE 生效（v5 定义下此句会抛约束错误）
+  });
+});
+
+describe("审批台账 / 撤回 / 批量决定（第 5 批）", () => {
+  const LEDGER_USER = "approvals-ledger-test";
+
+  const mk = (over: Partial<Parameters<typeof createApproval>[0]> = {}) =>
+    createApproval({
+      applicant: LEDGER_USER,
+      type: "leave",
+      leaveType: "事假",
+      startDate: "2026-09-15",
+      reason: "台账回归",
+      ...over,
+    });
+
+  beforeAll(() => {
+    db.prepare("DELETE FROM approvals WHERE applicant = ?").run(LEDGER_USER);
+  });
+
+  it("listApprovals 按状态与月份筛选，并受 limit 约束", () => {
+    const a1 = mk({ startDate: "2026-09-15" });
+    const a2 = mk({ startDate: "2026-09-16", leaveType: "病假" });
+    decideApproval(a2.id, "approved", "admin", "同意", "SUPER_ADMIN");
+
+    const pending = listApprovals({ status: "pending", applicant: LEDGER_USER });
+    expect(pending.map((r) => r.id)).toContain(a1.id);
+    expect(pending.map((r) => r.id)).not.toContain(a2.id);
+
+    // 已处理：已批的按 decidedAt 归月；未决的按 createdAt 归月，两者都能被同一次查询覆盖
+    expect(listApprovals({ status: "decided", applicant: LEDGER_USER }).map((r) => r.id)).toEqual([a2.id]);
+    expect(listApprovals({ month: "1999-01", applicant: LEDGER_USER })).toEqual([]);
+    expect(listApprovals({ applicant: LEDGER_USER, limit: "1" })).toHaveLength(1);
+    expect(listApprovals({ applicant: LEDGER_USER, limit: "99999" }).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("撤回：本人 + pending 才允许，撤回后不再计入待审计", () => {
+    const own = mk();
+    expect(withdrawApproval(own.id, "someone-else").forbidden).toBe(true);
+    const withdrawn = withdrawApproval(own.id, LEDGER_USER);
+    expect(withdrawn.row?.status).toBe("withdrawn");
+    expect(withdrawn.row?.decidedAt).toBeTruthy();
+
+    // 已撤回不能再撤回，也不能再决定
+    expect(withdrawApproval(own.id, LEDGER_USER).conflict).toBe(true);
+    expect(decideApproval(own.id, "approved", "admin", "", "SUPER_ADMIN").conflict).toBe(true);
+    expect(listApprovals({ status: "withdrawn", applicant: LEDGER_USER }).map((r) => r.id)).toContain(own.id);
+  });
+
+  it("台账不再只看到 pending：已办记录可检索（此前的盲区）", () => {
+    const ids = listApprovals({ status: "decided" }).map((r) => r.id);
+    expect(ids.length).toBeGreaterThan(0);
+    // 待审列表仍是老口径
+    for (const id of listPending().map((r) => r.id)) expect(ids).not.toContain(id);
+  });
+
+  afterAll(() => {
+    db.prepare("DELETE FROM approvals WHERE applicant = ?").run(LEDGER_USER);
+  });
+});
+
+describe("PUT /approvals/batch-decide 结果分类（HTTP）", () => {
+  // 关键回归：decideApproval 的 forbidden / conflict 返回值里也带 row，
+  // 若先判 result.row 就会把"不能审批自己的申请"报成已办成功（前端 toast 说谎）。
+  const SELF = "batch-self-test";
+  const OTHER = "batch-other-test";
+  let api = "";
+  let server: import("node:http").Server;
+
+  beforeAll(async () => {
+    const { default: express } = await import("express");
+    const { approvalsRouter } = await import("../approvalsRouter.ts");
+    const app = express();
+    app.use((req, _res, next) => {
+      (req as { auth?: unknown }).auth = {
+        username: SELF,
+        systemRole: "SUPER_ADMIN",
+        employeeId: null,
+        displayName: "t",
+        email: "",
+        mustChangePassword: false,
+      };
+      next();
+    });
+    app.use("/api/approvals", approvalsRouter);
+    server = await new Promise<import("node:http").Server>((r) => {
+      const s = app.listen(0, "127.0.0.1", () => r(s));
+    });
+    api = `http://127.0.0.1:${(server.address() as import("node:net").AddressInfo).port}/api/approvals`;
+  });
+
+  afterAll(async () => {
+    db.prepare("DELETE FROM approvals WHERE applicant IN (?, ?)").run(SELF, OTHER);
+    await new Promise<void>((r) => server.close(() => r()));
+  });
+
+  it("自审被拒时不得算成已办；他人申请正常通过", async () => {
+    db.prepare("DELETE FROM approvals WHERE applicant IN (?, ?)").run(SELF, OTHER);
+    const mine = createApproval({ applicant: SELF, type: "leave", leaveType: "年假", startDate: "2026-11-02", reason: "批量自审用例" });
+    const theirs = createApproval({ applicant: OTHER, type: "leave", leaveType: "年假", startDate: "2026-11-03", reason: "批量他人用例" });
+
+    const res = await fetch(`${api}/batch-decide`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: [mine.id, theirs.id], status: "approved", comment: "批量通过" }),
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { decided: string[]; failed: { id: string; error: string }[] };
+    expect(body.decided).toEqual([theirs.id]);
+    expect(body.failed).toHaveLength(1);
+    expect(body.failed[0].id).toBe(mine.id);
+    expect(body.failed[0].error).toContain("不能审批自己的申请");
+
+    const statuses = new Map(
+      db
+        .prepare("SELECT id, status FROM approvals WHERE id IN (?, ?)")
+        .all(mine.id, theirs.id)
+        .map((r) => [asString(r.id), asString(r.status)] as const)
+    );
+    expect(statuses.get(mine.id)).toBe("pending"); // 自审那条必须还是待审
+    expect(statuses.get(theirs.id)).toBe("approved");
+    expect(
+      asString(db.prepare("SELECT comment FROM approvals WHERE id = ?").get(theirs.id)?.comment)
+    ).toBe("批量通过");
+  });
+
+  it("空 ids 与超限都要 400", async () => {
+    const empty = await fetch(`${api}/batch-decide`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: [], status: "approved" }),
+    });
+    expect(empty.status).toBe(400);
+    const bad = await fetch(`${api}/batch-decide`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: ["x"], status: "pending" }),
+    });
+    expect(bad.status).toBe(400);
   });
 });

@@ -148,12 +148,21 @@ const POLICIES: Policy[] = [
   { pattern: /^\/todos\b/, methods: "*", minRole: "EMPLOYEE" },
   { pattern: /^\/notifications\b/, methods: "*", minRole: "EMPLOYEE" },
 
+  // 到期提醒：阈值与收件人都是全局配置（含同事的合同到期日），只对 HR 及以上开放。
+  { pattern: /^\/reminders\b/, methods: "*", minRole: "HR" },
+
   // AI 助手（PoC）：对话功能，任何登录用户可用；
   // 数据检索在 aiContext 中按最小暴露原则只取聚合摘要，且遵守 req.auth 的数据权限。
   { pattern: /^\/ai\//, methods: "*", minRole: "EMPLOYEE" },
 
   // 微信通知生成器：任何登录用户可用；AI 启停/管理员限制在 wechatNoticeRouter 内部按 aiConfig 判断。
   { pattern: /^\/notice\//, methods: "*", minRole: "EMPLOYEE" },
+
+  // 业务单正文润色：员工自助办单，任何登录用户可用；AI 启停/额度同 /notice 一样在路由内判断。
+  { pattern: /^\/form\//, methods: "*", minRole: "EMPLOYEE" },
+
+  // 用户留存条目（座位方案 / 打印参数 / 草稿）：数据按 username 隔离，路由内只读写本人行。
+  { pattern: /^\/saved-items\b/, methods: "*", minRole: "EMPLOYEE" },
 ];
 
 /** 兜底：读操作任何登录用户可做，写操作至少 HR */

@@ -89,6 +89,33 @@ export const http = {
 };
 
 /**
+ * 二进制上传（raw body）：axios 实例的拦截器与默认 Content-Type 都面向 JSON，
+ * Excel 导入这类"整份文件直传"走 fetch，避免 base64 内存放大（见 AUDIT P2-4）。
+ * 目前消费方：员工导入 /api/users/import、考勤导入 /api/attendance/records/import。
+ */
+export async function sendBinary<T>(url: string, blob: Blob): Promise<T> {
+  const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/octet-stream',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: blob,
+  });
+  if (!res.ok) {
+    let err: unknown;
+    try {
+      err = await res.json();
+    } catch {
+      err = { error: `HTTP ${res.status}` };
+    }
+    throw err;
+  }
+  return (await res.json()) as T;
+}
+
+/**
  * 直接下载链接（审计 CSV 导出、备份文件下载）无法走 axios 拦截器，
  * 用 access_token 查询参数携带凭据。后端 authGate 仅对文件下载类端点放行 query token。
  */

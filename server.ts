@@ -27,6 +27,8 @@ import { statsRouter } from "./server/statsRouter.ts";
 import { runTemplateSandbox } from "./server/scriptSandbox.ts";
 import { applyTemplateOps } from "./server/excelReplay.ts";
 import { startBackupScheduler } from "./server/backupDb.ts";
+import { remindersRouter } from "./server/remindersRouter.ts";
+import { startReminderScheduler } from "./server/remindersDb.ts";
 import { pruneAuditLogs } from "./server/auditDb.ts";
 import { startOrphanUploadScan } from "./server/uploadsCleanup.ts";
 import { authRouter } from "./server/authRouter.ts";
@@ -47,6 +49,8 @@ import { auditRouter } from "./server/auditRouter.ts";
 import { backupRopter } from "./server/backupRopter.ts";
 import { aiRouter } from "./server/aiRouter.ts";
 import { noticeRouter } from "./server/wechatNoticeRouter.ts";
+import { businessFormRouter } from "./server/businessFormRouter.ts";
+import { savedItemsRouter } from "./server/savedItemsRouter.ts";
 
 // In-memory theme storage (initialized with default themes, startup 时从 settings 回填)
 let dynamicThemes: Record<string, Record<string, unknown>> = { ...EXCEL_THEMES };
@@ -146,6 +150,9 @@ async function startServer() {
   app.use("/api/backup", backupRopter);
   app.use("/api/ai", aiRouter);
   app.use("/api/notice", noticeRouter);
+  app.use("/api/form", businessFormRouter);
+  app.use("/api/saved-items", savedItemsRouter);
+  app.use("/api/reminders", remindersRouter);
   app.use("/api/system", systemRouter);
   app.use("/api/announcements", announcementsRouter);
   app.use("/api/stats", statsRouter);
@@ -400,9 +407,11 @@ async function startServer() {
     }
   });
 
-  // 常驻后台任务：定时备份（BACKUP_ENABLED=false 可关）、审计保留期清理、上传孤儿扫描
+  // 常驻后台任务：定时备份（BACKUP_ENABLED=false 可关）、到期提醒扫描
+  //（REMINDER_SCAN_ENABLED=false 可关，默认每 6 小时一轮）、审计保留期清理、上传孤儿扫描
   //（默认关闭，设 UPLOADS_ORPHAN_SCAN_MS 开启）。均自带错误吞噬，不会拖垮服务。
   startBackupScheduler();
+  startReminderScheduler();
   pruneAuditLogs();
   startOrphanUploadScan();
 

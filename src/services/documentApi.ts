@@ -5,7 +5,7 @@
  *   服务端管道直接落盘，内存与文件大小无关；50MB 上限超限返回 413。
  */
 import { http, withAuthToken } from './api';
-import type { Folder, Document, DocumentSet } from '../types/document';
+import type { Folder, Document, DocumentSet, PrintPart } from '../types/document';
 
 /** 服务端生成 id，前端只提交内容字段 */
 export type FolderInput = Omit<Folder, 'id'>;
@@ -63,4 +63,7 @@ export const documentApi = {
   /** 下载链接：/api/files/:id 仅 attachment + nosniff，需带 access_token */
   fileDownloadUrl: (doc: Pick<Document, 'id' | 'url'>): string =>
     withAuthToken(doc.url || `/api/files/${doc.id}`),
+
+  /** 打印片段：服务端按类型把已上传文件转成文本 / 表格 / 图片页（不支持的类型给原因） */
+  getPrintPart: (id: string): Promise<PrintPart> => http.get<PrintPart>(`/documents/${id}/print-part`),
 };

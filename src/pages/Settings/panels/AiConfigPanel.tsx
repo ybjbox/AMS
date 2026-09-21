@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, type ChangeEvent, type ReactNode } from 'react';
-import { Save, Bot, RotateCcw, RefreshCw, Upload, X, ChevronDown } from 'lucide-react';
+import { Save, Bot, RotateCcw, RefreshCw, Upload, X, ChevronDown, PlugZap, CircleCheck, CircleX } from 'lucide-react';
 import { STORAGE_KEYS } from '@/config/constants';
+import { getRoleDisplayName } from '@/utils/roleUtils';
 import { AI_ICON_OPTIONS, resolveAiIcon, DEFAULT_AI_NAME } from '@/config/aiIcons';
 import { Button } from '@/components/ui/button';
 import Badge from '@/components/ui/Badge';
@@ -33,6 +34,7 @@ interface ConfigForm {
   assistantDraggable: boolean;
   conversationRetentionDays: number;
   dailyQuota: number;
+  adminDailyQuota: number;
   allowPersonalModel: boolean;
 }
 
@@ -50,6 +52,7 @@ const EMPTY: ConfigForm = {
   assistantDraggable: false,
   conversationRetentionDays: 0,
   dailyQuota: 20,
+  adminDailyQuota: 100,
   allowPersonalModel: true,
 };
 
@@ -76,10 +79,15 @@ export default function AiConfigPanel() {
   const [fetching, setFetching] = useState(false);
   const [modelErr, setModelErr] = useState<string | null>(null);
   const [customModel, setCustomModel] = useState(false);
+  // 连接可用性检测
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 今日系统额度用量与个人模型配置名单（超管视角）
-  const [usage, setUsage] = useState<{ username: string; used: number }[] | null>(null);
+  // 今日系统额度用量（含角色档位上限）与个人模型配置名单（超管视角）
+  const [usage, setUsage] = useState<
+    { username: string; used: number; role?: string; limit?: number }[] | null
+  >(null);
   const [personalUsers, setPersonalUsers] = useState<string[]>([]);
   useEffect(() => {
     fetch('/api/ai/admin/usage', { headers: authHeaders() })
@@ -109,6 +117,7 @@ export default function AiConfigPanel() {
             assistantDraggable: !!j.assistantDraggable,
             conversationRetentionDays: Number(j.conversationRetentionDays) || 0,
             dailyQuota: Number.isFinite(Number(j.dailyQuota)) ? Number(j.dailyQuota) : 20,
+            adminDailyQuota: Number.isFinite(Number(j.adminDailyQuota)) ? Number(j.adminDailyQuota) : 100,
             allowPersonalModel: j.allowPersonalModel !== false,
             apiKey: '', // 后端返回脱敏值；用户不填则保留原值
           });
@@ -178,6 +187,36 @@ export default function AiConfigPanel() {
     }
   };
 
+  const testConnection = async () => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const r = await fetch('/api/ai/test', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          baseUrl: form.baseUrl.trim(),
+          apiKey: form.apiKey.trim(),
+          model: form.model.trim(),
+        }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || `检测失败（${r.status}）`);
+      if (j.ok) {
+        setTestResult({
+          ok: true,
+          text: `连接成功（${j.latencyMs}ms），模型 ${j.model} 回复「${j.reply}」`,
+        });
+      } else {
+        setTestResult({ ok: false, text: j.error || '检测未通过' });
+      }
+    } catch (e: unknown) {
+      setTestResult({ ok: false, text: (e as { message?: string })?.message || '检测失败' });
+    } finally {
+      setTesting(false);
+    }
+  };
+
   const save = async () => {
     setSaving(true);
     setMsg(null);
@@ -195,6 +234,7 @@ export default function AiConfigPanel() {
         assistantDraggable: form.assistantDraggable,
         conversationRetentionDays: Number(form.conversationRetentionDays) || 0,
         dailyQuota: Number(form.dailyQuota) || 0,
+        adminDailyQuota: Number(form.adminDailyQuota) || 0,
         allowPersonalModel: form.allowPersonalModel,
       };
       // 仅当用户确实输入了新 key 才覆盖；留空则不动原值
@@ -265,12 +305,12 @@ export default function AiConfigPanel() {
       <Section title="额度与个人模型" className="space-y-5">
 
         {/* 系统模型额度 */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           <h3 className="text-sm font-medium text-foreground">系统模型额度</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-4 items-start">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-foreground">
-                每人每日提问上限
+                普通员工每日上限
               </label>
               <Input
                 type="number"
@@ -280,19 +320,41 @@ export default function AiConfigPanel() {
                 onChange={(e) => update({ dailyQuota: Number(e.target.value) })}
               />
             </div>
-            <p className="text-xs text-muted-foreground leading-relaxed sm:pt-7">
-              约束所有调用系统配置的对话，0 表示不限；额度按自然日计数，次日自动重置。
-              走系统额度的对话会强制附加「仅限行政事务范围」的提示词约束。
-            </p>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">
+                管理员 / 人事主管每日上限
+              </label>
+              <Input
+                type="number"
+                min={0}
+                max={100000}
+                value={form.adminDailyQuota}
+                onChange={(e) => update({ adminDailyQuota: Number(e.target.value) })}
+              />
+            </div>
           </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            超级管理员不受额度限制。填 0 表示该档位不限；额度按自然日计数，次日自动重置。
+            走系统额度的调用会强制附加「仅限行政事务范围」的提示词约束；配置了个人模型者不占额度。
+          </p>
           {usage && usage.length > 0 && (
             <div>
               <div className="mb-1.5 text-xs text-muted-foreground">今日系统额度用量</div>
               <div className="flex flex-wrap gap-1.5">
                 {usage.map((u) => (
-                  <Badge key={u.username} variant="neutral">
+                  <Badge
+                    key={u.username}
+                    variant="neutral"
+                    title={
+                      u.limit && u.limit > 0
+                        ? `${getRoleDisplayName(u.role)} · 每日上限 ${u.limit} 次`
+                        : `${getRoleDisplayName(u.role)} · 不限额`
+                    }
+                  >
                     {u.username}
-                    <span className="font-medium tabular-nums">{u.used} 次</span>
+                    <span className="font-medium tabular-nums">
+                      {u.limit && u.limit > 0 ? `${u.used} / ${u.limit} 次` : `${u.used} 次`}
+                    </span>
                   </Badge>
                 ))}
               </div>
@@ -489,6 +551,17 @@ export default function AiConfigPanel() {
               <RefreshCw className={`size-4 ${fetching ? 'animate-spin' : ''}`} />
               {fetching ? '获取中' : models.length ? '刷新' : '获取模型'}
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="shrink-0"
+              onClick={testConnection}
+              disabled={testing || !form.baseUrl.trim() || !form.model.trim()}
+              title="向服务商发送一次最小对话请求，验证 Base URL、API Key 与模型是否可用"
+            >
+              <PlugZap className={`size-4 ${testing ? 'animate-pulse' : ''}`} />
+              {testing ? '检测中' : '检测'}
+            </Button>
           </div>
           {models.length > 0 && !customModel && (
             <button
@@ -509,9 +582,23 @@ export default function AiConfigPanel() {
             </button>
           )}
           {modelErr && <p className="text-xs text-destructive mt-1.5">{modelErr}</p>}
+          {testResult && (
+            <p
+              className={`flex items-start gap-1.5 text-xs mt-1.5 ${
+                testResult.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'
+              }`}
+            >
+              {testResult.ok ? (
+                <CircleCheck className="mt-0.5 size-3.5 shrink-0" />
+              ) : (
+                <CircleX className="mt-0.5 size-3.5 shrink-0" />
+              )}
+              <span>{testResult.text}</span>
+            </p>
+          )}
           <p className="text-xs text-muted-foreground mt-1.5">
             填写 Base URL 与 API Key 后，点「获取模型」从服务商{' '}
-            <code className="text-foreground">/models</code> 端点拉取可用模型。
+            <code className="text-foreground">/models</code> 端点拉取可用模型；点「检测」发送一次最小对话请求，验证连接与模型是否真正可用。
           </p>
         </div>
 

@@ -52,8 +52,22 @@ export const useNotificationStore = create<NotificationState>()((set, get) => ({
   /** 创建通知（本地触发如保存失败提醒也会落库，跨设备可见） */
   addNotification: (notification) => {
     notificationApi
-      .create({ title: notification.title, message: notification.message, type: notification.type })
-      .then((created) => set((state) => ({ ...withUnread([created, ...state.notifications]) })))
+      .create({
+        title: notification.title,
+        message: notification.message,
+        type: notification.type,
+        refKey: notification.refKey,
+      })
+      .then((created) =>
+        set((state) => {
+          // 带 refKey 的周期提醒会命中后端已有条目（同 id）：原地替换，避免本地列表出现重复
+          const exists = state.notifications.some((n) => n.id === created.id);
+          const notifications = exists
+            ? state.notifications.map((n) => (n.id === created.id ? created : n))
+            : [created, ...state.notifications];
+          return withUnread(notifications);
+        })
+      )
       .catch((e) => {
         // 关键：静默降级，绝不 toast/再次触发全局错误事件——
         // 否则 401 → API_ERROR → addNotification → 401 会形成无限错误循环

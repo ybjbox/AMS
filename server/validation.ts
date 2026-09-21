@@ -107,6 +107,29 @@ export const notificationCreateSchema = z
     message: z.string().optional(),
     type: z.enum(["info", "warning", "success", "error"]).optional(),
     recipient: z.string().optional(),
+    refKey: z.string().max(120).optional(),
+  })
+  .loose();
+
+/** 从员工档案生成业务单后的归档请求体（employeeName 不在其中：归属由服务端按 employeeId 回填） */
+export const businessFormRecordSchema = z
+  .object({
+    employeeId: z.string({ error: "缺少员工" }).min(1, "缺少员工"),
+    kind: z.enum(["condolence", "wedding", "custom"], { error: "业务类型不合法" }),
+    kindLabel: z.string().max(40).optional(),
+    department: z.string().max(40).optional(),
+    relation: z.string().max(20).optional(),
+    date: z.string({ error: "单据日期格式应为 YYYY-MM-DD" }).regex(/^\d{4}-\d{2}-\d{2}$/u, "单据日期格式应为 YYYY-MM-DD"),
+    amount: z.number().min(0).max(1_000_000).optional(),
+    body: z.string({ error: "正文不能为空" }).trim().min(1, "正文不能为空").max(4000, "正文过长（上限 4000 字）"),
+  })
+  .loose();
+
+/** 到期提醒阈值（服务端 settings KV）；上限防止手滑填成 9999 天 */
+export const reminderConfigSchema = z
+  .object({
+    contractExpiryDays: z.coerce.number().int().min(1).max(365).optional(),
+    probationConversionDays: z.coerce.number().int().min(1).max(365).optional(),
   })
   .loose();
 
@@ -179,4 +202,16 @@ export const profileUpdateSchema = z.object({
     .max(50_000, "头像数据过大，请压缩后重试")
     .refine((v) => v === "" || /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(v), "头像必须是图片数据")
     .optional(),
+});
+
+/** 用户留存条目（座位方案 / 打印参数 / 草稿）：kind 白名单在服务端也收一道 */
+export const savedItemUpsertSchema = z.object({
+  kind: z.string({ error: "缺少留存类型" }).min(1, "缺少留存类型").max(40, "留存类型过长"),
+  name: z
+    .string({ error: "缺少名称" })
+    .trim()
+    .min(1, "缺少名称")
+    .max(80, "名称最多 80 个字符"),
+  // payload 结构由各前端模块自己负责（方案/参数形状不同），这里只保证是 JSON 值
+  payload: z.unknown(),
 });

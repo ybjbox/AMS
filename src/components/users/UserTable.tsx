@@ -180,6 +180,11 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
         },
         cell: ({ row }) => {
           const days = row.original.daysToExpiry;
+          const expiry = row.original.contractExpiry;
+          // 未登记到期日（或被服务端裁掉合同字段）时不能显示成「0 天」的红色紧迫态
+          if (!expiry) {
+            return <div className="tabular-nums text-zinc-400 dark:text-zinc-500">—</div>;
+          }
           // 合同到期天数着色：≤30 红（紧迫）、≤90 橙（关注）、其他中性灰；仅数值着色，保持列可扫读
           const tone =
             typeof days === 'number' && days <= 30

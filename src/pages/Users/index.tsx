@@ -1,6 +1,7 @@
 import { Permission } from "@/components/Permission";
 import PageContainer from "@/components/PageContainer";
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useDepartments } from '@/store/useDepartmentStore';
 import { useBodyOverflow } from '@/hooks/useBodyOverflow';
@@ -47,6 +48,22 @@ export default function Users() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [selectedDeptName, setSelectedDeptName] = useState<string>('');
   const [selectedRoleName, setSelectedRoleName] = useState<string>('');
+
+  // 业务单页「查看该员工档案」回跳：?detail=EMP0001 直接打开对应档案弹窗。
+  // 用派生值而不是 effect 里 setState —— 员工列表是异步到达的，派生能自然等它就绪。
+  const [searchParams, setSearchParams] = useSearchParams();
+  const detailUserId = searchParams.get('detail');
+  const detailUser = useMemo(
+    () => (detailUserId ? (users.find((u) => u.id === detailUserId) ?? null) : null),
+    [users, detailUserId]
+  );
+  const closeDetailModal = useCallback(() => {
+    setIsDetailModalOpen(false);
+    if (!detailUserId) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete('detail');
+    setSearchParams(next, { replace: true });
+  }, [detailUserId, searchParams, setSearchParams]);
 
   const {
     searchTerm,
@@ -227,9 +244,9 @@ export default function Users() {
         previewRight={previewRight}
       />
       <UserDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={() => setIsDetailModalOpen(false)}
-        selectedUser={selectedUser}
+        isOpen={isDetailModalOpen || !!detailUser}
+        onClose={closeDetailModal}
+        selectedUser={selectedUser ?? detailUser}
         handleEdit={handleEdit}
         onRenew={(u) => setRenewUser(u)}
       />

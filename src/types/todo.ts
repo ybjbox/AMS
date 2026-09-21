@@ -8,8 +8,3 @@ export interface Todo {
   targetId?: string;
   createdAt: string;
 }
-
-export interface ReminderSettings {
-  contractExpiryDays: number;
-  probationConversionDays: number;
-}

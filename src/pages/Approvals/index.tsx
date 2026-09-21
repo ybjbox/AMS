@@ -2,14 +2,16 @@ import PageContainer from "@/components/PageContainer";
 import React, { useCallback, useEffect, useState } from 'react';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useUserStore } from '@/store/useUserStore';
-import { CheckCircle2, Clock, FileCheck2, Send, XCircle, CalendarClock, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Clock, FileCheck2, Send, XCircle, CalendarClock, ShieldCheck, Undo2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import Badge, { type BadgeVariant } from '@/components/ui/Badge';
-import { approvalApi, Approval, ApprovalStatus } from '@/services/approvalApi';
+import { BaseModal } from '@/components/ui/BaseModal';
+import { approvalApi, Approval, ApprovalStatus, type CompBalance } from '@/services/approvalApi';
 
 const LEAVE_TYPES = ['事假', '病假', '年假', '调休'] as const;
 const PUNCH_KINDS = ['上班卡', '下班卡'] as const;
@@ -18,7 +20,18 @@ const STATUS_META: Record<ApprovalStatus, { label: string; variant: BadgeVariant
   pending: { label: '待审批', variant: 'warning' },
   approved: { label: '已通过', variant: 'success' },
   rejected: { label: '已驳回', variant: 'destructive' },
+  withdrawn: { label: '已撤回', variant: 'neutral' },
 };
+
+/** 台账筛选（status 值与后端 listApprovals 一致） */
+const LEDGER_FILTERS: Array<{ id: 'decided' | 'pending' | 'approved' | 'rejected' | 'withdrawn' | ''; label: string }> = [
+  { id: 'decided', label: '已处理' },
+  { id: 'pending', label: '还在等' },
+  { id: 'approved', label: '已通过' },
+  { id: 'rejected', label: '已驳回' },
+  { id: 'withdrawn', label: '已撤回' },
+  { id: '', label: '全部' },
+];
 
 function errText(e: unknown, fallback: string): string {
   return (e as { error?: string })?.error || fallback;
@@ -57,9 +70,18 @@ export default function Approvals() {
   const hasPermission = useUserStore((state) => state.hasPermission);
   const canApprove = hasPermission('approvals:approve');
 
-  const [tab, setTab] = useState<'mine' | 'pending'>('mine');
+  const [tab, setTab] = useState<'mine' | 'pending' | 'ledger'>('mine');
   const [mine, setMine] = useState<Approval[]>([]);
   const [pending, setPending] = useState<Approval[]>([]);
+  const [ledger, setLedger] = useState<Approval[]>([]);
+  const [ledgerStatus, setLedgerStatus] = useState<(typeof LEDGER_FILTERS)[number]['id']>('decided');
+  const [ledgerMonth, setLedgerMonth] = useState('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [balance, setBalance] = useState<CompBalance | null>(null);
+  /** 决定对话框的目标：1 条=单条决定，>1 条=批量 */
+  const [decideTarget, setDecideTarget] = useState<Approval[] | null>(null);
+  const [comment, setComment] = useState('');
+  const [deciding, setDeciding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [formType, setFormType] = useState<'leave' | 'makeup' | 'conversion' | 'resign' | 'overtime'>('leave');
@@ -78,15 +100,25 @@ export default function Approvals() {
   const refresh = useCallback(async () => {
     setIsLoading(true);
     try {
-      const jobs: Promise<void>[] = [approvalApi.listMine().then(setMine)];
-      if (canApprove) jobs.push(approvalApi.listPending().then(setPending));
+      const jobs: Promise<void>[] = [
+        approvalApi.listMine().then(setMine),
+        approvalApi.compBalance().then(setBalance).catch(() => setBalance(null)),
+      ];
+      if (canApprove) {
+        jobs.push(approvalApi.listPending().then(setPending));
+        jobs.push(
+          approvalApi
+            .listAll({ status: ledgerStatus || undefined, month: ledgerMonth || undefined, limit: 300 })
+            .then(setLedger)
+        );
+      }
       await Promise.all(jobs);
     } catch (e) {
       toast.error(errText(e, '审批数据加载失败'));
     } finally {
       setIsLoading(false);
     }
-  }, [canApprove]);
+  }, [canApprove, ledgerStatus, ledgerMonth]);
 
   useEffect(() => {
     refresh();
@@ -151,30 +183,74 @@ export default function Approvals() {
     [form, formType, refresh]
   );
 
-  const handleDecide = useCallback(
-    async (item: Approval, status: Exclude<ApprovalStatus, 'pending'>) => {
-      const ok = await confirm({
-        title: status === 'approved' ? '通过该申请？' : '驳回该申请？',
-        description:
-          item.type === 'makeup'
-            ? `${item.applicant} 的补卡申请（${item.punchDate} ${item.punchTime}）`
-            : item.type === 'overtime'
-              ? `${item.applicant} 的加班申请（${item.startDate}，${item.hours} 小时）`
-              : `${item.applicant} 的${item.leaveType}申请（${item.startDate}）`,
-      });
-      if (!ok) return;
+  /** 打开决定对话框：传 1 条=单条决定，传多条=批量决定 */
+  const openDecide = useCallback((items: Approval[]) => {
+    setComment('');
+    setDecideTarget(items);
+  }, []);
+
+  const submitDecide = useCallback(
+    async (status: 'approved' | 'rejected') => {
+      const items = decideTarget ?? [];
+      if (items.length === 0) return;
+      if (status === 'rejected' && !comment.trim()) {
+        toast.error('驳回请填写意见');
+        return;
+      }
+      setDeciding(true);
       try {
-        await approvalApi.decide(item.id, status);
-        toast.success(status === 'approved' ? '已通过' : '已驳回');
+        if (items.length === 1) {
+          await approvalApi.decide(items[0].id, status, comment.trim());
+          toast.success(status === 'approved' ? '已通过' : '已驳回');
+        } else {
+          const res = await approvalApi.batchDecide(
+            items.map((i) => i.id),
+            status,
+            comment.trim()
+          );
+          toast.success(
+            `已${status === 'approved' ? '通过' : '驳回'} ${res.decided.length} 条` +
+              (res.failed.length > 0 ? `；${res.failed.length} 条未处理（${res.failed[0].error}）` : '')
+          );
+        }
+        setDecideTarget(null);
+        setSelectedIds([]);
         await refresh();
       } catch (err) {
         toast.error(errText(err, '操作失败，请稍后重试'));
+      } finally {
+        setDeciding(false);
+      }
+    },
+    [decideTarget, comment, refresh]
+  );
+
+  const onWithdraw = useCallback(
+    async (item: Approval) => {
+      const ok = await confirm({
+        title: '撤回该申请？',
+        description: `${approvalTitle(item)}（${item.startDate}）撤回后可以重新提交。`,
+        variant: 'danger',
+      });
+      if (!ok) return;
+      try {
+        await approvalApi.withdraw(item.id);
+        toast.success('已撤回');
+        await refresh();
+      } catch (err) {
+        toast.error(errText(err, '撤回失败'));
       }
     },
     [confirm, refresh]
   );
 
-  const list = tab === 'mine' ? mine : pending;
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }, []);
+
+  const list = tab === 'mine' ? mine : tab === 'pending' ? pending : ledger;
+  const selectable = tab === 'pending' ? pending.filter((i) => i.status === 'pending') : [];
+  const selectedItems = selectable.filter((i) => selectedIds.includes(i.id));
 
   const renderList = () => {
     if (isLoading) {
@@ -184,8 +260,16 @@ export default function Approvals() {
       return (
         <EmptyState
           icon={FileCheck2}
-          title={tab === 'mine' ? '暂无申请记录' : '没有待审批的申请'}
-          description={tab === 'mine' ? '在左侧提交你的第一条申请' : '有新的申请时会出现在这里'}
+          title={
+            tab === 'mine' ? '暂无申请记录' : tab === 'pending' ? '没有待审批的申请' : '该条件下没有审批记录'
+          }
+          description={
+            tab === 'mine'
+              ? '在左侧提交你的第一条申请'
+              : tab === 'pending'
+                ? '有新的申请时会出现在这里'
+                : '换个状态筛选或清空月份试试；历史记录不会因已处理而消失'
+          }
         />
       );
     }
@@ -193,14 +277,23 @@ export default function Approvals() {
       <ul className="divide-y divide-zinc-100 dark:divide-zinc-700/60">
         {list.map((item) => (
           <li key={item.id} className="flex items-start justify-between gap-4 px-4 py-3">
-            <div className="min-w-0">
+            <div className="min-w-0 flex items-start gap-2">
+              {tab === 'pending' && item.status === 'pending' && (
+                <Checkbox
+                  checked={selectedIds.includes(item.id)}
+                  onCheckedChange={() => toggleSelect(item.id)}
+                  aria-label={`选择 ${item.applicant} 的${approvalTitle(item)}申请`}
+                  className="mt-0.5"
+                />
+              )}
+              <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm font-medium text-zinc-900 dark:text-white">
-                  {tab === 'pending' ? item.applicant : approvalTitle(item)}
+                  {tab === 'mine' ? approvalTitle(item) : `${item.applicant} · ${approvalTitle(item)}`}
                 </span>
                 <span className="inline-flex items-center gap-1 text-xs text-zinc-400 dark:text-zinc-500">
                   {item.type === 'makeup' && <CalendarClock className="w-3 h-3" aria-hidden="true" />}
-                  {approvalTitle(item)}
+                  {new Date(item.createdAt).toLocaleDateString('zh-CN')}
                 </span>
                 <StatusBadge status={item.status} />
               </div>
@@ -215,18 +308,28 @@ export default function Approvals() {
               )}
               {item.status !== 'pending' && (
                 <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
-                  审批人：{item.approver ?? '-'}
+                  {item.status === 'withdrawn' ? '处理：' : '审批人：'}
+                  {item.status === 'withdrawn' ? '本人撤回' : (item.approver ?? '-')}
                   {item.comment ? ` · 意见：${item.comment}` : ''}
+                  {item.decidedAt ? ` · ${new Date(item.decidedAt.replace(' ', 'T')).toLocaleString('zh-CN', { hour12: false })}` : ''}
                 </p>
               )}
+              </div>
             </div>
             {tab === 'pending' && item.status === 'pending' && (
               <div className="flex items-center gap-2 shrink-0">
-                <Button size="sm" onClick={() => handleDecide(item, 'approved')}>
+                <Button size="sm" onClick={() => openDecide([item])}>
                   <CheckCircle2 /> 通过
                 </Button>
-                <Button size="sm" variant="destructive" onClick={() => handleDecide(item, 'rejected')}>
+                <Button size="sm" variant="destructive" onClick={() => openDecide([item])}>
                   <XCircle /> 驳回
+                </Button>
+              </div>
+            )}
+            {tab === 'mine' && item.status === 'pending' && (
+              <div className="shrink-0">
+                <Button size="sm" variant="ghost" onClick={() => void onWithdraw(item)}>
+                  <Undo2 /> 撤回
                 </Button>
               </div>
             )}
@@ -468,7 +571,8 @@ export default function Approvals() {
               [
                 { id: 'mine', label: '我的申请' },
                 ...(canApprove ? [{ id: 'pending', label: '待我审批' }] : []),
-              ] as Array<{ id: 'mine' | 'pending'; label: string }>
+                ...(canApprove ? [{ id: 'ledger', label: '审批台账' }] : []),
+              ] as Array<{ id: 'mine' | 'pending' | 'ledger'; label: string }>
             ).map((t) => (
               <button
                 key={t.id}
@@ -488,9 +592,138 @@ export default function Approvals() {
               </button>
             ))}
           </div>
+
+          {/* 台账筛选：状态 + 处理月份（批过的单子不再从视野里消失） */}
+          {tab === 'ledger' && (
+            <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-zinc-100 dark:border-zinc-700/60">
+              {LEDGER_FILTERS.map((f) => (
+                <button
+                  key={f.id || 'all'}
+                  onClick={() => setLedgerStatus(f.id)}
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                    ledgerStatus === f.id
+                      ? 'bg-brand-600 text-white'
+                      : 'bg-zinc-100 dark:bg-zinc-700/60 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-600'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+              <input
+                type="month"
+                value={ledgerMonth}
+                onChange={(e) => setLedgerMonth(e.target.value)}
+                aria-label="按处理月份筛选"
+                className="ml-auto rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent px-2 py-1 text-xs text-zinc-700 dark:text-zinc-200 dark:[color-scheme:dark]"
+              />
+            </div>
+          )}
+
+          {/* 批量决定工具条 */}
+          {tab === 'pending' && selectable.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-zinc-100 dark:border-zinc-700/60 bg-zinc-50/60 dark:bg-zinc-900/30">
+              <Checkbox
+                id="select-all-pending"
+                checked={selectedIds.length > 0 && selectedIds.length === selectable.length}
+                onCheckedChange={() =>
+                  setSelectedIds(
+                    selectedIds.length === selectable.length ? [] : selectable.map((i) => i.id)
+                  )
+                }
+              />
+              <label htmlFor="select-all-pending" className="text-xs text-zinc-600 dark:text-zinc-300 cursor-pointer">
+                全选（已选 {selectedIds.length} / {selectable.length}）
+              </label>
+              <div className="flex-1" />
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={selectedItems.length === 0}
+                onClick={() => openDecide(selectedItems)}
+              >
+                <CheckCircle2 /> 批量通过
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                disabled={selectedItems.length === 0}
+                onClick={() => openDecide(selectedItems)}
+              >
+                <XCircle /> 批量驳回
+              </Button>
+            </div>
+          )}
+
+          {/* 我的调休余额：原来只在提交超额时以报错形式出现 */}
+          {tab === 'mine' && balance && (
+            <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-zinc-100 dark:border-zinc-700/60 text-xs">
+              <span className="text-zinc-500 dark:text-zinc-400">调休余额</span>
+              <span className="font-medium text-zinc-900 dark:text-white tabular-nums">
+                {balance.linked
+                  ? `${balance.hours.toFixed(1)} 小时${balance.pendingHours > 0 ? `（待审占用 ${balance.pendingHours.toFixed(1)}）` : ''}`
+                  : '账号未关联员工档案，无法计算'}
+              </span>
+            </div>
+          )}
+
           <div className="flex-1 overflow-y-auto">{renderList()}</div>
         </div>
       </div>
+
+      {/* 决定对话框：通过/驳回都在这里有意见可写（驳回必填） */}
+      <BaseModal
+        isOpen={!!decideTarget}
+        onClose={() => setDecideTarget(null)}
+        title={
+          (decideTarget?.length ?? 0) > 1
+            ? `批量处理 ${decideTarget?.length} 条申请`
+            : '审批决定'
+        }
+        size="md"
+        footer={
+          <>
+            <Button
+              variant="destructive"
+              disabled={deciding}
+              onClick={() => void submitDecide('rejected')}
+            >
+              <XCircle /> 驳回
+            </Button>
+            <Button disabled={deciding} onClick={() => void submitDecide('approved')}>
+              {deciding ? <Clock className="animate-spin" /> : <CheckCircle2 />} 通过
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <ul className="max-h-40 overflow-auto space-y-1.5 text-sm">
+            {(decideTarget ?? []).map((i) => (
+              <li key={i.id} className="text-zinc-700 dark:text-zinc-200">
+                {i.applicant} · {approvalTitle(i)} · {approvalSummary(i)}
+                <span className="block text-xs text-zinc-500 dark:text-zinc-400">事由：{i.reason}</span>
+              </li>
+            ))}
+          </ul>
+          <label className="block">
+            <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
+              审批意见 <span className="text-red-500" aria-hidden="true">*</span>
+              <span className="text-zinc-400 dark:text-zinc-500">（驳回时必填）</span>
+            </span>
+            <Textarea
+              rows={2}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="例如：已与部门确认排班，准予；或说明驳回原因"
+              className="field-sizing-fixed resize-y text-sm"
+            />
+          </label>
+          {decideTarget && decideTarget.length === 1 && decideTarget[0].type === 'leave' && decideTarget[0].requiredRole === 'ADMIN' && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              该请假 ≥3 天，需管理员终审；当前账号若权限不足会被服务端拒绝。
+            </p>
+          )}
+        </div>
+      </BaseModal>
     </PageContainer>
   );
 }
