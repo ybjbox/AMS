@@ -66,12 +66,14 @@ async function runFresh(): Promise<void> {
     db.prepare("INSERT INTO employees (id, name) VALUES (?, ?)").run(`EMP${i}`, `员工${i}`);
   }
   // 3000 条打卡：分布在 20 名员工、跨 150 个日期
+  // 日期按 i/20 递增而不是 i%150 —— punch_records 上 (employeeId, date, time) 是唯一的，
+  // 取模会让每 300 条循环一次、造出重复打卡。
   const punch = db.prepare(
     "INSERT INTO punch_records (id, employeeId, employeeName, date, time) VALUES (?, ?, ?, ?, ?)"
   );
   for (let i = 0; i < 3000; i++) {
     const emp = `EMP${i % 20}`;
-    const day = String(1 + (i % 150)).padStart(2, "0");
+    const day = String(1 + Math.floor(i / 20)).padStart(2, "0");
     punch.run(`P${i}`, emp, `员工${i % 20}`, `2026-03-${day}`, "09:00");
   }
   // 800 个文档，分布到 5 个文件夹 + 部分未归类
