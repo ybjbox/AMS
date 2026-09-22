@@ -21,7 +21,7 @@ import { PlansModal } from './components/PlansModal';
 import { useSeatingArrange, type Table, type TableCapacity } from './hooks/useSeatingArrange';
 import { useSeatingPlans } from './hooks/useSeatingPlans';
 import { usePrintSettings } from './hooks/usePrintSettings';
-import type { MoveSpec } from './lib/manual';
+import { RENAME_MESSAGES, type MoveSpec } from './lib/manual';
 
 export default function Seating() {
   const users = useEmployeeStore((state) => state.users);
@@ -51,6 +51,10 @@ export default function Seating() {
     handleAutoArrange,
     handleClear,
     removeTable,
+    undoRemoveTable,
+    renameTable,
+    applyRename,
+    clearUndo,
     capacitiesByNumber,
     unseated,
     moveMember,
@@ -58,6 +62,10 @@ export default function Seating() {
 
   /** 点选一个等待移入某桌的人（拖拽之外的键盘/点击路径） */
   const [pickedUserId, setPickedUserId] = useState<string | null>(null);
+  const undoRef = useRef(undoRemoveTable);
+  useEffect(() => {
+    undoRef.current = undoRemoveTable;
+  }, [undoRemoveTable]);
 
   const handleMove = useCallback(
     (spec: MoveSpec) => {
@@ -80,8 +88,9 @@ export default function Seating() {
       setTables(state.tables);
       setSkippedNumbers(state.skippedNumbers);
       setPickedUserId(null);
+      clearUndo();
     },
-    [setTableCapacities, setTables, setSkippedNumbers]
+    [setTableCapacities, setTables, setSkippedNumbers, clearUndo]
   );
 
   const seatingPlans = useSeatingPlans({
@@ -171,9 +180,35 @@ export default function Seating() {
   const handleRemoveTable = useCallback(
     (tableNumber: number) => {
       setPickedUserId(null);
-      removeTable(tableNumber);
+      if (!removeTable(tableNumber)) return;
+      toast(`已删除 ${tableNumber} 号桌，成员回到未入座`, {
+        duration: 8000,
+        action: {
+          label: '撤销',
+          onClick: () => {
+            // 必须走 ref：toast 的 action 闭包捕获的是删除前那一次渲染的 undoRemoveTable，
+            // 那时 lastRemoved 还是 null，撤销会莫名其妙失败
+            const restored = undoRef.current();
+            if (restored) toast.success(`${restored.number} 号桌已放回原位（${restored.members.length} 人）`);
+            else toast.error('桌号已被占用或画布已变，无法放回');
+          },
+        },
+      });
     },
     [removeTable]
+  );
+
+  const handleRename = useCallback(
+    (from: number, to: number) => {
+      const result = renameTable(from, to);
+      if (!result.ok) {
+        toast.warning(RENAME_MESSAGES[result.reason]);
+        return;
+      }
+      applyRename(result);
+      toast.success(`${from} 号桌已改为 ${to} 号桌，人数上限跟着改`);
+    },
+    [renameTable, applyRename]
   );
 
   return (
@@ -254,6 +289,7 @@ export default function Seating() {
                 onPick={setPickedUserId}
                 onMove={handleMove}
                 onRemove={handleRemoveTable}
+                onRename={handleRename}
               />
             ))}
           </div>

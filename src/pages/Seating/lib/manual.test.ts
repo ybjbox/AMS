@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { User } from '@/types';
-import { applyMove, tableOf, unseatedMembers, type MoveContext } from './manual';
-import type { Table } from '../hooks/useSeatingArrange';
+import { applyMove, renameTableNumber, tableOf, unseatedMembers, type MoveContext } from './manual';
+import type { Table, TableCapacity } from '../hooks/useSeatingArrange';
 
 function u(id: string, name = id): User {
   return { id, name, department: '技术部', role: '工程师' } as User;
@@ -122,5 +122,54 @@ describe('周边查询', () => {
 
   it('未入座池保持名单原顺序，且已入座的都被剔掉', () => {
     expect(unseatedMembers([A, B, C, D], ctx().tables).map((x) => x.id)).toEqual(['EMP0004']);
+  });
+});
+
+const caps = (...pairs: [number, number][]): TableCapacity[] =>
+  pairs.map(([n, c]) => ({ id: `tc-${n}`, tableNumber: n, capacity: c }));
+
+describe('renameTableNumber：改桌号', () => {
+  const base = {
+    tables: [
+      { number: 1, members: [A] },
+      { number: 2, members: [B] },
+    ] as Table[],
+    capacities: caps([1, 10], [2, 8]),
+    skippedNumbers: '4,14,24',
+  };
+
+  it('改名同时换掉画布桌号与容量行的桌号（两边靠桌号关联）', () => {
+    const r = renameTableNumber({ ...base, from: 1, to: 7 });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.tables.map((t) => t.number)).toEqual([7, 2]);
+    expect(r.capacities.map((c) => [c.tableNumber, c.capacity])).toEqual([[7, 10], [2, 8]]);
+    // 成员跟着桌子走，没被复制也没丢
+    expect(r.tables[0].members.map((m) => m.id)).toEqual(['EMP0001']);
+  });
+
+  it('没有对应容量行的桌也能改（只改画布）', () => {
+    const r = renameTableNumber({ tables: [{ number: 9, members: [A] }], capacities: [], from: 9, to: 10, skippedNumbers: '' });
+    expect(r.ok && r.tables[0].number).toBe(10);
+    expect(r.ok && r.capacities).toEqual([]);
+  });
+
+  it('撞已存在的桌号 / 撞跳过的号 / 号没变 / 号不合法 / 桌不在画布，都被挡下', () => {
+    expect(renameTableNumber({ ...base, from: 1, to: 2 })).toEqual({ ok: false, reason: 'taken' });
+    expect(renameTableNumber({ ...base, from: 1, to: 4 })).toEqual({ ok: false, reason: 'skipped' });
+    expect(renameTableNumber({ ...base, from: 1, to: 1 })).toEqual({ ok: false, reason: 'same' });
+    expect(renameTableNumber({ ...base, from: 1, to: 0 })).toEqual({ ok: false, reason: 'invalid' });
+    expect(renameTableNumber({ ...base, from: 1, to: 2.5 })).toEqual({ ok: false, reason: 'invalid' });
+    expect(renameTableNumber({ ...base, from: 8, to: 9 })).toEqual({ ok: false, reason: 'not-found' });
+  });
+
+  it('跳过桌号支持中文逗号与空格', () => {
+    expect(renameTableNumber({ ...base, from: 1, to: 14, skippedNumbers: '4， 14 ,24' }).ok).toBe(false);
+  });
+
+  it('不改动传入的数组（纯函数）', () => {
+    const snapshot = JSON.stringify([base.tables, base.capacities]);
+    renameTableNumber({ ...base, from: 1, to: 7 });
+    expect(JSON.stringify([base.tables, base.capacities])).toBe(snapshot);
   });
 });

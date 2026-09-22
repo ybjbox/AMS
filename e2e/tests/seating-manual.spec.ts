@@ -102,4 +102,62 @@ test.describe('座位手动微调', () => {
     await expect(page.getByText('目标桌已满')).toBeVisible();
     await expect(page.locator(`${targetSel} [data-member-id="${memberId}"]`)).toBeVisible();
   });
+
+  test('落点提示 → 删桌可撤销 → 桌号可改名（含撞号被拒）', async ({ page }) => {
+    await page.goto('/seating', { timeout: 60000 });
+    await page.waitForLoadState('networkidle', { timeout: 60000 });
+    await page.getByRole('button', { name: /自动排座/ }).first().click();
+    const cards = page.locator('[data-table-number]');
+    await expect(cards.first()).toBeVisible({ timeout: 20000 });
+
+    const numbers = await cards.evaluateAll((els) => els.map((e) => e.getAttribute('data-table-number')));
+    expect(numbers.length).toBeGreaterThanOrEqual(3);
+    const [firstNumber, secondNumber] = numbers as string[];
+    const lastNumber = numbers[numbers.length - 1]!;
+
+    // 1) 落点提示：悬停桌面 → 桌尾占位；悬停某个成员 → 只有他上方出现插入线
+    await page.evaluate((n) => {
+      document
+        .querySelector(`[data-table-number="${n}"]`)
+        ?.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true }));
+    }, firstNumber!);
+    await expect(page.locator(`[data-table-number="${firstNumber}"] [data-drop-tail]`)).toBeVisible();
+
+    const chipId = (await page.locator(`[data-table-number="${firstNumber}"] [data-member-id]`).first().getAttribute('data-member-id'))!;
+    await page.evaluate((id) => {
+      document
+        .querySelector(`[data-member-id="${id}"]`)
+        ?.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true }));
+    }, chipId);
+    await expect(page.locator(`[data-member-id="${chipId}"]`)).toHaveClass(/before:bg-brand-500/);
+    await expect(page.locator(`[data-table-number="${firstNumber}"] [data-drop-tail]`)).toHaveCount(0);
+
+    // 2) 删掉最后一桌 → 用 toast 里的「撤销」放回原位
+    await page.getByRole('button', { name: `删除 ${lastNumber} 号桌` }).click();
+    await expect(page.locator(`[data-table-number="${lastNumber}"]`)).toHaveCount(0);
+    await page.getByRole('button', { name: '撤销' }).click();
+    await expect(page.locator(`[data-table-number="${lastNumber}"]`)).toBeVisible();
+    const afterUndo = await cards.evaluateAll((els) => els.map((e) => e.getAttribute('data-table-number')));
+    expect(afterUndo).toEqual(numbers);
+
+    // 3) 改桌号：标题与「各桌人数设置」里的容量行一起跟着改
+    await page.getByRole('button', { name: `修改 ${firstNumber} 号桌的桌号` }).click();
+    const numberInput = page.getByRole('spinbutton', { name: '新桌号' });
+    await expect(numberInput).toBeVisible();
+    // 编辑态不能把卡片撑出横向滚动
+    expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2)).toBe(false);
+    await numberInput.fill('88');
+    await numberInput.press('Enter');
+    await expect(page.locator('[data-table-number="88"]')).toBeVisible();
+    await expect(page.getByRole('heading', { name: '88号桌' })).toBeVisible();
+    await expect(page.getByRole('spinbutton', { name: '第 88 桌人数' })).toBeVisible();
+    await expect(page.getByText(new RegExp(`${firstNumber} 号桌已改为 88 号桌`))).toBeVisible();
+
+    // 4) 撞号被拒：88 号桌改成还存在的第二桌号，弹提示且画布不变
+    await page.getByRole('button', { name: '修改 88 号桌的桌号' }).click();
+    await page.getByRole('spinbutton', { name: '新桌号' }).fill(secondNumber!);
+    await page.getByRole('spinbutton', { name: '新桌号' }).press('Enter');
+    await expect(page.getByText('已经有这个桌号了，换一个')).toBeVisible();
+    await expect(page.locator('[data-table-number="88"]')).toBeVisible();
+  });
 });

@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { User, DepartmentNode, RoleNode } from '@/types';
-import { applyMove, unseatedMembers, type MoveResult, type MoveSpec } from '../lib/manual';
+import { applyMove, renameTableNumber, unseatedMembers, type MoveResult, type MoveSpec, type RenameBlock } from '../lib/manual';
 
 export interface Table {
   number: number;
@@ -13,6 +13,10 @@ export interface TableCapacity {
   capacity: number;
 }
 
+export type RenameResult =
+  | { ok: true; tables: Table[]; capacities: TableCapacity[] }
+  | { ok: false; reason: RenameBlock };
+
 export function useSeatingArrange(
   activeUsers: User[],
   selectedUserIds: Set<string>,
@@ -24,6 +28,8 @@ export function useSeatingArrange(
   ]);
   const [tables, setTables] = useState<Table[]>([]);
   const [skippedNumbers, setSkippedNumbers] = useState<string>('4,14,24');
+  /** 最近删掉的一桌（含原位置），只支持撤销一次 */
+  const [lastRemoved, setLastRemoved] = useState<{ table: Table; index: number } | null>(null);
 
   const addTableCapacity = useCallback(() => {
     setTableCapacities((prev) => {
@@ -135,16 +141,57 @@ export function useSeatingArrange(
 
     setTableCapacities(newCapacities);
     setTables(newTables);
+    setLastRemoved(null);
   }, [activeUsers, departments, roles, selectedUserIds, skippedNumbers, tableCapacities]);
 
   const handleClear = useCallback(() => {
     setTables([]);
+    setLastRemoved(null);
   }, []);
 
-  const removeTable = useCallback((tableNumber: number) => {
-    // 删桌不把人也删掉：成员回到未入座池，等着被拖到别的桌
-    setTables((prev) => prev.filter((t) => t.number !== tableNumber));
-  }, []);
+  /** 删掉一桌（记下原位置，供撤销放回） */
+  const removeTable = useCallback(
+    (tableNumber: number) => {
+      const index = tables.findIndex((t) => t.number === tableNumber);
+      if (index < 0) return false;
+      // 删桌不把人也删掉：成员回到未入座池，等着被拖到别的桌
+      setLastRemoved({ table: tables[index], index });
+      setTables(tables.filter((t) => t.number !== tableNumber));
+      return true;
+    },
+    [tables]
+  );
+
+  /** 撤销删桌：放回原来的位置。桌号已被别桌占了就不硬塞，交给界面提示 */
+  const undoRemoveTable = useCallback(() => {
+    if (!lastRemoved) return null;
+    const { table, index } = lastRemoved;
+    setLastRemoved(null);
+    if (tables.some((t) => t.number === table.number)) return null;
+    const next = [...tables];
+    next.splice(Math.min(index, next.length), 0, table);
+    setTables(next);
+    return table;
+  }, [lastRemoved, tables]);
+
+  /** 整体换画布（载入方案 / 恢复草稿）后，旧的「撤销删桌」就不该再放回来 */
+  const clearUndo = useCallback(() => setLastRemoved(null), []);
+
+  const renameTable = useCallback(
+    (from: number, to: number): RenameResult =>
+      renameTableNumber({ tables, capacities: tableCapacities, from, to, skippedNumbers }),
+    [tables, tableCapacities, skippedNumbers]
+  );
+
+  /** 改名成功后一次性换掉两份状态（桌号是它们之间唯一的关联键，不能只改一边） */
+  const applyRename = useCallback(
+    (result: { tables: Table[]; capacities: TableCapacity[] }) => {
+      setTables(result.tables);
+      setTableCapacities(result.capacities);
+      setLastRemoved(null);
+    },
+    []
+  );
 
   const capacitiesByNumber = useMemo(
     () => Object.fromEntries(tableCapacities.map((tc) => [tc.tableNumber, tc.capacity])),
@@ -181,6 +228,10 @@ export function useSeatingArrange(
     handleAutoArrange,
     handleClear,
     removeTable,
+    undoRemoveTable,
+    renameTable,
+    applyRename,
+    clearUndo,
     capacitiesByNumber,
     unseated,
     moveMember,

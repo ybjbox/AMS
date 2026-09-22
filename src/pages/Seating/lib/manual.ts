@@ -1,5 +1,5 @@
 import type { User } from '@/types';
-import type { Table } from '../hooks/useSeatingArrange';
+import type { Table, TableCapacity } from '../hooks/useSeatingArrange';
 
 /**
  * 手动排座的纯逻辑。
@@ -88,3 +88,45 @@ export function applyMove(ctx: MoveContext, spec: MoveSpec): MoveResult {
     tables: nextTables,
   };
 }
+
+export type RenameBlock = 'same' | 'invalid' | 'skipped' | 'taken' | 'not-found';
+
+/**
+ * 改桌号。桌号是画布与「各桌人数设置」之间唯一的关联键（方案 payload 也按桌号存容量），
+ * 所以一次改名必须同时改 tables 与 capacities，并且不许撞已存在的桌或被跳过的号 ——
+ * 撞了就会出现两张同名桌，之后所有按桌号的查找都会指错。
+ */
+export function renameTableNumber(input: {
+  tables: Table[];
+  capacities: TableCapacity[];
+  from: number;
+  to: number;
+  skippedNumbers: string;
+}): { ok: true; tables: Table[]; capacities: TableCapacity[] } | { ok: false; reason: RenameBlock } {
+  const { tables, capacities, from, to, skippedNumbers } = input;
+  if (!Number.isInteger(to) || to < 1 || to > 999) return { ok: false, reason: 'invalid' };
+  if (from === to) return { ok: false, reason: 'same' };
+  const skipped = new Set(
+    skippedNumbers
+      .split(/[,，]/)
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !Number.isNaN(n))
+  );
+  if (skipped.has(to)) return { ok: false, reason: 'skipped' };
+  if (tables.some((t) => t.number === to)) return { ok: false, reason: 'taken' };
+  if (!tables.some((t) => t.number === from)) return { ok: false, reason: 'not-found' };
+
+  return {
+    ok: true,
+    tables: tables.map((t) => (t.number === from ? { ...t, number: to } : t)),
+    capacities: capacities.map((tc) => (tc.tableNumber === from ? { ...tc, tableNumber: to } : tc)),
+  };
+}
+
+export const RENAME_MESSAGES: Record<RenameBlock, string> = {
+  same: '桌号没变',
+  invalid: '桌号得是 1 到 999 之间的整数',
+  skipped: '这个号在「跳过桌号」里，换一个',
+  taken: '已经有这个桌号了，换一个',
+  'not-found': '这一桌已经不在画布上',
+};

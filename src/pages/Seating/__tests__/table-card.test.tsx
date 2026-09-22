@@ -12,6 +12,7 @@ function setup(picked: string | null = null) {
   const onPick = vi.fn();
   const onMove = vi.fn();
   const onRemove = vi.fn();
+  const onRename = vi.fn();
   const { container } = render(
     <TableCard
       table={table}
@@ -21,27 +22,32 @@ function setup(picked: string | null = null) {
       onPick={onPick}
       onMove={onMove}
       onRemove={onRemove}
+      onRename={onRename}
     />
   );
-  return { container, onPick, onMove, onRemove };
+  return { container, onPick, onMove, onRemove, onRename };
 }
+
+const renderCard = (number: number, members: User[], cap?: number) =>
+  render(
+    <TableCard
+      table={{ number, members }}
+      viewMode="grid"
+      capacity={cap}
+      pickedUserId={null}
+      onPick={vi.fn()}
+      onMove={vi.fn()}
+      onRemove={vi.fn()}
+      onRename={vi.fn()}
+    />
+  );
 
 const dropTo = (el: Element, userId: string) =>
   fireEvent.drop(el as HTMLElement, { dataTransfer: { getData: () => userId, setData: () => undefined }, bubbles: true });
 
 describe('TableCard 手动排座交互', () => {
   it('显示「当前人数 / 容量」，满桌时换成警示样式', () => {
-    const { container } = render(
-      <TableCard
-        table={{ number: 1, members: [u('EMP0001', '甲'), u('EMP0002', '乙')] }}
-        viewMode="grid"
-        capacity={2}
-        pickedUserId={null}
-        onPick={vi.fn()}
-        onMove={vi.fn()}
-        onRemove={vi.fn()}
-      />
-    );
+    const { container } = renderCard(1, [u('EMP0001', '甲'), u('EMP0002', '乙')], 2);
     expect(screen.getByText('2 / 2 人')).toBeInTheDocument();
     expect(container.querySelector('.border-amber-200')).toBeTruthy();
   });
@@ -76,19 +82,70 @@ describe('TableCard 手动排座交互', () => {
     dropTo(container.querySelector('[data-table-number="3"]') as Element, 'EMP0009');
     expect(onMove).toHaveBeenLastCalledWith({ userId: 'EMP0009', toTable: 3, beforeMemberId: null });
   });
+});
 
+describe('TableCard 拖拽落点提示', () => {
+  it('悬停在某个成员上时，只有那个成员上方出现插入线', () => {
+    const { container } = setup();
+    const second = container.querySelector('[data-member-id="EMP0002"]') as HTMLElement;
+    fireEvent.dragOver(second);
+    expect(second.className).toContain('before:bg-brand-500');
+    expect((container.querySelector('[data-member-id="EMP0001"]') as HTMLElement).className).not.toContain('before:bg-brand-500');
+  });
+
+  it('悬停在桌面空白处时，桌尾出现「松手落座」占位', () => {
+    const { container } = setup();
+    const card = container.querySelector('[data-table-number="3"]') as HTMLElement;
+    fireEvent.dragOver(card);
+    expect(container.querySelector('[data-drop-tail]')).toBeTruthy();
+    expect(screen.getByText('松手落座桌尾')).toBeInTheDocument();
+  });
+
+  it('落点提示在 drop 之后清掉，不会留一条假线', () => {
+    const { container } = setup();
+    const card = container.querySelector('[data-table-number="3"]') as HTMLElement;
+    fireEvent.dragOver(card);
+    expect(container.querySelector('[data-drop-tail]')).toBeTruthy();
+    dropTo(card, 'EMP0009');
+    expect(container.querySelector('[data-drop-tail]')).toBeNull();
+  });
+});
+
+describe('TableCard 改桌号', () => {
+  it('点标题上的编辑入口 → 输入新号 → 回车提交', () => {
+    const { onRename } = setup();
+    fireEvent.click(screen.getByRole('button', { name: '修改 3 号桌的桌号' }));
+    const input = screen.getByRole('spinbutton', { name: '新桌号' });
+    fireEvent.change(input, { target: { value: '7' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onRename).toHaveBeenCalledWith(3, 7);
+  });
+
+  it('Esc 取消：不提交也不改', () => {
+    const { onRename, container } = setup();
+    fireEvent.click(screen.getByRole('button', { name: '修改 3 号桌的桌号' }));
+    const input = screen.getByRole('spinbutton', { name: '新桌号' });
+    fireEvent.change(input, { target: { value: '7' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(onRename).not.toHaveBeenCalled();
+    expect(container.querySelector('[data-table-number="3"]')).toBeTruthy();
+  });
+
+  it('号没变或不是数字时不提交', () => {
+    const { onRename } = setup();
+    fireEvent.click(screen.getByRole('button', { name: '修改 3 号桌的桌号' }));
+    const input = screen.getByRole('spinbutton', { name: '新桌号' });
+    fireEvent.change(input, { target: { value: '3' } });
+    fireEvent.blur(input);
+    fireEvent.change(input, { target: { value: '' } });
+    fireEvent.blur(input);
+    expect(onRename).not.toHaveBeenCalled();
+  });
+});
+
+describe('TableCard 空桌', () => {
   it('空桌给出可放置提示，而不是渲染成一张无内容的卡片', () => {
-    render(
-      <TableCard
-        table={{ number: 9, members: [] }}
-        viewMode="list"
-        capacity={8}
-        pickedUserId={null}
-        onPick={vi.fn()}
-        onMove={vi.fn()}
-        onRemove={vi.fn()}
-      />
-    );
+    renderCard(9, [], 8);
     expect(screen.getByText(/空桌/)).toBeInTheDocument();
     expect(screen.queryAllByRole('button', { name: /1 号/ })).toHaveLength(0);
   });
