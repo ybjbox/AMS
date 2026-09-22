@@ -135,7 +135,7 @@
 | ② 前后端接通 | Login 接真实登录 + 强制改密流转；登出调后端 + persist 隔离；员工/部门/考勤/待办/通知切真实 API（统一 items/total 信封、/users→/employees）；挂载 4 个死面板与 AiAssistant；Dashboard 接真数据；修 withAuthToken | 2-4 天 |
 | ③ 数据一致性 | 补事务；乐观锁落地（expectedVersion + 409）；错误/分页形状统一；files 下载 attachment+nosniff；CSV 公式防御 | 1-2 天 |
 | ④ 工程化 | lint 覆盖 server/scripts；typecheck 接入；11 个自包含 verify 脚本统一 runner 进 CI；重写 Dockerfile；vitest 增加 node project 承接数据层测试；移除 xlsx | ~1 天 |
-| ⑤ 功能演进 | 按 ROADMAP.md 优先 R1 审批流 + R2 员工自助门户（"先把档案柜变办事大厅"） | 按规划 |
+| ⑤ 功能演进 | 按 ROADMAP.md（2026-09-22 收口版）优先 N1 考勤数据源接入 + N2 审批流引擎化 + N3 员工自助门户；R1 审批流与"档案柜变办事大厅"这一步已落地为四类固定流程 | 按规划 |
 
 > **实施进度**（随改造更新）：
 > - **① 安全对齐 ✅ 已完成**（2026-09-14）：沙箱守门脚本 41/41 通过，审计网关实测留痕，主题持久化跨重启验证通过。

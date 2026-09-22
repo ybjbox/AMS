@@ -63,7 +63,7 @@
 ### P1 · 定时增量同步
 
 - 同步游标表记录"上次成功同步到的时间点"，每 30~60 分钟拉 `[cursor - 重叠窗口, now]`（重叠是为了补企业微信侧的迟到数据，靠唯一键幂等）。
-- **给 `punch_records` 加唯一索引**（schema v10）：如 `(employeeId, date, time)`，或加 `source` + `wecomSign` 列区分来源，用 `INSERT … ON CONFLICT DO NOTHING` 落库。**这一步是 P1 的前置**，否则重复数据不可控。
+- ~~给 `punch_records` 加唯一索引（schema v10）~~ **已完成**：`(employeeId, date, time)` 唯一索引已随 schema v10 落地，服务端考勤 Excel 导入走 `INSERT … ON CONFLICT DO NOTHING` 幂等落库（`server/attendanceImportDb.ts`，回归 `server/tests/attendance-import.test.ts`）。同步侧只需再补 `source` / `wecomSign` 两列区分来源。
 - 复用 `import_jobs` 异步作业通道做手动"立即同步"，前端显示进度。
 
 ### P2 · 班次对齐（可选）
