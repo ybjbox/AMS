@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { User, DepartmentNode, RoleNode } from '@/types';
+import { applyMove, unseatedMembers, type MoveResult, type MoveSpec } from '../lib/manual';
 
 export interface Table {
   number: number;
@@ -141,8 +142,30 @@ export function useSeatingArrange(
   }, []);
 
   const removeTable = useCallback((tableNumber: number) => {
+    // 删桌不把人也删掉：成员回到未入座池，等着被拖到别的桌
     setTables((prev) => prev.filter((t) => t.number !== tableNumber));
   }, []);
+
+  const capacitiesByNumber = useMemo(
+    () => Object.fromEntries(tableCapacities.map((tc) => [tc.tableNumber, tc.capacity])),
+    [tableCapacities]
+  );
+
+  /** 参与名单里没被排上任何桌的人（未选进来的人不算「等待入座」） */
+  const unseated = useMemo(
+    () => unseatedMembers(activeUsers.filter((u) => selectedUserIds.has(u.id)), tables),
+    [activeUsers, selectedUserIds, tables]
+  );
+
+  /** 手动排座：换桌 / 桌内换序 / 移出，结果交给界面提示，状态在这里落地 */
+  const moveMember = useCallback(
+    (spec: MoveSpec): MoveResult => {
+      const result = applyMove({ tables, pool: unseated, capacities: capacitiesByNumber }, spec);
+      if (result.ok) setTables(result.tables);
+      return result;
+    },
+    [tables, unseated, capacitiesByNumber]
+  );
 
   return {
     tableCapacities,
@@ -158,5 +181,8 @@ export function useSeatingArrange(
     handleAutoArrange,
     handleClear,
     removeTable,
+    capacitiesByNumber,
+    unseated,
+    moveMember,
   };
 }

@@ -12,6 +12,7 @@ import { User } from '@/types';
 import { SeatingToolbar } from './components/SeatingToolbar';
 import { TableConfig } from './components/TableConfig';
 import { TableCard } from './components/TableCard';
+import { UnseatedStrip } from './components/UnseatedStrip';
 import { ParticipantModal } from './components/ParticipantModal';
 import { PrintSettingsModal } from './components/PrintSettingsModal';
 import { PrintPreview } from './components/PrintPreview';
@@ -20,6 +21,7 @@ import { PlansModal } from './components/PlansModal';
 import { useSeatingArrange, type Table, type TableCapacity } from './hooks/useSeatingArrange';
 import { useSeatingPlans } from './hooks/useSeatingPlans';
 import { usePrintSettings } from './hooks/usePrintSettings';
+import type { MoveSpec } from './lib/manual';
 
 export default function Seating() {
   const users = useEmployeeStore((state) => state.users);
@@ -49,13 +51,35 @@ export default function Seating() {
     handleAutoArrange,
     handleClear,
     removeTable,
+    capacitiesByNumber,
+    unseated,
+    moveMember,
   } = useSeatingArrange(activeUsers, selectedUserIds, departments, roles);
+
+  /** 点选一个等待移入某桌的人（拖拽之外的键盘/点击路径） */
+  const [pickedUserId, setPickedUserId] = useState<string | null>(null);
+
+  const handleMove = useCallback(
+    (spec: MoveSpec) => {
+      const result = moveMember(spec);
+      if (result.ok) {
+        toast.success(result.message);
+        setPickedUserId(null);
+        return;
+      }
+      if (result.reason === 'full') toast.warning('目标桌已满：先改这桌人数上限，或换一桌');
+      else if (result.reason === 'no-such-table') toast.error('目标桌已不存在，请重新排座');
+      // already-there（松回原位）与 not-found（档案里已删）不打扰用户
+    },
+    [moveMember]
+  );
 
   const applyPlanState = useCallback(
     (state: { tableCapacities: TableCapacity[]; tables: Table[]; skippedNumbers: string }) => {
       if (state.tableCapacities.length) setTableCapacities(state.tableCapacities);
       setTables(state.tables);
       setSkippedNumbers(state.skippedNumbers);
+      setPickedUserId(null);
     },
     [setTableCapacities, setTables, setSkippedNumbers]
   );
@@ -133,16 +157,35 @@ export default function Seating() {
     }
   }, []);
 
+  // 整体重排/清空/删桌都可能让「已选中待移入的人」失效，顺手取消选中
+  const runAutoArrange = useCallback(() => {
+    setPickedUserId(null);
+    handleAutoArrange();
+  }, [handleAutoArrange]);
+
+  const runClear = useCallback(() => {
+    setPickedUserId(null);
+    handleClear();
+  }, [handleClear]);
+
+  const handleRemoveTable = useCallback(
+    (tableNumber: number) => {
+      setPickedUserId(null);
+      removeTable(tableNumber);
+    },
+    [removeTable]
+  );
+
   return (
     <PageContainer className="space-y-6 animate-in fade-in duration-400 print:hidden">
         <div className="page-header shrink-0">
           <div>
             <h1 className="page-title">座位安排</h1>
-            <p className="page-subtitle">自动按部门与职位优先级生成座位方案</p>
+            <p className="page-subtitle">自动按部门与职位优先级生成方案，可拖拽微调；座次顺序即打印序号</p>
           </div>
           <div>
             <button
-              onClick={handleAutoArrange}
+              onClick={runAutoArrange}
               className="btn-primary"
             >
               <RefreshCw className="w-4 h-4 sm:mr-2" />
@@ -154,7 +197,7 @@ export default function Seating() {
           viewMode={viewMode}
           setViewMode={setViewMode}
           hasTables={tables.length > 0}
-          handleClear={handleClear}
+          handleClear={runClear}
           setIsParticipantModalOpen={setIsParticipantModalOpen}
           selectedCount={selectedUserIds.size}
           setIsPrintModalOpen={setIsPrintModalOpen}
@@ -197,19 +240,30 @@ export default function Seating() {
           selectedCount={selectedUserIds.size}
         />
 
+        <UnseatedStrip users={unseated} pickedUserId={pickedUserId} onPick={setPickedUserId} onMove={handleMove} />
+
         {tables.length > 0 ? (
           <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
             {tables.map((table) => (
-              <TableCard key={table.number} table={table} viewMode={viewMode} onRemove={removeTable} />
+              <TableCard
+                key={table.number}
+                table={table}
+                viewMode={viewMode}
+                capacity={capacitiesByNumber[table.number]}
+                pickedUserId={pickedUserId}
+                onPick={setPickedUserId}
+                onMove={handleMove}
+                onRemove={handleRemoveTable}
+              />
             ))}
           </div>
         ) : (
           <EmptyState
             icon={Armchair}
             title="准备好开始排座了吗？"
-            description="点击右上角的“自动排座”按钮，系统将根据员工的部门和职位优先级为您生成最佳方案。"
+            description="点击右上角的“自动排座”按钮，系统将根据员工的部门和职位优先级为您生成最佳方案；生成后可拖拽微调。"
             action={
-              <button onClick={handleAutoArrange} className="btn-primary">
+              <button onClick={runAutoArrange} className="btn-primary">
                 自动排座
               </button>
             }
