@@ -1,6 +1,7 @@
 import { test as setup, expect } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { resolveAdminPassword } from '../adminCredentials';
 
 /**
  * 认证 Setup：登录一次并保存会话状态（storageState），
@@ -13,9 +14,9 @@ setup('登录并保存会话', async ({ page }) => {
   await page.goto('/login', { timeout: 60000 });
   await page.waitForLoadState('networkidle', { timeout: 60000 });
 
-  // 填写凭据（调试环境的固定账号）
+  // 填写凭据（口令来自 .env.local / CI 现生成值，见 e2e/adminCredentials.ts）
   await page.locator('input').nth(0).fill('admin');
-  await page.locator('input').nth(1).fill(process.env.AMS_PASSWORD || 'Ams-Debug#2026');
+  await page.locator('input').nth(1).fill(resolveAdminPassword());
   await page.locator('button[type="submit"]').first().click();
 
   // 等待跳转到控制台（登录成功的标志）

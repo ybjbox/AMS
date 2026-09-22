@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import ExcelJS from 'exceljs';
+import { resolveAdminPassword } from '../adminCredentials';
 
 /**
  * P1 功能闭环 E2E：
@@ -10,7 +11,7 @@ import ExcelJS from 'exceljs';
  * 5. 人员流动统计：结构与数据完整
  */
 
-const ADMIN_PASSWORD = process.env.AMS_ADMIN_PASSWORD || 'Ams-Debug#2026';
+const ADMIN_PASSWORD = resolveAdminPassword();
 const PW_1 = 'E2e-P1#2026a';
 const PW_2 = 'E2e-P1#2026b';
 

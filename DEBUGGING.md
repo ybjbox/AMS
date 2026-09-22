@@ -76,7 +76,7 @@ cp .env.example .env.local    # 可选项见 .env.local 内注释
 1. 自动执行数据库迁移建表（种子 45 名员工、部门树、班次、文件夹；迁移版本 v5）；
 2. 自动创建管理员账号 `admin`。若 `.env.local` 未设置 `AMS_ADMIN_PASSWORD`，会在**服务端控制台打印随机密码**并写入 `data/ADMIN_CREDENTIALS.txt`（首次改密后请删除该文件）；
 3. 系统强制**首次登录改密**：改密前所有业务接口返回 `403 PASSWORD_CHANGE_REQUIRED`，属预期安全设计（`POST /api/auth/change-password`）。
-4. 本工作区已完成首次启动，当前登录凭据：**admin / Ams-Debug#2026**（调试用，正式使用前请再修改），过期的凭据文件已删除。
+4. 本工作区已完成首次启动：用户名 `admin`，口令取 `.env.local` 里的 `AMS_ADMIN_PASSWORD`（不写进仓库，也不贴在这里；`requests.http` 与 e2e 都从同一个环境变量取）。若换机器且没设该变量，就走上面第 2 条的随机密码 + `ADMIN_CREDENTIALS.txt` 流程。
 5. 登录接口有防爆破锁定（连续失败会临时锁定），调试密码时别狂试。
 
 启动成功标志：控制台输出 `Server running on http://localhost:3000`，浏览器访问 <http://localhost:3000> 出现登录页。

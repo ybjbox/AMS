@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { resolveAdminPassword } from '../adminCredentials';
 
 /**
  * P2 功能闭环 E2E：
@@ -8,7 +9,7 @@ import { test, expect } from '@playwright/test';
  * 4. 考勤看板：/stats/attendance 结构（30 天热力 + 部门出勤率）
  */
 
-const ADMIN_PASSWORD = process.env.AMS_ADMIN_PASSWORD || 'Ams-Debug#2026';
+const ADMIN_PASSWORD = resolveAdminPassword();
 const PW_1 = 'E2e-P2#2026a';
 const PW_2 = 'E2e-P2#2026b';
 

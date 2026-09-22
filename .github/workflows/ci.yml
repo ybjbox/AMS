@@ -58,11 +58,18 @@ jobs:
       - name: 安装 Playwright Chromium
         run: npx playwright install chromium --with-deps
 
+      # 口令每次运行现生成（runner 上的库是新播种的，跑完即弃）：
+      # 仓库里不再保存默认口令，日志里也不会出现这个值。
+      # 走 AMS_ADMIN_PASSWORD 这条路的 admin 不带 mustChangePassword，用例可直接登录。
+      - name: 生成本次运行的 e2e 管理员口令
+        id: e2e_pw
+        run: echo "value=Ams$(openssl rand -hex 9)9" >> "$GITHUB_OUTPUT"
+
       - name: 运行 E2E 测试（自动启动服务器 + 种子管理员）
         run: npx playwright test --reporter=list
         env:
           CI: true
-          AMS_ADMIN_PASSWORD: Ams-Debug#2026
+          AMS_ADMIN_PASSWORD: ${{ steps.e2e_pw.outputs.value }}
           TZ: Asia/Shanghai
 
       - name: 上传测试报告（失败时）

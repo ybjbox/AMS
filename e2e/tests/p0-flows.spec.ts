@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { resolveAdminPassword } from '../adminCredentials';
 
 /**
  * P0 功能闭环 E2E：
@@ -9,7 +10,7 @@ import { test, expect } from '@playwright/test';
  * 账号准备：管理员创建「补卡测试员工」档案 + 关联账号；测试后全量清理。
  */
 
-const ADMIN_PASSWORD = process.env.AMS_ADMIN_PASSWORD || 'Ams-Debug#2026';
+const ADMIN_PASSWORD = resolveAdminPassword();
 const TEST_ACCOUNT = 'e2e-makeup';
 const PW_1 = 'E2e-P0#2026a';
 const PW_2 = 'E2e-P0#2026b';

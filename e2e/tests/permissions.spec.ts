@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { resolveAdminPassword } from '../adminCredentials';
 
 /**
  * 角色权限矩阵 E2E（API 层）—— 对齐 server/authMiddleware.ts 的 POLICIES 表：
@@ -15,11 +16,8 @@ import { test, expect } from '@playwright/test';
  *       用新会话跑矩阵 → 收尾删除账号。
  */
 
-const ADMIN_PASSWORD = process.env.AMS_ADMIN_PASSWORD;
-if (!ADMIN_PASSWORD) {
-  // 本文件不落默认口令：宁可这里说清缺什么，也不要拿硬编码凭据去撞别人机器上的库
-  throw new Error("运行本用例需要 AMS_ADMIN_PASSWORD（本地见 .env.local，CI 见 workflow env）");
-}
+// 口令解析统一走 helper：拿不到就抛错，绝不回退到提交进仓库的口令
+const ADMIN_PASSWORD = resolveAdminPassword();
 
 const TEST_PASSWORD_1 = 'E2e-Matrix#2026';
 const TEST_PASSWORD_2 = 'E2e-Matrix#2027';

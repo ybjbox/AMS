@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { resolveAdminPassword } from '../adminCredentials';
 
 /**
  * 关键业务流 E2E 测试：
@@ -25,7 +26,7 @@ test.describe('登录流程', () => {
   test('正确凭据可登录', async ({ page }) => {
     await page.goto('/login');
     await page.locator('input').nth(0).fill('admin');
-    await page.locator('input').nth(1).fill(process.env.AMS_PASSWORD || 'Ams-Debug#2026');
+    await page.locator('input').nth(1).fill(resolveAdminPassword());
     await page.locator('button[type="submit"]').first().click();
 
     await page.waitForURL('**/', { timeout: 20000 });

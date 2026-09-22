@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import fs from 'fs';
+import { config } from 'dotenv';
 
 /**
  * AMS E2E 测试配置（双模式）。
@@ -13,6 +14,12 @@ import fs from 'fs';
 const isCI = !!process.env.CI;
 const localChromium = process.env.CHROMIUM_PATH || '/usr/local/bin/chromium';
 const useLocalChromium = !isCI && fs.existsSync(localChromium);
+
+// 本地 admin 口令只在 .env.local 里（服务端也是读它）。这里同样读进来，
+// 好让 worker 进程与 webServer 拿到的 AMS_ADMIN_PASSWORD 跟服务端一致。
+if (!process.env.AMS_ADMIN_PASSWORD) {
+  config({ path: '.env.local', quiet: true });
+}
 
 export default defineConfig({
   testDir: './e2e/tests',
@@ -69,8 +76,9 @@ export default defineConfig({
       ...process.env,
       // CI 用生产模式（静态服务 + 无 Vite middleware）
       ...(isCI ? { NODE_ENV: 'production' } : {}),
-      // CI 首启种子管理员口令（本地由 .env.local 提供，无影响）
-      AMS_ADMIN_PASSWORD: process.env.AMS_ADMIN_PASSWORD || 'Ams-Debug#2026',
+      // AMS_ADMIN_PASSWORD 随上面的 ...process.env 带进来（本地来自 .env.local，
+      // CI 由 workflow 每次运行现生成）。仓库里不再保留兜底口令；两处都没有时
+      // 服务端会随机生成并写 data/ADMIN_CREDENTIALS.txt。
     },
   },
 });
