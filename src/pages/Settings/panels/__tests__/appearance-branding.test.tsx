@@ -34,8 +34,6 @@ beforeEach(() => {
 
 describe('外观设置图片迁移与恢复默认', () => {
   it('本机残留的 data URL 会被自动上传并换成服务端地址', async () => {
-    // fetch 用于把 data URL 转成 Blob（dataUrlToFile）
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(new Blob(['x'], { type: 'image/png'}))));
     statusMock.mockResolvedValue({ background: null, icon: null });
     uploadMock.mockResolvedValue({ success: true, url: '/api/branding/background', type: 'image/png', size: 1 });
     useAppSettings.getState().applyBranding({ background: LEGACY, icon: null });
@@ -43,11 +41,16 @@ describe('外观设置图片迁移与恢复默认', () => {
     render(<AppearancePanel />);
 
     await waitFor(() => expect(uploadMock).toHaveBeenCalledTimes(1));
-    expect(uploadMock.mock.calls[0][0]).toBe('background');
+    const [slot, file] = uploadMock.mock.calls[0];
+    expect(slot).toBe('background');
+    // 解码正确性一并钉住：不走 fetch，避免依赖运行时的 Response 与被 CSP 拦掉的 data: 请求
+    expect(file).toBeInstanceOf(File);
+    expect(file.type).toBe('image/png');
+    const expected = Uint8Array.from(atob(LEGACY.split(',')[1] ?? ''), (c) => c.charCodeAt(0));
+    expect(new Uint8Array(await file.arrayBuffer())).toEqual(expected);
     await waitFor(() =>
       expect(useAppSettings.getState().loginBackground).toBe('/api/branding/background')
     );
-    vi.unstubAllGlobals();
   });
 
   it('服务端已有更新的图时，本机旧值直接让位，不重复上传', async () => {

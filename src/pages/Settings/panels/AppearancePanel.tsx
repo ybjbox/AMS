@@ -14,10 +14,20 @@ import {
 
 const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif';
 
-/** data URL → File（只用于把旧版本机图片搬上服务器） */
+/**
+ * data URL → File（只用于把旧版本机图片搬上服务器）。
+ * 直接解码而不是 fetch(dataUrl)：后者依赖运行时有 fetch/Response，
+ * 且本站有 CSP —— connect-src 不放 data: 时这条迁移会静默失败。
+ */
 async function dataUrlToFile(dataUrl: string, name: string): Promise<File> {
-  const blob = await fetch(dataUrl).then((r) => r.blob());
-  return new File([blob], name, { type: blob.type || 'image/png' });
+  const comma = dataUrl.indexOf(',');
+  const head = comma >= 0 ? dataUrl.slice(0, comma) : dataUrl;
+  const body = comma >= 0 ? dataUrl.slice(comma + 1) : '';
+  const mime = /^data:([^;,]+)/.exec(head)?.[1] ?? 'image/png';
+  const bytes = head.includes(';base64')
+    ? Uint8Array.from(atob(body), (c) => c.charCodeAt(0))
+    : Uint8Array.from(new TextEncoder().encode(decodeURIComponent(body)));
+  return new File([bytes], name, { type: mime });
 }
 
 export default function AppearancePanel() {
