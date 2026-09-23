@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ClipboardList, Download, FolderArchive, Loader2, Printer, Sparkles } from 'lucide-react';
+import { Download, FolderArchive, Loader2, Printer, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import PageContainer from '@/components/PageContainer';
 import { Button } from '@/components/ui/button';
@@ -224,13 +224,10 @@ export default function BusinessForms() {
 
   return (
     <PageContainer width="6xl" className="space-y-6 animate-in fade-in duration-400">
-      <div className="flex items-start gap-3">
-        <div className="p-2.5 rounded-xl bg-brand-100 dark:bg-brand-950/50 text-brand-700 dark:text-brand-300">
-          <ClipboardList className="h-6 w-6" />
-        </div>
+      <div className="page-header shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">业务单据生成</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="page-title">业务单据生成</h1>
+          <p className="page-subtitle">
             {linkedEmployee
               ? `正在为 ${linkedEmployee.name}（${linkedEmployee.id}）生成单据，可存档到该员工档案。`
               : '沿用纸质《业务单》原件版式生成单据：选择业务类型自动填正文，可直接打印送签或下载 Word 文档继续编辑。'}
@@ -309,7 +306,7 @@ export default function BusinessForms() {
                 <span className="text-xs font-medium text-muted-foreground">与员工关系</span>
                 <Select value={relation} onValueChange={(v) => setRelation(String(v))}>
                   <SelectTrigger aria-label="与员工关系" className="w-full justify-between">
-                    <SelectValue>{(v) => String(v ?? '')}</SelectValue>
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {RELATION_OPTIONS.map((r) => (

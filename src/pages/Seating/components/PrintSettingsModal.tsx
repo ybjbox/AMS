@@ -475,7 +475,7 @@ export function PrintSettingsModal({
                                   </div>
                                   {(printSettings.showDepartment || printSettings.showRole) && (
                                     <div
-                                      className="text-zinc-500 mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis"
+                                      className="text-muted-foreground mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis"
                                       style={{ fontSize: `${printSettings.contentFontSize}px` }}
                                     >
                                       {printSettings.showDepartment ? m.department : ''}
@@ -492,7 +492,7 @@ export function PrintSettingsModal({
                         )}
 
                         <div
-                          className="mt-3 text-center text-[10px] text-zinc-400"
+                          className="mt-3 text-center text-3xs text-zinc-400"
                           style={{ fontFamily: printSettings.footerFontFamily }}
                         >
                           {printSettings.footerText}

@@ -33,7 +33,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-8">
         {/* 图表：平板占 3/5，桌面占 3/5（recharts 懒加载） */}
         <div className="md:col-span-3">
-          <Suspense fallback={<div className="card-base p-6 min-h-[300px] flex items-center justify-center text-sm text-zinc-500">图表加载中…</div>}>
+          <Suspense fallback={<div className="card-base p-6 min-h-[300px] flex items-center justify-center text-sm text-muted-foreground">图表加载中…</div>}>
             <DashboardChart data={dashboardData.chartData} isLoading={dashboardData.isLoading} />
           </Suspense>
         </div>

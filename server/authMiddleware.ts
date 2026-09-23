@@ -96,6 +96,11 @@ export function clientIp(req: Request): string {
 const PUBLIC_PATHS: Array<{ method: string; pattern: RegExp }> = [
   { method: "GET", pattern: /^\/health\/?$/ },
   { method: "POST", pattern: /^\/auth\/login\/?$/ },
+  // 登录页在拿到 token 之前就要渲染背景与图标，因此这两个固定槽位免鉴权可读。
+  // 只放开 background / icon 两个字面量（路径由服务端拼、按字节头白名单校验），
+  // 其余 /branding/* 仍需登录；写入另说一律超管。
+  { method: "GET", pattern: /^\/branding\/?$/ },
+  { method: "GET", pattern: /^\/branding\/(background|icon)$/ },
 ];
 
 interface Policy {
@@ -143,6 +148,10 @@ const POLICIES: Policy[] = [
   // 通知出站通道配置含 webhook 回调地址与 SMTP 凭据，仅管理员可读写
   { pattern: /^\/notify\b/, methods: "*", minRole: "ADMIN" },
 
+  // 企业微信考勤：corpSecret / userid 映射 / 全员打卡数据，读写都限管理员。
+  // 服务端只用它向企微发请求，access_token 与 Secret 永不下发前端。
+  { pattern: /^\/wecom\b/, methods: "*", minRole: "ADMIN" },
+
   // 待办与通知（P2-7）：个人生产力功能，任何登录用户可用；
   // 数据按 username 隔离，且归属/权限在服务端二次校验（见 todosDb/notificationsDb）。
   { pattern: /^\/todos\b/, methods: "*", minRole: "EMPLOYEE" },
@@ -163,6 +172,9 @@ const POLICIES: Policy[] = [
 
   // 用户留存条目（座位方案 / 打印参数 / 草稿）：数据按 username 隔离，路由内只读写本人行。
   { pattern: /^\/saved-items\b/, methods: "*", minRole: "EMPLOYEE" },
+
+  // 品牌资源（登录页背景 / 系统图标）：读已按固定槽位放开，写只给超管。
+  { pattern: /^\/branding\b/, methods: ["POST", "PUT", "PATCH", "DELETE"], minRole: "SUPER_ADMIN" },
 ];
 
 /** 兜底：读操作任何登录用户可做，写操作至少 HR */

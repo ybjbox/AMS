@@ -87,17 +87,17 @@ const NotificationContent = React.memo(function NotificationContent({ onClose }:
                 <h4
                   className={`flex-1 min-w-0 truncate text-xs ${
                     notification.read
-                      ? 'text-zinc-400 dark:text-zinc-500'
+                      ? 'text-muted-foreground'
                       : 'text-zinc-800 dark:text-zinc-100 font-medium'
                   }`}
                 >
                   {notification.title}
                 </h4>
-                <span className="text-3xs text-zinc-400 dark:text-zinc-500 whitespace-nowrap">
+                <span className="text-3xs text-muted-foreground whitespace-nowrap">
                   {formatNotificationTime(notification.time)}
                 </span>
               </div>
-              <p className={`mt-0.5 pl-3 text-2xs leading-snug truncate ${notification.read ? 'text-zinc-400 dark:text-zinc-500' : 'text-zinc-500 dark:text-zinc-400'}`}>
+              <p className={`mt-0.5 pl-3 text-2xs leading-snug truncate ${notification.read ? 'text-muted-foreground' : 'text-zinc-500 dark:text-zinc-400'}`}>
                 {notification.message}
               </p>
             </button>

@@ -31,6 +31,38 @@ export interface MonthlySummaryResponse {
   rows: MonthlySummaryRow[];
 }
 
+/** 部门工作时段（自动对班的配置） */
+export interface DeptShiftRule {
+  id: string;
+  departmentId: string;
+  departmentName: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+  /** 1=周一 … 7=周日 */
+  workdays: number[];
+}
+
+export interface EffectiveRulesView {
+  departmentId: string;
+  rules: DeptShiftRule[];
+  sourceDepartmentId: string | null;
+  sourceDepartmentName: string;
+  inherited: boolean;
+  depth: number;
+}
+
+/** 异常分析的覆盖统计：让人看见"多少人日根本没被判定" */
+export interface AnalyzeCoverage {
+  days: number;
+  byRule: number;
+  bySchedule: number;
+  unmatched: number;
+  noPlan: number;
+  leaveSkipped: number;
+  unmatchedSample: { employeeId: string; employeeName: string; date: string; reason: string }[];
+}
+
 export const attendanceApi = {
   // ---- 班次 ----
   fetchShifts: (): Promise<Shift[]> => http.get<Shift[]>('/attendance/shifts'),
@@ -77,14 +109,31 @@ export const attendanceApi = {
 
   // ---- 异常 ----
   fetchAnomalies: (): Promise<Anomaly[]> => http.get<Anomaly[]>('/attendance/anomalies'),
+  /** 上一次分析的覆盖率（服务端留档） */
+  fetchAnalysisStatus: (): Promise<{ at: string | null; coverage: AnalyzeCoverage | null }> =>
+    http.get('/attendance/anomalies/status'),
 
-  /** 基于打卡记录 + 排班 + 班次时间做真实异常分析，结果持久化并返回 */
-  analyzeAnomalies: async (): Promise<Anomaly[]> => {
-    const res = await http.post<{ success: boolean; message: string; anomalies: Anomaly[] }>(
-      '/attendance/analyze'
-    );
-    return res.anomalies ?? [];
+  /** 打卡记录 → 自动对班 → 异常判定，结果持久化；coverage 说明有多少 person-day 根本没被判定 */
+  analyzeAnomalies: async (): Promise<{ anomalies: Anomaly[]; coverage: AnalyzeCoverage | null }> => {
+    const res = await http.post<{
+      success: boolean;
+      message: string;
+      anomalies: Anomaly[];
+      coverage?: AnalyzeCoverage;
+    }>('/attendance/analyze');
+    return { anomalies: res.anomalies ?? [], coverage: res.coverage ?? null };
   },
+
+  // ---- 部门工作时段 ----
+  fetchShiftRules: (): Promise<DeptShiftRule[]> => http.get<DeptShiftRule[]>('/attendance/shift-rules'),
+  fetchEffectiveRules: (departmentId: string): Promise<EffectiveRulesView> =>
+    http.get<EffectiveRulesView>(`/attendance/shift-rules/effective?departmentId=${encodeURIComponent(departmentId)}`),
+  createShiftRule: (rule: Omit<DeptShiftRule, 'id' | 'departmentName'>): Promise<DeptShiftRule> =>
+    http.post<DeptShiftRule>('/attendance/shift-rules', rule),
+  updateShiftRule: (id: string, rule: Partial<Omit<DeptShiftRule, 'id' | 'departmentName'>>): Promise<DeptShiftRule> =>
+    http.put<DeptShiftRule>(`/attendance/shift-rules/${encodeURIComponent(id)}`, rule),
+  deleteShiftRule: (id: string): Promise<{ success: boolean }> =>
+    http.delete<{ success: boolean }>(`/attendance/shift-rules/${encodeURIComponent(id)}`),
 };
 
 // ---- 批量导入（服务端解析 + 后台任务轮询，与员工导入同一套流程）----

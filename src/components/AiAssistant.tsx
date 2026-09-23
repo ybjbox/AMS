@@ -4,6 +4,7 @@ import { X, Send, Square, Plus, History, Trash2, MessageSquare, Loader2, Sliders
 import { useAiChat } from '@/hooks/useAiChat';
 import { resolveAiIcon, resolveAiName } from '@/config/aiIcons';
 import AiOwnModelModal from '@/components/AiOwnModelModal';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -236,37 +237,44 @@ export default function AiAssistant() {
               </div>
               <div className="flex items-center gap-1">
                 {allowPersonalModel && (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => setShowOwnModel(true)}
                     aria-label="模型设置"
                     title="模型设置（可配置个人模型，不占用系统额度）"
-                    className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    className="text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   >
                     <SlidersHorizontal className="h-4 w-4" />
-                  </button>
+                  </Button>
                 )}
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => setShowHistory((v) => !v)}
                   aria-label="历史对话"
                   aria-pressed={showHistory}
-                  className={`rounded-md p-1.5 transition-colors ${
+                  className={`transition-colors ${
                     showHistory
-                      ? 'bg-primary/10 text-primary'
+                      ? // ghost 的 hover 底色会盖掉选中态，显式钉回原样（原实现选中时无 hover 反馈）
+                        'bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/10'
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   }`}
                 >
                   <History className="h-4 w-4" />
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-xs"
                   onClick={handleClose}
                   aria-label="关闭"
-                  className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  className="text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
-                  <X className="h-4 w-4" />
-                </button>
+                  <X className="size-4" />
+                </Button>
               </div>
             </div>
 
@@ -283,17 +291,19 @@ export default function AiAssistant() {
                     className="shrink-0 overflow-hidden border-r border-border bg-muted/40"
                   >
                     <div className="flex h-full w-[140px] flex-col">
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => {
                           newChat();
                           setShowHistory(false);
                         }}
-                        className="m-2 flex items-center justify-center gap-1 rounded-lg border border-dashed border-border px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                        className="m-2 rounded-lg border border-dashed border-border text-xs text-muted-foreground transition-colors hover:border-primary hover:bg-transparent hover:text-primary dark:hover:bg-transparent"
                       >
-                        <Plus className="h-3.5 w-3.5" />
+                        <Plus className="size-3.5" />
                         新建对话
-                      </button>
+                      </Button>
                       <div className="flex-1 space-y-1 overflow-y-auto px-2 pb-2">
                         {conversations.length === 0 && (
                           <p className="px-1 pt-4 text-center text-xs text-muted-foreground">

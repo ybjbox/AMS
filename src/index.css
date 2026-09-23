@@ -309,10 +309,11 @@ main,
     @apply bg-gradient-to-b from-brand-500 to-brand-700 shadow-inner;
   }
 
-  .stat-card {
-    @apply bg-white dark:bg-zinc-800 p-4 rounded-2xl shadow-sm 
-    border border-zinc-200/60 dark:border-white/10
-    flex items-center transition-[box-shadow,transform] duration-250 hover:shadow-md hover:-translate-y-0.5;
+  /* 卡片抬升：与 .card-base 搭配使用的 hover 反馈。
+     刻意只动 transform/box-shadow（transform 不引起 reflow），位移上限 2px，
+     时长走 --duration-fast(250ms)。新增卡片要抬升就加这个类，别再内联一遍。 */
+  .card-lift {
+    @apply transition-[box-shadow,transform] duration-250 hover:shadow-md hover:-translate-y-0.5;
   }
   
   .page-header {
@@ -405,6 +406,20 @@ main,
   label:has(input[type="checkbox"]),
   label:has(input[type="radio"]) {
     cursor: pointer;
+  }
+
+  /* 键盘焦点统一走品牌环（MASTER：焦点环必须可见）。
+     全站约 180 个裸 <button> 与 btn-* 契约类按钮此前只显示 UA 默认 1px auto 环，
+     与 ui/* 原语的 brand ring 是两套观感；这里一次性收齐。
+     原语自带 outline-none + ring（utilities 层优先级高于 base），不会被这条盖成双环。
+     --ring 在亮色=brand-600、暗色=brand-400，随主题自动切换。 */
+  :is(button, [role="button"], a[href], summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+    outline-style: solid;
+    outline-width: 2px;
+    outline-offset: 2px;
+    /* 显式写长手：上面的 * { outline-ring/50 } 会把 outline-color 留在 50% alpha，
+       白底上约 2:1，达不到 WCAG 2.4.11 对焦点指示 3:1 的要求 */
+    outline-color: var(--ring);
   }
 }
 

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useAppSettings } from '../store/appSettings';
 import { useInitData } from './useInitData';
 import { useNotificationStore } from '../store/useNotificationStore';
+import { useBrandingSync } from './useBrandingSync';
 import { EVENT_KEYS, DEFAULT_SYSTEM_ICON } from '../config/constants';
 
 export function useAppLifecycle() {
@@ -14,6 +15,9 @@ export function useAppLifecycle() {
 
   // Data initialization
   useInitData();
+
+  // 品牌资源（登录背景 / 系统图标）以服务端为准
+  useBrandingSync();
 
   // Theme applying
   useLayoutEffect(() => {

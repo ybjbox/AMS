@@ -39,6 +39,7 @@ import { ensureTodosTable } from "./todosDb.ts";
 import { ensureNotificationsTable } from "./notificationsDb.ts";
 import { ensureImportJobsTable } from "./importJobsDb.ts";
 import { ensureOrgTables } from "./departmentsDb.ts";
+import { ensurePunchSourceColumns } from "./attendanceDb.ts";
 
 /** 当前 schema 版本。导出供回归脚本断言（不要再硬编码数字）。 */
 export const SCHEMA_VERSION = 13;
@@ -61,6 +62,9 @@ export function runMigrations(): void {
     ensureIndexes();
     ensureTodosAndNotificationsTables();
     ensurePunchRecordUniqueIndex();
+    // 老备份恢复回来可能缺 source 列（企微同步才引入），常驻补列比抬版本更稳：
+    // 恢复路径不经过版本号变化，靠版本步骤会漏
+    ensurePunchSourceColumns();
     syncDisplaySnapshots();
   };
 
@@ -318,6 +322,7 @@ const PUNCH_RECORDS_SCHEMA = `
   employeeName TEXT NOT NULL,
   date         TEXT NOT NULL,
   time         TEXT NOT NULL,
+  source       TEXT NOT NULL DEFAULT '',
   FOREIGN KEY (employeeId) REFERENCES employees(id) ON DELETE CASCADE
 `;
 

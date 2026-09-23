@@ -112,15 +112,15 @@ function EmployeePicker({
             >
               <span className="truncate">
                 {e.name}
-                <span className="ml-2 text-xs text-zinc-400">{e.department}</span>
+                <span className="ml-2 text-xs text-muted-foreground">{e.department}</span>
               </span>
-              <span className="text-xs text-zinc-400 shrink-0 ml-3">
+              <span className="text-xs text-muted-foreground shrink-0 ml-3">
                 {taken ? `已绑 ${holder}` : e.id}
               </span>
             </button>
           );
         })}
-        {matched.length === 0 && <p className="px-3 py-3 text-sm text-zinc-400">没有匹配的员工</p>}
+        {matched.length === 0 && <p className="px-3 py-3 text-sm text-muted-foreground">没有匹配的员工</p>}
       </div>
     </div>
   );
@@ -363,14 +363,14 @@ export default function AccountManager() {
                       {emp ? (
                         <span className="text-zinc-700 dark:text-zinc-300">
                           {emp.name}
-                          <span className="ml-1.5 text-xs text-zinc-400">{emp.id}</span>
+                          <span className="ml-1.5 text-xs text-muted-foreground">{emp.id}</span>
                         </span>
                       ) : a.employeeId ? (
-                        <span className="text-amber-600 dark:text-amber-400" title="员工档案已删除，但账号仍带着这个工号">
+                        <span className="text-amber-700 dark:text-amber-400" title="员工档案已删除，但账号仍带着这个工号">
                           绑定失效 · {a.employeeId}
                         </span>
                       ) : (
-                        <span className="text-zinc-400">未绑定</span>
+                        <span className="text-muted-foreground">未绑定</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-500 dark:text-zinc-400">{a.lastLoginAt || '从未登录'}</td>
@@ -414,7 +414,7 @@ export default function AccountManager() {
               })}
               {rows.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-zinc-400">
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
                     没有符合条件的账号
                   </td>
                 </tr>
@@ -424,7 +424,7 @@ export default function AccountManager() {
         </div>
       </div>
 
-      <p className="mt-3 text-xs text-zinc-400 dark:text-zinc-500 leading-relaxed">
+      <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
         账号与员工是一对一：未绑定的账号能登录，但收不到也不影响自己的转正/加班/补卡等审批领域动作。
         「绑定失效」通常是员工被删除后遗留，点改绑重新指定或停用该账号即可。
       </p>
@@ -479,8 +479,8 @@ function IconAction({
       onClick={onClick}
       className={`p-1.5 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
         danger
-          ? 'text-zinc-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
-          : 'text-zinc-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-zinc-700/60'
+          ? 'text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
+          : 'text-muted-foreground hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-zinc-700/60'
       }`}
     >
       <Icon className="w-4 h-4" />
@@ -612,7 +612,7 @@ function CreateAccountDialog({
               </button>
             </div>
             <p className="mt-1 select-all font-mono text-sm bg-zinc-100 dark:bg-zinc-700 rounded-lg px-3 py-2">{password}</p>
-            <p className="mt-1 text-xs text-zinc-400">首次登录会要求改密。</p>
+            <p className="mt-1 text-xs text-muted-foreground">首次登录会要求改密。</p>
           </div>
           <div>
             <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">绑定员工</label>

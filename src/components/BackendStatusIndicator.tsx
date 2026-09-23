@@ -16,7 +16,7 @@ const CONFIG: Record<BackendStatus, IndicatorConfig> = {
   checking: {
     label: '检测中…',
     dot: 'bg-zinc-400',
-    text: 'text-zinc-500 dark:text-zinc-400',
+    text: 'text-muted-foreground',
     ring: 'bg-zinc-400/20',
     pulse: true,
     title: '正在检测后端服务连接…',
@@ -24,7 +24,7 @@ const CONFIG: Record<BackendStatus, IndicatorConfig> = {
   online: {
     label: '后端在线',
     dot: 'bg-emerald-500',
-    text: 'text-emerald-600 dark:text-emerald-400',
+    text: 'text-emerald-700 dark:text-emerald-400',
     ring: 'bg-emerald-500/20',
     pulse: false,
     title: '后端服务正常',
@@ -32,7 +32,7 @@ const CONFIG: Record<BackendStatus, IndicatorConfig> = {
   error: {
     label: '后端异常',
     dot: 'bg-amber-500',
-    text: 'text-amber-600 dark:text-amber-400',
+    text: 'text-amber-700 dark:text-amber-400',
     ring: 'bg-amber-500/20',
     pulse: false,
     title: '后端服务有响应，但健康检查未通过（可能是服务内部错误或依赖异常），请查看设置 → 运行诊断',
@@ -40,7 +40,7 @@ const CONFIG: Record<BackendStatus, IndicatorConfig> = {
   offline: {
     label: '后端离线',
     dot: 'bg-red-500',
-    text: 'text-red-600 dark:text-red-400',
+    text: 'text-red-700 dark:text-red-400',
     ring: 'bg-red-500/20',
     pulse: false,
     title: '无法连接后端服务，请确认服务已启动（默认端口 3000）',

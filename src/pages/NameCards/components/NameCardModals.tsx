@@ -137,7 +137,7 @@ export default function NameCardModals({
                   <button
                     data-dept={dept}
                     onClick={onToggleDeptExpandClick}
-                    className="p-1 text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                    className="p-1 text-muted-foreground hover:text-zinc-600 dark:hover:text-zinc-300 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
                     aria-label={isExpanded ? `收起部门：${dept}` : `展开部门：${dept}`}
                     aria-expanded={isExpanded}
                   >

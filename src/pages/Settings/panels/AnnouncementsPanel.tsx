@@ -191,7 +191,7 @@ export default function AnnouncementsPanel() {
         </div>
         <div className="flex-1 overflow-auto">
           {isLoading ? (
-            <div className="p-8 text-sm text-zinc-400 dark:text-zinc-500">加载中…</div>
+            <div className="p-8 text-sm text-muted-foreground">加载中…</div>
           ) : items.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-sm text-zinc-500 dark:text-zinc-400 py-12">
               <Megaphone className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-3" aria-hidden="true" />
@@ -214,7 +214,7 @@ export default function AnnouncementsPanel() {
                     {item.content && (
                       <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2">{item.content}</p>
                     )}
-                    <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1 tabular-nums">
+                    <p className="text-xs text-muted-foreground mt-1 tabular-nums">
                       {item.publisher} 发布于 {formatTime(item.createdAt)}
                       {item.expiresAt ? ` · 有效至 ${item.expiresAt}` : ''}
                     </p>

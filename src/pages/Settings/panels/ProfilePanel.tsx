@@ -230,7 +230,7 @@ export default function ProfilePanel() {
                   </button>
                 )}
               </div>
-              <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1.5">
+              <p className="text-xs text-muted-foreground mt-1.5">
                 支持 PNG / JPG / WebP，自动居中裁剪为 128×128；未上传时使用默认头像
               </p>
             </div>
@@ -274,11 +274,11 @@ export default function ProfilePanel() {
           </div>
           <div className="pt-1 flex items-center justify-between">
             {profileForm.formState.isDirty ? (
-              <span className="text-xs text-zinc-400 dark:text-zinc-500">
+              <span className="text-xs text-muted-foreground">
                 登录账号：{userInfo?.username ?? '-'}（用户名由管理员维护，不可自助修改）
               </span>
             ) : (
-              <span className="text-xs text-zinc-400 dark:text-zinc-500">
+              <span className="text-xs text-muted-foreground">
                 {savingProfile ? '正在保存…' : '修改上方信息后即可保存（用户名由管理员维护，不可自助修改）'}
               </span>
             )}
@@ -342,7 +342,7 @@ export default function ProfilePanel() {
             )}
           </div>
           <div className="pt-1 flex items-center justify-between">
-            <span className="text-xs text-zinc-400 dark:text-zinc-500">
+            <span className="text-xs text-muted-foreground">
               当前账号：{userInfo?.username ?? '-'}
             </span>
             <Button type="submit" disabled={submitting}>

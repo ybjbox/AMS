@@ -154,7 +154,7 @@ export function TableCard({ table, viewMode, capacity, pickedUserId, onPick, onM
       </div>
       <div className="p-4 flex-1">
         {table.members.length === 0 && (
-          <p className="text-sm text-zinc-400 dark:text-zinc-500 py-6 text-center">空桌 —— 把人拖进来，或先点选一个人再回来</p>
+          <p className="text-sm text-muted-foreground py-6 text-center">空桌 —— 把人拖进来，或先点选一个人再回来</p>
         )}
         <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 gap-3' : 'space-y-2'}>
           {table.members.map((m, idx) => (
@@ -242,7 +242,7 @@ function MemberChip({
       data-member-id={member.id}
     >
       <div className="flex items-center gap-2 min-w-0">
-        <span className="text-xs text-zinc-400 dark:text-zinc-500 w-4 shrink-0 tabular-nums">{seat}.</span>
+        <span className="text-xs text-muted-foreground w-4 shrink-0 tabular-nums">{seat}.</span>
         <div className="min-w-0">
           <div className="text-sm font-bold text-zinc-900 dark:text-white truncate">{member.name}</div>
           <div className="text-3xs text-zinc-500 dark:text-zinc-400 truncate">
@@ -259,7 +259,7 @@ function MemberChip({
           }}
           title="移出座位（回到未入座）"
           aria-label={`把 ${member.name} 移出座位`}
-          className="p-1 rounded-md text-zinc-400 dark:text-zinc-500 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
+          className="p-1 rounded-md text-muted-foreground hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>

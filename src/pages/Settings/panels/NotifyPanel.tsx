@@ -39,7 +39,7 @@ function Field({
     <label className="block text-sm">
       <span className="mb-1 block font-medium text-zinc-600 dark:text-zinc-300">{label}</span>
       {children}
-      {hint && <span className="mt-1 block text-xs text-zinc-400">{hint}</span>}
+      {hint && <span className="mt-1 block text-xs text-muted-foreground">{hint}</span>}
     </label>
   );
 }
@@ -70,7 +70,7 @@ export default function NotifyPanel() {
 
   if (!config) {
     return (
-      <div className="flex items-center justify-center py-16 text-zinc-500">
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600" />
       </div>
     );
@@ -176,7 +176,7 @@ export default function NotifyPanel() {
                 <button
                   type="button"
                   onClick={() => patchWebhook({ url: prevMaskedUrl.current })}
-                  className="shrink-0 text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                  className="shrink-0 text-xs font-medium text-muted-foreground hover:text-zinc-800 dark:hover:text-zinc-200"
                 >
                   撤销
                 </button>
@@ -262,7 +262,7 @@ export default function NotifyPanel() {
                 <button
                   type="button"
                   onClick={() => patchEmail({ password: prevMaskedPass.current })}
-                  className="shrink-0 text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                  className="shrink-0 text-xs font-medium text-muted-foreground hover:text-zinc-800 dark:hover:text-zinc-200"
                 >
                   撤销
                 </button>

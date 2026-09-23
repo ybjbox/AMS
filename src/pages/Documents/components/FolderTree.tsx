@@ -1,5 +1,6 @@
 import React from 'react';
 import { Folder, ChevronRight, ChevronDown, Plus, Edit2, Trash2, FolderOpen, FolderPlus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Folder as FolderType } from '@/store/useDocumentStore';
 import { usePermissionsStore } from '@/store/permissions';
 import { hasPermission } from '@/utils/permission';
@@ -50,6 +51,7 @@ export function FolderTree({
                 >
                   <div className="flex items-center space-x-1.5 overflow-hidden">
                     <button
+                      aria-label="展开或收起该文件夹"
                       className="p-0.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 shrink-0"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -76,6 +78,7 @@ export function FolderTree({
                         e.stopPropagation();
                         onAddSubFolderClick(folder.id);
                       }}
+                      aria-label="新建子文件夹"
                       className="p-1 text-zinc-400 hover:text-brand-600"
                     >
                       <Plus className="w-3 h-3" />
@@ -85,6 +88,7 @@ export function FolderTree({
                         e.stopPropagation();
                         onEditFolderClick(folder.id);
                       }}
+                      aria-label="重命名该文件夹"
                       className="p-1 text-zinc-400 hover:text-brand-600"
                     >
                       <Edit2 className="w-3 h-3" />
@@ -94,6 +98,7 @@ export function FolderTree({
                         e.stopPropagation();
                         onDeleteFolderClick(folder.id);
                       }}
+                      aria-label={`删除文件夹：${folder.name}`}
                       className="p-1 text-zinc-400 hover:text-red-600"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -117,14 +122,16 @@ export function FolderTree({
           文件夹
         </span>
         {canManageDocs && (
-        <button
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={handleCreateRootFolderClick}
-          className="p-1.5 text-zinc-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-zinc-700 rounded-md transition-colors"
+          className="text-zinc-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-zinc-700 rounded-md transition-colors"
           title="新建根目录文件夹"
           aria-label="新建根目录文件夹"
         >
           <FolderPlus className="w-4 h-4" />
-        </button>
+        </Button>
         )}
       </div>
       <div className="flex-1 overflow-y-auto p-3 space-y-1">

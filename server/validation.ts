@@ -133,6 +133,43 @@ export const reminderConfigSchema = z
   })
   .loose();
 
+// ---------------------------------------------------------------- 企业微信考勤接入
+
+/**
+ * 凭据配置：字段全部可选（面板按可见字段提交，缺键=不改），
+ * 掩码串/清除哨兵的语义在 wecomDb.mergeWeComConfig 里处理；
+ * baseUrl 的目标地址校验也在那边（要区分本机回环与外网 https，不是简单格式问题）。
+ */
+export const wecomConfigSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    corpId: z.string().max(64, "企业 ID 过长").optional(),
+    agentId: z.string().max(32, "AgentId 过长").optional(),
+    corpSecret: z.string().max(128, "Secret 过长").optional(),
+    baseUrl: z.string().max(200, "接口地址过长").optional(),
+    syncIntervalMinutes: z.coerce.number().optional(),
+    overlapMinutes: z.coerce.number().optional(),
+  })
+  .loose();
+
+/** 成员映射批量认领：employeeId 为 null 表示退回待认领 */
+export const wecomBindingsSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        wecomUserId: z
+          .string({ error: "企业微信成员账号不能为空" })
+          .trim()
+          .min(1, "企业微信成员账号不能为空")
+          .max(64, "企业微信成员账号过长")
+          .regex(/^[\w.\-@]+$/u, "企业微信成员账号只能包含字母、数字与 . - _ @"),
+        employeeId: z.string().trim().max(32).nullable().optional(),
+      })
+    )
+    .min(1, "没有要提交的成员")
+    .max(500, "一次最多认领 500 条"),
+});
+
 // ---------------------------------------------------------------- 文件夹 / 文档套件（name 必填）
 
 export const folderCreateSchema = z

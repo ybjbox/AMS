@@ -144,7 +144,7 @@ export default function DiagnosticsPanel() {
             报错（状态码 ≥400）或超时（&gt;{data?.accessLog.slowThresholdMs ?? 1000}ms）的接口请求，红色=服务端错误，橙色=客户端错误/慢请求
           </p>
         </div>
-        <div className="flex-1 min-h-0 overflow-auto">
+        <div className="flex-1 min-h-0 overflow-auto" tabIndex={0} role="region" aria-label="最近异常请求（可滚动）">
           {data && data.recent.length > 0 ? (
             <table className="w-full text-left text-sm" aria-label="最近异常请求">
               <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs text-zinc-500 dark:text-zinc-400">

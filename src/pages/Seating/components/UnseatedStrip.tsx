@@ -43,9 +43,16 @@ export function UnseatedStrip({ users, pickedUserId, onPick, onMove }: UnseatedS
       <div className="flex items-center gap-2 mb-2">
         <Armchair className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
         <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">未入座 {users.length} 人</span>
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">拖到某桌落座；先点选一人，再点目标桌的「移入」也可以</span>
+        <span className="text-xs text-zinc-500 dark:text-zinc-400">拖拽至桌次即可落座；或先点选一人，再点击目标桌的「移入」</span>
       </div>
-      <div className="flex flex-wrap gap-2">
+      {/* 限高 + 内部滚动：整桌未排时这里会铺开几十个人，不能把画布的空态与主操作挤出首屏 */}
+      <div className="relative">
+        <div
+          className="flex flex-wrap gap-2 max-h-32 overflow-y-auto"
+          tabIndex={0}
+          role="region"
+          aria-label={`未入座人员列表，共 ${users.length} 人`}
+        >
         {users.map((u) => (
           <button
             key={u.id}
@@ -68,6 +75,12 @@ export function UnseatedStrip({ users, pickedUserId, onPick, onMove }: UnseatedS
             {u.name}
           </button>
         ))}
+        </div>
+        {/* 底部渐隐＝"下面还有"，与侧栏/设置导航的滚动提示同一做法 */}
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-zinc-50 to-transparent dark:from-zinc-900"
+          aria-hidden="true"
+        />
       </div>
     </div>
   );

@@ -19,6 +19,7 @@ import {
   ListOrdered,
   BellRing,
   KeyRound,
+  Fingerprint,
 } from 'lucide-react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useUserStore } from '@/store/useUserStore';
@@ -39,6 +40,7 @@ import AnnouncementsPanel from './panels/AnnouncementsPanel';
 import RemindersPanel from './panels/RemindersPanel';
 import AccountsPanel from './panels/AccountsPanel';
 import NavOrderPanel from './panels/NavOrderPanel';
+import WeComPanel from './panels/WeComPanel';
 
 /**
  * 设置页信息架构：按域分组 + 按角色门槛过滤。
@@ -91,6 +93,7 @@ const TAB_GROUPS: { title: string; tabs: SettingsTab[] }[] = [
     title: '系统管理',
     tabs: [
       { id: 'preferences', label: '系统偏好', icon: Sliders, minRole: SystemRole.ADMIN },
+      { id: 'wecom', label: '企业微信打卡', icon: Fingerprint, minRole: SystemRole.ADMIN },
       { id: 'accounts', label: '账号管理', icon: KeyRound, minRole: SystemRole.ADMIN },
       { id: 'permissions', label: '权限矩阵', icon: ShieldCheck, minRole: SystemRole.ADMIN },
       { id: 'diagnostics', label: '运行诊断', icon: Activity, minRole: SystemRole.ADMIN },
@@ -157,6 +160,7 @@ export default function Settings() {
       case 'appearance': return <AppearancePanel />;
       case 'nav-order': return <NavOrderPanel />;
       case 'preferences': return <PreferencesPanel />;
+      case 'wecom': return <WeComPanel />;
       case 'notify': return <NotifyPanel />;
       case 'reminders': return <RemindersPanel />;
       case 'themes': return <ThemesPanel />;
@@ -232,7 +236,7 @@ export default function Settings() {
               <nav className="space-y-5" role="tablist" aria-label="设置导航" aria-orientation="vertical">
                 {groups.map((group) => (
                   <div key={group.title}>
-                    <p className="px-3 mb-1.5 text-2xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                    <p className="px-3 mb-1.5 text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
                       {group.title}
                     </p>
                     <div className="space-y-1">{group.tabs.map((tab) => renderTabButton(tab, false))}</div>

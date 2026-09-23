@@ -1,5 +1,6 @@
 import React from 'react';
 import { FileText, ChevronDown, ChevronRight, Folder } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -93,16 +94,18 @@ export function SetFormModal({
         <div>
           <div className="flex justify-between items-center mb-2">
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">选择包含的文件</label>
-            <button
+            <Button
               type="button"
+              variant="link"
+              size="xs"
               onClick={toggleAllModalFolders}
-              className="text-sm text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 font-medium"
+              className="h-auto px-0 text-sm text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 font-medium"
             >
               {expandedModalFolders.size === folders.filter((f) => documents.some((d) => d.folderId === f.id)).length &&
               expandedModalFolders.size > 0
                 ? '全部收起'
                 : '全部展开'}
-            </button>
+            </Button>
           </div>
           <div className="max-h-60 overflow-y-auto border border-zinc-200 dark:border-zinc-700 rounded-md bg-zinc-50 dark:bg-zinc-800/50 p-2 space-y-1">
             {documents.length === 0 ? (
@@ -197,6 +200,7 @@ export function SetFormModal({
                       {doc.name}
                     </span>
                     <div className="flex items-center space-x-3 shrink-0">
+                      {/* 分段胶囊/步进器嵌在共享边框盒里，选中底色与圆角属于版面对象，换 Button 会破坏盒模型，故保留裸 button */}
                       <div className="flex items-center space-x-1 bg-white dark:bg-zinc-700 rounded border border-zinc-200 dark:border-zinc-600 p-0.5">
                         <button
                           type="button"
@@ -233,7 +237,7 @@ export function SetFormModal({
                         <button
                           type="button"
                           onClick={() => onSetCopiesClick(id, 'dec')}
-                          className="px-2 py-1 text-zinc-500 hover:text-zinc-700 dark:text-zinc-300 dark:hover:text-zinc-300"
+                          className="px-2 py-1 text-muted-foreground hover:text-zinc-700 dark:text-zinc-300 dark:hover:text-zinc-300"
                         >
                           -
                         </button>
@@ -243,7 +247,7 @@ export function SetFormModal({
                         <button
                           type="button"
                           onClick={() => onSetCopiesClick(id, 'inc')}
-                          className="px-2 py-1 text-zinc-500 hover:text-zinc-700 dark:text-zinc-300 dark:hover:text-zinc-300"
+                          className="px-2 py-1 text-muted-foreground hover:text-zinc-700 dark:text-zinc-300 dark:hover:text-zinc-300"
                         >
                           +
                         </button>

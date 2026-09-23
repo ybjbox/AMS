@@ -211,7 +211,7 @@ export function TreeSelect({
           aria-haspopup="tree"
           aria-expanded={isOpen}
         />
-        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-zinc-400 dark:text-zinc-500">
+        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-muted-foreground">
           <ChevronDown className="h-4 w-4" />
         </div>
       </div>

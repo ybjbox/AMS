@@ -148,7 +148,7 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
                 <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
                   点击选择 .xlsx 文件
                 </span>
-                <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                <span className="text-xs text-muted-foreground">
                   单次最多 5000 行，解析后先预览再导入
                 </span>
               </>
@@ -215,7 +215,7 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
                       key={row.rowNumber}
                       className={`border-t border-zinc-100 dark:border-zinc-800 ${ok ? '' : 'bg-red-50/40 dark:bg-red-900/10'}`}
                     >
-                      <td className="px-3 py-2 text-zinc-400 dark:text-zinc-500 tabular-nums">{row.rowNumber}</td>
+                      <td className="px-3 py-2 text-muted-foreground tabular-nums">{row.rowNumber}</td>
                       <td className="px-3 py-2 text-zinc-900 dark:text-white">{String(row.data.name ?? '—')}</td>
                       <td className="px-3 py-2 text-zinc-600 dark:text-zinc-300 font-mono text-xs">
                         {typeof row.data.idCard === 'string' ? row.data.idCard : '—'}

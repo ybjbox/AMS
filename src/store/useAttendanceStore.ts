@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { attendanceApi } from '../services/attendanceApi';
+import type { AnalyzeCoverage } from '../services/attendanceApi';
 import { createAsyncAction } from './utils';
 
 export type Shift = {
@@ -21,6 +22,8 @@ export type PunchRecord = {
   employeeName: string;
   date: string; // "YYYY-MM-DD"
   time: string; // "HH:mm:ss"
+  /** 数据来源：'' = 补卡/导入/手工（历史行也是），'wecom' = 企业微信同步 */
+  source: string;
 };
 
 export type Anomaly = {
@@ -38,6 +41,10 @@ interface AttendanceState {
   schedules: EmployeeSchedule[];
   records: PunchRecord[];
   anomalies: Anomaly[];
+  /** 最近一次异常分析的覆盖统计（null = 服务端还没有留档） */
+  analyzeCoverage: AnalyzeCoverage | null;
+  /** 该次分析的时间（ISO），来自服务端留档 */
+  analyzeCoverageAt: string | null;
   isLoading: boolean;
   error: string | null;
 
@@ -62,18 +69,28 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
   schedules: [],
   records: [],
   anomalies: [],
+  analyzeCoverage: null,
+  analyzeCoverageAt: null,
   isLoading: false,
   error: null,
 
   fetchData: async () => {
     return createAsyncAction(set, async () => {
-      const [shifts, schedules, records, anomalies] = await Promise.all([
+      const [shifts, schedules, records, anomalies, analysis] = await Promise.all([
         attendanceApi.fetchShifts(),
         attendanceApi.fetchSchedules(),
         attendanceApi.fetchRecords(),
         attendanceApi.fetchAnomalies(),
+        attendanceApi.fetchAnalysisStatus(),
       ]);
-      return { shifts, schedules, records, anomalies };
+      return {
+        shifts,
+        schedules,
+        records,
+        anomalies,
+        analyzeCoverage: analysis.coverage,
+        analyzeCoverageAt: analysis.at,
+      };
     });
   },
 
@@ -150,8 +167,10 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
 
   analyzeAnomalies: async () => {
     return createAsyncAction(set, async () => {
-      const anomalies = await attendanceApi.analyzeAnomalies();
-      return { anomalies };
+      const { anomalies } = await attendanceApi.analyzeAnomalies();
+      // 覆盖率回读服务端留档：界面上的"上次分析 …"与刷新后看到的必须是同一份
+      const status = await attendanceApi.fetchAnalysisStatus();
+      return { anomalies, analyzeCoverage: status.coverage, analyzeCoverageAt: status.at };
     });
   },
 }));

@@ -96,7 +96,7 @@ export function PrintSetModal({
               })}
             </ul>
           </div>
-          <p className="mt-3 text-left text-xs text-zinc-400 dark:text-zinc-500 leading-relaxed">
+          <p className="mt-3 text-left text-xs text-muted-foreground leading-relaxed">
             份数会真实复制输出，「黑白」按灰度渲染；双面只能镜像页边距，仍需在打印对话框里勾选。
             无法在线打印的类型会在对应页上标注原因。
           </p>

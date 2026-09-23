@@ -183,7 +183,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
           const expiry = row.original.contractExpiry;
           // 未登记到期日（或被服务端裁掉合同字段）时不能显示成「0 天」的红色紧迫态
           if (!expiry) {
-            return <div className="tabular-nums text-zinc-400 dark:text-zinc-500">—</div>;
+            return <div className="tabular-nums text-muted-foreground">—</div>;
           }
           // 合同到期天数着色：≤30 红（紧迫）、≤90 橙（关注）、其他中性灰；仅数值着色，保持列可扫读
           const tone =
@@ -361,7 +361,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                                 ? 'descending'
                                 : undefined
                             }
-                            className={`group px-4 py-2 text-xs font-medium text-zinc-500 uppercase tracking-wider bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-100 dark:border-zinc-800 sticky top-0 z-20 ${
+                            className={`group px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-100 dark:border-zinc-800 sticky top-0 z-20 ${
                               isFirst
                                 ? 'left-0 z-30 shadow-sticky-left'
                                 : ''

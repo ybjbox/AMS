@@ -25,7 +25,7 @@ export function EmptyState({ title, description, icon: Icon, action, className }
         <div className="absolute bottom-2 left-0 w-2 h-2 rounded-full bg-zinc-200 dark:bg-zinc-700" />
       </div>
       <h2 className="text-base font-semibold text-zinc-900 dark:text-white mb-2">{title}</h2>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-xs leading-relaxed">{description}</p>
+      <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">{description}</p>
       {action && <div className="mt-6">{action}</div>}
     </div>
   );

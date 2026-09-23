@@ -564,28 +564,32 @@ export default function AiConfigPanel() {
             </Button>
           </div>
           {models.length > 0 && !customModel && (
-            <button
+            <Button
               type="button"
-              className="text-xs text-primary hover:underline mt-1.5"
+              variant="link"
+              size="xs"
+              className="mt-1.5 h-auto px-0 text-xs text-primary hover:underline"
               onClick={() => setCustomModel(true)}
             >
               列表中找不到？手动输入模型名
-            </button>
+            </Button>
           )}
           {customModel && models.length > 0 && (
-            <button
+            <Button
               type="button"
-              className="text-xs text-primary hover:underline mt-1.5"
+              variant="link"
+              size="xs"
+              className="mt-1.5 h-auto px-0 text-xs text-primary hover:underline"
               onClick={() => setCustomModel(false)}
             >
               从列表选择
-            </button>
+            </Button>
           )}
           {modelErr && <p className="text-xs text-destructive mt-1.5">{modelErr}</p>}
           {testResult && (
             <p
               className={`flex items-start gap-1.5 text-xs mt-1.5 ${
-                testResult.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'
+                testResult.ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-destructive'
               }`}
             >
               {testResult.ok ? (
@@ -638,13 +642,16 @@ export default function AiConfigPanel() {
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>{form.systemPrompt.trim() ? `已填写 ${form.systemPrompt.trim().length} 字` : '未填写，将使用默认提示'}</span>
           {form.systemPrompt && (
-            <button
+            <Button
               type="button"
-              className="text-primary hover:underline"
+              variant="link"
+              size="xs"
+              aria-label="清空系统提示词"
+              className="h-auto px-0 text-primary hover:underline"
               onClick={() => update({ systemPrompt: '' })}
             >
               清空
-            </button>
+            </Button>
           )}
         </div>
       </Section>

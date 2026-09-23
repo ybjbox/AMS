@@ -55,7 +55,7 @@ const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: Sor
       <div
         {...attributes}
         {...listeners}
-        className="mr-3 cursor-grab active:cursor-grabbing p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded text-zinc-400 dark:text-zinc-500"
+        className="mr-3 cursor-grab active:cursor-grabbing p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded text-muted-foreground"
       >
         <GripVertical className="h-4 w-4" />
       </div>
@@ -144,7 +144,7 @@ export function AddressBookModal({
               {selectedCols.map((col: ExportColumn) => (
                 <th
                   key={col.key as string}
-                  className="border border-zinc-200 dark:border-zinc-700/80 px-3 py-2 bg-zinc-50 text-center font-semibold text-zinc-700 dark:text-zinc-300"
+                  className="border border-zinc-200 px-3 py-2 bg-zinc-50 text-center font-semibold text-zinc-700"
                 >
                   {col.label}
                 </th>
@@ -321,7 +321,7 @@ export function AddressBookModal({
           <div>
             <div className="flex items-center justify-between mb-3">
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">选择并排序导出列</label>
-              <span className="text-3xs text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-700 px-2 py-0.5 rounded-full">
+              <span className="text-3xs text-muted-foreground bg-zinc-100 dark:bg-zinc-700 px-2 py-0.5 rounded-full">
                 拖拽左侧图标进行排序
               </span>
             </div>
@@ -357,7 +357,8 @@ export function AddressBookModal({
           </div>
           <div className="w-full bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl p-8">
             <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">{addressBookConfig.title}</h1>
+              {/* 纸张标题：页面已有 h1，打印 HTML 由 builder 单独生成 */}
+              <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">{addressBookConfig.title}</h2>
             </div>
             <div className={`flex ${addressBookConfig.isTwoColumn ? 'gap-6' : ''} items-start`}>
               <div className="flex-1">{renderTableContent(previewLeft, addressBookConfig)}</div>

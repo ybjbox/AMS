@@ -6,9 +6,12 @@
  *   早退 → EARLY_LEAVE。
  */
 import { db, transact } from "./db.ts";
+import { getSetting, setSetting } from "./settingsDb.ts";
 import crypto from "crypto";
 import { resolvePaging, toListResult, ListResult } from "./listQuery.ts";
 import { type DbRow, asString, asNumber, asNullableNumber } from "./sqliteUtil.ts";
+import { resolveRulesForDepartment, toCandidates } from "./shiftRulesDb.ts";
+import { candidateFromShift, resolveDay, type ShiftCandidate } from "./shiftMatch.ts";
 
 // ---------- 行类型（typescript-best-practices：边界解析） ----------
 export interface ShiftRow {
@@ -32,6 +35,8 @@ export interface PunchRecordRow {
   date: string;
   time: string;
   version: number;
+  /** 数据来源：'' = 手工/导入（历史行也是），'wecom' = 企业微信同步 */
+  source: string;
 }
 
 export interface AnomalyRow {
@@ -61,6 +66,7 @@ function rowToRecord(row: DbRow): PunchRecordRow {
     date: asString(row.date),
     time: asString(row.time),
     version: asNumber(row.version),
+    source: asString(row.source),
   };
 }
 
@@ -83,7 +89,8 @@ db.exec(`
     employeeName TEXT NOT NULL,
     date         TEXT NOT NULL,
     time         TEXT NOT NULL,
-    version      INTEGER DEFAULT 0
+    version      INTEGER DEFAULT 0,
+    source       TEXT NOT NULL DEFAULT ''
   );
   CREATE TABLE IF NOT EXISTS anomalies (
     id           TEXT PRIMARY KEY,
@@ -95,6 +102,25 @@ db.exec(`
     description  TEXT DEFAULT ''
   );
 `);
+
+// ---------- 老库补列：source 是企微同步这一路才引入的，历史库没有这一列 ----------
+/**
+ * 幂等补 punch_records.source 列。
+ * 不靠 SCHEMA_VERSION 抬版本：本模块加载即补，所以任何进程（含只 import 本模块的脚本、
+ * 以及从旧备份恢复出来的库）在写企微数据前都一定拿得到这一列。migrate 的常驻步骤也调它，
+ * 两条路都跑过仍是零操作。
+ */
+export function ensurePunchSourceColumns(): void {
+  try {
+    const cols = db.prepare("PRAGMA table_info(punch_records)").all() as unknown as DbRow[];
+    if (cols.some((c) => asString(c.name) === "source")) return;
+    db.exec("ALTER TABLE punch_records ADD COLUMN source TEXT NOT NULL DEFAULT ''");
+  } catch (e) {
+    // 表还不存在（建表由本模块或 migrate 负责）：忽略，下一次调用会补上
+    console.warn("[attendance] 补 source 列失败：", e instanceof Error ? e.message : e);
+  }
+}
+ensurePunchSourceColumns();
 
 // ---------- Shifts ----------
 export function listShifts(): ShiftRow[] {
@@ -367,6 +393,43 @@ export function clearRecords() {
   db.exec("DELETE FROM punch_records");
 }
 
+/**
+ * 外部数据源增量写入（企业微信同步通道）。
+ *
+ * 与 replaceRecords 的「整表替换」语义相反：这里只加、不改、不删。
+ * (employeeId,date,time) 唯一索引命中即跳过，所以同一区间重复同步是幂等的，
+ * 而 HR 手工补的卡与 Excel 导入的行都不会被同步冲掉。
+ */
+export function insertSourcedRecords(
+  rows: { employeeId: string; employeeName: string; date: string; time: string; source: string }[]
+): { created: number; skipped: number } {
+  const insert = db.prepare(
+    `INSERT INTO punch_records (id, employeeId, employeeName, date, time, version, source)
+     VALUES (?, ?, ?, ?, ?, 1, ?)
+     ON CONFLICT(employeeId, date, time) DO NOTHING`
+  );
+  let created = 0;
+  let skipped = 0;
+  db.exec("BEGIN");
+  try {
+    for (const r of rows) {
+      const res = insert.run(crypto.randomUUID(), r.employeeId, r.employeeName, r.date, r.time, r.source);
+      if (Number(res.changes) > 0) created += 1;
+      else skipped += 1;
+    }
+    db.exec("COMMIT");
+  } catch (e) {
+    db.exec("ROLLBACK");
+    throw e;
+  }
+  return { created, skipped };
+}
+
+/** 某来源已有的打卡行数（同步结果面板用来核对"库里到底有多少条企微卡"） */
+export function countRecordsBySource(source: string): number {
+  return asNumber(db.prepare("SELECT COUNT(*) AS c FROM punch_records WHERE source = ?").get(source)?.c);
+}
+
 // ---------- Anomalies ----------
 export function listAnomalies(): AnomalyRow[] {
   return db.prepare("SELECT * FROM anomalies ORDER BY date, employeeId").all().map((row) => ({
@@ -380,9 +443,80 @@ export function listAnomalies(): AnomalyRow[] {
   }));
 }
 
-function toMinutes(hhmm: string): number {
-  const [h, m] = hhmm.split(":").map(Number);
-  return h * 60 + (m || 0);
+// ---------- 对班解析（异常分析与月报共用同一份口径） ----------
+
+export type ShiftSourceKind = "rule" | "schedule" | "none";
+
+export interface EmployeeShiftPlan {
+  candidates: ShiftCandidate[];
+  /** rule = 按部门工作时段自动对班；schedule = 回退到逐日排班；none = 两者都没有 */
+  source: ShiftSourceKind;
+  /** 给人看的来源说明，如「研发部（继承自集团总部）」「正常班（排班）」 */
+  note: string;
+}
+
+/**
+ * 一次性把「员工 → 当天可选班次」解析好并缓存。
+ *
+ * 优先级是刻意的：**部门时段一旦配了就覆盖该部门（含继承的子部门）员工的全部判定**，
+ * 因为用户给的是「各部门上班时间段」而不是逐日排班表；两套并存时若让排班优先，
+ * HR 改了时段却看不到效果，只会更困惑。回退到排班是为了不让没配时段的部门失去判定。
+ */
+export function buildShiftPlanner(): (employeeId: string) => EmployeeShiftPlan {
+  const shiftMap = new Map(listShifts().map((s) => [s.id, s]));
+  const scheduleMap = new Map(listSchedules().map((s) => [s.employeeId, s]));
+  const deptByEmployee = new Map<string, string>();
+  try {
+    for (const row of db.prepare("SELECT id, departmentId FROM employees").all() as unknown as DbRow[]) {
+      deptByEmployee.set(asString(row.id), asString(row.departmentId));
+    }
+  } catch {
+    /* employees 表缺席时按"没有部门"处理：员工会退回排班口径而不是整个分析炸掉 */
+  }
+  const cache = new Map<string, EmployeeShiftPlan>();
+
+  const compute = (employeeId: string): EmployeeShiftPlan => {
+    const resolved = resolveRulesForDepartment(deptByEmployee.get(employeeId) ?? "");
+    if (resolved.rules.length > 0) {
+      const via = resolved.depth > 0 ? `（继承自 ${resolved.sourceDepartmentName}）` : "";
+      return { candidates: toCandidates(resolved), source: "rule", note: `${resolved.sourceDepartmentName}${via}` };
+    }
+    const schedule = scheduleMap.get(employeeId);
+    const shift = schedule ? schedule.shiftIds.map((id) => shiftMap.get(id)).find(Boolean) : undefined;
+    if (shift) return { candidates: [candidateFromShift(shift)], source: "schedule", note: `${shift.name}（排班）` };
+    return {
+      candidates: [],
+      source: "none",
+      note: schedule ? "排班指向的班次已不存在" : "既没有部门时段也没有排班",
+    };
+  };
+
+  return (employeeId) => {
+    const hit = cache.get(employeeId);
+    if (hit) return hit;
+    const plan = compute(employeeId);
+    cache.set(employeeId, plan);
+    return plan;
+  };
+}
+
+/** 分析覆盖率：让用户看见"有多少人日根本没被判定"，而不是以为系统算过了 */
+export interface AnalyzeCoverage {
+  /** 参与分析的「员工×日期」总数 */
+  days: number;
+  byRule: number;
+  bySchedule: number;
+  /** 配了时段/排班但对不上班（首卡偏差超容忍 / 非工作日）的人日 */
+  unmatched: number;
+  /** 既没部门时段也没排班，完全无从判定的人日 */
+  noPlan: number;
+  leaveSkipped: number;
+  unmatchedSample: { employeeId: string; employeeName: string; date: string; reason: string }[];
+}
+
+export interface AnalyzeResult {
+  anomalies: AnomalyRow[];
+  coverage: AnalyzeCoverage;
 }
 
 // ---------- 月度考勤汇总（P0：HR 月报） ----------
@@ -409,10 +543,7 @@ export interface MonthlySummaryRow {
  */
 export function monthlySummary(month: string): MonthlySummaryRow[] {
   const prefix = `${month}-%`;
-  const shifts = listShifts();
-  const schedules = listSchedules();
-  const shiftMap = new Map(shifts.map((s) => [s.id, s]));
-  const scheduleMap = new Map(schedules.map((s) => [s.employeeId, s]));
+  const planner = buildShiftPlanner();
 
   // 当月打卡记录（含部门联查）
   const rows = db
@@ -463,24 +594,18 @@ export function monthlySummary(month: string): MonthlySummaryRow[] {
     agg.workDays += 1;
     agg.punchCount += info.punches.length;
 
-    // 规则与 analyzeAnomalies 保持一致（未排班员工只计出勤/打卡，不计异常）
-    const schedule = scheduleMap.get(employeeId);
-    const shift = schedule
-      ? (schedule.shiftIds || []).map((id) => shiftMap.get(id)).find(Boolean)
-      : undefined;
-    if (!shift) continue;
-    // 已批准请假日不计异常（半天请假只有一次打卡会被误标缺卡），与 analyzeAnomalies 同口径
+    // 与异常分析同一份判定（未配时段也没排班的人只计出勤/打卡，不计异常）
     if (leaveDays.has(key)) continue;
-
-    const times = [...info.punches].sort();
-    if (times.length === 1) {
-      agg.missingCount += 1;
-      continue;
+    const [, date] = key.split("__");
+    const plan = planner(employeeId);
+    if (plan.source === "none") continue;
+    const outcome = resolveDay(plan.candidates, { date, times: info.punches });
+    if (outcome.kind !== "judged") continue;
+    for (const finding of outcome.judgement.findings) {
+      if (finding.type === "LATE_5" || finding.type === "LATE_15") agg.lateCount += 1;
+      else if (finding.type === "EARLY_LEAVE") agg.earlyLeaveCount += 1;
+      else agg.missingCount += 1;
     }
-    const inTime = toMinutes(times[0]);
-    const outTime = toMinutes(times[times.length - 1]);
-    if (inTime - toMinutes(shift.startTime) > 5) agg.lateCount += 1;
-    if (toMinutes(shift.endTime) - outTime > 0) agg.earlyLeaveCount += 1;
   }
 
   return [...byEmployee.values()].sort((a, b) => a.employeeId.localeCompare(b.employeeId));
@@ -520,16 +645,16 @@ function approvedLeaveDayKeys(): Set<string> {
   return keys;
 }
 
-/** 真实异常分析：基于打卡记录 + 排班 + 班次时间计算，结果持久化 */
-export function analyzeAnomalies(): AnomalyRow[] {
-  const shifts = listShifts();
-  const schedules = listSchedules();
+/**
+ * 真实异常分析：打卡记录 → 自动对班（部门工作时段，回退逐日排班）→ 判定，结果持久化。
+ * 返回 anomalies + coverage：对不上班的人日**不判定**，但必须报出来，
+ * 否则"今天没人迟到"和"今天没一个人对上班"在界面上会长得一模一样。
+ */
+export function analyzeAttendance(): AnalyzeResult {
   const recordsResult = listRecords();
   const records = Array.isArray(recordsResult) ? recordsResult : recordsResult.items;
   const leaveDays = approvedLeaveDayKeys();
-
-  const shiftMap = new Map(shifts.map((s) => [s.id, s]));
-  const scheduleMap = new Map(schedules.map((s) => [s.employeeId, s]));
+  const planner = buildShiftPlanner();
 
   // 按 员工+日期 分组打卡
   const grouped = new Map<string, PunchRecordRow[]>();
@@ -539,45 +664,64 @@ export function analyzeAnomalies(): AnomalyRow[] {
     grouped.get(key)!.push(r);
   }
 
-  const anomalies: { employeeId: string; employeeName: string; date: string; type: string; minutes?: number; description: string }[] = [];
+  const coverage: AnalyzeCoverage = {
+    days: grouped.size,
+    byRule: 0,
+    bySchedule: 0,
+    unmatched: 0,
+    noPlan: 0,
+    leaveSkipped: 0,
+    unmatchedSample: [],
+  };
+  const anomalies: {
+    employeeId: string;
+    employeeName: string;
+    date: string;
+    type: string;
+    minutes?: number;
+    description: string;
+  }[] = [];
+
   for (const [key, punches] of grouped) {
     const [employeeId, date] = key.split("__");
-    if (leaveDays.has(key)) continue; // 已批准请假日：不判定异常
-    const schedule = scheduleMap.get(employeeId);
-    if (!schedule) continue; // 未排班员工不参与分析
-    const shift = (schedule.shiftIds as string[]).map((id) => shiftMap.get(id)).find(Boolean);
-    if (!shift) continue;
-
     const employeeName = punches[0].employeeName;
-    const times = punches.map((p) => p.time.slice(0, 5)).sort();
-    const shiftStart = toMinutes(shift.startTime);
-    const shiftEnd = toMinutes(shift.endTime);
-    const midpoint = (shiftStart + shiftEnd) / 2;
-
-    if (times.length === 1) {
-      // 仅一次打卡：按时间判定缺上班卡还是缺下班卡
-      const t = toMinutes(times[0]);
-      if (t <= midpoint) {
-        anomalies.push({ employeeId, employeeName, date, type: "MISSING_OUT", description: "缺下班卡" });
-      } else {
-        anomalies.push({ employeeId, employeeName, date, type: "MISSING_IN", description: "缺上班卡" });
+    if (leaveDays.has(key)) {
+      coverage.leaveSkipped += 1;
+      continue;
+    }
+    const plan = planner(employeeId);
+    if (plan.source === "none") {
+      coverage.noPlan += 1;
+      if (coverage.unmatchedSample.length < 20) {
+        coverage.unmatchedSample.push({ employeeId, employeeName, date, reason: `无判定依据：${plan.note}` });
       }
       continue;
     }
-
-    const inTime = toMinutes(times[0]);
-    const outTime = toMinutes(times[times.length - 1]);
-
-    const lateMinutes = inTime - shiftStart;
-    if (lateMinutes > 15) {
-      anomalies.push({ employeeId, employeeName, date, type: "LATE_15", minutes: lateMinutes, description: `迟到 ${lateMinutes} 分钟` });
-    } else if (lateMinutes > 5) {
-      anomalies.push({ employeeId, employeeName, date, type: "LATE_5", minutes: lateMinutes, description: `迟到 ${lateMinutes} 分钟` });
+    const times = punches.map((p) => p.time);
+    const outcome = resolveDay(plan.candidates, { date, times });
+    if (outcome.kind !== "judged") {
+      coverage.unmatched += 1;
+      if (coverage.unmatchedSample.length < 20) {
+        coverage.unmatchedSample.push({
+          employeeId,
+          employeeName,
+          date,
+          reason: `${outcome.kind === "no-workday" ? "非工作日" : "未对上班"} · ${plan.note} · ${outcome.reason}`,
+        });
+      }
+      continue;
     }
-
-    const earlyMinutes = shiftEnd - outTime;
-    if (earlyMinutes > 0) {
-      anomalies.push({ employeeId, employeeName, date, type: "EARLY_LEAVE", minutes: earlyMinutes, description: `早退 ${earlyMinutes} 分钟` });
+    if (plan.source === "rule") coverage.byRule += 1;
+    else coverage.bySchedule += 1;
+    for (const finding of outcome.judgement.findings) {
+      anomalies.push({
+        employeeId,
+        employeeName,
+        date,
+        type: finding.type,
+        minutes: finding.minutes ?? undefined,
+        description: finding.description,
+      });
     }
   }
 
@@ -592,7 +736,32 @@ export function analyzeAnomalies(): AnomalyRow[] {
       insert.run(crypto.randomUUID(), a.employeeId, a.employeeName, a.date, a.type, a.minutes ?? null, a.description);
     }
   });
-  return listAnomalies();
+  // 覆盖率跟着结果一起留档：刷新页面或换一台设备也要能看到"为什么没有异常"，
+  // 而不是只剩一个空列表让人以为系统已经判过了。
+  const result: AnalyzeResult = { anomalies: listAnomalies(), coverage };
+  setAttendanceAnalysisStatus(result);
+  return result;
+}
+
+const ANALYSIS_STATUS_KEY = "attendance_last_analysis";
+
+/** 上一次分析的覆盖统计（重启/刷新后仍可用） */
+export function getAttendanceAnalysisStatus(): { at: string | null; coverage: AnalyzeCoverage | null } {
+  const raw = getSetting<{ at?: string; coverage?: AnalyzeCoverage }>(ANALYSIS_STATUS_KEY);
+  return { at: typeof raw?.at === "string" ? raw.at : null, coverage: raw?.coverage ?? null };
+}
+
+function setAttendanceAnalysisStatus(result: AnalyzeResult): void {
+  try {
+    setSetting(ANALYSIS_STATUS_KEY, { at: new Date().toISOString(), coverage: result.coverage });
+  } catch {
+    /* 留档失败不影响分析结果本身 */
+  }
+}
+
+/** 兼容旧调用方（审批决定后只关心"重算一遍"）：只要异常列表时用它 */
+export function analyzeAnomalies(): AnomalyRow[] {
+  return analyzeAttendance().anomalies;
 }
 
 // ---------- 首次播种（默认班次，与原 mock 一致） ----------

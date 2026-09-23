@@ -66,8 +66,12 @@ GitHub Actions 两个 job（verify：typecheck / lint / 单测 / 11 个服务端
 
 #### N1. 考勤数据源接入（企业微信打卡同步）⭐⭐⭐⭐⭐
 **为什么排第一**：现在所有考勤分析、异常申诉、调休额度都建立在"HR 手工导 Excel"上，这是这套系统最大的失真来源。
-调研已完成（`docs/WECOM-ATTENDANCE-INTEGRATION.md`，含接口清单、字段映射、同步策略与三个待定决策），
-**卡在决策而不是工作量**——先定：同步频率（实时/定时/手动触发）、异常写回口径、以及是否接受自建应用凭证。
+三个决策已于 2026-09-23 定下（见 `docs/WECOM-ATTENDANCE-INTEGRATION.md` 第五节），**P0+P1 链路已落地**：
+凭据掩码配置 / token 缓存 / 29 天分段 + 100 人分批 / 敏感字段在客户端边界即丢弃 / userid↔工号人工认领 /
+幂等增量落库（`punch_records.source`）/ 干跑预览 / 定时调度（默认关）。回归 `server/tests/wecom-sync.test.ts`。
+**还剩一件事**：真实凭据 + 固定公网 IP（可信 IP 是硬门槛，配好后在设置页填 CorpID/Secret 即可，代码不用再动）。
+判定层已按用户口径重做：**部门工作时段 + 按打卡时间自动对班**（`server/shiftMatch.ts` / `shiftRulesDb.ts`，
+考勤页新增「部门时段」，异常分析返回 coverage 说明多少人日未被判定），不再要求 HR 逐日排班。
 
 #### N2. 通用审批流引擎 ⭐⭐⭐⭐⭐
 把已有的四类流程抽象成 `approval_templates`（表单 schema + 节点 JSON）+ `approval_instances` / `approval_tasks`，
@@ -107,7 +111,7 @@ GitHub Actions 两个 job（verify：typecheck / lint / 单测 / 11 个服务端
 Phase 0 · 安全与底座 ✅ 已完成（AUDIT 27 项修 26 项；CI 双 job；schema v13；256 单测 + 42 e2e）
 
 Phase 1 · 数据源与流程（下一批就做）
-   ├─ N1 企微打卡同步      ← 先要三个决策，不要先写代码
+   ├─ N1 企微打卡同步      ← 链路 + 自动对班判定已落地；只剩「真实凭据 + 可信 IP」
    ├─ N2 审批流引擎化      ← 心脏；四类抽象成模板
    └─ N3 员工自助门户      ← 与 N2 并行，端点大多现成
 

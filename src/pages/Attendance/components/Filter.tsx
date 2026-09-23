@@ -109,8 +109,9 @@ export default function Filter({
   }, [selectedEmployeeId, selectedShiftIds, users, schedules, setSchedules]);
 
   const handleAnalyze = useCallback(async () => {
-    if (records.length === 0 || schedules.length === 0) {
-      toast.warning('请先导入打卡记录和排班字典');
+    // 只需要打卡记录：对班可以来自部门工作时段（不需要排班字典），没有卡才真的无从判定
+    if (records.length === 0) {
+      toast.warning('还没有打卡记录，先去「打卡记录」导入或等待企业微信同步');
       return;
     }
 
@@ -122,7 +123,7 @@ export default function Filter({
       console.error('Analysis failed:', error);
       toast.error('分析失败，请重试');
     }
-  }, [records.length, schedules.length, analyzeAnomalies]);
+  }, [records.length, analyzeAnomalies]);
 
   const onEmployeeSelectClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const employeeId = e.currentTarget.dataset.employeeid;
@@ -221,7 +222,7 @@ export default function Filter({
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 点击选择 Excel 文件
               </p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">支持 .xlsx，单次最多 5000 行</p>
+              <p className="text-xs text-muted-foreground mt-1">支持 .xlsx，单次最多 5000 行</p>
               <input
                 type="file"
                 ref={fileInputRef}
@@ -246,7 +247,7 @@ export default function Filter({
                 onClick={() => setIsEmployeeDropdownOpen(!isEmployeeDropdownOpen)}
                 tabIndex={0}
               >
-                <span className={selectedEmployeeId ? '' : 'text-zinc-500'}>
+                <span className={selectedEmployeeId ? '' : 'text-muted-foreground'}>
                   {selectedEmployeeId
                     ? users.find((u) => u.id === selectedEmployeeId)?.name + ' (' + selectedEmployeeId + ')'
                     : '-- 请选择员工 --'}

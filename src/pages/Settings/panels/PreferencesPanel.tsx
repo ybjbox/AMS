@@ -107,7 +107,7 @@ export default function PreferencesPanel() {
               >
                 {item.label}
               </span>
-              <span className="text-xs text-zinc-500 mt-1">{item.desc}</span>
+              <span className="text-xs text-muted-foreground mt-1">{item.desc}</span>
             </button>
           ))}
         </div>

@@ -80,6 +80,8 @@ const SECRET_KEYS = new Set([
   "client_secret",
   // 通知出站：/api/notify/config 的 webhook 对象含带 access_token 的完整回调地址，整体丢弃
   "webhook",
+  // 企业微信考勤：PUT /api/wecom/config 的 corpSecret 是应用凭据，与 clientsecret 同档
+  "corpsecret",
 ]);
 
 /** 这些字段体积可能极大（脚本正文、base64 文件），只留长度信息 */

@@ -247,7 +247,7 @@ export default function SystemLogs() {
               className="w-[150px]"
               aria-label="起始日期"
             />
-            <span className="text-sm text-zinc-400">至</span>
+            <span className="text-sm text-muted-foreground">至</span>
             <Input
               type="date"
               value={filters.to}
@@ -339,7 +339,7 @@ export default function SystemLogs() {
                       >
                         {log.result === 'success' ? '成功' : '失败'} {log.status}
                       </span>
-                      <div className="text-zinc-400 dark:text-zinc-500 text-xs mt-1">{log.durationMs} ms</div>
+                      <div className="text-muted-foreground text-xs mt-1">{log.durationMs} ms</div>
                     </td>
                     <td className="px-6 py-4 text-sm text-zinc-900 dark:text-zinc-200 min-w-[200px]">
                       <div className="flex items-start justify-between gap-4">
@@ -378,7 +378,7 @@ export default function SystemLogs() {
           )}
         </div>
 
-        <div className="p-4 border-t border-zinc-200 dark:border-zinc-700 flex items-center justify-between text-sm text-zinc-500 dark:text-zinc-400">
+        <div className="p-4 border-t border-zinc-200 dark:border-zinc-700 flex items-center justify-between text-sm text-muted-foreground">
           <span>
             共 {total} 条{from > 0 ? `，显示第 ${from}–${to} 条` : ''}
           </span>

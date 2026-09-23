@@ -108,7 +108,7 @@ export function PlansModal({
                       onClick={() => onRemove(p.id)}
                       aria-label={`删除方案 ${p.name}`}
                       title="删除方案"
-                      className="p-1.5 rounded-md text-zinc-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

@@ -1,17 +1,76 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Image as ImageIcon, Monitor, Moon, Palette, Sun, Upload } from 'lucide-react';
+import { Image as ImageIcon, Loader2, Monitor, Moon, Palette, Sun, Upload } from 'lucide-react';
 import { DEFAULT_SYSTEM_ICON } from '@/config/constants';
 import { useAppSettings } from '@/store/appSettings';
 import { Button } from '@/components/ui/button';
+import {
+  BRANDING_LABELS,
+  BRANDING_LIMITS,
+  brandingApi,
+  brandingError,
+  type BrandingSlot,
+} from '@/services/brandingApi';
+
+const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif';
+
+/** data URL → File（只用于把旧版本机图片搬上服务器） */
+async function dataUrlToFile(dataUrl: string, name: string): Promise<File> {
+  const blob = await fetch(dataUrl).then((r) => r.blob());
+  return new File([blob], name, { type: blob.type || 'image/png' });
+}
 
 export default function AppearancePanel() {
   const theme = useAppSettings((state) => state.theme);
   const setTheme = useAppSettings((state) => state.setTheme);
   const loginBackground = useAppSettings((state) => state.loginBackground);
-  const setLoginBackground = useAppSettings((state) => state.setLoginBackground);
   const systemIcon = useAppSettings((state) => state.systemIcon);
+  const setLoginBackground = useAppSettings((state) => state.setLoginBackground);
   const setSystemIcon = useAppSettings((state) => state.setSystemIcon);
+  const [busy, setBusy] = useState<BrandingSlot | null>(null);
+
+  const setSlotLocal = useCallback(
+    (slot: BrandingSlot, url: string | null) => {
+      if (slot === 'background') setLoginBackground(url);
+      else setSystemIcon(url);
+    },
+    [setLoginBackground, setSystemIcon]
+  );
+
+  /**
+   * 旧版本把整张图编成 base64 存在本机 localStorage（有撑爆配额、连带丢主题的风险）。
+   * 打开面板时把这类残留搬上服务器，之后本机只保存一个地址。
+   */
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const state = useAppSettings.getState();
+      const legacy: Array<[BrandingSlot, string]> = [];
+      if (state.loginBackground?.startsWith('data:')) legacy.push(['background', state.loginBackground]);
+      if (state.systemIcon?.startsWith('data:')) legacy.push(['icon', state.systemIcon]);
+      if (!legacy.length) return;
+
+      const status = await brandingApi.status().catch(() => null);
+      if (!status || cancelled) return;
+      for (const [slot, dataUrl] of legacy) {
+        if (status[slot]) {
+          setSlotLocal(slot, status[slot]!.url); // 服务器已有更新的图，本机旧值直接作废
+          continue;
+        }
+        try {
+          const file = await dataUrlToFile(dataUrl, `legacy-${slot}`);
+          const r = await brandingApi.upload(slot, file);
+          if (!cancelled) setSlotLocal(slot, r.url);
+        } catch {
+          /* 迁移失败就继续用本机值，下次打开面板再试 */
+        }
+      }
+      if (!cancelled) toast.info('已把此前仅存于本机的图片迁移到服务器');
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [setSlotLocal]);
 
   const onThemeClick = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -23,28 +82,73 @@ export default function AppearancePanel() {
     [setTheme]
   );
 
-  const handleImageUpload = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>, type: 'background' | 'icon') => {
-      const file = e.target.files?.[0];
+  const handleUpload = useCallback(
+    async (slot: BrandingSlot, file: File | undefined) => {
       if (!file) return;
-      // TODO(backend): 替换为真实文件上传 API，当前使用本地 FileReader 预览
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const dataUrl = ev.target?.result as string;
-        if (!dataUrl) return;
-        if (type === 'background') {
-          setLoginBackground(dataUrl);
-        } else {
-          setSystemIcon(dataUrl);
-        }
-        toast.success(`已预览${type === 'background' ? '背景图' : '系统图标'}，保存后生效`);
-      };
-      reader.readAsDataURL(file);
-      // 重置 input，允许重复选择同一文件
-      e.target.value = '';
+      if (file.size > BRANDING_LIMITS[slot]) {
+        toast.error(`${BRANDING_LABELS[slot]}超过 ${Math.round(BRANDING_LIMITS[slot] / 1024 / 1024)}MB 上限`);
+        return;
+      }
+      setBusy(slot);
+      try {
+        const r = await brandingApi.upload(slot, file);
+        setSlotLocal(slot, r.url);
+        toast.success(`${BRANDING_LABELS[slot]}已更新，所有浏览器与设备立即生效`);
+      } catch (e) {
+        toast.error(brandingError(e, `${BRANDING_LABELS[slot]}上传失败`));
+      } finally {
+        setBusy(null);
+      }
     },
-    [setLoginBackground, setSystemIcon]
+    [setSlotLocal]
   );
+
+  const handleReset = useCallback(
+    async (slot: BrandingSlot) => {
+      setBusy(slot);
+      try {
+        await brandingApi.remove(slot);
+        setSlotLocal(slot, null);
+        toast.success(`${BRANDING_LABELS[slot]}已恢复默认`);
+      } catch (e) {
+        toast.error(brandingError(e, `${BRANDING_LABELS[slot]}恢复失败`));
+      } finally {
+        setBusy(null);
+      }
+    },
+    [setSlotLocal]
+  );
+
+  const uploadButton = (slot: BrandingSlot, label: string) => (
+    <label className="flex items-center px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors cursor-pointer text-sm font-medium">
+      {busy === slot ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+      {label}
+      <input
+        type="file"
+        accept={ACCEPT}
+        className="hidden"
+        disabled={busy !== null}
+        onChange={(e) => {
+          void handleUpload(slot, e.target.files?.[0]);
+          // 重置 input，允许重复选择同一文件
+          e.target.value = '';
+        }}
+      />
+    </label>
+  );
+
+  const resetButton = (slot: BrandingSlot, current: string | null) =>
+    current ? (
+      <Button
+        type="button"
+        variant="destructive"
+        size="sm"
+        disabled={busy === slot}
+        onClick={() => void handleReset(slot)}
+      >
+        恢复默认
+      </Button>
+    ) : null;
 
   return (
     <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-400 space-y-6">
@@ -97,7 +201,7 @@ export default function AppearancePanel() {
             <div className="w-24 h-24 rounded-xl border-2 border-dashed border-zinc-200/80 dark:border-zinc-600 flex items-center justify-center bg-zinc-50 dark:bg-zinc-800/50 overflow-hidden shrink-0">
               <img
                 src={systemIcon || DEFAULT_SYSTEM_ICON}
-                alt="System Icon"
+                alt="系统图标预览"
                 width={96}
                 height={96}
                 className={`w-full h-full object-contain ${systemIcon ? '' : 'rounded-lg'}`}
@@ -105,24 +209,11 @@ export default function AppearancePanel() {
             </div>
             <div className="flex-1">
               <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-                上传自定义系统图标，将显示在左上角和浏览器标签页中。建议使用正方形的 PNG 或 SVG 图片。
+                自定义系统图标将显示在左上角与浏览器标签页。支持 PNG / JPEG / WebP / GIF，1MB 以内，建议使用正方形图片；不上传时使用内置默认图标。
               </p>
               <div className="flex items-center space-x-3">
-                <label className="flex items-center px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors cursor-pointer text-sm font-medium">
-                  <Upload className="w-4 h-4 mr-2" />
-                  上传图标
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleImageUpload(e, 'icon')}
-                  />
-                </label>
-                {systemIcon && (
-                  <Button type="button" variant="destructive" size="sm" onClick={() => setSystemIcon(null)}>
-                    恢复默认
-                  </Button>
-                )}
+                {uploadButton('icon', '上传图标')}
+                {resetButton('icon', systemIcon)}
               </div>
             </div>
           </div>
@@ -137,31 +228,18 @@ export default function AppearancePanel() {
           <div className="flex items-start space-x-6">
             <div className="w-48 h-32 rounded-xl border-2 border-dashed border-zinc-200/80 dark:border-zinc-600 flex items-center justify-center bg-zinc-50 dark:bg-zinc-800/50 overflow-hidden shrink-0">
               {loginBackground ? (
-                <img src={loginBackground} alt="Login Background" width={192} height={128} className="w-full h-full object-cover" />
+                <img src={loginBackground} alt="登录页背景预览" width={192} height={128} className="w-full h-full object-cover" />
               ) : (
                 <ImageIcon className="w-8 h-8 text-zinc-400 dark:text-zinc-500" />
               )}
             </div>
             <div className="flex-1">
               <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-                上传自定义登录页背景图片。建议使用 1920x1080 分辨率的高清图片，以获得最佳显示效果。
+                登录页整屏背景图。支持 PNG / JPEG / WebP / GIF，5MB 以内，建议使用 1920x1080 横图；不上传时使用默认渐变底。
               </p>
               <div className="flex items-center space-x-3">
-                <label className="flex items-center px-4 py-2 bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors cursor-pointer text-sm font-medium">
-                  <Upload className="w-4 h-4 mr-2" />
-                  上传背景
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleImageUpload(e, 'background')}
-                  />
-                </label>
-                {loginBackground && (
-                  <Button type="button" variant="destructive" size="sm" onClick={() => setLoginBackground(null)}>
-                    恢复默认
-                  </Button>
-                )}
+                {uploadButton('background', '上传背景')}
+                {resetButton('background', loginBackground)}
               </div>
             </div>
           </div>

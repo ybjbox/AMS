@@ -1,7 +1,9 @@
 # 企业微信考勤接入调研（AMS）
 
-> 状态：**仅调研，未写任何代码**。等待第五节三个决策后再落 P0。
-> 日期：2026-09-20 ｜ 环境事实：企业微信自建应用与 API 凭据**尚未创建**。
+> 状态：**P0/P1 链路已于 2026-09-23 落地**（`server/wecomDb.ts` / `wecomClient.ts` / `wecomSync.ts` / `wecomRouter.ts` + 设置页「企业微信打卡」面板，回归 `server/tests/wecom-sync.test.ts` 20 例）。
+> 剩下的只是**真实凭据与可信 IP**：企业微信后台建自建应用 → 把出口 IP 配进可信 IP → 在面板里填 CorpID/Secret → 检测连接。
+> 下面第一~四节是当时的调研原文（保留作接口口径备查），第五节的三个决策已在文末记为已定。
+> 环境事实（2026-09-20 起）：企业微信自建应用与 API 凭据**尚未创建**。
 
 企业微信侧的接口能力是够的，但**开通姿势**和**数据落库**有两处硬约束会直接决定方案形态。
 
@@ -53,31 +55,57 @@
 
 ## 四、建议的接入形态（分三期）
 
-### P0 · 打通链路（只读，不写库）
+> 2026-09-23 更新：P0 与 P1 已合并为一批落地，下面保留原设计并标注实际差异。
 
-- `server/wecomDb.ts`：配置（corpid / agentId / appSecret 掩码 / 同步开关 / 时间窗）+ access_token 缓存（含提前失效重取）。
-- `POST /api/wecom/preview`：传日期区间 → 拉数据 → 返回"将写入 N 条 / 无法匹配 M 人"的**干跑报告**，先验证权限与映射，不动考勤表。
-- 映射表 `wecom_bindings(wecomUserId, employeeId)` + 设置页一个"未绑定成员"列表让人手工认领（比自动按姓名匹配安全——AMS 里"员工 34"这种种子名根本对不上真实 userid）。
-- 权限：`POLICIES` 加 `/wecom/*` = ADMIN；前端 `attendance:sync` 权限码 + persist 版本 migrate。
+### P0 · 打通链路（只读，不写库）✅ 已落地
 
-### P1 · 定时增量同步
+- `server/wecomDb.ts`：配置（corpid / agentId / appSecret 掩码 / 同步开关 / 时间窗）+ 成员映射 + 同步游标；
+  `server/wecomClient.ts` 负责 access_token 缓存（含提前失效重取）。
+- `POST /api/wecom/preview`：干跑报告，**完全只读**（不写打卡、不登记映射、不抬游标）。
+- 映射表 `wecom_bindings(wecomUserId PK, employeeId NULL=待认领, boundAt, boundBy, lastSeenAt)`；
+  设置页「企业微信打卡」面板做登记/认领/退回/删除。**实际差异**：
+  一个员工只能被一个 userid 认领（部分唯一索引，与账号↔员工同口径）；
+  权限**没有**新增 `attendance:sync` 权限码，而是 `POLICIES` 里 `/wecom` 整段限 ADMIN+（面板按角色秩隐藏）。
+- 落库标记：`punch_records` 新增 `source` 列（`''`=补卡/导入/手工，`wecom`=同步），考勤页「打卡记录」显示来源徽标。
+  时间统一写成 `HH:mm:ss`，与 Excel 导入通道同形，否则同一分钟会被唯一索引认成两条。
 
-- 同步游标表记录"上次成功同步到的时间点"，每 30~60 分钟拉 `[cursor - 重叠窗口, now]`（重叠是为了补企业微信侧的迟到数据，靠唯一键幂等）。
-- ~~给 `punch_records` 加唯一索引（schema v10）~~ **已完成**：`(employeeId, date, time)` 唯一索引已随 schema v10 落地，服务端考勤 Excel 导入走 `INSERT … ON CONFLICT DO NOTHING` 幂等落库（`server/attendanceImportDb.ts`，回归 `server/tests/attendance-import.test.ts`）。同步侧只需再补 `source` / `wecomSign` 两列区分来源。
-- 复用 `import_jobs` 异步作业通道做手动"立即同步"，前端显示进度。
+### P1 · 定时增量同步 ✅ 已落地
 
-### P2 · 班次对齐（可选）
+- 游标在 `wecom_sync_state`，每轮拉 `[cursor - 回看窗口, now]`（默认回看 120 分钟，可调），
+  幂等靠 `(employeeId, date, time)` 唯一索引 + `INSERT … ON CONFLICT DO NOTHING`。
+- 手动「立即同步」复用 `import_jobs` 通道（202 + jobId 轮询）；`startWeComSyncScheduler()` 照备份范式，
+  默认关（配置页开关 + `WECOM_SYNC_ENABLED=false` 总闸），因为可信 IP 没配好之前一次接口都不该发。
+- **任一分段失败即整体失败、游标不抬**：半途而废的同步会让缺口永久静默。一次补拉上限 180 天，内部按 29 天分段、每 100 人分批。
 
-- 若要让迟到判定与企业微信一致：拉 `获取员工打卡规则` + `获取打卡人员排班信息`，把 `groupid`/`schedule_id`/`timeline_id` 映射进 AMS 的 shifts/schedules；或直接采信企业微信的 `exception_type` 生成 anomalies（不再本地算）。
-- 这期改动最大，建议先看 P1 跑出来的数据质量再决定。
+### P2 · 班次对齐 → 已按「部门工作时段 + 自动对班」落地（2026-09-23）
+
+原设想是"要不要采信企业微信 `exception_type`"。裁定结果是否定的：用户按部门预先给出上班时间段，
+系统按打卡时间**自动匹配**当天该上哪个班，既不逐日排班也不看企业微信的异常标记。实际形态：
+
+- `server/shiftMatch.ts`（纯函数，异常分析与月报共用同一份判定）+ `server/shiftRulesDb.ts`（`dept_shift_rules`）。
+- 一个部门可配多条时段（早班/正常班并存），每条带自己的工作日集合；**首卡**与上班时间的偏差最小者胜出，
+  超过容忍 180 分钟就判"没对上班"而不是硬套一个班（逐日排班是明确指定，不受该容忍限制）。
+- 未配时段的部门沿组织树向上取**第一个配了时段的祖先部门**，判定说明里写清来源（例：`对班：北京分公司 · 正常班 09:00-18:00`）。
+- 优先级：**部门时段一旦生效就压过该员工的逐日排班**；没配时段的部门仍走排班（回退，不是并存）。
+- `POST /api/attendance/analyze` 返回 `coverage`（按部门时段 / 按排班 / 未对上 / 无判定依据 / 请假日跳过 + 前 20 条原因），
+  并留档在 settings KV，刷新或换设备仍能看到"为什么没有异常"。
+- 界面：考勤管理 →「部门时段」（含"试算某部门实际生效的时段"）+ 异常分析页顶部的覆盖率条。
+- 不支持跨夜班（下班早于上班时间直接拒写），因为判定式 `end > start` 会失效；真要上夜班再单独设计跨天归属。
 
 ---
 
-## 五、需要确认的三件事
+## 五、需要确认的三件事（2026-09-23 已裁定）
 
-1. **部署位置**：同步进程放哪？有没有固定公网 IP 的机器可以配可信 IP？（这条不通，后面都白做）
-2. **数据范围**：只取上下班打卡（datatype=1）还是含外出打卡？要不要 `location`/`wifimac`/`deviceid`/`mediaids` 这些敏感字段——**建议默认不入库**，它们既是 PII 又撑大库，AMS 现有表结构也放不下。
-3. **判定口径**：迟到/异常继续用 AMS 本地排班算，还是以企业微信 `exception_type` 为准？（决定要不要做 P2）
+1. **部署位置** → 先把链路做完、不等凭据。真实联调要等企业在微信后台建自建应用并把出口 IP 配进可信 IP；
+   期间用本机假服务（`127.0.0.1` 被 `validateWeComBaseUrl` 显式允许）跑完整回归与真机取证。
+   ⚠️ 可信 IP 仍是硬门槛：IP 变了会 60020，届时要么把同步挪到有固定公网 IP 的机器，要么接受改一次后台配置。
+2. **数据范围** → `opencheckindatatype` **固定为 1（只取上下班）**，且 `lat`/`lng`/`wifimac`/`wifiname`/`deviceid`/
+   `mediaids`/`location_*`/`notes` **在客户端边界就被丢弃**（`wecomClient.toPunch()` 只挑 `userid` + `checkin_time`）。
+   默认拒绝：以后要加字段必须显式改那个白名单，敏感数据不会经由预览报告、日志或落库泄露。
+3. **判定口径** → 两边都不直接用。**用户会提前给出各部门上班时间段，需要按打卡时间自动匹配对班，而不是提前逐日排班。**
+   所以：同步只负责把打卡事实（工号/日期/时间/来源）落库，异常判定要新做一层
+   「部门工作时段规则 + 按打卡时间自动匹配」（AMS 现有 `analyzeAnomalies` 依赖 `schedules` 逐日排班，与这个形态不兼容）。
+   这一层**不在本批**，见 ROADMAP N1 的剩余项。
 
 ---
 

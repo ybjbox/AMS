@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X, Loader2, Trash2 } from 'lucide-react';
 import { STORAGE_KEYS } from '@/config/constants';
 import { Button } from '@/components/ui/button';
@@ -48,6 +48,19 @@ export default function AiOwnModelModal({ onClose, onChanged }: Props) {
       .catch(() => setErr('读取已保存的配置失败'))
       .finally(() => setLoading(false));
   }, []);
+
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Esc 关闭 + 焦点落到第一个输入框。刻意不迁 BaseModal：它固定 z-50，
+  // 会被唤起本弹窗的 AI 助手面板盖住，这里必须压在 z-[60] 之上。
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    panelRef.current?.querySelector<HTMLElement>('input')?.focus();
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   const save = async () => {
     setSaving(true);
@@ -101,6 +114,7 @@ export default function AiOwnModelModal({ onClose, onChanged }: Props) {
       aria-label="个人模型配置"
     >
       <div
+        ref={panelRef}
         className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >

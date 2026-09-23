@@ -160,7 +160,7 @@ export default function RenewContractModal({ isOpen, onClose, user, onRenewed }:
             <ul className="space-y-1.5 max-h-[140px] overflow-auto">
               {history.map((h) => (
                 <li key={h.id} className="text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900 rounded-md px-3 py-2 tabular-nums">
-                  <span className="text-zinc-400 dark:text-zinc-500">{h.createdAt.slice(0, 10)}</span>
+                  <span className="text-muted-foreground">{h.createdAt.slice(0, 10)}</span>
                   {' '}
                   {h.prevExpiry || '（无）'} → <span className="font-medium">{h.contractExpiry}</span>
                   {' '}· {h.contractYears} 年 · {h.renewedBy}

@@ -254,7 +254,7 @@ export default function Approvals() {
 
   const renderList = () => {
     if (isLoading) {
-      return <div className="p-8 text-sm text-zinc-400 dark:text-zinc-500">加载中…</div>;
+      return <div className="p-8 text-sm text-muted-foreground">加载中…</div>;
     }
     if (list.length === 0) {
       return (
@@ -291,7 +291,7 @@ export default function Approvals() {
                 <span className="text-sm font-medium text-zinc-900 dark:text-white">
                   {tab === 'mine' ? approvalTitle(item) : `${item.applicant} · ${approvalTitle(item)}`}
                 </span>
-                <span className="inline-flex items-center gap-1 text-xs text-zinc-400 dark:text-zinc-500">
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                   {item.type === 'makeup' && <CalendarClock className="w-3 h-3" aria-hidden="true" />}
                   {new Date(item.createdAt).toLocaleDateString('zh-CN')}
                 </span>
@@ -302,12 +302,12 @@ export default function Approvals() {
                 · 事由：{item.reason}
               </p>
               {item.type === 'leave' && item.requiredRole === 'ADMIN' && item.status === 'pending' && (
-                <p className="text-2xs mt-0.5 inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                <p className="text-2xs mt-0.5 inline-flex items-center gap-1 text-amber-700 dark:text-amber-400">
                   <ShieldCheck className="w-3 h-3" aria-hidden="true" /> ≥3 天假期，需管理员终审
                 </p>
               )}
               {item.status !== 'pending' && (
-                <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {item.status === 'withdrawn' ? '处理：' : '审批人：'}
                   {item.status === 'withdrawn' ? '本人撤回' : (item.approver ?? '-')}
                   {item.comment ? ` · 意见：${item.comment}` : ''}
@@ -378,7 +378,7 @@ export default function Approvals() {
                 className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                   formType === t.id
                     ? 'bg-white dark:bg-zinc-800 text-brand-600 dark:text-brand-400 shadow-sm'
-                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {t.label}
@@ -398,7 +398,7 @@ export default function Approvals() {
                     aria-label="请假类型"
                     className="w-full justify-between"
                   >
-                    <SelectValue>{(val) => String(val ?? '')}</SelectValue>
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {LEAVE_TYPES.map((t) => (
@@ -462,7 +462,7 @@ export default function Approvals() {
                     aria-label="补卡类型"
                     className="w-full justify-between"
                   >
-                    <SelectValue>{(val) => String(val ?? '')}</SelectValue>
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {PUNCH_KINDS.map((k) => (
@@ -580,7 +580,7 @@ export default function Approvals() {
                 className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors ${
                   tab === t.id
                     ? 'text-brand-600 dark:text-brand-400 border-b-2 border-brand-600 dark:border-brand-400'
-                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Clock className="w-4 h-4" /> {t.label}
@@ -707,7 +707,7 @@ export default function Approvals() {
           <label className="block">
             <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
               审批意见 <span className="text-red-500" aria-hidden="true">*</span>
-              <span className="text-zinc-400 dark:text-zinc-500">（驳回时必填）</span>
+              <span className="text-muted-foreground">（驳回时必填）</span>
             </span>
             <Textarea
               rows={2}
@@ -718,7 +718,7 @@ export default function Approvals() {
             />
           </label>
           {decideTarget && decideTarget.length === 1 && decideTarget[0].type === 'leave' && decideTarget[0].requiredRole === 'ADMIN' && (
-            <p className="text-xs text-amber-600 dark:text-amber-400">
+            <p className="text-xs text-amber-700 dark:text-amber-400">
               该请假 ≥3 天，需管理员终审；当前账号若权限不足会被服务端拒绝。
             </p>
           )}

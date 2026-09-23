@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { STORAGE_KEYS } from '../config/constants';
 
 interface AppSettingsState {
+  /** 服务端图片地址（/api/branding/…）。历史上这里存过 base64 data URL，会把配额打爆 */
   loginBackground: string | null;
   systemIcon: string | null;
   theme: 'light' | 'dark' | 'system';
@@ -11,6 +12,8 @@ interface AppSettingsState {
   navOrder: string[];
   setLoginBackground: (url: string | null) => void;
   setSystemIcon: (url: string | null) => void;
+  /** 用服务端真值覆盖两个图片位（启动同步、上传成功、恢复默认都走这里） */
+  applyBranding: (branding: { background: string | null; icon: string | null }) => void;
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   setEnableStrictPermission: (enable: boolean) => void;
   setNavOrder: (order: string[]) => void;
@@ -26,6 +29,7 @@ export const useAppSettings = create<AppSettingsState>()(
       navOrder: [],
       setLoginBackground: (url) => set({ loginBackground: url }),
       setSystemIcon: (url) => set({ systemIcon: url }),
+      applyBranding: ({ background, icon }) => set({ loginBackground: background, systemIcon: icon }),
       setTheme: (theme) => set({ theme }),
       setEnableStrictPermission: (enable) => set({ enableStrictPermission: enable }),
       setNavOrder: (order) => set({ navOrder: order }),

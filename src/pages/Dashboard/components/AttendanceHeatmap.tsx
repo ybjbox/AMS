@@ -63,7 +63,7 @@ export default function AttendanceHeatmap({ stats, isLoading }: Props) {
               );
             })}
           </div>
-          <div className="flex justify-between mt-2 text-2xs text-zinc-400 dark:text-zinc-500 tabular-nums">
+          <div className="flex justify-between mt-2 text-2xs text-muted-foreground tabular-nums">
             <span>{dayLabel(stats.days[0]?.date ?? '')}</span>
             <span>{dayLabel(stats.days[Math.floor(stats.days.length / 2)]?.date ?? '')}</span>
             <span>今天</span>
@@ -83,7 +83,7 @@ export default function AttendanceHeatmap({ stats, isLoading }: Props) {
               return (
                 <>
                   <div><div className="text-lg font-semibold tabular-nums text-zinc-900 dark:text-white">{total.present}</div><div className="text-2xs text-zinc-500 dark:text-zinc-400">出勤人次</div></div>
-                  <div><div className="text-lg font-semibold tabular-nums text-amber-600 dark:text-amber-400">{total.late}</div><div className="text-2xs text-zinc-500 dark:text-zinc-400">迟到</div></div>
+                  <div><div className="text-lg font-semibold tabular-nums text-amber-700 dark:text-amber-400">{total.late}</div><div className="text-2xs text-zinc-500 dark:text-zinc-400">迟到</div></div>
                   <div><div className="text-lg font-semibold tabular-nums text-rose-600 dark:text-rose-400">{total.early}</div><div className="text-2xs text-zinc-500 dark:text-zinc-400">早退</div></div>
                   <div><div className="text-lg font-semibold tabular-nums text-zinc-900 dark:text-white">{total.missing}</div><div className="text-2xs text-zinc-500 dark:text-zinc-400">缺卡</div></div>
                 </>

@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { toast } from 'sonner';
 import { File, FileText, ImageIcon, FileArchive, Search, ChevronRight } from 'lucide-react';
 import { Document } from '@/store/useDocumentStore';
+import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/input';
 import { formatFileSize } from '@/utils/fileUtils';
@@ -58,21 +59,26 @@ export function FileList({
     <div className="flex-1 bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl flex flex-col overflow-hidden">
       <div className="p-4 border-b border-zinc-100 dark:border-zinc-700 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-zinc-50/50 dark:bg-zinc-800/50 gap-4">
         <div className="flex items-center text-sm text-zinc-500 dark:text-zinc-400">
-          <button
+          {/* text-sm/font-normal/继承色为覆盖类：对齐 link 变体自带的 text-primary、基类 font-medium 与原继承样式，视觉零变化 */}
+          <Button
+            variant="link"
+            size="xs"
             onClick={() => onBreadcrumbClick(null)}
-            className="hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
+            className="h-auto px-0 text-sm font-normal text-zinc-500 dark:text-zinc-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
           >
             根目录
-          </button>
+          </Button>
           {breadcrumbs.map((crumb) => (
             <React.Fragment key={crumb.id}>
               <ChevronRight className="w-4 h-4 mx-1" />
-              <button
+              <Button
+                variant="link"
+                size="xs"
                 onClick={() => onBreadcrumbClick(crumb.id)}
-                className="hover:text-brand-600 dark:hover:text-brand-400 transition-colors truncate max-w-[100px] sm:max-w-[200px]"
+                className="h-auto px-0 text-sm font-normal text-zinc-500 dark:text-zinc-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors truncate max-w-[100px] sm:max-w-[200px]"
               >
-                {crumb.name}
-              </button>
+                <span className="min-w-0 truncate">{crumb.name}</span>
+              </Button>
             </React.Fragment>
           ))}
         </div>
@@ -159,26 +165,32 @@ export function FileList({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         {canManageDocs && (
-                        <button
+                        <Button
+                          variant="link"
+                          size="xs"
                           onClick={() => onMoveDocClick(doc.id, doc.folderId || null)}
-                          className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 mr-4"
+                          className="h-auto px-0 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 mr-4"
                         >
                           移动
-                        </button>
+                        </Button>
                         )}
-                        <button
+                        <Button
+                          variant="link"
+                          size="xs"
                           onClick={() => handleDownloadDocClick(doc.url, doc.name)}
-                          className="text-brand-600 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300 mr-4"
+                          className="h-auto px-0 text-sm text-brand-600 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300 mr-4"
                         >
                           下载
-                        </button>
+                        </Button>
                         {canManageDocs && (
-                        <button
+                        <Button
+                          variant="link"
+                          size="xs"
                           onClick={() => handleDeleteDocClick(doc.id)}
-                          className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                          className="h-auto px-0 text-sm text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
                         >
                           删除
-                        </button>
+                        </Button>
                         )}
                       </td>
                     </tr>

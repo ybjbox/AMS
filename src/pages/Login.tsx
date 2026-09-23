@@ -10,6 +10,7 @@ import { useUserStore } from '../store/useUserStore';
 import { authService, toUserInfo } from '../services/auth';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { useBrandingSync } from '@/hooks/useBrandingSync';
 
 const loginSchema = z.object({
   username: z.string().min(1, '请输入用户名'),
@@ -28,6 +29,8 @@ export default function Login() {
   const navigate = useNavigate();
   const loginBackground = useAppSettings((state) => state.loginBackground);
   const systemIcon = useAppSettings((state) => state.systemIcon);
+  // 图片存在服务端，未登录也要按服务端真值渲染（本机首次访问时同样能拿到）
+  useBrandingSync();
 
   const {
     register,
@@ -107,7 +110,7 @@ export default function Login() {
           登录行政管理系统
         </h1>
         <p
-          className={`mt-2 text-center text-sm ${loginBackground ? 'text-zinc-200' : 'text-zinc-500 dark:text-zinc-400'}`}
+          className={`mt-2 text-center text-sm ${loginBackground ? 'text-zinc-200' : 'text-muted-foreground'}`}
         >
           企业级后台管理解决方案
         </p>

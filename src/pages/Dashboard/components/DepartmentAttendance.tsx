@@ -26,14 +26,14 @@ export default function DepartmentAttendance({ stats, isLoading }: Props) {
       {isLoading || !stats ? (
         <div className="h-[140px] animate-pulse bg-zinc-100 dark:bg-zinc-800 rounded-lg" />
       ) : rates.length === 0 ? (
-        <div className="h-[140px] flex items-center justify-center text-sm text-zinc-400 dark:text-zinc-500">
+        <div className="h-[140px] flex items-center justify-center text-sm text-muted-foreground">
           暂无排班与打卡数据
         </div>
       ) : (
         <ul className="space-y-3">
           {rates.map((r, idx) => (
             <li key={r.name} className="flex items-center gap-3">
-              <span className="w-5 text-right text-xs tabular-nums text-zinc-400 dark:text-zinc-500 shrink-0">
+              <span className="w-5 text-right text-xs tabular-nums text-muted-foreground shrink-0">
                 {idx + 1}
               </span>
               <span className="w-20 truncate text-sm text-zinc-700 dark:text-zinc-200 shrink-0" title={r.name}>

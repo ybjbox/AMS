@@ -70,7 +70,7 @@ export default function NavOrderPanel() {
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {isDefault && (
-              <span className="text-2xs text-zinc-400 dark:text-zinc-500">当前已是默认顺序</span>
+              <span className="text-2xs text-muted-foreground">当前已是默认顺序</span>
             )}
             <Button type="button" variant="outline" size="sm" onClick={reset} disabled={isDefault}>
               <RotateCcw />
@@ -89,7 +89,7 @@ export default function NavOrderPanel() {
                 key={path}
                 className="flex items-center gap-3 px-3 py-2 rounded-lg border border-zinc-200/80 dark:border-zinc-700/60 bg-zinc-50/50 dark:bg-zinc-900/30"
               >
-                <span className="w-5 text-center text-xs font-medium text-zinc-400 dark:text-zinc-500 tabular-nums">{index + 1}</span>
+                <span className="w-5 text-center text-xs font-medium text-muted-foreground tabular-nums">{index + 1}</span>
                 <Icon className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
                 <span className="flex-1 text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate">{meta.label}</span>
                 <div className="flex items-center gap-1">

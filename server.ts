@@ -29,6 +29,8 @@ import { applyTemplateOps } from "./server/excelReplay.ts";
 import { startBackupScheduler } from "./server/backupDb.ts";
 import { remindersRouter } from "./server/remindersRouter.ts";
 import { startReminderScheduler } from "./server/remindersDb.ts";
+import { wecomRouter } from "./server/wecomRouter.ts";
+import { startWeComSyncScheduler } from "./server/wecomSync.ts";
 import { pruneAuditLogs } from "./server/auditDb.ts";
 import { startOrphanUploadScan } from "./server/uploadsCleanup.ts";
 import { authRouter } from "./server/authRouter.ts";
@@ -51,6 +53,7 @@ import { aiRouter } from "./server/aiRouter.ts";
 import { noticeRouter } from "./server/wechatNoticeRouter.ts";
 import { businessFormRouter } from "./server/businessFormRouter.ts";
 import { savedItemsRouter } from "./server/savedItemsRouter.ts";
+import { brandingRouter } from "./server/brandingRouter.ts";
 
 // In-memory theme storage (initialized with default themes, startup 时从 settings 回填)
 let dynamicThemes: Record<string, Record<string, unknown>> = { ...EXCEL_THEMES };
@@ -152,7 +155,9 @@ async function startServer() {
   app.use("/api/notice", noticeRouter);
   app.use("/api/form", businessFormRouter);
   app.use("/api/saved-items", savedItemsRouter);
+  app.use("/api/branding", brandingRouter);
   app.use("/api/reminders", remindersRouter);
+  app.use("/api/wecom", wecomRouter);
   app.use("/api/system", systemRouter);
   app.use("/api/announcements", announcementsRouter);
   app.use("/api/stats", statsRouter);
@@ -413,6 +418,9 @@ async function startServer() {
   //（默认关闭，设 UPLOADS_ORPHAN_SCAN_MS 开启）。均自带错误吞噬，不会拖垮服务。
   startBackupScheduler();
   startReminderScheduler();
+  // 企业微信打卡同步：默认关（配置页开关 + WECOM_SYNC_ENABLED=false 总闸），
+  // 因为可信 IP 是硬门槛——没配好之前一次接口都不该发。
+  startWeComSyncScheduler();
   pruneAuditLogs();
   startOrphanUploadScan();
 

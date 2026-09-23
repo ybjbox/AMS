@@ -112,7 +112,7 @@ export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: Contr
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
                         {user.contractExpiry || '-'}
                         {isExpiringSoon && (
-                          <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">({daysToExpiry}天后)</span>
+                          <span className="ml-2 text-xs text-amber-700 dark:text-amber-400">({daysToExpiry}天后)</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium sticky right-0 z-10 bg-white dark:bg-zinc-800 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-700/50 shadow-sticky-right">

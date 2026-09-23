@@ -67,11 +67,11 @@ export function BusinessFormRecords({ employee }: { employee: User }) {
                         ¥{r.amount.toFixed(2)}
                       </div>
                     )}
-                    <div className="text-xs text-zinc-400 dark:text-zinc-500">
+                    <div className="text-xs text-muted-foreground">
                       {formatDateTime(r.createdAt)}
                     </div>
                     {r.operator && (
-                      <div className="text-xs text-zinc-400 dark:text-zinc-500">{r.operator} 归档</div>
+                      <div className="text-xs text-muted-foreground">{r.operator} 归档</div>
                     )}
                   </div>
                 </li>

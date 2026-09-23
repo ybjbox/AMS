@@ -309,7 +309,7 @@ export default function NameCardEditor({
                   onChange={(e) => setPrintSettings((prev) => ({ ...prev, fontColor: e.target.value }))}
                   className="h-8 w-12 rounded border border-zinc-200/80 dark:border-zinc-600 cursor-pointer p-0.5 bg-white dark:bg-zinc-700"
                 />
-                <span className="text-xs text-zinc-500 uppercase">{printSettings.fontColor}</span>
+                <span className="text-xs text-muted-foreground uppercase">{printSettings.fontColor}</span>
               </div>
             </div>
           </div>

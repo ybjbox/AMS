@@ -12,7 +12,7 @@ export default function SystemNotices({ notices, isLoading }: SystemNoticesProps
   // 「查看全部」入口位于系统设置（ADMIN 专属）：无权限用户仅看控制台展示，不显示入口
   const canManage = useUserStore((state) => state.hasPermission('settings:view'));
   return (
-    <div className="card-base p-6 transition duration-250 hover:shadow-md hover:-translate-y-0.5">
+    <div className="card-base card-lift p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-white tracking-tight">系统公告</h2>
         {canManage && (

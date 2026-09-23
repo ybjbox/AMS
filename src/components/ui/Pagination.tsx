@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 /** 可选的每页条数（全站统一） */
 export const PER_PAGE_OPTIONS = [10, 20, 50] as const;
@@ -57,20 +58,27 @@ export function Pagination({
         <div className="flex items-center gap-3">
           {/* 每页条数选择器（传了回调才显示） */}
           {onItemsPerPageChange && (
-            <label className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
-              每页
-              <select
-                value={itemsPerPage}
-                onChange={(e) => onItemsPerPageChange(parseInt(e.target.value, 10))}
-                aria-label="每页显示条数"
-                className="rounded-md border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 px-1.5 py-1 text-sm text-zinc-700 dark:text-zinc-200 tabular-nums"
+            <div className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
+              <span>每页</span>
+              <Select
+                value={String(itemsPerPage)}
+                onValueChange={(v) => {
+                  if (v != null) onItemsPerPageChange(Number(v));
+                }}
               >
-                {PER_PAGE_OPTIONS.map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-              条
-            </label>
+                <SelectTrigger size="sm" aria-label="每页显示条数" className="w-14 justify-center tabular-nums">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PER_PAGE_OPTIONS.map((n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span>条</span>
+            </div>
           )}
           {/* 分页按钮组 */}
           <nav

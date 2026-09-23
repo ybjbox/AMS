@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Search, Trash2, Eye, X, MessagesSquare, User as UserIcon, Clock } from 'lucide-react';
 import { STORAGE_KEYS } from '@/config/constants';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 
 /**
  * AI 对话历史（仅超级管理员可见）。
@@ -225,21 +226,13 @@ export default function AiHistoryPanel() {
         )}
       </div>
 
-      {/* 详情抽屉 */}
+      {/* 详情抽屉：走 ui/sheet 原语（Esc 关闭、焦点陷阱、遮罩语义由原语负责） */}
       {detail && (
-        <div
-          className="fixed inset-0 z-50 flex justify-end bg-black/40"
-          onClick={() => setDetail(null)}
-        >
-          <div
-            className="w-full max-w-lg h-full bg-card shadow-xl flex flex-col animate-in slide-in-from-right duration-400 ease-smooth-out"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <Sheet open onOpenChange={(open) => !open && setDetail(null)}>
+          <SheetContent side="right" showCloseButton={false} className="w-full max-w-lg gap-0 p-0">
             <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
               <div className="min-w-0">
-                <div className="font-semibold text-foreground truncate">
-                  {detail.title || '（无标题）'}
-                </div>
+                <SheetTitle className="truncate text-base">{detail.title || '（无标题）'}</SheetTitle>
                 <div className="text-xs text-muted-foreground mt-0.5">
                   用户 {detail.username} · 更新于 {fmt(detail.updatedAt)}
                 </div>
@@ -253,6 +246,7 @@ export default function AiHistoryPanel() {
                 title="关闭"
               >
                 <X className="size-5" />
+                <span className="sr-only">关闭对话详情</span>
               </Button>
             </div>
 
@@ -291,8 +285,8 @@ export default function AiHistoryPanel() {
                 {deletingId === detail.id ? '删除中…' : '删除此对话'}
               </Button>
             </div>
-          </div>
-        </div>
+          </SheetContent>
+        </Sheet>
       )}
     </div>
   );

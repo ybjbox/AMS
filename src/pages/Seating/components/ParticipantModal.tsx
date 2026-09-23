@@ -122,7 +122,7 @@ export function ParticipantModal({
                         <span className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
                           {u.name}
                         </span>
-                        <span className="text-xs text-zinc-400 dark:text-zinc-500">({u.role})</span>
+                        <span className="text-xs text-muted-foreground">({u.role})</span>
                       </label>
                     );
                   })}

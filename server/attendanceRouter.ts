@@ -18,8 +18,16 @@ import {
   upsertSchedule, deleteSchedule, clearSchedules,
   listRecords, replaceRecords,
   upsertRecord, deleteRecord, clearRecords,
-  listAnomalies, analyzeAnomalies,
+  listAnomalies, analyzeAnomalies, analyzeAttendance, getAttendanceAnalysisStatus,
   VersionConflictError, monthlySummary } from "./attendanceDb.ts";
+import {
+  createDeptShiftRule,
+  deleteDeptShiftRule,
+  listDeptShiftRules,
+  resolveRulesForDepartment,
+  ShiftRuleError,
+  updateDeptShiftRule,
+} from "./shiftRulesDb.ts";
 import { db } from "./db.ts";
 import { asString } from "./sqliteUtil.ts";
 import { requireRole } from "./authMiddleware.ts";
@@ -88,6 +96,55 @@ attendanceRouter.put("/shifts/:id", (req, res) => {
 
 attendanceRouter.delete("/shifts/:id", (req, res) => {
   if (!deleteShift(req.params.id)) return res.status(404).json({ error: "Shift not found" });
+  res.json({ success: true });
+});
+
+// ---- 部门工作时段（自动对班的配置面）----
+
+/** 时段配置错误的共同特征：都是"用户能改对"的输入问题，一律 400 + 中文原因 */
+function ruleErrorResponse(res: import("express").Response, e: unknown) {
+  if (e instanceof ShiftRuleError) return res.status(400).json({ error: e.message });
+  throw e;
+}
+
+attendanceRouter.get("/shift-rules", (_req, res) => {
+  res.json(listDeptShiftRules());
+});
+
+/** 某个部门的生效视图（含向上继承），给面板显示"这些时段实际来自哪个部门" */
+attendanceRouter.get("/shift-rules/effective", (req, res) => {
+  const departmentId = String(req.query.departmentId ?? "");
+  const resolved = resolveRulesForDepartment(departmentId);
+  res.json({
+    departmentId,
+    rules: resolved.rules,
+    sourceDepartmentId: resolved.sourceDepartmentId,
+    sourceDepartmentName: resolved.sourceDepartmentName,
+    inherited: resolved.depth > 0,
+    depth: resolved.depth,
+  });
+});
+
+attendanceRouter.post("/shift-rules", (req, res) => {
+  try {
+    res.status(201).json(createDeptShiftRule(req.body || {}));
+  } catch (e) {
+    ruleErrorResponse(res, e);
+  }
+});
+
+attendanceRouter.put("/shift-rules/:id", (req, res) => {
+  try {
+    const updated = updateDeptShiftRule(req.params.id, req.body || {});
+    if (!updated) return res.status(404).json({ error: "时段不存在" });
+    res.json(updated);
+  } catch (e) {
+    ruleErrorResponse(res, e);
+  }
+});
+
+attendanceRouter.delete("/shift-rules/:id", (req, res) => {
+  if (!deleteDeptShiftRule(req.params.id)) return res.status(404).json({ error: "时段不存在" });
   res.json({ success: true });
 });
 
@@ -297,8 +354,19 @@ attendanceRouter.get("/anomalies", (_req, res) => {
   res.json(listAnomalies());
 });
 
+/** 上一次分析的覆盖率（留档在服务端，刷新/换设备也看得到"为什么没有异常"） */
+attendanceRouter.get("/anomalies/status", (_req, res) => {
+  res.json(getAttendanceAnalysisStatus());
+});
+
 attendanceRouter.post("/analyze", (_req, res) => {
-  const anomalies = analyzeAnomalies();
+  const { anomalies, coverage } = analyzeAttendance();
   const notified = notifyTodayAnomalies(anomalies);
-  res.json({ success: true, message: `分析完成，共发现 ${anomalies.length} 条异常`, anomalies, notified });
+  res.json({
+    success: true,
+    message: `分析完成，共发现 ${anomalies.length} 条异常`,
+    anomalies,
+    coverage,
+    notified,
+  });
 });

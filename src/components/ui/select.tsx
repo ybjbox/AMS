@@ -4,7 +4,47 @@ import { Select as SelectPrimitive } from '@base-ui/react/select';
 import { cn } from '@/lib/utils';
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from 'lucide-react';
 
-const Select = SelectPrimitive.Root;
+/**
+ * 自动将 <SelectItem value=…> 的中文标签登记给 base-ui 的 `items`。
+ * base-ui 的 Select.Value 在没有 items 映射时会回吐原始 value，于是
+ * `value="ALL"` 的下拉框会把内部枚举直接显示给用户（见 2026-09-22 Design QA）。
+ * 这里在元素描述符层面递归收集，弹层未挂载也能拿到标签；
+ * 标签不是纯文本（带图标等）的项不登记，维持调用方自己传 items 的出口。
+ */
+function collectItemLabels(node: React.ReactNode, acc: Record<string, React.ReactNode>): void {
+  React.Children.forEach(node, (child) => {
+    if (!React.isValidElement(child)) return;
+    if (child.type === SelectItem) {
+      const { value, children } = child.props as { value?: unknown; children?: React.ReactNode };
+      if (value === undefined || value === null) return;
+      const text = typeof children === 'string' || typeof children === 'number' ? String(children) : null;
+      if (text !== null && text.trim() !== '') acc[String(value)] = text;
+      return;
+    }
+    const nested = (child.props as { children?: React.ReactNode })?.children;
+    if (nested) collectItemLabels(nested, acc);
+  });
+}
+
+function Select<Value, Multiple extends boolean | undefined = false>(
+  props: SelectPrimitive.Root.Props<Value, Multiple>
+) {
+  const { items, children, ...rest } = props;
+  const derived = React.useMemo(() => {
+    const acc: Record<string, React.ReactNode> = {};
+    collectItemLabels(children, acc);
+    return acc;
+  }, [children]);
+  const merged = Array.isArray(items) ? items : { ...derived, ...(items as Record<string, React.ReactNode> | undefined) };
+  return (
+    <SelectPrimitive.Root
+      {...(rest as SelectPrimitive.Root.Props<Value, Multiple>)}
+      items={merged as SelectPrimitive.Root.Props<Value, Multiple>['items']}
+    >
+      {children}
+    </SelectPrimitive.Root>
+  );
+}
 
 const SelectGroup = React.memo(function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return <SelectPrimitive.Group data-slot="select-group" className={cn('scroll-my-1 p-1', className)} {...props} />;

@@ -82,7 +82,7 @@ export default async function applyTemplate(worksheet, data, config) {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-lg font-medium text-zinc-900 dark:text-white">导出脚本模板</h2>
-          <p className="text-sm text-zinc-500 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             使用 JavaScript 高度自定义 Excel 导出逻辑，支持 ExcelJS 所有 API
           </p>
         </div>
@@ -166,7 +166,7 @@ export default async function applyTemplate(worksheet, data, config) {
                   </div>
                 </div>
                 <h3 className="font-semibold text-zinc-900 dark:text-white truncate">{script.name}.js</h3>
-                <p className="text-xs text-zinc-500 mt-1 line-clamp-2 font-mono">{script.code.substring(0, 100)}…</p>
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-2 font-mono">{script.code.substring(0, 100)}…</p>
               </div>
             ))}
             {scripts.length === 0 && (

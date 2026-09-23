@@ -56,7 +56,7 @@ export function TableConfig({
                 {tableCapacities.length > 1 && (
                   <button
                     onClick={() => removeTableCapacity(tc.id)}
-                    className="ml-1 p-1 text-zinc-400 dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    className="ml-1 p-1 text-muted-foreground hover:text-red-500 dark:hover:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>

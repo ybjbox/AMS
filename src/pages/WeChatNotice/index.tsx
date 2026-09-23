@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Check, Copy, FileUp, Loader2, MessageSquareText, Sparkles, Wand2, ChevronLeft, ChevronRight, History } from 'lucide-react';
+import { Check, Copy, FileUp, Loader2, Sparkles, Wand2, ChevronLeft, ChevronRight, History } from 'lucide-react';
 import { toast } from 'sonner';
 import PageContainer from '@/components/PageContainer';
 import { Button } from '@/components/ui/button';
@@ -233,13 +233,10 @@ export default function WeChatNotice() {
 
   return (
     <PageContainer width="6xl" className="space-y-6 animate-in fade-in duration-400">
-      <div className="flex items-start gap-3">
-        <div className="p-2.5 rounded-xl bg-brand-100 dark:bg-brand-950/50 text-brand-700 dark:text-brand-300">
-          <MessageSquareText className="h-6 w-6" />
-        </div>
+      <div className="page-header shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">微信通知生成器</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="page-title">微信通知生成器</h1>
+          <p className="page-subtitle">
             粘贴文字，或上传/拖入文件（图片 / txt / md / csv / Excel / Word / PDF，含扫描版），AI 自动整理成可直接发到微信群的通知文案，一键复制。
           </p>
         </div>

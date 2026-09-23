@@ -146,21 +146,21 @@ export default function MonthlyReport() {
                       {r.lateCount > 0 ? (
                         <span className="text-amber-700 dark:text-amber-400 font-medium">{r.lateCount}</span>
                       ) : (
-                        <span className="text-zinc-400 dark:text-zinc-500">0</span>
+                        <span className="text-muted-foreground">0</span>
                       )}
                     </td>
                     <td className="px-4 py-2.5 text-right tabular-nums">
                       {r.earlyLeaveCount > 0 ? (
                         <span className="text-amber-700 dark:text-amber-400 font-medium">{r.earlyLeaveCount}</span>
                       ) : (
-                        <span className="text-zinc-400 dark:text-zinc-500">0</span>
+                        <span className="text-muted-foreground">0</span>
                       )}
                     </td>
                     <td className="px-4 py-2.5 text-right tabular-nums">
                       {r.missingCount > 0 ? (
                         <span className="text-red-600 dark:text-red-400 font-medium">{r.missingCount}</span>
                       ) : (
-                        <span className="text-zinc-400 dark:text-zinc-500">0</span>
+                        <span className="text-muted-foreground">0</span>
                       )}
                     </td>
                   </tr>

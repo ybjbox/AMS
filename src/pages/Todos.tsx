@@ -182,10 +182,12 @@ export default function Todos() {
                   <button
                     data-todoid={todo.id}
                     onClick={onToggleTodoClick}
+                    aria-label={todo.completed ? `标记为未完成：${todo.title}` : `标记为完成：${todo.title}`}
+                    aria-pressed={todo.completed}
                     className={`mt-1 transition-colors ${
                       todo.completed
                         ? 'text-brand-500'
-                        : 'text-zinc-300 dark:text-zinc-500 hover:text-brand-600 dark:hover:text-brand-400'
+                        : 'text-zinc-500 dark:text-zinc-400 hover:text-brand-600 dark:hover:text-brand-400'
                     }`}
                   >
                     {todo.completed ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
@@ -211,21 +213,17 @@ export default function Todos() {
                         </span>
                       )}
                     </div>
-                    <p
-                      className={`text-sm mt-1 ${
-                        todo.completed ? 'text-zinc-400 dark:text-zinc-500' : 'text-zinc-500 dark:text-zinc-400'
-                      }`}
-                    >
+                    <p className="text-sm mt-1 text-muted-foreground">
                       {todo.description}
                     </p>
                     <div className="flex items-center space-x-4 mt-2">
                       {todo.dueDate && (
-                        <div className="flex items-center text-xs text-zinc-500 dark:text-zinc-500 tabular-nums">
+                        <div className="flex items-center text-xs text-muted-foreground tabular-nums">
                           <Calendar className="w-3.5 h-3.5 mr-1.5" />
                           截止日期: {todo.dueDate}
                         </div>
                       )}
-                      <div className="flex items-center text-xs text-zinc-500 dark:text-zinc-500">
+                      <div className="flex items-center text-xs text-muted-foreground">
                         <Clock className="w-3.5 h-3.5 mr-1.5" />
                         创建于: {formatDateTime(todo.createdAt)}
                       </div>
@@ -235,7 +233,7 @@ export default function Todos() {
                     data-todoid={todo.id}
                     data-todotitle={todo.title}
                     onClick={onDeleteTodoClick}
-                    className="p-2 text-zinc-400 dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition shrink-0"
+                    className="p-2 text-muted-foreground hover:text-red-500 dark:hover:text-red-400 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition shrink-0"
                     aria-label={`删除待办：${todo.title}`}
                     title="删除"
                   >

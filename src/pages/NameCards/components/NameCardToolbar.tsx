@@ -31,7 +31,7 @@ export default function NameCardToolbar({
         {uploadedUsers && (
           <button
             onClick={() => setUploadedUsers(null)}
-            className="btn-secondary text-amber-600 dark:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+            className="btn-secondary text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20"
             title="清除上传的名单，恢复系统人员"
           >
             <X className="h-4 w-4 mr-2" />

@@ -5,7 +5,10 @@ import { TableSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { AlertTriangle, Search, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/ui/Pagination';
+import CoverageBanner from './CoverageBanner';
 import { UseAttendanceReturn } from '../hooks/useAttendance';
 
 export type TableProps = Pick<
@@ -138,30 +141,33 @@ export default function Table({
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">已导入记录 ({records.length})</h2>
           {records.length > 0 && hasPermission('attendance:purge') && (
-            <button
+            <Button
+              variant="ghost"
+              size="xs"
               onClick={() => void onClearRecords()}
-              className="text-sm text-destructive hover:text-destructive/80 transition-colors"
+              className="h-auto px-0 text-sm text-destructive hover:text-destructive/80"
             >
               清空全部记录
-            </button>
+            </Button>
           )}
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-[800px] w-full divide-y divide-zinc-100 dark:divide-zinc-800">
             <thead className="bg-zinc-50/50 dark:bg-zinc-800/50">
               <tr>
-                <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">工号</th>
-                <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">姓名</th>
-                <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">日期</th>
-                <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">时间</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">工号</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">姓名</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">日期</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">时间</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">来源</th>
                 {hasPermission('attendance:manage') && (
-                  <th className="px-6 py-2 text-right text-xs font-medium text-zinc-500 uppercase tracking-wider">操作</th>
+                  <th className="px-6 py-2 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">操作</th>
                 )}
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-50 dark:divide-zinc-800/50">
               {isLoading ? (
-                <TableSkeleton columns={hasPermission('attendance:manage') ? 5 : 4} rows={5} />
+                <TableSkeleton columns={hasPermission('attendance:manage') ? 6 : 5} rows={5} />
               ) : (
                 records.slice((recordsPage - 1) * ITEMS_PER_PAGE, recordsPage * ITEMS_PER_PAGE).map((record) => (
                   <tr key={record.id} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-700/30 transition-colors">
@@ -177,18 +183,28 @@ export default function Table({
                     <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
                       {record.time}
                     </td>
+                    <td className="px-6 py-2 whitespace-nowrap text-sm">
+                      {record.source === 'wecom' ? (
+                        <Badge variant="primary">企业微信</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">补卡/导入</span>
+                      )}
+                    </td>
                     {hasPermission('attendance:manage') && (
                       <td className="px-6 py-2 whitespace-nowrap text-right">
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="icon-sm"
                           data-recordid={record.id}
                           onClick={(e) => void onRemoveRecordClick(e)}
-                          className="p-1.5 -m-1.5 text-zinc-400 hover:text-destructive rounded-md transition-colors"
+                          // -m-1.5 抵消 28px 按钮盒，避免撑高表格行
+                          className="-m-1.5 text-zinc-400 hover:text-destructive"
                           title="删除该条打卡记录"
                           aria-label={`删除打卡记录：${record.employeeName} ${record.date} ${record.time}`}
                         >
                           <Trash2 className="h-4 w-4" />
-                        </button>
+                        </Button>
                       </td>
                     )}
                   </tr>
@@ -225,12 +241,14 @@ export default function Table({
               />
             </div>
             {schedules.length > 0 && hasPermission('attendance:purge') && (
-              <button
+              <Button
+                variant="ghost"
+                size="xs"
                 onClick={() => void onClearSchedules()}
-                className="text-sm text-destructive hover:text-destructive/80 whitespace-nowrap transition-colors"
+                className="h-auto px-0 text-sm whitespace-nowrap text-destructive hover:text-destructive/80"
               >
                 清空全部排班
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -238,10 +256,10 @@ export default function Table({
           <table className="min-w-[800px] w-full divide-y divide-zinc-100 dark:divide-zinc-800">
             <thead className="bg-zinc-50/50 dark:bg-zinc-800/50">
               <tr>
-                <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">工号</th>
-                <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">姓名</th>
-                <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">班次</th>
-                <th className="px-6 py-2 text-right text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">工号</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">姓名</th>
+                <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">班次</th>
+                <th className="px-6 py-2 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   操作
                 </th>
               </tr>
@@ -277,15 +295,17 @@ export default function Table({
                     </td>
                     <td className="px-6 py-2 whitespace-nowrap text-right text-sm font-medium">
                       <Permission code="attendance:manage">
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="xs"
                           data-employeeid={schedule.employeeId}
                           onClick={(e) => void onRemoveScheduleClick(e)}
-                          className="text-destructive hover:text-destructive/80 transition-colors"
+                          className="h-auto px-0 text-sm text-destructive hover:text-destructive/80"
                           aria-label={`移除排班：${schedule.employeeName}`}
                         >
                           删除
-                        </button>
+                        </Button>
                       </Permission>
                     </td>
                   </tr>
@@ -308,12 +328,13 @@ export default function Table({
   if (activeTab === 'anomalies') {
     return (
       <div className="p-6 flex flex-col h-full">
+        <CoverageBanner />
         {anomalies.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center py-16 text-center">
             <EmptyState
               title="暂无异常数据"
-              description="请先导入打卡记录和排班字典，然后点击'一键分析异常'"
               icon={AlertTriangle}
+              description="打卡记录会按部门工作时段自动对班后判定。若还没有任何判定，请到「部门时段」配置各部门上下班时间（或维护排班字典），再点「一键分析异常」。"
             />
           </div>
         ) : (
@@ -321,19 +342,19 @@ export default function Table({
             <table className="min-w-[800px] w-full divide-y divide-zinc-100 dark:divide-zinc-800">
               <thead className="bg-zinc-50/50 dark:bg-zinc-800/50">
                 <tr>
-                  <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                  <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     日期
                   </th>
-                  <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                  <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     工号
                   </th>
-                  <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                  <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     姓名
                   </th>
-                  <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                  <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     异常类型
                   </th>
-                  <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                  <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     描述
                   </th>
                 </tr>
@@ -391,17 +412,17 @@ export default function Table({
           <table className="min-w-[800px] w-full divide-y divide-zinc-100 dark:divide-zinc-800">
             <thead className="bg-zinc-50/50 dark:bg-zinc-800/50">
               <tr>
-                <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   班次名称
                 </th>
-                <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   上班时间
                 </th>
-                <th className="px-6 py-2 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                <th className="px-6 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   下班时间
                 </th>
                 {hasPermission('attendance:manage') && (
-                  <th className="px-6 py-2 text-right text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                  <th className="px-6 py-2 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     操作
                   </th>
                 )}
@@ -424,20 +445,24 @@ export default function Table({
                     </td>
                     {hasPermission('attendance:manage') && (
                       <td className="px-6 py-2 whitespace-nowrap text-right text-sm font-medium">
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="xs"
                           data-shiftid={shift.id}
                           onClick={onEditShiftClick}
-                          className="text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 mr-4 transition-colors"
+                          className="h-auto px-0 mr-4 text-sm text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
                         >
                           编辑
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="xs"
                           data-shiftid={shift.id}
                           onClick={onDeleteShiftClick}
-                          className="text-destructive hover:text-destructive/80 transition-colors"
+                          className="h-auto px-0 text-sm text-destructive hover:text-destructive/80"
                         >
                           删除
-                        </button>
+                        </Button>
                       </td>
                     )}
                   </tr>

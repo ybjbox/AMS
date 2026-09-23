@@ -532,6 +532,13 @@ export function deleteEmployee(id: string) {
       /* todos 表由 todosDb 建，模块加载早期可能还不存在 */
     }
     try {
+      // 企业微信成员映射：员工没了还留着映射，等于让同步继续去拉一个离职者的打卡，
+      // 拉回来又落不到任何人头上。删掉后这个 userid 也不再进入请求列表。
+      db.prepare("DELETE FROM wecom_bindings WHERE employeeId = ?").run(id);
+    } catch {
+      /* wecom_bindings 由 wecomDb 建表，模块加载早期可能还不存在 */
+    }
+    try {
       // 归并键指向该员工的周期提醒通知（remindersDb 用 contract:{id} / probation:{id}）
       db.prepare("DELETE FROM notifications WHERE refKey IN (?, ?)").run(
         `contract:${id}`,

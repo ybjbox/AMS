@@ -149,7 +149,7 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
                 <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
                   点击选择 .xlsx 文件
                 </span>
-                <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                <span className="text-xs text-muted-foreground">
                   单次最多 5000 行，解析后先预览再导入
                 </span>
               </>
