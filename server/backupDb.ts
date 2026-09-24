@@ -20,6 +20,7 @@
 import fs from "fs";
 import path from "path";
 import { db, DB_PATH, closeDb, reloadDb } from "./db.ts";
+import { runMigrations } from "./migrate.ts";
 import { UPLOADS_DIR } from "./documentsDb.ts";
 
 const SQLITE_MAGIC = "SQLite format 3\u0000"; // 前 16 字节
@@ -166,6 +167,11 @@ export interface RestoreResult {
   safetyBackup?: string;
   /** uploads 目录是否随备份一并回滚（旧备份无快照时保持现状并如实上报） */
   uploadsRestored: boolean;
+  /** 恢复后补跑迁移的结果说明；失败时面板要提示"请重启服务" */
+  schemaOk: boolean;
+  schemaNote: string;
+  /** 恢复后实际的日志模式（期望 wal；被别的连接挡住时会退回 delete 并在 schemaNote 里说清） */
+  journalMode: string;
 }
 
 export function restoreBackup(name: string, safetyLabel = "pre-restore"): RestoreResult {
@@ -229,7 +235,33 @@ export function restoreBackup(name: string, safetyLabel = "pre-restore"): Restor
     uploadsRestored = true;
   }
 
-  return { restoredFrom: name, safetyBackup, uploadsRestored };
+  // 5) 补跑迁移与常驻维护：备份可能是老 schema，而唯一索引/新列（refKey、punch 唯一键、
+  //    accounts.employeeId 索引…）只在启动路径上补。不补的话恢复完当下就开始 500：
+  //    所有 `ON CONFLICT(employeeId,date,time)` 写入报 no such index，而用户只会觉得"恢复坏了"。
+  let schemaNote = "已按当前版本补齐索引与列";
+  let schemaOk = true;
+  try {
+    runMigrations();
+  } catch (e) {
+    schemaOk = false;
+    schemaNote = `恢复后补跑迁移失败（${e instanceof Error ? e.message : String(e)}），请重启服务`;
+    console.error("[backup] 恢复后补跑迁移失败：", e);
+  }
+
+  // 6) 确认还回 WAL：备份文件是 VACUUM INTO 出来的 delete 模式，journal_mode 的转换要求独占。
+  //    只要有第二个连接（例如同时跑着的 dev:watch 共用同一个库）就会静默留在 delete 模式 ——
+  //    那种状态下并发写会各自等满 busy_timeout 再报 database is locked，比"恢复失败"更难查。
+  const journalMode = String(db.prepare("PRAGMA journal_mode").get()?.journal_mode ?? "").toLowerCase();
+  if (journalMode !== "wal") {
+    schemaOk = false;
+    schemaNote =
+      schemaNote +
+      `；恢复后日志模式是 ${journalMode || "未知"}（不是 wal）。若另有进程占着同一个库（例如 :3000 的开发实例），` +
+      `请先停掉它再恢复一次，否则并发写会等 5 秒后报 database is locked`;
+    console.warn(`[backup] ${schemaNote}`);
+  }
+
+  return { restoredFrom: name, safetyBackup, uploadsRestored, schemaOk, schemaNote, journalMode };
 }
 
 /** 删除单份备份（仅删备份文件与 uploads 快照，不影响线上库）。返回是否删除成功。 */

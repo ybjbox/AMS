@@ -112,3 +112,76 @@ export async function runImportJob(jobId: string, rows: { data: Record<string, s
     markJobError(jobId, message);
   }
 }
+
+// ---------------------------------------------------------------- 台账对账与清理
+
+/**
+ * 超过这么多分钟没写进度就判定任务已死。判定只看"有没有进展"，不看是哪个进程建的：
+ * 本机常有两个实例共用同一个库（:3000 dev:watch 与 :3001 生产验证），
+ * 按归属清理会把另一个实例正在跑的任务判死。
+ */
+export const STALE_JOB_MINUTES = 15;
+/** 终态任务行只是进度台账，不能无限增长（企微定时同步每天就要留若干条）。 */
+export const JOB_RETENTION_DAYS = 30;
+const SWEEP_INTERVAL_MS = 5 * 60 * 1000;
+
+export interface ImportJobSweepResult {
+  interrupted: number;
+  pruned: number;
+}
+
+export function sweepImportJobs(
+  opts: { staleMinutes?: number; retentionDays?: number } = {}
+): ImportJobSweepResult {
+  const staleMinutes = opts.staleMinutes ?? STALE_JOB_MINUTES;
+  const retentionDays = opts.retentionDays ?? JOB_RETENTION_DAYS;
+  const interrupted = db
+    .prepare(
+      `UPDATE import_jobs
+          SET status = 'error', error = ?, updatedAt = datetime('now','localtime')
+        WHERE status = 'running'
+          AND updatedAt < datetime('now','localtime', ?)`
+    )
+    .run(
+      `任务已中断：${staleMinutes} 分钟内没有任何进展（服务可能已重启或被强杀），请重新发起`,
+      `-${staleMinutes} minutes`
+    );
+  // 上一行刚被判中断的条目 updatedAt 已是当下，所以本轮不会被一起删掉，还能被看见一段时间
+  const pruned = db
+    .prepare(
+      `DELETE FROM import_jobs
+        WHERE status <> 'running'
+          AND updatedAt < datetime('now','localtime', ?)`
+    )
+    .run(`-${retentionDays} days`);
+  return { interrupted: Number(interrupted.changes), pruned: Number(pruned.changes) };
+}
+
+let sweepTimer: ReturnType<typeof setInterval> | null = null;
+
+/** 启动即对账一次（上一代进程留下的 running 行不该继续被前端当成"在跑"而无限轮询），之后周期巡检。 */
+export function startImportJobSweeper(intervalMs = SWEEP_INTERVAL_MS): ReturnType<typeof setInterval> {
+  stopImportJobSweeper();
+  const run = () => {
+    try {
+      const { interrupted, pruned } = sweepImportJobs();
+      if (interrupted > 0 || pruned > 0) {
+        console.log(`[import] 任务台账已对账：判中断 ${interrupted} 条、清理 ${pruned} 条`);
+      }
+    } catch (e) {
+      console.error("[import] 任务台账对账失败：", e);
+    }
+  };
+  run();
+  const timer = setInterval(run, intervalMs);
+  if (typeof timer.unref === "function") timer.unref();
+  sweepTimer = timer;
+  return timer;
+}
+
+export function stopImportJobSweeper(): void {
+  if (sweepTimer) {
+    clearInterval(sweepTimer);
+    sweepTimer = null;
+  }
+}

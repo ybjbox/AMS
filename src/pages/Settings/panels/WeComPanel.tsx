@@ -111,9 +111,15 @@ export default function WeComPanel() {
     setSaving(true);
     try {
       // 留空 = 保持原 Secret（服务端按掩码串识别）
-      setConfig(await wecomApi.setConfig({ ...config, corpSecret: secretDraft.trim() || SECRET_MASK }));
+      const saved = await wecomApi.setConfig({ ...config, corpSecret: secretDraft.trim() || SECRET_MASK });
+      setConfig(saved);
       setSecretDraft('');
-      toast.success('企业微信配置已保存');
+      // 开关打开了但调度器没起来（凭据不齐 / 环境变量总闸），必须当场说，不能让人以为在跑
+      if (config.enabled && saved.schedulerRunning === false) {
+        toast.warning(`配置已保存，但定时同步未启动：${saved.schedulerReason || '原因见服务端日志'}`);
+      } else {
+        toast.success('企业微信配置已保存');
+      }
       void load();
     } catch (e) {
       notifySaveFailure({ title: '保存企业微信配置失败', error: e, retry: onSave });
@@ -277,6 +283,20 @@ export default function WeComPanel() {
                   maxLength={200}
                   autoComplete="off"
                 />
+              </label>
+              <label className="space-y-1.5">
+                <span className={LABEL_CLASS}>出网代理（可选）</span>
+                <Input
+                  value={config.proxyUrl}
+                  onChange={(e) => setConfig({ ...config, proxyUrl: e.target.value })}
+                  placeholder="http://1.2.3.4:3128 或 http://user:pass@1.2.3.4:3128"
+                  maxLength={300}
+                  autoComplete="off"
+                />
+                <span className={HINT_CLASS}>
+                  本机出口 IP 会变（家宽）时，填一台固定公网 IP 的 http/https 代理，企业微信的「可信 IP」配那台机器。
+                  目标是官方 https 接口时走 CONNECT 隧道，代理只看得到主机名，看不到 Secret 与 access_token；清空即直连。
+                </span>
               </label>
               <label className="space-y-1.5">
                 <span className={LABEL_CLASS}>定时同步间隔（分钟）</span>

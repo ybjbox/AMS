@@ -32,11 +32,25 @@ export let db = new DatabaseSync(DB_PATH);
 function applyConnectionPragmas(conn: DatabaseSync): void {
   conn.exec(`
     PRAGMA busy_timeout = 5000;
-    PRAGMA journal_mode = WAL;
     PRAGMA synchronous = NORMAL;
     PRAGMA cache_size = -20000;
     PRAGMA temp_store = MEMORY;
   `);
+  // journal_mode 单独处理：把 delete 转成 WAL 需要独占访问，只要有第二个连接（例如同时跑着的
+  // :3000 开发实例，或刚恢复备份时另一个进程仍握着文件）就会抛 database is locked。
+  // 原来这条混在上面的 exec() 里 —— 结果是整个服务在 import 期直接崩掉，
+  // 屏幕上只留一句 "database is locked"，完全看不出是这个原因。现在降级并说清楚。
+  try {
+    const mode = String(conn.prepare("PRAGMA journal_mode = WAL").get()?.journal_mode ?? "").toLowerCase();
+    if (mode !== "wal") {
+      console.warn(`[db] 日志模式是 ${mode || "未知"}（不是 wal）：并发写会互相等满 busy_timeout 后报 database is locked`);
+    }
+  } catch (e) {
+    console.warn(
+      `[db] 切换 WAL 失败，按当前日志模式继续启动（并发写可能出现 database is locked）：`,
+      e instanceof Error ? e.message : e
+    );
+  }
 }
 
 applyConnectionPragmas(db);
@@ -56,19 +70,54 @@ export function onDbReload(hook: () => void): void {
  * 事件循环单线程且所有回调同步执行，计数不会失准）。
  */
 let txDepth = 0;
+
+/**
+ * 事务提交后才允许发生的副作用（出站通知/邮件/webhook 这类**不可撤回**的动作）。
+ * 在事务里直接 fire-and-forget 的话，一旦回滚，"审批已通过"的邮件已经发出去了 —— 库里没有、外面已生效，
+ * 是这类系统里最难对账的不一致。不在事务里时立即执行，语义与原来一致。
+ */
+const afterCommitQueue: Array<() => void> = [];
+export function onAfterCommit(fn: () => void): void {
+  if (txDepth === 0) {
+    runAfterCommitHook(fn);
+    return;
+  }
+  afterCommitQueue.push(fn);
+}
+
+function drainAfterCommit(commitOk: boolean): void {
+  const queued = afterCommitQueue.splice(0, afterCommitQueue.length);
+  if (!commitOk) {
+    if (queued.length) console.warn(`[db] 事务回滚，丢弃 ${queued.length} 个提交后副作用`);
+    return;
+  }
+  for (const fn of queued) runAfterCommitHook(fn);
+}
+
+function runAfterCommitHook(fn: () => void): void {
+  try {
+    fn();
+  } catch (e) {
+    console.error("[db] 提交后副作用执行失败：", e);
+  }
+}
+
 export function transact<T>(fn: () => T): T {
   if (txDepth > 0) return fn();
   txDepth++;
   db.exec("BEGIN");
+  let commitOk = false;
   try {
     const result = fn();
     db.exec("COMMIT");
+    commitOk = true;
     return result;
   } catch (e) {
     db.exec("ROLLBACK");
     throw e;
   } finally {
     txDepth--;
+    drainAfterCommit(commitOk);
   }
 }
 
@@ -439,6 +488,25 @@ export function createEmployee(input: Record<string, unknown>) {
 }
 
 /**
+ * 「这张表在本进程的库里还没建出来」是可以跳过的唯一理由（只 import db.ts 的脚本、
+ * 或刚从旧备份恢复过来的窗口）。其它错误一律冒出去：以前一律 `catch {}`，
+ * 结果是"删员工成功但台账没清""改名成功但快照没跟"这种静默半截状态。
+ */
+function isMissingTableError(e: unknown): boolean {
+  return /no such table/i.test(e instanceof Error ? e.message : String(e));
+}
+
+function execIfTable(sql: string, ...params: unknown[]): boolean {
+  try {
+    db.prepare(sql).run(...(params as (string | number | null)[]));
+    return true;
+  } catch (e) {
+    if (isMissingTableError(e)) return false;
+    throw e;
+  }
+}
+
+/**
  * 员工姓名在各子表里都是展示用快照（历史留痕时抄下的），改名后必须一起跟着走，
  * 否则会出现「档案已改名，月报/异常列表还是旧名」，而按新名在打卡记录里搜索还会搜不到
  * （listRecords 的 employeeName LIKE 用的就是这份快照）。
@@ -456,11 +524,7 @@ export function syncEmployeeNameSnapshots(employeeId: string, name: string): voi
     `UPDATE business_forms SET employeeName = ? WHERE employeeId = ?`,
   ];
   for (const sql of updates) {
-    try {
-      db.prepare(sql).run(trimmed, employeeId);
-    } catch {
-      /* 该表尚未创建（模块加载早期 / 精简库）时跳过，不影响主写入 */
-    }
+    execIfTable(sql, trimmed, employeeId);
   }
 }
 
@@ -501,52 +565,32 @@ export function updateEmployee(id: string, input: Record<string, unknown>) {
 export function deleteEmployee(id: string) {
   db.exec("BEGIN");
   try {
-    // 登录账号必须一起解绑：否则员工删了账号还在，且带着一个指向空气的 employeeId，
-    // 转正/加班/补卡的领域动作会落在一个已不存在的档案上
-    try {
-      db.prepare("UPDATE accounts SET employeeId = NULL WHERE employeeId = ?").run(id);
-    } catch {
-      /* accounts 由 authDb 建表，模块加载早期可能还不存在 */
+    // 登录账号：解绑 + 停用 + 吊销会话。只解绑会留下一个"还能登录、却没有档案"的账号，
+    // 与离职流程（applyResign 停用+吊销）口径不一致；账号本身保留，审计还要靠它追人。
+    const bound = (() => {
+      try {
+        return db.prepare("SELECT username FROM accounts WHERE employeeId = ?").all(id) as { username: string }[];
+      } catch (e) {
+        if (isMissingTableError(e)) return [];
+        throw e;
+      }
+    })();
+    execIfTable("UPDATE accounts SET employeeId = NULL, enabled = 0 WHERE employeeId = ?", id);
+    for (const row of bound) {
+      execIfTable("DELETE FROM sessions WHERE username = ?", row.username);
     }
     // 续签历史无外键约束，需显式清理（避免孤儿记录被后续同 ID 引用）
-    try {
-      db.prepare("DELETE FROM contract_renewals WHERE employeeId = ?").run(id);
-    } catch {
-      /* 续签表尚未创建时忽略（模块加载早期） */
-    }
-    try {
-      db.prepare("DELETE FROM business_forms WHERE employeeId = ?").run(id);
-    } catch {
-      /* 同上：业务单归档表 */
-    }
-    try {
-      // 加班/调休台账以 employeeId 为主键且无外键，不清会留下一个「已不存在的人的余额」
-      db.prepare("DELETE FROM overtime_ledger WHERE employeeId = ?").run(id);
-    } catch {
-      /* 同上：审批表尚未创建时忽略 */
-    }
-    try {
-      // 指向该员工的提醒待办（合同到期 / 试用期转正）：人已不在，催它没有意义
-      db.prepare("DELETE FROM todos WHERE targetId = ?").run(id);
-    } catch {
-      /* todos 表由 todosDb 建，模块加载早期可能还不存在 */
-    }
-    try {
-      // 企业微信成员映射：员工没了还留着映射，等于让同步继续去拉一个离职者的打卡，
-      // 拉回来又落不到任何人头上。删掉后这个 userid 也不再进入请求列表。
-      db.prepare("DELETE FROM wecom_bindings WHERE employeeId = ?").run(id);
-    } catch {
-      /* wecom_bindings 由 wecomDb 建表，模块加载早期可能还不存在 */
-    }
-    try {
-      // 归并键指向该员工的周期提醒通知（remindersDb 用 contract:{id} / probation:{id}）
-      db.prepare("DELETE FROM notifications WHERE refKey IN (?, ?)").run(
-        `contract:${id}`,
-        `probation:${id}`
-      );
-    } catch {
-      /* 同上：notifications 表由 notificationsDb 建 */
-    }
+    execIfTable("DELETE FROM contract_renewals WHERE employeeId = ?", id);
+    // 业务单归档
+    execIfTable("DELETE FROM business_forms WHERE employeeId = ?", id);
+    // 加班/调休台账以 employeeId 为主键且无外键，不清会留下一个「已不存在的人的余额」
+    execIfTable("DELETE FROM overtime_ledger WHERE employeeId = ?", id);
+    // 指向该员工的提醒待办（合同到期 / 试用期转正）：人已不在，催它没有意义
+    execIfTable("DELETE FROM todos WHERE targetId = ?", id);
+    // 企业微信成员映射：员工没了还留着映射，等于让同步继续去拉一个离职者的打卡
+    execIfTable("DELETE FROM wecom_bindings WHERE employeeId = ?", id);
+    // 归并键指向该员工的周期提醒通知（remindersDb 用 contract:{id} / probation:{id}）
+    execIfTable("DELETE FROM notifications WHERE refKey IN (?, ?)", `contract:${id}`, `probation:${id}`);
     const result = db.prepare("DELETE FROM employees WHERE id = ?").run(id);
     db.exec("COMMIT");
     return result.changes > 0;

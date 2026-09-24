@@ -85,13 +85,22 @@ export function startOrphanUploadScan(): NodeJS.Timeout | null {
     `[uploads] 孤儿文件定时扫描已启用：每 ${Math.round(interval / 60000)} 分钟一次，自动删除=${autoDelete}`
   );
   const tick = () => {
-    const result = removeOrphanUploads({ dryRun: !autoDelete });
-    if (result.found > 0) {
-      console.warn(
-        `[uploads] 发现 ${result.found} 个孤儿文件${autoDelete ? `，已删除 ${result.removed.length}` : "（dry-run，未删除）"}`
-      );
-      if (result.errors.length) console.error("[uploads] 删除失败：", result.errors);
+    // 包一层 try：DB 抖动/表缺失时不能把异常抛成 uncaughtException（本站兜底是 process.exit(1)），
+    // 否则一次定时扫描就能让整个服务退出
+    try {
+      const result = removeOrphanUploads({ dryRun: !autoDelete });
+      if (result.found > 0) {
+        console.warn(
+          `[uploads] 发现 ${result.found} 个孤儿文件${autoDelete ? `，已删除 ${result.removed.length}` : "（dry-run，未删除）"}`
+        );
+        if (result.errors.length) console.error("[uploads] 删除失败：", result.errors);
+      }
+    } catch (e) {
+      console.error("[uploads] 孤儿文件扫描失败：", e instanceof Error ? e.message : e);
     }
   };
-  return setInterval(tick, interval);
+  const timer = setInterval(tick, interval);
+  // 与其它三个调度器一致：不阻止进程退出
+  if (typeof timer.unref === "function") timer.unref();
+  return timer;
 }

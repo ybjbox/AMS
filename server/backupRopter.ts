@@ -63,7 +63,15 @@ backupRopter.get("/export/:name", (req, res) => {
       "Content-Disposition",
       `attachment; filename=${encodeURIComponent(name)}`
     );
-    createReadStream(filePath).pipe(res);
+    // 流错误必须有监听者：备份文件被手工删掉时 read stream 抛 'error'，没人接就是
+    // uncaughtException（本站兜底 process.exit(1)），一个下载请求就能打停整站。
+    const stream = createReadStream(filePath);
+    stream.on("error", (e) => {
+      console.error("[backup] 读取备份文件失败：", e);
+      if (!res.headersSent) res.status(500).json({ error: "下载备份失败" });
+      else res.destroy(e);
+    });
+    stream.pipe(res);
   } catch (e) {
     serverErrorResponse(res, e, "下载备份失败");
   }

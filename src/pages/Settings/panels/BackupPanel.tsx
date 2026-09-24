@@ -89,6 +89,10 @@ export default function BackupPanel() {
         if (res.uploadsRestored === false) {
           toast.warning('该备份不含上传文件快照，uploads 目录保持现状未回滚');
         }
+        if (res.schemaOk === false) {
+          // 恢复的是老 schema 且补跑迁移失败：不提醒的话用户只会看到后续写入莫名 500
+          toast.warning(res.schemaNote || '恢复后补跑迁移失败，请重启服务', { duration: 12000 });
+        }
         await load();
       } catch (err) {
         notifySaveFailure({ title: '恢复失败', error: err, retry: () => void handleRestore(b) });

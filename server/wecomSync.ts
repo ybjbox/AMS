@@ -139,7 +139,16 @@ export async function runWeComSync(opts: RunSyncOptions): Promise<WeComSyncRepor
   }
   const { startSec, endSec } = resolveSyncWindow(opts, cfg);
   const startedAt = new Date().toISOString();
-  const { punches, fetched, calls } = await fetchCheckinRecords(cfg, known, startSec, endSec);
+  const { punches, fetched, calls } = await fetchCheckinRecords(
+    cfg,
+    known,
+    startSec,
+    endSec,
+    // 拉取阶段就回写进度：这段是整轮同步里最长的一段（分段 × 分批，几十次接口调用），
+    // 只在写库时回写会让任务行长时间看起来"卡住"，进而被台账对账判成中断。
+    // 此刻还没有任何写入，所以 created/skipped 如实给 0（别把调用次数塞进去当跳过数）。
+    (pulled) => opts.onProgress?.(pulled, 0, 0)
+  );
 
   const unboundMap = new Map<string, number>();
   const missing = new Set<string>();
@@ -237,28 +246,71 @@ export async function testWeComConnection(): Promise<{ ok: boolean; message: str
 /**
  * 定时增量同步。与企业微信的可信 IP 现实一致：默认要靠配置页的开关显式打开，
  * 关着的时候一次接口都不调。环境变量 WECOM_SYNC_ENABLED=false 是运维级总闸。
+ *
+ * 两个必须留意的点（都在这轮全系统检查里被抓到）：
+ *  - 保存配置后要能立刻改生效：以前只在进程启动时调一次，用户在界面上打开开关
+ *    后什么都不会发生（要到下次重启才偷偷补上），所以这里做成可重复调用的 restart。
+ *  - 不能重入：一轮同步没跑完就到了下一个 tick，会让两个游标读改写互相覆盖，
+ *    所以同一时刻只允许一轮，晚到的 tick 直接跳过（下一轮的回看窗口会补上）。
  */
-export function startWeComSyncScheduler(): ReturnType<typeof setInterval> | null {
+let schedulerHandles: { boot: ReturnType<typeof setTimeout>; interval: ReturnType<typeof setInterval> } | null = null;
+let syncing = false;
+
+export interface SchedulerState {
+  running: boolean;
+  reason: string;
+}
+
+export function restartWeComSyncScheduler(): SchedulerState {
+  stopWeComSyncScheduler();
   if (process.env.WECOM_SYNC_ENABLED === "false") {
-    console.log("[wecom] 定时同步已被环境变量禁用（WECOM_SYNC_ENABLED=false）");
-    return null;
+    const reason = "定时同步已被环境变量禁用（WECOM_SYNC_ENABLED=false）";
+    console.log(`[wecom] ${reason}`);
+    return { running: false, reason };
   }
   const cfg = getWeComConfig();
   if (!cfg.enabled || !isWeComConfigured(cfg)) {
-    console.log("[wecom] 同步开关未打开，定时任务不启动");
-    return null;
+    const reason = cfg.enabled ? "凭据未配齐" : "同步开关未打开";
+    console.log(`[wecom] 定时任务不启动：${reason}`);
+    return { running: false, reason };
   }
   const intervalMs = Math.max(10, cfg.syncIntervalMinutes) * 60_000;
   const tick = () => {
-    runWeComSync({ dryRun: false }).catch((e) => {
-      console.error("[wecom] 定时同步失败：", e instanceof Error ? e.message : e);
-    });
+    if (syncing) {
+      console.warn("[wecom] 上一轮同步仍未结束，本轮跳过（回看窗口会补齐这段区间）");
+      return;
+    }
+    syncing = true;
+    runWeComSync({ dryRun: false })
+      .catch((e) => {
+        console.error("[wecom] 定时同步失败：", e instanceof Error ? e.message : e);
+      })
+      .finally(() => {
+        syncing = false;
+      });
   };
   // 启动后先跑一轮（5 秒后，给迁移与种子数据留出时间），之后按间隔
   const boot = setTimeout(tick, 5000);
-  if (typeof boot.unref === "function") boot.unref();
-  const timer = setInterval(tick, intervalMs);
-  if (typeof timer.unref === "function") timer.unref();
-  console.log(`[wecom] 定时同步已启动：每 ${Math.round(intervalMs / 60000)} 分钟一次，回看 ${cfg.overlapMinutes} 分钟`);
-  return timer;
+  const interval = setInterval(tick, intervalMs);
+  for (const h of [boot, interval]) {
+    if (typeof h.unref === "function") h.unref();
+  }
+  schedulerHandles = { boot, interval };
+  console.log(
+    `[wecom] 定时同步已启动：每 ${Math.round(intervalMs / 60000)} 分钟一次，回看 ${cfg.overlapMinutes} 分钟`
+  );
+  return { running: true, reason: `每 ${Math.round(intervalMs / 60000)} 分钟一次` };
+}
+
+/** 进程启动时的入口（语义等同于 restart：先清干净再装）。 */
+export function startWeComSyncScheduler(): ReturnType<typeof setInterval> | null {
+  const state = restartWeComSyncScheduler();
+  return state.running ? (schedulerHandles?.interval ?? null) : null;
+}
+
+export function stopWeComSyncScheduler(): void {
+  if (!schedulerHandles) return;
+  clearTimeout(schedulerHandles.boot);
+  clearInterval(schedulerHandles.interval);
+  schedulerHandles = null;
 }

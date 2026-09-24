@@ -29,3 +29,19 @@ export function localDateOffset(days: number, from: Date = new Date()): string {
   d.setDate(d.getDate() - days);
   return formatLocalDate(d);
 }
+
+/**
+ * 距今多少天（按**本地日历日**相减，可为负）。
+ *
+ * 不要用 `new Date('YYYY-MM-DD') - Date.now()`：前者是 UTC 零点、后者是本地时刻，
+ * 在 UTC+8 下每天 00:00–07:59 会多算一天，"合同到期剩 N 天"就跟着差一格。
+ * 两端都归到本地日历日之后再除以 86400000，结果与"看日历数天数"一致。
+ */
+export function daysUntilLocal(dateStr: string | null | undefined, from: Date = new Date()): number {
+  const raw = String(dateStr ?? "").trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/u.test(raw)) return 0;
+  const [y, m, d] = raw.split("-").map(Number);
+  const target = Date.UTC(y, m - 1, d);
+  const today = Date.UTC(from.getFullYear(), from.getMonth(), from.getDate());
+  return Math.round((target - today) / 86_400_000);
+}

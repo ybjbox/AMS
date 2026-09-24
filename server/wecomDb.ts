@@ -31,6 +31,12 @@ export interface WeComConfig {
   corpSecret: string;
   /** 接口主机；生产恒为官方地址，可指向本地 stub 做联调（见 validateWeComBaseUrl） */
   baseUrl: string;
+  /**
+   * 出网代理（`http://host:port` 或 `https://…`，可带 user:pass）。
+   * 存在的理由：自建应用必须配「可信 IP」，而 AMS 常跑在出口 IP 会变的家宽机器上 ——
+   * 让请求经由一台固定公网 IP 的代理机出去，可信 IP 填代理机即可。留空=直连。
+   */
+  proxyUrl: string;
   syncIntervalMinutes: number;
   overlapMinutes: number;
 }
@@ -42,6 +48,7 @@ export function defaultWeComConfig(): WeComConfig {
     agentId: "",
     corpSecret: "",
     baseUrl: WECOM_DEFAULT_BASE_URL,
+    proxyUrl: "",
     syncIntervalMinutes: 60,
     overlapMinutes: 120,
   };
@@ -61,6 +68,8 @@ export function getWeComConfig(): WeComConfig {
     agentId: typeof raw.agentId === "string" ? raw.agentId.trim() : "",
     corpSecret: typeof raw.corpSecret === "string" ? raw.corpSecret : "",
     baseUrl,
+    // 库里存量的代理地址若被手工改成非法值，读侧直接当"没配代理"，不能让整个面板打不开
+    proxyUrl: typeof raw.proxyUrl === "string" ? sanitizeProxyUrl(raw.proxyUrl) : "",
     syncIntervalMinutes:
       Number.isFinite(interval) && interval >= SYNC_INTERVAL_MIN_MINUTES ? interval : d.syncIntervalMinutes,
     overlapMinutes: Number.isFinite(overlap) && overlap >= 0 ? Math.min(overlap, SYNC_OVERLAP_MAX_MINUTES) : d.overlapMinutes,
@@ -79,7 +88,7 @@ export function isWeComConfigured(cfg = getWeComConfig()): boolean {
 /** 给前端面板的视图：corpSecret 打码。 */
 export function maskedWeComConfig(): WeComConfig {
   const c = getWeComConfig();
-  return { ...c, corpSecret: maskSecret(c.corpSecret) };
+  return { ...c, corpSecret: maskSecret(c.corpSecret), proxyUrl: maskProxyUrl(c.proxyUrl) };
 }
 
 /**
@@ -90,7 +99,10 @@ export function maskedWeComConfig(): WeComConfig {
 export function mergeWeComConfig(input: Partial<WeComConfig>): WeComConfig {
   const cur = getWeComConfig();
   const keepSecret = !input.corpSecret || input.corpSecret === MASK_SENTINEL || input.corpSecret.includes(MASK_SENTINEL);
+  // 代理地址与 Secret 不同：清空输入框就是"不要代理了"，所以只有 undefined / 掩码回传才算"本次不改"
+  const proxyTouched = input.proxyUrl !== undefined && !String(input.proxyUrl).includes(MASK_SENTINEL);
   const baseUrl = input.baseUrl === undefined ? cur.baseUrl : validateWeComBaseUrl(input.baseUrl);
+  const proxyUrl = proxyTouched ? validateWeComProxyUrl(String(input.proxyUrl ?? "")) : cur.proxyUrl;
   const interval = Math.trunc(Number(input.syncIntervalMinutes ?? cur.syncIntervalMinutes));
   const overlap = Math.trunc(Number(input.overlapMinutes ?? cur.overlapMinutes));
   return {
@@ -100,6 +112,7 @@ export function mergeWeComConfig(input: Partial<WeComConfig>): WeComConfig {
     agentId: input.agentId !== undefined ? String(input.agentId).trim() : cur.agentId,
     corpSecret: input.corpSecret === CLEAR_SENTINEL ? "" : keepSecret ? cur.corpSecret : String(input.corpSecret),
     baseUrl,
+    proxyUrl,
     syncIntervalMinutes:
       Number.isFinite(interval) && interval >= SYNC_INTERVAL_MIN_MINUTES ? interval : cur.syncIntervalMinutes,
     overlapMinutes: Number.isFinite(overlap) && overlap >= 0 ? Math.min(overlap, SYNC_OVERLAP_MAX_MINUTES) : cur.overlapMinutes,
@@ -131,6 +144,52 @@ export function validateWeComBaseUrl(value: string): string {
   if (url.search) throw new WeComConfigError("接口地址不得包含查询参数");
   const portPart = url.port ? `:${url.port}` : "";
   return `${url.protocol}//${url.hostname}${portPart}`.replace(/\/+$/u, "");
+}
+
+/**
+ * 出网代理地址校验：只接受 http/https 代理（undici 的 ProxyAgent 也只支持这两种），
+ * 允许 user:pass（该密码与 corpSecret 同档：回显掩码、审计整体丢弃）。
+ * 拒 path/query：代理机上这些不参与连接，留着只会让人以为配了路由。
+ */
+export function validateWeComProxyUrl(value: string): string {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new WeComConfigError("代理地址不是合法 URL");
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    throw new WeComConfigError("代理只支持 http/https（SOCKS 请让 AMS 进程经系统代理出网）");
+  }
+  if (!url.hostname) throw new WeComConfigError("代理地址缺少主机名");
+  if (url.pathname && url.pathname !== "/") throw new WeComConfigError("代理地址不得包含路径");
+  if (url.search) throw new WeComConfigError("代理地址不得包含查询参数");
+  const auth = url.password ? `${url.username}:${url.password}@` : url.username ? `${url.username}@` : "";
+  const portPart = url.port ? `:${url.port}` : "";
+  return `${url.protocol}//${auth}${url.hostname}${portPart}`;
+}
+
+/** 读侧兜底：非法值一律当"没配代理"，不让脏数据把出站请求带偏。 */
+function sanitizeProxyUrl(value: string): string {
+  try {
+    return validateWeComProxyUrl(value);
+  } catch {
+    return "";
+  }
+}
+
+/** 回显给面板的视图：藏掉代理密码，其余照原样，好让人确认自己配的是哪台机器。 */
+export function maskProxyUrl(value: string): string {
+  if (!value) return "";
+  try {
+    const url = new URL(value);
+    if (!url.password) return value;
+    return `${url.protocol}//${url.username}:${MASK_SENTINEL}@${url.hostname}${url.port ? `:${url.port}` : ""}`;
+  } catch {
+    return MASK_SENTINEL;
+  }
 }
 
 export class WeComConfigError extends Error {

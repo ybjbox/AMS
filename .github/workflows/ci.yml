@@ -1,7 +1,8 @@
 # AMS CI：六道闸门（类型 → lint → 单元测试 → 服务端验证 → 构建 → E2E）
 # 说明：
-#  - lint 当前对上游既有债务（193 个 error，详见 docs/DESIGN-REVIEW.md ④）设为
-#    continue-on-error 非阻塞展示；债务清偿后请移除该标记，使其成为合并门槛。
+#  - lint 是**阻塞**门槛：上游既有债务已在 commit 4cdb471 前后清零（当前 0 error / 78 warning，
+#    warning 主要是 @typescript-eslint/no-explicit-any 与 React Compiler 的 incompatible-library 提示）。
+#    历史这里挂过 continue-on-error（当时 193 error），债务清完却没摘标记 —— 2026-09-24 全系统检查发现并摘除。
 #  - E2E 使用 Playwright：CI 环境自动安装 chromium 并自动启动服务器（含种子管理员）。
 name: CI
 
@@ -28,9 +29,8 @@ jobs:
       - name: 类型检查（client + server）
         run: npm run typecheck
 
-      - name: Lint（历史债务，非阻塞）
+      - name: Lint（0 error 门槛）
         run: npm run lint
-        continue-on-error: true
 
       - name: 前端与服务端单元测试（含死 UI 可达性守门）
         run: npm run test:run

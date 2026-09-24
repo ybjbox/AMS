@@ -14,12 +14,19 @@ export interface WeComConfig {
   /** 掩码回显；提交时回传掩码=保持原值，'__CLEAR__'=清除 */
   corpSecret: string;
   baseUrl: string;
+  /** 出网代理（可带 user:pass，掩码回显）；清空即直连。见 server/wecomDb.validateWeComProxyUrl */
+  proxyUrl: string;
   syncIntervalMinutes: number;
   overlapMinutes: number;
 }
 
 export const SECRET_MASK = '********';
 export const SECRET_CLEAR = '__CLEAR__';
+
+export interface SavedWeComConfig extends WeComConfig {
+  schedulerRunning?: boolean;
+  schedulerReason?: string;
+}
 
 export interface WeComBinding {
   wecomUserId: string;
@@ -81,7 +88,9 @@ export interface SyncRange {
 
 export const wecomApi = {
   getConfig: (): Promise<WeComConfig> => http.get<WeComConfig>('/wecom/config'),
-  setConfig: (patch: Partial<WeComConfig>): Promise<WeComConfig> => http.put<WeComConfig>('/wecom/config', patch),
+  /** 保存后服务端会顺带重启定时同步，回包里带它的实际状态（"保存了却没跑起来"必须看得见） */
+  setConfig: (patch: Partial<WeComConfig>): Promise<SavedWeComConfig> =>
+    http.put<SavedWeComConfig>('/wecom/config', patch),
   getStatus: (): Promise<WeComStatus> => http.get<WeComStatus>('/wecom/status'),
   test: (): Promise<{ ok: boolean; message: string }> => http.post('/wecom/test', {}),
   getBindings: (): Promise<{ items: WeComBinding[] }> => http.get<{ items: WeComBinding[] }>('/wecom/bindings'),

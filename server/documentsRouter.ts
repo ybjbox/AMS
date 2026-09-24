@@ -111,7 +111,10 @@ documentsRouter.post("/upload", (req, res) => {
   const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50MB
   const contentLength = Number(req.headers["content-length"] ?? 0);
   if (contentLength > MAX_UPLOAD_BYTES) {
-    return res.status(413).json({ error: "uploaded file exceeds 50MB limit" });
+    // 走 fail() 而不是直接 return：写流已经创建，不销毁不删就会每次留下一个 fd 与 0 字节孤儿文件
+    fail(413, "uploaded file exceeds 50MB limit");
+    writeStream.destroy();
+    return;
   }
   let uploadedBytes = 0;
   req.on("data", (chunk: Buffer) => {

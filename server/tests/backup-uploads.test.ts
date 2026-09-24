@@ -97,3 +97,43 @@ describe("deleteBackup 同步清理 sidecar", () => {
     expect(fs.existsSync(snap)).toBe(false);
   });
 });
+
+describe("恢复后补跑迁移（全系统检查 A3）", () => {
+  it("老备份缺唯一索引：恢复完就该在库里补齐，且返回 schemaOk", async () => {
+    const { DatabaseSync } = await import("node:sqlite");
+    const INDEX = "idx_punch_employee_date_time";
+    const meta = createBackup("mgtest");
+    const file = path.join(backupDir(), meta.name);
+
+    // 造一份"v11 之前"的备份：直接把索引从备份文件里删掉
+    const old = new DatabaseSync(file);
+    old.exec(`DROP INDEX IF EXISTS ${INDEX}`);
+    expect(old.prepare("SELECT name FROM sqlite_master WHERE type='index' AND name=?").get(INDEX)).toBeUndefined();
+    old.close();
+
+    const res = restoreBackup(meta.name);
+    expect(res.schemaOk).toBe(true);
+    expect(res.schemaNote).toContain("补齐");
+    // 线上库（恢复后的那个文件）必须重新有这个索引，否则所有 ON CONFLICT 写入会 500
+    // 注意要在使用 restoreBackup 之后再取 db：reloadDb 会换掉连接，早取的句柄已关闭
+    const { db } = await import("../db.ts");
+    expect(db.prepare("SELECT name FROM sqlite_master WHERE type='index' AND name=?").get(INDEX)).toBeTruthy();
+    deleteBackup(meta.name);
+  });
+});
+
+describe("恢复后必须是 WAL（第二个连接的教训）", () => {
+  it("restoreBackup 报告 journalMode，且单连接环境下确实是 wal", async () => {
+    const { DatabaseSync } = await import("node:sqlite");
+    const probe = new DatabaseSync(path.join(DATA_DIR, "ams.db"), { readOnly: true });
+    const before = String(probe.prepare("PRAGMA journal_mode").get()?.journal_mode ?? "").toLowerCase();
+    probe.close();
+    expect(before).toBe("wal"); // 本套用例自带独立 DATA_DIR，没有第二个实例抢锁
+
+    const meta = createBackup("walcheck");
+    const res = restoreBackup(meta.name);
+    expect(res.journalMode).toBe("wal");
+    expect(res.schemaOk).toBe(true);
+    deleteBackup(meta.name);
+  });
+});

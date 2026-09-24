@@ -10,6 +10,16 @@ import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/ui/Pagination';
 import CoverageBanner from './CoverageBanner';
 import { UseAttendanceReturn } from '../hooks/useAttendance';
+import { toast } from 'sonner';
+
+/**
+ * store 的写动作不抛异常（失败原因作为返回值），4xx/5xx 也没有全局提示 ——
+ * 不接住它就会点了删除却毫无反应。统一在这里给出反馈。
+ */
+function reportWrite(failure: string | null, okMessage: string) {
+  if (failure) toast.error(failure);
+  else toast.success(okMessage);
+}
 
 export type TableProps = Pick<
   UseAttendanceReturn,
@@ -96,7 +106,7 @@ export default function Table({
         description: '移除后该员工不再按班次判定考勤异常。',
         variant: 'danger',
       });
-      if (ok) removeSchedule(employeeId);
+      if (ok) reportWrite(await removeSchedule(employeeId), '已移除该员工的排班');
     },
     [confirm, removeSchedule]
   );
@@ -109,7 +119,7 @@ export default function Table({
       description: '此操作不可恢复，建议先导出花名册留底。',
       variant: 'danger',
     });
-    if (ok) clearSchedules();
+    if (ok) reportWrite(await clearSchedules(), '已清空全部排班');
   }, [confirm, clearSchedules, schedules.length]);
 
   const onClearRecords = useCallback(async () => {
@@ -118,7 +128,7 @@ export default function Table({
       description: '月报与异常分析将随之失效，需重新导入打卡数据，此操作不可恢复。',
       variant: 'danger',
     });
-    if (ok) clearRecords();
+    if (ok) reportWrite(await clearRecords(), '已清空全部打卡记录');
   }, [confirm, clearRecords, records.length]);
 
   const onRemoveRecordClick = useCallback(
@@ -130,7 +140,7 @@ export default function Table({
         description: '删除后需重新导入才能恢复。',
         variant: 'danger',
       });
-      if (ok) removeRecord(id);
+      if (ok) reportWrite(await removeRecord(id), '已删除该条打卡记录');
     },
     [confirm, removeRecord]
   );

@@ -115,14 +115,12 @@ export default function Filter({
       return;
     }
 
-    try {
-      // store 动作内部调用 POST /attendance/analyze（真实分析并持久化）
-      await analyzeAnomalies();
-      toast.success('异常分析完成');
-    } catch (error) {
-      console.error('Analysis failed:', error);
-      toast.error('分析失败，请重试');
-    }
+    // store 动作内部调用 POST /attendance/analyze（真实分析并持久化）。
+    // 它不抛异常（错误写进 state.error 并作为返回值），所以必须看返回值再报成功 ——
+    // 否则后端 403/500 时界面照样弹「异常分析完成」。
+    const failure = await analyzeAnomalies();
+    if (failure) toast.error(failure);
+    else toast.success('异常分析完成');
   }, [records.length, analyzeAnomalies]);
 
   const onEmployeeSelectClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {

@@ -15,7 +15,7 @@ import { serverErrorResponse } from "./errorHandler.ts";
 import { listRenewals, renewContract } from "./contractRenewalsDb.ts";
 import { previewImport, buildTemplate, MAX_IMPORT_ROWS } from "./employeeImportDb.ts";
 import { createImportJob, getImportJob, runImportJob } from "./importJobsDb.ts";
-import { ROLE_LEVEL, type SessionContext } from "./authDb.ts";
+import { ROLE_LEVEL, getAccount, type SessionContext } from "./authDb.ts";
 
 export const employeesRouter = Router();
 employeesRouter.use(json());
@@ -208,8 +208,15 @@ employeesRouter.get("/:id/contract-renewals", (req, res) => {
   res.json(listRenewals(req.params.id));
 });
 
-// DELETE /api/users/:id — 删除员工
+// DELETE /api/users/:id — 删除员工（连带停用并吊销其绑定账号，见 db.deleteEmployee）
 employeesRouter.delete("/:id", (req, res) => {
+  // 自锁保护：删掉与自己账号绑定的档案会顺手停用登录者本人，这一刀必须换个人来下
+  const mine = req.auth ? getAccount(req.auth.username) : null;
+  if (mine?.employeeId && mine.employeeId === req.params.id) {
+    return res
+      .status(400)
+      .json({ error: "该员工档案与你的登录账号绑定，删除会停用你自己的账号；请先由其他管理员解绑，或改用「离职」流程" });
+  }
   const ok = deleteEmployee(req.params.id);
   if (!ok) return res.status(404).json({ error: "User not found" });
   res.json({ success: true });

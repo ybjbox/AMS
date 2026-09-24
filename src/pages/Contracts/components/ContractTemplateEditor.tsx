@@ -11,6 +11,9 @@ interface ContractTemplateEditorProps {
   onClose: () => void;
 }
 
+/** 模板要整份塞进 textarea 并持久化，给个够用的上限（合同正文 HTML 通常 10–30KB） */
+const MAX_TEMPLATE_BYTES = 512 * 1024;
+
 export const ContractTemplateEditor = ({ isOpen, onClose }: ContractTemplateEditorProps) => {
   const template = useContractStore((state) => state.template);
   const setTemplate = useContractStore((state) => state.setTemplate);
@@ -18,18 +21,29 @@ export const ContractTemplateEditor = ({ isOpen, onClose }: ContractTemplateEdit
 
   const [editingTemplate, setEditingTemplate] = useState(template);
 
-  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  /**
+   * 真读文件：模板就是 HTML/纯文本源码（输入框 accept=".html,.txt"），
+   * 所以浏览器读文本即可，不需要后端 —— 也不该假装能解析 docx。
+   */
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    if (fileInputRef.current) fileInputRef.current.value = '';
     if (!file) return;
-
-    // Mock backend processing
-    setTimeout(() => {
-      setEditingTemplate('<h1>Mock Contract Template</h1><p>Name: {name}</p>');
-      toast.success('成功上传合同模板 (Mock)');
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+    if (file.size > MAX_TEMPLATE_BYTES) {
+      toast.error(`模板文件超过 ${MAX_TEMPLATE_BYTES / 1024}KB，无法载入`);
+      return;
+    }
+    try {
+      const text = await file.text();
+      if (!text.trim()) {
+        toast.error(`${file.name} 是空文件，没有可载入的模板内容`);
+        return;
       }
-    }, 500);
+      setEditingTemplate(text);
+      toast.success(`已载入 ${file.name}（${text.length} 字符），确认后点保存生效`);
+    } catch (error) {
+      toast.error(`读取文件失败：${error instanceof Error ? error.message : String(error)}`);
+    }
   }, []);
 
   return (

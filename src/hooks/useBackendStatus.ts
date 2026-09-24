@@ -46,6 +46,29 @@ async function probeOnce(): Promise<ProbeResult> {
   }
 }
 
+/**
+ * 催一次即时复检（断线遮罩的「立即重试」走这里），并可订阅每次探测的结果。
+ * 之所以走事件 + 订阅而不是改 hook 的返回值：状态是多个组件各自持有的，
+ * 改返回形状会把状态灯的消费方一起扯进来。
+ */
+const REPROBE_EVENT = 'ams:backend:reprobe';
+type ProbeSubscriber = (status: BackendStatus) => void;
+const probeSubscribers = new Set<ProbeSubscriber>();
+
+export function requestBackendReprobe(): void {
+  window.dispatchEvent(new Event(REPROBE_EVENT));
+}
+
+/** 订阅探测结果（返回退订函数）。给"点一下等结果"的界面用，避免各家自己搓第二份探测。 */
+export function onBackendProbeResult(sub: ProbeSubscriber): () => void {
+  probeSubscribers.add(sub);
+  return () => probeSubscribers.delete(sub);
+}
+
+function publish(status: BackendStatus): void {
+  for (const sub of probeSubscribers) sub(status);
+}
+
 export function useBackendStatus(pollInterval = POLL_INTERVAL_MS): BackendStatus {
   // 浏览器已经报告离线时直接以 offline 起手，省掉「检查中 → 立刻改口」的那一帧
   const [status, setStatus] = useState<BackendStatus>(() =>
@@ -53,16 +76,18 @@ export function useBackendStatus(pollInterval = POLL_INTERVAL_MS): BackendStatus
   );
   const mountedRef = useRef(true);
 
+  const apply = useCallback((next: BackendStatus) => {
+    if (mountedRef.current) setStatus(next);
+    publish(next);
+  }, []);
+
   const probe = useCallback(async () => {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-      setStatus('offline');
+      apply('offline');
       return;
     }
-    const result = await probeOnce();
-    if (mountedRef.current) {
-      setStatus(result);
-    }
-  }, []);
+    apply(await probeOnce());
+  }, [apply]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -74,13 +99,15 @@ export function useBackendStatus(pollInterval = POLL_INTERVAL_MS): BackendStatus
     const interval = setInterval(() => void probe(), pollInterval);
 
     const handleOnline = () => void probe();
-    const handleOffline = () => setStatus('offline');
+    const handleOffline = () => apply('offline');
+    const handleReprobe = () => void probe();
     const handleVisible = () => {
       if (document.visibilityState === 'visible') void probe();
     };
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    window.addEventListener(REPROBE_EVENT, handleReprobe);
     document.addEventListener('visibilitychange', handleVisible);
 
     return () => {
@@ -88,9 +115,10 @@ export function useBackendStatus(pollInterval = POLL_INTERVAL_MS): BackendStatus
       clearInterval(interval);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.removeEventListener(REPROBE_EVENT, handleReprobe);
       document.removeEventListener('visibilitychange', handleVisible);
     };
-  }, [probe, pollInterval]);
+  }, [probe, apply, pollInterval]);
 
   return status;
 }

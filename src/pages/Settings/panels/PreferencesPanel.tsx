@@ -1,38 +1,23 @@
-import React, { useCallback } from 'react';
-import { ShieldCheck } from 'lucide-react';
+import React from 'react';
+import { ShieldCheck, ShieldAlert } from 'lucide-react';
 import { useAppSettings } from '@/store/appSettings';
 import { useUserStore } from '@/store/useUserStore';
 import { SystemRole } from '@/types';
+
+/** 只用于把系统角色渲染成中文；判定一律以后端下发的真实角色为准。 */
+const ROLE_LABEL: Record<string, string> = {
+  [SystemRole.SUPER_ADMIN]: '超级管理员',
+  [SystemRole.ADMIN]: '管理员',
+  [SystemRole.HR]: '人事主管',
+  [SystemRole.EMPLOYEE]: '普通员工',
+};
 
 export default function PreferencesPanel() {
   const userInfo = useUserStore((state) => state.userInfo);
   const enableStrictPermission = useAppSettings((state) => state.enableStrictPermission);
   const setEnableStrictPermission = useAppSettings((state) => state.setEnableStrictPermission);
 
-  const handleRoleChange = useCallback(
-    (role: SystemRole) => {
-      if (userInfo) {
-        useUserStore.getState().setUser(
-          {
-            ...userInfo,
-            role: role,
-          },
-          useUserStore.getState().token || ''
-        );
-      }
-    },
-    [userInfo]
-  );
-
-  const onRoleChangeClick = useCallback(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
-      const role = e.currentTarget.dataset.role as SystemRole;
-      if (role) {
-        handleRoleChange(role);
-      }
-    },
-    [handleRoleChange]
-  );
+  const role = userInfo?.role;
 
   return (
     <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-400 space-y-6">
@@ -46,9 +31,10 @@ export default function PreferencesPanel() {
               <ShieldCheck className="w-5 h-5 text-rose-600 dark:text-rose-400" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">严格的权限拦截</h3>
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">按权限隐藏界面</h3>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                开启后，系统将严格校验用户的页面访问和按钮操作权限。关闭则默认放行所有权限。
+                只影响本界面的菜单与按钮显隐，关掉不会多出任何权限：能不能读写由服务端的策略表决定，
+                越权的请求一律被拒绝。要让某角色看不到某些入口，就开启本开关。
               </p>
             </div>
           </div>
@@ -73,43 +59,17 @@ export default function PreferencesPanel() {
       </div>
 
       <div className="bg-white dark:bg-zinc-800 p-6 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm">
-        <div className="flex items-center space-x-3 mb-6">
+        <div className="flex items-center space-x-3">
           <div className="p-2 bg-brand-50 dark:bg-brand-900/20 rounded-lg">
-            <ShieldCheck className="w-5 h-5 text-brand-600 dark:text-brand-400" />
+            <ShieldAlert className="w-5 h-5 text-brand-600 dark:text-brand-400" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">权限测试 (演示用)</h3>
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">当前账号角色</h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-              切换当前登录用户的系统角色，测试不同的权限视图
+              {role ? ROLE_LABEL[String(role)] ?? String(role) : '未登录'} · 登录账号 {userInfo?.username ?? '-'}
+              。角色在「账号管理」里修改，改完需重新登录生效。
             </p>
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[
-            { role: SystemRole.SUPER_ADMIN, label: '超级管理员', desc: '拥有所有模块的完全访问权限' },
-            { role: SystemRole.ADMIN, label: '管理员', desc: '拥有大部分权限，无法修改系统设置' },
-            { role: SystemRole.HR, label: '人事主管', desc: '仅拥有员工管理权限' },
-            { role: SystemRole.EMPLOYEE, label: '普通员工', desc: '仅拥有查看权限，无法修改数据' },
-          ].map((item) => (
-            <button
-              key={item.role}
-              data-role={item.role}
-              onClick={onRoleChangeClick}
-              className={`flex flex-col p-4 rounded-xl border text-left transition ${
-                userInfo?.role === item.role
-                  ? 'border-brand-600 bg-brand-50/50 dark:bg-brand-900/20 ring-2 ring-brand-600/20'
-                  : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-200/80 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
-              }`}
-            >
-              <span
-                className={`text-sm font-bold ${userInfo?.role === item.role ? 'text-brand-700 dark:text-brand-400' : 'text-zinc-900 dark:text-white'}`}
-              >
-                {item.label}
-              </span>
-              <span className="text-xs text-muted-foreground mt-1">{item.desc}</span>
-            </button>
-          ))}
         </div>
       </div>
     </div>

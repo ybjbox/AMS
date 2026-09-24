@@ -69,7 +69,9 @@ GitHub Actions 两个 job（verify：typecheck / lint / 单测 / 11 个服务端
 三个决策已于 2026-09-23 定下（见 `docs/WECOM-ATTENDANCE-INTEGRATION.md` 第五节），**P0+P1 链路已落地**：
 凭据掩码配置 / token 缓存 / 29 天分段 + 100 人分批 / 敏感字段在客户端边界即丢弃 / userid↔工号人工认领 /
 幂等增量落库（`punch_records.source`）/ 干跑预览 / 定时调度（默认关）。回归 `server/tests/wecom-sync.test.ts`。
-**还剩一件事**：真实凭据 + 固定公网 IP（可信 IP 是硬门槛，配好后在设置页填 CorpID/Secret 即可，代码不用再动）。
+**还剩一件事**：真实凭据（企业 ID / AgentId / Secret）——**可信 IP 这道门槛已于 2026-09-24 有了不改部署的解法**：
+设置页新增「出网代理」，让请求经由一台固定公网 IP 的 http/https 代理机出网，可信 IP 填代理机即可
+（目标是官方 https 接口时走 CONNECT 隧道，代理看不到 Secret 与 token；配了代理才换 undici 的连接栈，默认路径不变）。
 判定层已按用户口径重做：**部门工作时段 + 按打卡时间自动对班**（`server/shiftMatch.ts` / `shiftRulesDb.ts`，
 考勤页新增「部门时段」，异常分析返回 coverage 说明多少人日未被判定），不再要求 HR 逐日排班。
 2026-09-24 补上**三班倒**：判定单位从"日历日"改成**班次实例**（`buildShiftInstances`），归属日 = 首卡那天，

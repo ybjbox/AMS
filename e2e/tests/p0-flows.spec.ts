@@ -141,7 +141,9 @@ test.describe.serial('P0 功能闭环', () => {
     );
     expect(recRes.status()).toBe(200);
     const records: { id: string; employeeId: string; date: string; time: string }[] = await recRes.json();
-    const created = records.find((r) => r.employeeId === employeeId && r.time === PUNCH_TIME);
+    // 库里统一存 HH:mm:ss（与 Excel 导入、企业微信同步同形）：以前补卡写 09:06、导入写 09:06:00，
+    // 同一分钟会被 (employeeId,date,time) 唯一键认成两条。断言归一后的形状，而不是申请单里的 HH:mm。
+    const created = records.find((r) => r.employeeId === employeeId && r.time === `${PUNCH_TIME}:00`);
     expect(created, `补卡记录应存在（员工 ${employeeId}，${PUNCH_DATE} ${PUNCH_TIME}）`).toBeTruthy();
     createdPunchRecordId = created!.id;
 

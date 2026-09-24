@@ -2,7 +2,7 @@
  * 通知数据层 — 通知是「用户级」数据，按 recipient(username) 隔离，
  * 支持跨设备/跨浏览器同步（P2-7）。也用于「派单」协作时自动给被派单人生成提醒。
  */
-import { db } from './db.ts';
+import { db, onAfterCommit } from './db.ts';
 import { randomUUID } from 'node:crypto';
 import { dispatchOutbound } from './notifyDispatch.ts';
 
@@ -128,8 +128,9 @@ export function createNotification(input: NotificationInput) {
     `INSERT INTO notifications (id, title, message, type, recipient, createdAt, refKey)
      VALUES (?, ?, ?, ?, ?, datetime('now'), ?)`
   ).run(id, title, message, type, recipient, refKey);
-  // 站内落库成功后镜像推送到出站通道（webhook/邮件）；fire-and-forget，失败不影响本请求
-  dispatchOutbound({ title, message, type, recipient });
+  // 站内落库成功后镜像推送到出站通道（webhook/邮件）；fire-and-forget，失败不影响本请求。
+  // 走 onAfterCommit：邮件/webhook 撤不回，事务回滚（磁盘满、database is locked）时不能已经发出去了。
+  onAfterCommit(() => dispatchOutbound({ title, message, type, recipient }));
   return rowToNotification(getNotificationRaw(id)!);
 }
 

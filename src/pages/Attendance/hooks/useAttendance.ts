@@ -29,18 +29,18 @@ export interface UseAttendanceReturn {
   filteredAnomalies: Anomaly[];
   filteredSchedules: EmployeeSchedule[];
 
-  // Store Actions
-  fetchData: () => Promise<void>;
+  // Store Actions（写动作把失败原因作为返回值：null=成功，见 src/store/utils.ts）
+  fetchData: () => Promise<string | null>;
   setRecords: (records: PunchRecord[]) => void;
   setSchedules: (schedules: EmployeeSchedule[]) => void;
-  removeSchedule: (employeeId: string) => void;
-  clearSchedules: () => void;
-  removeRecord: (id: string) => void;
-  clearRecords: () => void;
-  analyzeAnomalies: () => void;
-  addShift: (shift: Shift) => void;
-  updateShift: (id: string, shift: Partial<Shift>) => void;
-  deleteShift: (id: string) => void;
+  removeSchedule: (employeeId: string) => Promise<string | null>;
+  clearSchedules: () => Promise<string | null>;
+  removeRecord: (id: string) => Promise<string | null>;
+  clearRecords: () => Promise<string | null>;
+  analyzeAnomalies: () => Promise<string | null>;
+  addShift: (shift: Shift) => Promise<string | null>;
+  updateShift: (id: string, shift: Partial<Shift>) => Promise<string | null>;
+  deleteShift: (id: string) => Promise<string | null>;
 
   // Auth
   hasPermission: (permission: string) => boolean;

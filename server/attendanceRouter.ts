@@ -20,7 +20,7 @@ import {
   listRecords, replaceRecords,
   upsertRecord, deleteRecord, clearRecords,
   listAnomalies, analyzeAnomalies, analyzeAttendance, getAttendanceAnalysisStatus,
-  VersionConflictError, monthlySummary } from "./attendanceDb.ts";
+  PunchFormatError, VersionConflictError, monthlySummary } from "./attendanceDb.ts";
 import {
   createDeptShiftRule,
   deleteDeptShiftRule,
@@ -81,18 +81,28 @@ attendanceRouter.get("/shifts", (_req, res) => {
   res.json(listShifts());
 });
 
-attendanceRouter.post("/shifts", (req, res) => {
+attendanceRouter.post("/shifts", (req, res, next) => {
   const { name, startTime, endTime } = req.body || {};
   if (!name || !startTime || !endTime) {
     return res.status(400).json({ error: "name, startTime, endTime are required" });
   }
-  res.status(201).json(createShift(req.body));
+  try {
+    res.status(201).json(createShift(req.body));
+  } catch (e) {
+    if (punchFormatErrorResponse(res, e)) return;
+    next(e);
+  }
 });
 
-attendanceRouter.put("/shifts/:id", (req, res) => {
-  const updated = updateShift(req.params.id, req.body || {});
-  if (!updated) return res.status(404).json({ error: "Shift not found" });
-  res.json(updated);
+attendanceRouter.put("/shifts/:id", (req, res, next) => {
+  try {
+    const updated = updateShift(req.params.id, req.body || {});
+    if (!updated) return res.status(404).json({ error: "Shift not found" });
+    res.json(updated);
+  } catch (e) {
+    if (punchFormatErrorResponse(res, e)) return;
+    next(e);
+  }
 });
 
 attendanceRouter.delete("/shifts/:id", (req, res) => {
@@ -101,6 +111,19 @@ attendanceRouter.delete("/shifts/:id", (req, res) => {
 });
 
 // ---- 部门工作时段（自动对班的配置面）----
+
+/**
+ * 打卡日期/时间的格式统一在数据层归一并校验（`attendanceDb.normalizePunchDate/Time`），
+ * 路由只负责翻成 400 + 中文原因。刻意不再写一份 zod 正则：
+ * 同一件事两处口径（校验一份、归一一份）正是过去反复出现的"两套说法"问题。
+ */
+function punchFormatErrorResponse(res: import("express").Response, e: unknown): boolean {
+  if (e instanceof PunchFormatError) {
+    res.status(400).json({ error: e.message });
+    return true;
+  }
+  return false;
+}
 
 /** 时段配置错误的共同特征：都是"用户能改对"的输入问题，一律 400 + 中文原因 */
 function ruleErrorResponse(res: import("express").Response, e: unknown) {
@@ -219,13 +242,18 @@ attendanceRouter.get("/records", (req, res) => {
 // 维持默认写策略（HR+）；如需收紧到 ADMIN，须同步调整前端导入入口的角色门槛。
 // 空数组在这里被拒：它是「全库打卡记录清零」的唯一整表入口，而清空本有
 // DELETE /records（仅 ADMIN）这条带角色门槛的路，不该由导入语义顺带触发。
-attendanceRouter.put("/records", (req, res) => {
+attendanceRouter.put("/records", (req, res, next) => {
   const { records } = req.body || {};
   if (!Array.isArray(records)) return res.status(400).json({ error: "records array is required" });
   if (records.length === 0) {
     return res.status(400).json({ error: "导入清单为空，已取消；确需清空全部打卡记录请用「全部清空打卡记录」" });
   }
-  res.json(replaceRecords(records));
+  try {
+    res.json(replaceRecords(records));
+  } catch (e) {
+    if (punchFormatErrorResponse(res, e)) return;
+    next(e);
+  }
 });
 
 // 增量：单条打卡记录 upsert（body.expectedVersion 可选启用乐观锁）
@@ -240,6 +268,7 @@ attendanceRouter.post("/records", (req, res, next) => {
     if (e instanceof VersionConflictError) {
       return res.status(409).json({ error: e.message, code: "VERSION_CONFLICT" });
     }
+    if (punchFormatErrorResponse(res, e)) return;
     next(e);
   }
 });
@@ -265,6 +294,7 @@ attendanceRouter.put("/records/:id", (req, res, next) => {
     if (e instanceof VersionConflictError) {
       return res.status(409).json({ error: e.message, code: "VERSION_CONFLICT" });
     }
+    if (punchFormatErrorResponse(res, e)) return;
     next(e);
   }
 });
@@ -347,7 +377,8 @@ attendanceRouter.get("/summary", (req, res) => {
   const month =
     typeof req.query.month === "string" && /^\d{4}-\d{2}$/.test(req.query.month)
       ? req.query.month
-      : new Date().toISOString().slice(0, 7);
+      // 本地当月：UTC 口径下每月 1 日 00:00–07:59 会查成上个月
+      : localToday().slice(0, 7);
   res.json({ month, rows: monthlySummary(month) });
 });
 

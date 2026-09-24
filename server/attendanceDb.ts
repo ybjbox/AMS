@@ -129,8 +129,11 @@ export function listShifts(): ShiftRow[] {
 
 export function createShift(input: { id?: string; name: string; startTime: string; endTime: string }): ShiftRow {
   const id = input.id || crypto.randomUUID();
+  // 归一到 HH:mm：`9:00` 会让 shiftMatch 的 toMinutes 解析成 NaN，那条班次从此永不判迟到
+  const startTime = normalizeClockTime(input.startTime);
+  const endTime = normalizeClockTime(input.endTime);
   db.prepare("INSERT INTO shifts (id, name, startTime, endTime) VALUES (?, ?, ?, ?)").run(
-    id, input.name, input.startTime, input.endTime
+    id, input.name, startTime, endTime
   );
   const row = db.prepare("SELECT * FROM shifts WHERE id = ?").get(id);
   if (!row) throw new Error(`createShift: 插入后未找到班次 ${id}`);
@@ -143,8 +146,8 @@ export function updateShift(id: string, input: { name?: string; startTime?: stri
   const existing = rowToShift(existingRow);
   db.prepare("UPDATE shifts SET name = ?, startTime = ?, endTime = ? WHERE id = ?").run(
     input.name ?? existing.name,
-    input.startTime ?? existing.startTime,
-    input.endTime ?? existing.endTime,
+    input.startTime !== undefined ? normalizeClockTime(input.startTime) : existing.startTime,
+    input.endTime !== undefined ? normalizeClockTime(input.endTime) : existing.endTime,
     id
   );
   const row = db.prepare("SELECT * FROM shifts WHERE id = ?").get(id);
@@ -212,6 +215,53 @@ export class VersionConflictError extends Error {
     super("数据已被他人修改，请刷新后重试");
     this.name = "VersionConflictError";
   }
+}
+
+/** 日期/时间格式不合法（这类值会静默逃过范围查询，或被唯一键当成另一分钟） */
+export class PunchFormatError extends Error {
+  status = 400;
+  constructor(message: string) {
+    super(message);
+    this.name = "PunchFormatError";
+  }
+}
+
+/**
+ * 打卡日期归一：接受 2026-09-21 / 2026-9-21 / 2026/9/21，一律存成 YYYY-MM-DD。
+ * 必须归一：punch_records 的范围查询是按 TEXT 字典序比的（`date >= ?`），
+ * 存了 2026-9-21 就永远查不到， yet 它在库里看着完全正常。
+ */
+export function normalizePunchDate(value: unknown): string {
+  const raw = String(value ?? "").trim();
+  const m = /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/u.exec(raw);
+  if (!m) throw new PunchFormatError(`打卡日期格式不正确（需要 YYYY-MM-DD）：${raw || "空值"}`);
+  const [, y, mo, d] = m;
+  const month = Number(mo);
+  const day = Number(d);
+  if (month < 1 || month > 12 || day < 1 || day > 31) throw new PunchFormatError(`打卡日期不合法：${raw}`);
+  return `${y}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+/**
+ * 打卡时间归一：9:00 / 09:00 / 09:00:00 → 09:00:00。
+ * 关键是补零到两位：唯一键是 (employeeId,date,time) 三列，
+ * "9:00" 与 "09:00" 会被认成两个不同分钟，同一分钟就会落两条卡（月报与缺卡判定跟着错）。
+ */
+export function normalizePunchTime(value: unknown): string {
+  const raw = String(value ?? "").trim();
+  const m = /^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/u.exec(raw);
+  if (!m) throw new PunchFormatError(`打卡时间格式不正确（需要 HH:mm 或 HH:mm:ss）：${raw || "空值"}`);
+  const [, h, mi, s] = m;
+  const hour = Number(h);
+  const minute = Number(mi);
+  const second = Number(s ?? 0);
+  if (hour > 23 || minute > 59 || second > 59) throw new PunchFormatError(`打卡时间不合法：${raw}`);
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:${String(second).padStart(2, "0")}`;
+}
+
+/** 班次/时段的时间存 HH:mm（shiftMatch 按 HH:mm 解析，多余秒数会被忽略，先统一掉） */
+export function normalizeClockTime(value: unknown): string {
+  return normalizePunchTime(value).slice(0, 5);
 }
 
 /**
@@ -309,7 +359,13 @@ export function replaceRecords(records: { id?: string; employeeId: string; emplo
   try {
     db.exec("DELETE FROM punch_records");
     for (const r of records || []) {
-      insert.run(r.id || crypto.randomUUID(), r.employeeId, r.employeeName, r.date, r.time);
+      insert.run(
+        r.id || crypto.randomUUID(),
+        r.employeeId,
+        r.employeeName,
+        normalizePunchDate(r.date),
+        normalizePunchTime(r.time)
+      );
     }
     db.exec("COMMIT");
   } catch (e) {
@@ -343,6 +399,8 @@ export function upsertRecord(r: {
   expectedVersion?: number;
 }): PunchRecordRow {
   const id = r.id ?? crypto.randomUUID();
+  const date = normalizePunchDate(r.date);
+  const time = normalizePunchTime(r.time);
   const existingRow = db.prepare("SELECT version FROM punch_records WHERE id = ?").get(id) as
     | { version: number | bigint }
     | undefined;
@@ -356,7 +414,7 @@ export function upsertRecord(r: {
       db.prepare(
         `UPDATE punch_records SET employeeId = ?, employeeName = ?, date = ?, time = ?, version = version + 1
          WHERE id = ?`
-      ).run(r.employeeId, r.employeeName, r.date, r.time, id);
+      ).run(r.employeeId, r.employeeName, date, time, id);
     } catch (e) {
       // 把这条记录改到与另一条同一分钟
       if (isUniqueViolation(e)) throw new DuplicatePunchError();
@@ -369,11 +427,11 @@ export function upsertRecord(r: {
         `INSERT INTO punch_records (id, employeeId, employeeName, date, time, version) VALUES (?, ?, ?, ?, ?, 1)
          ON CONFLICT(employeeId, date, time) DO NOTHING`
       )
-      .run(id, r.employeeId, r.employeeName, r.date, r.time);
+      .run(id, r.employeeId, r.employeeName, date, time);
     if (res.changes === 0) {
       const hit = db
         .prepare("SELECT * FROM punch_records WHERE employeeId = ? AND date = ? AND time = ?")
-        .get(r.employeeId, r.date, r.time) as DbRow | undefined;
+        .get(r.employeeId, date, time) as DbRow | undefined;
       if (hit) return rowToRecord(hit);
       throw new DuplicatePunchError();
     }
@@ -410,9 +468,15 @@ export function insertSourcedRecords(
   );
   let created = 0;
   let skipped = 0;
+  // 先整体归一再开事务：任何一行日期/时间格式不对就整体拒绝，不留"半批已写入"的状态
+  const normalized = rows.map((r) => ({
+    ...r,
+    date: normalizePunchDate(r.date),
+    time: normalizePunchTime(r.time),
+  }));
   db.exec("BEGIN");
   try {
-    for (const r of rows) {
+    for (const r of normalized) {
       const res = insert.run(crypto.randomUUID(), r.employeeId, r.employeeName, r.date, r.time, r.source);
       if (Number(res.changes) > 0) created += 1;
       else skipped += 1;

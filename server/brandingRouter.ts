@@ -42,7 +42,15 @@ brandingRouter.get('/:slot', (req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
   res.setHeader('ETag', etag);
-  fs.createReadStream(rec.absPath).pipe(res);
+  // 流错误必须有监听者：文件被手工删掉/EMFILE 时 read stream 会抛 'error'，
+  // 没人接就是 uncaughtException —— 而本站的兜底是 process.exit(1)，等于一个免鉴权请求能打停整站。
+  const stream = fs.createReadStream(rec.absPath);
+  stream.on('error', (e) => {
+    console.error('[branding] 读取资源失败：', e);
+    if (!res.headersSent) res.status(404).json({ error: '资源不存在' });
+    else res.destroy(e);
+  });
+  stream.pipe(res);
 });
 
 brandingRouter.post('/:slot', requireRole('SUPER_ADMIN'), (req, res) => {

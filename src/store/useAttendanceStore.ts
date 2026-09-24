@@ -48,20 +48,20 @@ interface AttendanceState {
   isLoading: boolean;
   error: string | null;
 
-  fetchData: () => Promise<void>;
+  fetchData: () => Promise<string | null>;
 
-  addShift: (shift: Shift) => Promise<void>;
-  updateShift: (id: string, shift: Partial<Shift>) => Promise<void>;
-  deleteShift: (id: string) => Promise<void>;
+  addShift: (shift: Shift) => Promise<string | null>;
+  updateShift: (id: string, shift: Partial<Shift>) => Promise<string | null>;
+  deleteShift: (id: string) => Promise<string | null>;
 
-  setSchedules: (schedules: EmployeeSchedule[]) => Promise<void>;
-  setRecords: (records: PunchRecord[]) => Promise<void>;
-  removeSchedule: (employeeId: string) => Promise<void>;
-  clearSchedules: () => Promise<void>;
-  removeRecord: (id: string) => Promise<void>;
-  clearRecords: () => Promise<void>;
+  setSchedules: (schedules: EmployeeSchedule[]) => Promise<string | null>;
+  setRecords: (records: PunchRecord[]) => Promise<string | null>;
+  removeSchedule: (employeeId: string) => Promise<string | null>;
+  clearSchedules: () => Promise<string | null>;
+  removeRecord: (id: string) => Promise<string | null>;
+  clearRecords: () => Promise<string | null>;
 
-  analyzeAnomalies: () => Promise<void>;
+  analyzeAnomalies: () => Promise<string | null>;
 }
 
 export const useAttendanceStore = create<AttendanceState>()((set, get) => ({

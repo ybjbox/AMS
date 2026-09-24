@@ -36,7 +36,7 @@ import {
   upsertWeComBinding,
   WeComConfigError,
 } from "./wecomDb.ts";
-import { runWeComSync, testWeComConnection, WeComSyncError } from "./wecomSync.ts";
+import { restartWeComSyncScheduler, runWeComSync, testWeComConnection, WeComSyncError } from "./wecomSync.ts";
 import { errMessage, validateBody, wecomBindingsSchema, wecomConfigSchema } from "./validation.ts";
 
 export const wecomRouter = Router();
@@ -50,11 +50,14 @@ wecomRouter.get("/config", (_req, res) => {
 wecomRouter.put("/config", validateBody(wecomConfigSchema), (req, res) => {
   try {
     setWeComConfig(mergeWeComConfig(req.body));
+    // 保存即生效：以前定时任务只在进程启动时装一次，界面上打开开关后什么都不会发生
+    const scheduler = restartWeComSyncScheduler();
+    res.json({ ...maskedWeComConfig(), schedulerRunning: scheduler.running, schedulerReason: scheduler.reason });
+    return;
   } catch (e) {
     if (e instanceof WeComConfigError) return res.status(400).json({ error: e.message });
     return res.status(500).json({ error: errMessage(e) });
   }
-  res.json(maskedWeComConfig());
 });
 
 wecomRouter.get("/status", (_req, res) => {

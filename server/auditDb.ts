@@ -82,6 +82,8 @@ const SECRET_KEYS = new Set([
   "webhook",
   // 企业微信考勤：PUT /api/wecom/config 的 corpSecret 是应用凭据，与 clientsecret 同档
   "corpsecret",
+  // 出网代理地址可带 user:pass，整条 URL 按凭据处理（与 webhook 同口径：整体丢弃，不做部分保留）
+  "proxyurl",
 ]);
 
 /** 这些字段体积可能极大（脚本正文、base64 文件），只留长度信息 */

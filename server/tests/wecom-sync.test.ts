@@ -12,8 +12,10 @@
  *
  * 运行环境：vitest server project，DATA_DIR=data-test。
  */
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import express from 'express';
+import http from 'node:http';
+import net from 'node:net';
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { db, createEmployee, deleteEmployee } from '../db.ts';
@@ -28,14 +30,25 @@ import {
   getWeComConfig,
   getWeComSyncState,
   listWeComBindings,
+  maskProxyUrl,
+  mergeWeComConfig,
   setWeComConfig,
   setWeComSyncState,
   upsertWeComBinding,
   validateWeComBaseUrl,
+  validateWeComProxyUrl,
   WeComConfigError,
 } from '../wecomDb.ts';
-import { fetchCheckinRecords, formatPunchTime, resetWeComTokenCache, CHECKIN_DATA_TYPE } from '../wecomClient.ts';
-import { runWeComSync, resolveSyncWindow, WeComSyncError, MAX_BACKFILL_DAYS } from '../wecomSync.ts';
+import {
+  CHECKIN_DATA_TYPE,
+  fetchCheckinRecords,
+  formatPunchTime,
+  getWeComAccessToken,
+  resetWeComProxyAgents,
+  resetWeComTokenCache,
+} from '../wecomClient.ts';
+import { sanitize } from '../auditDb.ts';
+import { runWeComSync, resolveSyncWindow, stopWeComSyncScheduler, WeComSyncError, MAX_BACKFILL_DAYS } from '../wecomSync.ts';
 
 const UA = 'Mozilla/5.0 (vitest-wecom)';
 const PW = 'Wecom#Test2026-aa';
@@ -227,8 +240,17 @@ describe('企微客户端：官方硬限制与字段白名单', () => {
     const users = Array.from({ length: 120 }, (_, i) => `u${i}`);
     const end = Math.floor(Date.now() / 1000);
     const start = end - 60 * 86400;
-    const res = await fetchCheckinRecords(cfg, users, start, end);
+    // 每完成一次调用就回写一次进度：拉取阶段是整轮同步最长的一段，不回写的话任务行会被
+    // 台账对账判成"没有进展 = 已中断"（批次 E1），前端也会一直停在 0。
+    const ticks: Array<[number, number]> = [];
+    const res = await fetchCheckinRecords(cfg, users, start, end, (pulled, callIndex) =>
+      ticks.push([pulled, callIndex])
+    );
     expect(res.calls).toBe(6);
+    expect(ticks.length).toBe(6);
+    expect(ticks.map((t) => t[1])).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(ticks.every((t, i) => i === 0 || t[0] >= ticks[i - 1][0])).toBe(true);
+    expect(ticks[ticks.length - 1][0]).toBe(res.fetched);
     for (const call of stub.calls) {
       expect(call.endtime - call.starttime).toBeLessThanOrEqual(29 * 86400);
       expect(call.useridlist.length).toBeLessThanOrEqual(100);
@@ -509,5 +531,202 @@ describe('/api/wecom HTTP 层（真 authGate）', () => {
     expect(punchCount()).toBe(1);
     // 别人的任务不能看：HR 连路径都进不来（403），换个管理员可以
     expect((await api('GET', `/sync/jobs/${jobId}`, hrToken)).status).toBe(403);
+  });
+});
+
+describe('出网代理（家宽动态 IP → 固定出口 IP）', () => {
+  let proxy: Server;
+  let proxyUrl = '';
+  let tunnels = 0;
+  let plainReqs = 0;
+
+  beforeAll(async () => {
+    const target = new URL(stubOrigin);
+    proxy = http.createServer((_req, res) => {
+      plainReqs += 1; // 绝对 URI 形式转发（本实现用不到，计数以证明走的是 CONNECT）
+      res.writeHead(400);
+      res.end();
+    });
+    proxy.on('connect', (req, socket, head) => {
+      tunnels += 1;
+      const upstream = net.connect(Number(target.port), target.hostname, () => {
+        socket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+        if (head?.length) upstream.write(head);
+        upstream.pipe(socket);
+        socket.pipe(upstream);
+      });
+      upstream.on('error', () => socket.destroy());
+      socket.on('error', () => upstream.destroy());
+    });
+    await new Promise<void>((r) => proxy.listen(0, '127.0.0.1', r));
+    proxyUrl = `http://127.0.0.1:${(proxy.address() as AddressInfo).port}`;
+  });
+
+  afterAll(async () => {
+    resetWeComProxyAgents();
+    await new Promise<void>((r) => proxy.close(() => r()));
+  });
+
+  beforeEach(() => {
+    tunnels = 0;
+    plainReqs = 0;
+    resetStub();
+  });
+
+  it('配了代理就真的经代理出网；不配则一次都不碰代理（对照，防假阳性）', async () => {
+    configure({ proxyUrl });
+    const viaProxy = await getWeComAccessToken(getWeComConfig());
+    expect(viaProxy).toMatch(/^tok-/u);
+    expect(tunnels).toBeGreaterThanOrEqual(1);
+    // 钉住机制：undici 的 ProxyAgent 用 CONNECT 隧道，而不是"绝对 URI 转发"（后者代理可读明文）
+    expect(plainReqs).toBe(0);
+    expect(stub.tokenCalls).toBe(1);
+
+    const before = tunnels;
+    configure({ proxyUrl: '' });
+    expect(await getWeComAccessToken(getWeComConfig())).toMatch(/^tok-/u);
+    expect(tunnels).toBe(before);
+  });
+
+  it('代理地址参与 token 缓存键：换出口机必须重新换 token', async () => {
+    const cfgA = { ...defaultWeComConfig(), corpId: 'c', agentId: 'a', corpSecret: 's', baseUrl: stubOrigin, proxyUrl };
+    setWeComConfig(cfgA);
+    resetWeComTokenCache();
+    await getWeComAccessToken(getWeComConfig());
+    const first = stub.tokenCalls;
+    // 只换代理、不手动清缓存：仍应重新请求（旧 token 是另一个出口 IP 换来的）
+    setWeComConfig({ ...cfgA, proxyUrl: `http://user:pw@127.0.0.1:${(proxy.address() as AddressInfo).port}` });
+    await getWeComAccessToken(getWeComConfig());
+    expect(stub.tokenCalls).toBe(first + 1);
+  });
+
+  it('带凭据的代理地址可用，但回显必须藏掉密码', async () => {
+    const withAuth = `http://qa-user:qa-pass@127.0.0.1:${(proxy.address() as AddressInfo).port}`;
+    configure({ proxyUrl: withAuth });
+    expect(await getWeComAccessToken(getWeComConfig())).toMatch(/^tok-/u);
+    expect(tunnels).toBeGreaterThanOrEqual(1);
+    const masked = maskProxyUrl(getWeComConfig().proxyUrl);
+    expect(masked).not.toContain('qa-pass');
+    expect(masked).toContain('qa-user');
+    const res = await api('GET', '/config', superToken);
+    expect((res.json as { proxyUrl: string }).proxyUrl).not.toContain('qa-pass');
+  });
+
+  it('校验：只收 http/https 代理、拒路径与查询、空串即清空', () => {
+    expect(validateWeComProxyUrl('')).toBe('');
+    expect(validateWeComProxyUrl('  ')).toBe('');
+    expect(validateWeComProxyUrl('http://1.2.3.4:3128')).toBe('http://1.2.3.4:3128');
+    expect(validateWeComProxyUrl('https://proxy.corp')).toBe('https://proxy.corp');
+    expect(() => validateWeComProxyUrl('socks5://1.2.3.4:1080')).toThrow(/只支持 http\/https/u);
+    expect(() => validateWeComProxyUrl('not-a-url')).toThrow(/不是合法 URL/u);
+    expect(() => validateWeComProxyUrl('http://1.2.3.4:3128/upstream')).toThrow(/不得包含路径/u);
+    expect(() => validateWeComProxyUrl('http://1.2.3.4:3128?x=1')).toThrow(/不得包含查询参数/u);
+  });
+
+  it('合并语义：掩码回传=不改、清空输入框=清掉代理、缺键=不改', () => {
+    configure({ proxyUrl: 'http://1.2.3.4:3128' });
+    const maskedNow = maskProxyUrl(getWeComConfig().proxyUrl);
+    expect(mergeWeComConfig({ proxyUrl: maskedNow }).proxyUrl).toBe('http://1.2.3.4:3128');
+    expect(mergeWeComConfig({}).proxyUrl).toBe('http://1.2.3.4:3128');
+    expect(mergeWeComConfig({ proxyUrl: '' }).proxyUrl).toBe('');
+    // 读侧兜底：库里被手工塞进非法代理时当"没配代理"，不能把出站请求带偏
+    setWeComConfig({ ...defaultWeComConfig(), proxyUrl: 'telnet://x' });
+    expect(getWeComConfig().proxyUrl).toBe('');
+  });
+
+  it('审计脱敏：proxyUrl 与 corpSecret 同档，整条丢弃', () => {
+    const out = sanitize({ corpSecret: 's', proxyUrl: 'http://u:p@1.2.3.4:3128', baseUrl: 'https://x' }) as Record<string, unknown>;
+    expect(out.proxyUrl).toBe('[已脱敏]');
+    expect(out.baseUrl).toBe('https://x');
+  });
+
+  it('HTTP 层：保存代理 → 回显掩码、库里是全值', async () => {
+    configure({ proxyUrl: '' });
+    const saved = await api('PUT', '/config', superToken, {
+      ...defaultWeComConfig(),
+      corpId: 'ww-test-corp',
+      agentId: '1000002',
+      corpSecret: 'stub-secret-value',
+      baseUrl: stubOrigin,
+      proxyUrl,
+    });
+    expect(saved.status).toBe(200);
+    expect((saved.json as { proxyUrl: string }).proxyUrl).toBe(proxyUrl);
+    expect(getWeComConfig().proxyUrl).toBe(proxyUrl);
+    const read = await api('GET', '/config', superToken);
+    expect((read.json as { proxyUrl: string }).proxyUrl).toBe(proxyUrl);
+    // 非法代理由服务端校验挡下并给中文原因（不是 500）
+    const bad = await api('PUT', '/config', superToken, { proxyUrl: 'socks5://1.2.3.4:1080' });
+    expect(bad.status).toBe(400);
+    expect((bad.json as { error: string }).error).toMatch(/只支持 http\/https/u);
+    configure({ proxyUrl: '' });
+  });
+});
+
+describe('错误消息不得带出凭据（全系统检查 A1）', () => {
+  it('连不上时只说接口路径，query 里的 corpsecret 与 access_token 一个都不留', async () => {
+    configure({ baseUrl: 'http://127.0.0.1:1', proxyUrl: '' }); // 没人监听的端口
+    const res = await api('POST', '/test', superToken);
+    const dump = JSON.stringify(res.json);
+    expect((res.json as { ok: boolean }).ok).toBe(false);
+    expect(dump).toContain('/cgi-bin/gettoken');
+    expect(dump).not.toContain('stub-secret-value');
+    expect(dump.toLowerCase()).not.toContain('corpsecret');
+    expect(dump.toLowerCase()).not.toContain('corpid');
+
+    // 同步任务的失败原因同样会落进 import_jobs.error 与审计 detail，必须一起干净
+    const preview = await api('POST', '/preview', superToken);
+    const pdump = JSON.stringify(preview.json);
+    expect(preview.status).toBeGreaterThanOrEqual(400);
+    expect(pdump).not.toContain('stub-secret-value');
+    expect(pdump.toLowerCase()).not.toContain('corpsecret');
+
+    configure(); // 恢复成假企微地址，别影响后面的用例
+  });
+});
+
+describe('保存配置即刻重启定时同步（全系统检查 B3）', () => {
+  const envKey = 'WECOM_SYNC_ENABLED';
+  let savedEnv: string | undefined;
+
+  beforeEach(() => {
+    savedEnv = process.env[envKey];
+    stopWeComSyncScheduler();
+  });
+  afterEach(() => {
+    stopWeComSyncScheduler();
+    if (savedEnv === undefined) delete process.env[envKey];
+    else process.env[envKey] = savedEnv;
+  });
+
+  const fullConfig = {
+    corpId: 'ww-test-corp',
+    agentId: '1000002',
+    corpSecret: 'stub-secret-value',
+    baseUrl: stubOrigin,
+    syncIntervalMinutes: 60,
+    overlapMinutes: 120,
+  };
+
+  it('开关打开且凭据齐：响应里 schedulerRunning=true（不用再重启进程）', async () => {
+    delete process.env[envKey];
+    const res = await api('PUT', '/config', superToken, { ...fullConfig, enabled: true });
+    expect(res.status).toBe(200);
+    expect(res.json).toMatchObject({ schedulerRunning: true });
+    expect(String((res.json as { schedulerReason?: string }).schedulerReason)).toContain('60 分钟');
+  });
+
+  it('开关关着：schedulerRunning=false 并说清原因', async () => {
+    delete process.env[envKey];
+    configure({ proxyUrl: '' });
+    const res = await api('PUT', '/config', superToken, { ...fullConfig, enabled: false });
+    expect(res.json).toMatchObject({ schedulerRunning: false, schedulerReason: '同步开关未打开' });
+  });
+
+  it('运维总闸优先：环境变量禁用时即便界面开了也不启动，原因如实回传', async () => {
+    process.env[envKey] = 'false';
+    const res = await api('PUT', '/config', superToken, { ...fullConfig, enabled: true });
+    expect(res.json).toMatchObject({ schedulerRunning: false });
+    expect(String((res.json as { schedulerReason?: string }).schedulerReason)).toContain('WECOM_SYNC_ENABLED');
   });
 });

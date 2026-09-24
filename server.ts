@@ -31,6 +31,7 @@ import { remindersRouter } from "./server/remindersRouter.ts";
 import { startReminderScheduler } from "./server/remindersDb.ts";
 import { wecomRouter } from "./server/wecomRouter.ts";
 import { startWeComSyncScheduler } from "./server/wecomSync.ts";
+import { startImportJobSweeper } from "./server/importJobsDb.ts";
 import { pruneAuditLogs } from "./server/auditDb.ts";
 import { startOrphanUploadScan } from "./server/uploadsCleanup.ts";
 import { authRouter } from "./server/authRouter.ts";
@@ -421,6 +422,9 @@ async function startServer() {
   // 企业微信打卡同步：默认关（配置页开关 + WECOM_SYNC_ENABLED=false 总闸），
   // 因为可信 IP 是硬门槛——没配好之前一次接口都不该发。
   startWeComSyncScheduler();
+  // 导入/同步任务台账对账：上一代进程留下的 running 行必须判中断，否则前端会一直轮询；
+  // 顺带按保留期清理终态行（这张表只增不删的话，定时同步每天都要留几条）。
+  startImportJobSweeper();
   pruneAuditLogs();
   startOrphanUploadScan();
 

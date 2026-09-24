@@ -12,19 +12,19 @@ interface DocumentState {
   isLoading: boolean;
   error: string | null;
 
-  fetchData: () => Promise<void>;
+  fetchData: () => Promise<string | null>;
 
-  addFolder: (input: FolderInput) => Promise<void>;
-  updateFolder: (id: string, folder: Partial<Folder>) => Promise<void>;
-  removeFolder: (id: string) => Promise<void>;
+  addFolder: (input: FolderInput) => Promise<string | null>;
+  updateFolder: (id: string, folder: Partial<Folder>) => Promise<string | null>;
+  removeFolder: (id: string) => Promise<string | null>;
 
-  uploadDocument: (file: File, folderId: string | null) => Promise<void>;
-  updateDocument: (id: string, doc: Partial<Document>) => Promise<void>;
-  removeDocument: (id: string) => Promise<void>;
+  uploadDocument: (file: File, folderId: string | null) => Promise<string | null>;
+  updateDocument: (id: string, doc: Partial<Document>) => Promise<string | null>;
+  removeDocument: (id: string) => Promise<string | null>;
 
-  addDocumentSet: (input: DocumentSetInput) => Promise<void>;
-  updateDocumentSet: (id: string, set: Partial<DocumentSet>) => Promise<void>;
-  removeDocumentSet: (id: string) => Promise<void>;
+  addDocumentSet: (input: DocumentSetInput) => Promise<string | null>;
+  updateDocumentSet: (id: string, set: Partial<DocumentSet>) => Promise<string | null>;
+  removeDocumentSet: (id: string) => Promise<string | null>;
 }
 
 export const useDocumentStore = create<DocumentState>()((set, get) => ({

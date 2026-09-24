@@ -147,6 +147,8 @@ export const wecomConfigSchema = z
     agentId: z.string().max(32, "AgentId 过长").optional(),
     corpSecret: z.string().max(128, "Secret 过长").optional(),
     baseUrl: z.string().max(200, "接口地址过长").optional(),
+    // 出网代理：可带 user:pass，故按凭据对待（回显掩码、审计丢弃）；具体格式由 validateWeComProxyUrl 裁定
+    proxyUrl: z.string().max(300, "代理地址过长").optional(),
     syncIntervalMinutes: z.coerce.number().optional(),
     overlapMinutes: z.coerce.number().optional(),
   })

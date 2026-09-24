@@ -6,6 +6,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { useDepartments } from '@/store/useDepartmentStore';
 import { useBodyOverflow } from '@/hooks/useBodyOverflow';
 import { useEmployeeStore } from '@/store/useEmployeeStore';
+import { toast } from 'sonner';
 import { Download, Plus, Printer, ChevronDown, Upload } from 'lucide-react';
 import { User } from '@/types';
 import { UserTable } from '@/components/users/UserTable';
@@ -199,7 +200,10 @@ export default function Users() {
                       variant: 'danger',
                     })
                   ) {
-                    deleteUser(user.id);
+                    // store 动作把失败原因作为返回值（4xx/5xx 没有全局提示），不接住就是"点了没反应"
+                    const failure = await deleteUser(user.id);
+                    if (failure) toast.error(failure);
+                    else toast.success('员工已删除');
                   }
                 }}
                 onRowClick={(user) => {

@@ -11,6 +11,7 @@
  * 并且**在客户端边界就把 lat/lng/wifimac/deviceid/mediaids/location/notes 全部丢掉** ——
  * 敏感字段不进入返回值，就不可能经由预览报告、日志或落库任何一条路径泄露出去。
  */
+import { fetch as undiciFetch, ProxyAgent } from "undici";
 import type { WeComConfig } from "./wecomDb.ts";
 
 /** 打卡数据类型：1=上下班，2=外出，3=全部。本系统只取 1。 */
@@ -73,7 +74,25 @@ interface TokenCacheEntry {
 const tokenCache = new Map<string, TokenCacheEntry>();
 
 function cacheKey(cfg: WeComConfig): string {
-  return `${cfg.baseUrl}|${cfg.corpId}|${cfg.agentId}|${cfg.corpSecret}`;
+  // 代理地址参与缓存键：换了出口机就该重新换 token（旧 token 是另一台 IP 换来的）
+  return `${cfg.baseUrl}|${cfg.corpId}|${cfg.agentId}|${cfg.corpSecret}|${cfg.proxyUrl ?? ""}`;
+}
+
+/** 每个代理地址复用一个连接池；ProxyAgent 内部自管 socket。 */
+const proxyAgents = new Map<string, ProxyAgent>();
+function proxyAgentFor(proxyUrl: string): ProxyAgent {
+  let agent = proxyAgents.get(proxyUrl);
+  if (!agent) {
+    agent = new ProxyAgent(proxyUrl);
+    proxyAgents.set(proxyUrl, agent);
+  }
+  return agent;
+}
+
+/** 测试与「改了代理」后调用：关掉连接池，避免留着指向旧端口的 socket。 */
+export function resetWeComProxyAgents(): void {
+  for (const agent of proxyAgents.values()) void agent.close();
+  proxyAgents.clear();
 }
 
 /** 测试与「改了 Secret」后用：丢掉缓存，下一次强制重新换 token。 */
@@ -82,12 +101,33 @@ export function resetWeComTokenCache(key?: string): void {
   else tokenCache.delete(key);
 }
 
-async function requestJson(url: string, init: RequestInit): Promise<Record<string, unknown>> {
+/**
+ * 出错时要说清"打在哪个接口上"，但**查询串一律丢掉**：
+ * `gettoken` 的 query 里有 corpsecret、`getcheckindata` 的 URL 里有 access_token，
+ * 而这条 message 会回给前端、写进 import_jobs.error，还会进审计 detail（detail 不做脱敏）。
+ */
+function describeEndpoint(url: string): string {
+  const withoutQuery = url.split("?")[0];
+  return withoutQuery.replace(/\/\/[^/]+\//u, "//…/");
+}
+
+async function requestJson(url: string, init: RequestInit, proxyUrl = ""): Promise<Record<string, unknown>> {
   let res: Response;
+  const signal = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
   try {
-    res = await fetch(url, { ...init, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+    if (proxyUrl) {
+      // 只有配了代理才换用 undici 自带的 fetch + ProxyAgent（agent 与 fetch 同副本，dispatcher 语义自洽）；
+      // 没配代理时仍是原来的全局 fetch，不给现网链路引入第二套 HTTP 栈
+      res = (await undiciFetch(url, {
+        ...init,
+        signal,
+        dispatcher: proxyAgentFor(proxyUrl),
+      } as unknown as Parameters<typeof undiciFetch>[1])) as unknown as Response;
+    } else {
+      res = await fetch(url, { ...init, signal });
+    }
   } catch (e) {
-    throw new WeComApiError(-1, `无法连接企业微信接口（${url.replace(/\/\/[^/]+\//u, "//…/")}）：${e instanceof Error ? e.message : String(e)}`);
+    throw new WeComApiError(-1, `无法连接企业微信接口（${describeEndpoint(url)}）：${e instanceof Error ? e.message : String(e)}`);
   }
   if (!res.ok) throw new WeComApiError(-1, `企业微信接口返回 HTTP ${res.status}`);
   try {
@@ -104,7 +144,7 @@ export async function getWeComAccessToken(cfg: WeComConfig, force = false): Prom
     if (hit && hit.expiresAt - TOKEN_REFRESH_AHEAD_MS > Date.now()) return hit.token;
   }
   const q = new URLSearchParams({ corpid: cfg.corpId, corpsecret: cfg.corpSecret });
-  const body = await requestJson(`${cfg.baseUrl}/cgi-bin/gettoken?${q.toString()}`, { method: "GET" });
+  const body = await requestJson(`${cfg.baseUrl}/cgi-bin/gettoken?${q.toString()}`, { method: "GET" }, cfg.proxyUrl);
   const errcode = Number(body.errcode ?? 0);
   if (errcode !== 0) throw new WeComApiError(errcode, describeWeComError(errcode, String(body.errmsg ?? "")));
   const token = String(body.access_token ?? "");
@@ -173,7 +213,7 @@ async function callCheckin(cfg: WeComConfig, token: string, body: Record<string,
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-  });
+  }, cfg.proxyUrl);
   const errcode = Number(res.errcode ?? 0);
   if (errcode !== 0) throw new WeComApiError(errcode, describeWeComError(errcode, String(res.errmsg ?? "")));
   const list = res.checkindata;
@@ -191,12 +231,15 @@ export interface WeComPullResult {
  * 拉取 [start,end] 区间内这些 userid 的上下班打卡。
  * 分段 × 分批串行调用（企业微信对同一接口的频率有上限，串行最稳），
  * 任一段失败即整体抛错——半途而废的同步比不同步更危险（游标会跳过缺口）。
+ * `onProgress(已拉条数, 已调用次数)` 每完成一次调用就回一次：这一段可能连跑几十次接口，
+ * 全程没有回写的任务行会被台账对账判成"没有进展 = 已中断"。
  */
 export async function fetchCheckinRecords(
   cfg: WeComConfig,
   userids: string[],
   start: number,
-  end: number
+  end: number,
+  onProgress?: (fetched: number, calls: number) => void
 ): Promise<WeComPullResult> {
   if (userids.length === 0) return { punches: [], fetched: 0, calls: 0 };
   let token = await getWeComAccessToken(cfg);
@@ -222,6 +265,7 @@ export async function fetchCheckinRecords(
         const p = toPunch(rec);
         if (p) punches.push(p);
       }
+      onProgress?.(fetched, calls);
       // 让出事件循环：长时间分段拉取期间 HTTP 服务仍能响应其它请求
       await new Promise((resolve) => setImmediate(resolve));
     }

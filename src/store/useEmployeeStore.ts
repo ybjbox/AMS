@@ -8,10 +8,10 @@ interface UserStore {
   isLoading: boolean;
   error: string | null;
   initialized: boolean;
-  fetchUsers: () => Promise<void>;
-  addUser: (user: Omit<User, 'id'>) => Promise<void>;
-  updateUser: (user: User) => Promise<void>;
-  deleteUser: (id: string) => Promise<void>;
+  fetchUsers: () => Promise<string | null>;
+  addUser: (user: Omit<User, 'id'>) => Promise<string | null>;
+  updateUser: (user: User) => Promise<string | null>;
+  deleteUser: (id: string) => Promise<string | null>;
 }
 
 export const useEmployeeStore = create<UserStore>()((set, get) => ({
@@ -21,7 +21,7 @@ export const useEmployeeStore = create<UserStore>()((set, get) => ({
   initialized: false,
 
   fetchUsers: async () => {
-    if (get().initialized && get().users.length > 0) return;
+    if (get().initialized && get().users.length > 0) return null;
 
     return createAsyncAction(set, async () => {
       const users = await userApi.fetchUsers();

@@ -32,6 +32,10 @@ export interface RestoreResponse {
   safetyBackup?: string;
   /** uploads 目录是否一并回滚（旧备份无快照时 uploads 保持现状） */
   uploadsRestored?: boolean;
+  /** 恢复后是否成功补齐索引与列（false 时面板提示需要重启服务） */
+  schemaOk?: boolean;
+  /** 恢复后补跑迁移与常驻维护的说明；失败时会写"请重启服务" */
+  schemaNote?: string;
 }
 
 export const fetchBackups = (): Promise<BackupListResponse> => http.get('/backup');

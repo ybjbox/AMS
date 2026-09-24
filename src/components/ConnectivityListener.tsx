@@ -2,51 +2,28 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useBodyOverflow } from '../hooks/useBodyOverflow';
+import { onBackendProbeResult, requestBackendReprobe, useBackendStatus } from '../hooks/useBackendStatus';
 
+/**
+ * 后端失联遮罩。判定**只信一处**：useBackendStatus 的真 /api/health 轮询（与侧栏状态灯同源）。
+ *
+ * 此前它自己用 navigator.onLine 起状态、又只在浏览器 online/offline 事件里改，
+ * 于是「后端进程死了」这种最常见的故障永远不触发遮罩；「立即重试」在 DEV 分支里还只看
+ * navigator.onLine（浏览器一直在线），等于一点就把遮罩自欺欺人地关掉。
+ */
 export default function ConnectivityListener() {
-  const [isDisconnected, setIsDisconnected] = useState(false);
+  const status = useBackendStatus();
+  const isDisconnected = status === 'offline';
   const [isChecking, setIsChecking] = useState(false);
 
   useBodyOverflow(isDisconnected);
 
-  const checkConnection = useCallback(async () => {
+  // 忙态在"探测结果回来"的回调里收掉，而不是在 effect 体里同步 setState
+  useEffect(() => onBackendProbeResult((next) => setIsChecking(next !== 'offline')), []);
+
+  const checkConnection = useCallback(() => {
     setIsChecking(true);
-    try {
-      // DEV 模式下直接依赖浏览器 navigator.onLine 判断，不发送 health check 请求
-      // TODO(backend): 后端部署后移除此分支，使用真实的 health check 端点
-      if (import.meta.env.DEV) {
-        if (navigator.onLine) {
-          setIsDisconnected(false);
-        }
-      } else {
-        const response = await fetch('/api/health');
-        if (response.ok) {
-          setIsDisconnected(false);
-        } else {
-          setIsDisconnected(true);
-        }
-      }
-    } catch {
-      setIsDisconnected(true);
-    } finally {
-      setIsChecking(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const handleOffline = () => setIsDisconnected(true);
-    const handleOnline = () => setIsDisconnected(false);
-
-    window.addEventListener('offline', handleOffline);
-    window.addEventListener('online', handleOnline);
-
-    // Initial state
-    setIsDisconnected(!navigator.onLine);
-
-    return () => {
-      window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('online', handleOnline);
-    };
+    requestBackendReprobe();
   }, []);
 
   if (!isDisconnected) return null;
