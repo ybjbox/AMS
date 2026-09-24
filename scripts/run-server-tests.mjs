@@ -22,6 +22,7 @@ const CASES = [
   "scripts/verify-todos.ts",
   "scripts/verify-validation.ts",
   "scripts/verify-error-handler.ts",
+  "scripts/verify-prod-deps.mjs",
 ];
 
 const results = [];

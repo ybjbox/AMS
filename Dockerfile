@@ -1,7 +1,7 @@
-# AMS 单容器全栈镜像（与 docker-compose.yml / docs/DOCKER.md 对应）
+# AMS 单容器全栈镜像（与 docs/DOCKER.md 对应）
 # 架构：Express + node:sqlite 单进程，生产模式下 Express 直接托管 dist/ 静态产物（无 nginx）
 
-# ---- 构建阶段：安装依赖 + 构建前端 ----
+# ---- 构建阶段：安装全量依赖 + 构建前端 ----
 FROM node:22-bookworm-slim AS builder
 WORKDIR /app
 COPY package*.json ./
@@ -10,13 +10,15 @@ RUN npm ci --legacy-peer-deps --no-audit --no-fund
 COPY . .
 RUN npm run build
 
-# ---- 运行阶段 ----
+# ---- 运行阶段：只装生产依赖 ----
+# dependencies 里现在只有"服务端运行时真会 import 的包"+ tsx（入口加载器）；
+# 前端与构建期工具（react / vite / tailwind 等）全部留在 devDependencies，只在 builder 里存在。
+# 边界由 scripts/verify-prod-deps.mjs 在 CI 里钉住（含"server.ts 不得静态 import vite"）。
 FROM node:22-bookworm-slim AS runner
-# 完整依赖：server.ts 顶层静态 import 了 vite（生产分支跳过但仍需可解析），且 tsx 负责运行 TS 入口
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --legacy-peer-deps --no-audit --no-fund
+RUN npm ci --omit=dev --legacy-peer-deps --no-audit --no-fund
 COPY --from=builder /app/dist ./dist
 COPY server.ts ./
 COPY server ./server

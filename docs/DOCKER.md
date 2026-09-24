@@ -7,13 +7,21 @@ AMS 经过安全改造后已是**单进程全栈架构**：`server.ts` 用 Expre
 > ⚠️ 必须使用 **Node 22+** 的基础镜像。后端依赖 Node 内置的 `node:sqlite`（DatabaseSync），
 > 在 Node 18 上完全不支持，镜像会启动失败。Dockerfile 已锁定 `node:22-bookworm-slim`。
 
+> ✅ runner 阶段只装 **生产依赖**（`npm ci --omit=dev`）。`dependencies` 里只有服务端运行时真会
+> import 的那十来个包（express / compression / exceljs / mammoth / nodemailer / pdf-to-img /
+> pdfjs-dist / unpdf / undici / dotenv / zod）加 `tsx`（加载 TS 入口）；react、vite、tailwind、
+> vitest 等前端与构建期工具全在 `devDependencies`，只存在于 builder 阶段。
+> 这条边界由 `scripts/verify-prod-deps.mjs` 在 CI 里钉住（含"server.ts 不得静态 import vite"）。
+
 ## 文件说明
 
 | 文件 | 作用 |
 |------|------|
-| `Dockerfile` | 多阶段构建：builder 跑 `vite build` 产出 `dist/`；runner 用 `tsx server.ts` 运行全栈服务 |
+| `Dockerfile` | 多阶段构建：builder 装全量依赖跑 `vite build` 产出 `dist/`；runner 只装生产依赖，用 `node --import tsx server.ts` 运行全栈服务 |
 | `.dockerignore` | 排除 `node_modules` / `dist` / `data`（含 SQLite 与凭据）/ 密钥，避免烤进镜像 |
-| `docker-compose.yml` | 单服务 + 命名卷 `ams-data` 持久化数据 + 健康检查 |
+
+> 仓库内**没有** `docker-compose.yml`（此前文档误列）。下面用 `docker run`；若你自己维护一份，
+> 记得服务定义只需 `build: .` + `ports: "3000:3000"` + `volumes: ams-data:/app/data`。
 
 ## 构建镜像
 
@@ -23,39 +31,19 @@ docker build -t ams:latest .
 
 ## 启动方式
 
-### 方式一：docker compose（推荐）
-
 ```bash
-# 首启会随机生成管理员口令并打到日志里
-docker compose up -d
-
-# 查看首次管理员口令
-docker compose logs ams
-```
-
-如需固定口令（至少 10 位，含字母与数字）：
-
-```bash
-AMS_ADMIN_PASSWORD='YourStrongPwd123' docker compose up -d
-```
-
-停止（数据卷保留）：
-
-```bash
-docker compose down
-```
-
-### 方式二：纯 docker run
-
-```bash
-docker run -d \
-  --name ams \
-  -p 3000:3000 \
-  -e NODE_ENV=production \
-  -e HOST=0.0.0.0 \
-  -v ams-data:/app/data \
+# 首启会随机生成管理员口令（打印横幅 + 落 data/ADMIN_CREDENTIALS.txt，权限 0600）
+docker run -d --name ams -p 3000:3000 \
+  -e NODE_ENV=production -e HOST=0.0.0.0 \
+  -v ams-data:/app/data --restart unless-stopped \
   ams:latest
+
+docker logs -f ams          # 看首次管理员口令
+docker inspect --format '{{.State.Health.Status}}' ams   # 内置 HEALTHCHECK
 ```
+
+如需固定口令（至少 10 位，含字母与数字）：加 `-e AMS_ADMIN_PASSWORD='YourStrongPwd123'`。
+停止（数据卷保留）：`docker rm -f ams`。
 
 访问 `http://<host>:3000`。容器内首启会：
 1. 创建 `data/ams.db`（SQLite）；
@@ -66,12 +54,12 @@ docker run -d \
 
 SQLite 库与上传文件都在容器内的 `/app/data`。**务必挂载卷**，否则容器删除即丢全部数据：
 
-- compose 已默认挂 `ams-data` 命名卷；
+- 上面的 `docker run` 已挂 `ams-data` 命名卷到 `/app/data`；
 - 手动运行时用 `-v ams-data:/app/data`（命名卷）或 `-v /path/on/host:/app/data`（bind 挂载，注意宿主机目录属主需可写）。
 
 ## 健康检查
 
-容器内置 `HEALTHCHECK` 每 30s 请求 `GET /api/health`，compose 同样配置。可用：
+容器内置 `HEALTHCHECK` 每 30s 请求 `GET /api/health`。可用：
 
 ```bash
 docker inspect --format='{{.State.Health.Status}}' ams

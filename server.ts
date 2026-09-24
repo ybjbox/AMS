@@ -1,7 +1,6 @@
 import "./server/env.ts";
 import express from "express";
 import compression from "compression";
-import { createServer as createViteServer } from "vite";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -368,6 +367,9 @@ async function startServer() {
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
+    // 懒加载：vite 是构建期依赖（devDependencies）。顶层静态 import 会让"生产运行时"也必须有它，
+    // 于是 Docker 的 runner 阶段只能连开发依赖一起装（见 Dockerfile）。
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
