@@ -12,6 +12,7 @@ import ExcelJS from "exceljs";
 import mammoth from "mammoth";
 import { getDocumentRaw } from "./documentsDb.ts";
 import { asString } from "./sqliteUtil.ts";
+import { formatLocalDate } from "./localDate.ts";
 
 /** 单张图片超过此大小不进打印（base64 后约 4/3 倍，再叠加会拖垮打印窗口） */
 export const MAX_PRINT_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -91,7 +92,7 @@ async function renderPdfPages(
 /** Excel 取值 → 打印用字符串：数字不带浮点尾巴，日期取本地日，公式取结果 */
 function cellText(value: ExcelJS.CellValue): string {
   if (value === null || value === undefined) return "";
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (value instanceof Date) return formatLocalDate(value);
   if (typeof value === "object") {
     const v = value as unknown as Record<string, unknown>;
     if ("result" in v) return cellText(v.result as ExcelJS.CellValue);

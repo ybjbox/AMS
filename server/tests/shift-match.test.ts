@@ -9,10 +9,13 @@ import { describe, it, expect } from 'vitest';
 import {
   MATCH_TOLERANCE_MINUTES,
   candidateFromShift,
+  crossesMidnight,
   formatWorkdays,
   judgeDay,
   matchShift,
   resolveDay,
+  resolveInstances,
+  shiftWindow,
   toMinutes,
   weekdayOf,
   type ShiftCandidate,
@@ -128,5 +131,121 @@ describe('判定分档', () => {
     if (out.kind === 'no-match') expect(out.reason).toMatch(/未对上任何班.*300 分钟.*180 分钟/u);
     const off = resolveDay([shift], { date: SAT, times: ['09:00', '18:00'] });
     expect(off.kind === 'no-workday' && off.reason).toMatch(/不在已配置时段的工作日/u);
+  });
+});
+
+describe('三班倒与跨午夜交接', () => {
+  const TUE = '2026-09-22';
+  const threeShifts = [
+    rule('夜班', '00:00', '08:00'),
+    rule('早班', '08:00', '16:00'),
+    rule('中班', '16:00', '00:00'),
+  ];
+
+  it('shiftWindow：24 点班结束于 1440，真跨日班结束于次日分钟数', () => {
+    expect(shiftWindow({ startTime: '16:00', endTime: '00:00' })).toEqual({ start: 960, end: 1440 });
+    expect(shiftWindow({ startTime: '20:00', endTime: '04:00' })).toEqual({ start: 1200, end: 1680 });
+    expect(shiftWindow({ startTime: '09:00', endTime: '18:00' })).toEqual({ start: 540, end: 1080 });
+    expect(crossesMidnight({ startTime: '16:00', endTime: '00:00' })).toBe(true);
+    expect(crossesMidnight({ startTime: '09:00', endTime: '18:00' })).toBe(false);
+  });
+
+  it('中班的人凌晨 00:03 打下班卡：仍是一个实例，归属前一天，不算早退也不缺卡', () => {
+    const out = resolveInstances(threeShifts, [
+      { date: MON, time: '15:58' },
+      { date: TUE, time: '00:03' },
+    ]);
+    expect(out).toHaveLength(1);
+    expect(out[0].kind).toBe('judged');
+    if (out[0].kind === 'judged') {
+      expect(out[0].date).toBe(MON);
+      expect(out[0].candidate.name).toBe('中班');
+      expect(out[0].judgement.findings).toEqual([]);
+    }
+  });
+
+  it('夜班的人 00:02 上班、08:05 下班：归属打当天，与中班的人互不污染', () => {
+    const out = resolveInstances(threeShifts, [
+      { date: TUE, time: '00:02' },
+      { date: TUE, time: '08:05' },
+    ]);
+    expect(out).toHaveLength(1);
+    if (out[0].kind === 'judged') {
+      expect(out[0].date).toBe(TUE);
+      expect(out[0].candidate.name).toBe('夜班');
+      expect(out[0].judgement.findings).toEqual([]);
+    }
+  });
+
+  it('真跨日班（20:00–04:00）的迟到与早退按绝对分钟算', () => {
+    const out = resolveInstances([rule('跨日夜班', '20:00', '04:00')], [
+      { date: MON, time: '20:20' },
+      { date: TUE, time: '03:40' },
+    ]);
+    expect(out[0].kind).toBe('judged');
+    if (out[0].kind === 'judged') {
+      expect(out[0].judgement.findings.map((f) => [f.type, f.minutes])).toEqual([
+        ['LATE_15', 20],
+        ['EARLY_LEAVE', 20],
+      ]);
+    }
+  });
+
+  it('只有一张 15:50 的卡：按 16:00–00:00 判缺下班卡（不是缺上班卡）', () => {
+    const out = resolveInstances(threeShifts, [{ date: MON, time: '15:50' }]);
+    expect(out[0].kind === 'judged' && out[0].judgement.findings[0].type).toBe('MISSING_OUT');
+  });
+
+  it('连上两个整点班（16:00 上班、次日 08:00 才走）不会被合成一个实例', () => {
+    const out = resolveInstances(threeShifts, [
+      { date: MON, time: '15:59' },
+      { date: TUE, time: '00:01' },
+      { date: TUE, time: '07:59' },
+    ]);
+    // 00:01 归中班（下班卡），07:59 归早班（上班卡），早班缺下班卡
+    expect(out.map((o) => `${o.kind}:${o.date}`)).toEqual([`judged:${MON}`, `judged:${TUE}`]);
+    const second = out[1];
+    if (second.kind === 'judged') {
+      expect(second.candidate.name).toBe('早班');
+      expect(second.judgement.findings[0].type).toBe('MISSING_OUT');
+    }
+  });
+
+  it('对不上任何班的锚点报 unmatched，而不是硬塞一个班', () => {
+    const out = resolveInstances(threeShifts, [{ date: MON, time: '11:30' }]);
+    expect(out[0]?.kind).toBe('unmatched');
+    if (out[0]?.kind === 'unmatched') expect(out[0].reason).toMatch(/未对上任何班/u);
+  });
+
+  it('凌晨 00:00 整点的卡按"是否已有首卡"归属：中班的人它是末卡，没有首卡的人它是锚点', () => {
+    const handover = resolveInstances(threeShifts, [
+      { date: MON, time: '16:00' },
+      { date: TUE, time: '00:00' },
+    ]);
+    expect(handover.map((o) => `${o.kind}:${o.date}`)).toEqual([`judged:${MON}`]);
+    if (handover[0].kind === 'judged') {
+      expect(handover[0].candidate.name).toBe('中班');
+      expect(handover[0].judgement.findings).toEqual([]);
+    }
+    const fresh = resolveInstances(threeShifts, [{ date: TUE, time: '00:00' }]);
+    expect(fresh[0].kind === 'judged' && fresh[0].candidate.name).toBe('夜班');
+    expect(fresh[0].kind === 'judged' && fresh[0].date).toBe(TUE);
+  });
+
+  it('整月连排：每个实例的迟到分钟按自己那天算，不被起始日的偏移污染', () => {
+    const days = ['2026-09-01', '2026-09-02', '2026-09-03'];
+    const out = resolveInstances(
+      [rule('行政班', '09:00', '18:00')],
+      days.flatMap((date) => [
+        { date, time: '09:20' },
+        { date, time: '18:00' },
+      ])
+    );
+    expect(out.map((o) => `${o.kind}:${o.date}`)).toEqual(days.map((d) => `judged:${d}`));
+    for (const o of out) {
+      if (o.kind === 'judged') {
+        expect(o.judgement.findings.map((f) => [f.type, f.minutes])).toEqual([['LATE_15', 20]]);
+      }
+    }
   });
 });

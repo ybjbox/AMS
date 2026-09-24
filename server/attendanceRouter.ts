@@ -12,6 +12,7 @@
  * 这两条语义差异曾直接造成「排班删了又复活」与「一键清空全员打卡史」。
  */
 import { Router, json, raw } from "express";
+import { localToday } from "./localDate.ts";
 import {
   listShifts, createShift, updateShift, deleteShift,
   listSchedules, replaceSchedules,
@@ -48,7 +49,7 @@ import {
  * 仅通知当日异常，避免历史异常反复打扰。
  */
 function notifyTodayAnomalies(anomalies: ReturnType<typeof analyzeAnomalies>): number {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localToday();
   const byEmployee = new Map<string, string[]>();
   for (const a of anomalies) {
     if (a.date !== today) continue;

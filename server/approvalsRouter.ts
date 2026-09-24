@@ -12,6 +12,7 @@ import { validateBody } from "./validation.ts";
 import { requireRole } from "./authMiddleware.ts";
 import { db } from "./db.ts";
 import { asString } from "./sqliteUtil.ts";
+import { localToday } from "./localDate.ts";
 import {
   createApproval,
   listMine,
@@ -21,8 +22,8 @@ import {
   withdrawApproval,
   getCompBalance,
   getPendingCompUsedHours,
-  leaveDaysBetween,
 } from "./approvalsDb.ts";
+import { APPROVAL_TYPES, approvalKindOf, type ApplicantContext, type ApprovalInput } from "./approvalTypes.ts";
 
 export const approvalsRouter = Router();
 approvalsRouter.use(json());
@@ -64,115 +65,26 @@ const decideSchema = z
 
 approvalsRouter.post("/", validateBody(createSchema), (req, res, next) => {
   try {
-    // 补卡分支：日期/时间/卡类型必填；startDate 复用为补卡日期（保持列表排序与展示兼容）
-    if (req.body.type === "makeup") {
-      const { punchDate, punchTime, punchKind, reason } = req.body;
-      if (!punchDate || !punchTime || !punchKind) {
-        return res.status(400).json({ error: "补卡申请需填写日期、时间与卡类型" });
-      }
-      const row = createApproval({
-        applicant: req.auth!.username,
-        type: "makeup",
-        leaveType: "补卡",
-        startDate: punchDate,
-        endDate: null,
-        reason,
-        punchDate,
-        punchTime,
-        punchKind,
-      });
-      return res.status(201).json(row);
+    const input = req.body as ApprovalInput;
+    const username = req.auth!.username;
+    const spec = APPROVAL_TYPES[approvalKindOf(input.type)];
+    // 惰性上下文：只有需要档案/余额的分支才会去查（补卡、离职一次都不查）
+    const ctx: ApplicantContext = {
+      username,
+      employeeId: () => asString(db.prepare("SELECT employeeId FROM accounts WHERE username = ?").get(username)?.employeeId),
+      employeeStatus: (employeeId) => asString(db.prepare("SELECT status FROM employees WHERE id = ?").get(employeeId)?.status),
+      compLedgerHours: () => {
+        const employeeId = ctx.employeeId();
+        return employeeId ? getCompBalance(employeeId) : 0;
+      },
+      pendingCompHours: () => getPendingCompUsedHours(username),
+      today: () => localToday(),
+    };
+    const result = spec.toDraft(input, ctx);
+    if (!result.ok) {
+      return res.status(400).json(result.code ? { error: result.error, code: result.code } : { error: result.error });
     }
-
-    // 转正分支：申请人须为「试用期」状态的已关联员工
-    if (req.body.type === "conversion") {
-      const accountRow = db
-        .prepare("SELECT employeeId FROM accounts WHERE username = ?")
-        .get(req.auth!.username);
-      const employeeId = asString(accountRow?.employeeId);
-      if (!employeeId) {
-        return res.status(400).json({ error: "你的账号未关联员工档案，无法申请转正" });
-      }
-      const empRow = db.prepare("SELECT status FROM employees WHERE id = ?").get(employeeId);
-      if (asString(empRow?.status) !== "试用期") {
-        return res.status(400).json({ error: "当前员工状态不是试用期，无需转正申请" });
-      }
-      const row = createApproval({
-        applicant: req.auth!.username,
-        type: "conversion",
-        leaveType: "转正",
-        startDate: new Date().toISOString().slice(0, 10),
-        endDate: null,
-        reason: req.body.reason,
-      });
-      return res.status(201).json(row);
-    }
-
-    // 离职分支：最后工作日（startDate）+ 原因必填
-    if (req.body.type === "resign") {
-      if (!req.body.startDate) {
-        return res.status(400).json({ error: "请填写最后工作日" });
-      }
-      const row = createApproval({
-        applicant: req.auth!.username,
-        type: "resign",
-        leaveType: "离职",
-        startDate: req.body.startDate,
-        endDate: null,
-        reason: req.body.reason,
-      });
-      return res.status(201).json(row);
-    }
-
-    // P2 加班分支：日期 + 时长必填，时长 0.5~24h；startDate 复用为加班日期
-    if (req.body.type === "overtime") {
-      const hours = Number(req.body.hours);
-      if (!req.body.startDate) return res.status(400).json({ error: "请填写加班日期" });
-      if (!Number.isFinite(hours) || hours <= 0 || hours > 24) {
-        return res.status(400).json({ error: "加班时长需为 0~24 之间的数字（小时）" });
-      }
-      const row = createApproval({
-        applicant: req.auth!.username,
-        type: "overtime",
-        leaveType: "加班",
-        startDate: req.body.startDate,
-        endDate: null,
-        reason: req.body.reason,
-        hours: Math.round(hours * 2) / 2,
-      });
-      return res.status(201).json(row);
-    }
-
-    // 请假分支（默认）
-    if (!req.body.startDate) {
-      return res.status(400).json({ error: "开始日期不能为空" });
-    }
-    // P2：调休假需校验余额（加班累计 − 待审调休已占用；8h=1 天，批准时才实际扣减）
-    if (req.body.leaveType === "调休") {
-      const accountRow = db
-        .prepare("SELECT employeeId FROM accounts WHERE username = ?")
-        .get(req.auth!.username);
-      const employeeId = asString(accountRow?.employeeId);
-      const days = leaveDaysBetween(req.body.startDate, req.body.endDate);
-      const balance = employeeId
-        ? getCompBalance(employeeId) - getPendingCompUsedHours(req.auth!.username)
-        : 0;
-      if (days * 8 > balance) {
-        return res.status(400).json({
-          error: `调休余额不足：需 ${days} 天（${days * 8}h），当前可用 ${Math.max(balance, 0)}h（另有 ${getPendingCompUsedHours(req.auth!.username)}h 待审批占用）`,
-          code: "COMP_BALANCE_INSUFFICIENT",
-        });
-      }
-    }
-    const row = createApproval({
-      applicant: req.auth!.username,
-      type: "leave",
-      leaveType: req.body.leaveType,
-      startDate: req.body.startDate,
-      endDate: req.body.endDate ?? null,
-      reason: req.body.reason,
-    });
-    res.status(201).json(row);
+    res.status(201).json(createApproval({ applicant: username, ...result.draft }));
   } catch (e) {
     next(e);
   }

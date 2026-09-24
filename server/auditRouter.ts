@@ -7,6 +7,7 @@
  */
 import { Router } from "express";
 import { serverErrorResponse } from "./errorHandler.ts";
+import { localToday } from "./localDate.ts";
 import {
   auditFacets,
   auditLogCount,
@@ -92,7 +93,7 @@ auditRouter.get("/export", (req, res) => {
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=${encodeURIComponent(`审计日志-${new Date().toISOString().slice(0, 10)}.csv`)}`
+      `attachment; filename=${encodeURIComponent(`审计日志-${localToday()}.csv`)}`
     );
     res.send(csv);
   } catch (e) {

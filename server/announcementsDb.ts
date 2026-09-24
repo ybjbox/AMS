@@ -9,6 +9,7 @@
 import { db } from "./db.ts";
 import { type DbRow, asString, asNumber } from "./sqliteUtil.ts";
 import { randomUUID } from "node:crypto";
+import { localToday } from "./localDate.ts";
 
 export interface AnnouncementRow {
   id: string;
@@ -69,7 +70,7 @@ export function listEffectiveAnnouncements(limit?: number): AnnouncementRow[] {
     .prepare("SELECT * FROM announcements WHERE active = 1 ORDER BY createdAt DESC, rowid DESC")
     .all()
     .map(rowToAnnouncement);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localToday();
   const effective = rows.filter((r) => isEffective(r, today));
   // 重要置顶（稳定排序：先按优先级分组，组内保持时间倒序）
   const sorted = [

@@ -8,7 +8,7 @@ import { announcementApi, type Announcement } from '@/services/announcementApi';
 import { fetchWorkforceStats, fetchAttendanceStats, type WorkforceStats, type AttendanceStats } from '@/services/statsApi';
 import { flattenDepartments, useDepartments } from '@/store/useDepartmentStore';
 import { useTodoStore } from '@/store/useTodoStore';
-import { formatDateTime } from '@/utils/dateUtils';
+import { formatDate, formatDateTime } from '@/utils/dateUtils';
 
 export interface StatItem {
   name: string;
@@ -142,7 +142,7 @@ export function useDashboard(): UseDashboardReturn {
         if (cancelled) return;
 
         // 今日打卡人数（原始值，department/todo 计数在 render 时派生）
-        const today = new Date().toISOString().slice(0, 10);
+        const today = formatDate(new Date());
         const todayPunchers = new Set(
           records.filter((r) => r.date === today).map((r) => r.employeeId)
         ).size;
@@ -154,7 +154,7 @@ export function useDashboard(): UseDashboardReturn {
         for (let i = 6; i >= 0; i--) {
           const d = new Date();
           d.setDate(d.getDate() - i);
-          const key = d.toISOString().slice(0, 10);
+          const key = formatDate(d);
           trend.push({ name: `周${WEEKDAY[d.getDay()]}`, value: byDate.get(key) ?? 0 });
         }
 

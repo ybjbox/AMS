@@ -103,8 +103,9 @@ function assertShape(input: { name: string; startTime: string; endTime: string; 
   if (!/^\d{2}:\d{2}$/.test(input.startTime) || !/^\d{2}:\d{2}$/.test(input.endTime)) {
     throw new ShiftRuleError("上下班时间格式应为 HH:mm");
   }
-  // 跨夜班（20:00-06:00）本层不支持：判定式 end > start 会失效，与其算错不如拒绝写入
-  if (input.startTime >= input.endTime) throw new ShiftRuleError("下班时间必须晚于上班时间（暂不支持跨夜班）");
+  if (input.startTime === input.endTime) throw new ShiftRuleError("上班时间与下班时间相同，请填一天的两个时点");
+  // endTime 早于 startTime 不再当错误：那是跨日班（16:00–00:00 的"24 点班"、20:00–04:00 的夜班）。
+  // 三班倒的凌晨交接就落在这里 —— 界面按「次日」显示，判定按 shiftMatch.shiftWindow 加 1440 分钟。
   if (input.workdays.length === 0) throw new ShiftRuleError("至少选择一个工作日");
 }
 

@@ -1,5 +1,6 @@
 import ExcelJS from "exceljs";
 import mammoth from "mammoth";
+import { formatLocalDate } from "./localDate.ts";
 import { extractText, getDocumentProxy } from "unpdf";
 
 /** 上传文件大小上限（字节） */
@@ -96,7 +97,7 @@ async function extractXlsx(buffer: Buffer): Promise<string> {
 
 function cellText(value: ExcelJS.CellValue): string {
   if (value == null) return "";
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (value instanceof Date) return formatLocalDate(value);
   if (typeof value === "object") {
     const v = value as unknown as Record<string, unknown>;
     if (Array.isArray(v.richText)) {

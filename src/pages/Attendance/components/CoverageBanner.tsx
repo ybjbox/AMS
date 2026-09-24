@@ -21,7 +21,8 @@ export default function CoverageBanner() {
         <CircleDashed className="w-4 h-4 shrink-0" aria-hidden="true" />
         <span>
           {at ? `${new Date(at).toLocaleString('zh-CN', { hour12: false })} 的分析：` : '本次分析：'}
-          {coverage.days} 个人日 · 按部门时段 <span className="tabular-nums">{coverage.byRule}</span> ·
+          {coverage.days} 个打卡日 · 判定 {coverage.instances} 个班次 · 按部门时段{' '}
+          <span className="tabular-nums">{coverage.byRule}</span> ·
           按逐日排班 <span className="tabular-nums">{coverage.bySchedule}</span> ·
           请假日跳过 <span className="tabular-nums">{coverage.leaveSkipped}</span>
         </span>

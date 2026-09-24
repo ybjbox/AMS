@@ -22,6 +22,10 @@ import { randomUUID } from "node:crypto";
 import { createNotification } from "./notificationsDb.ts";
 import { upsertRecord, analyzeAnomalies } from "./attendanceDb.ts";
 import { ROLE_LEVEL, type SystemRole } from "./authDb.ts";
+import { APPROVAL_TYPES, approvalKindOf, leaveDaysBetween, type ApprovalKind } from "./approvalTypes.ts";
+
+/** 天数口径的唯一实现住在 approvalTypes，这里再导出给既有调用方（路由校验、测试） */
+export { leaveDaysBetween };
 
 export type ApprovalStatus = "pending" | "approved" | "rejected";
 
@@ -131,13 +135,7 @@ export function getApproval(id: string): ApprovalRow | undefined {
   return row ? rowToApproval(row) : undefined;
 }
 
-/** 请假天数（含首尾两天；无结束日期按 1 天计）——提交校验与额度扣减共用同一口径 */
-export function leaveDaysBetween(startDate: string, endDate?: string | null): number {
-  const start = Date.parse(`${startDate}T00:00:00Z`);
-  const end = endDate ? Date.parse(`${endDate}T00:00:00Z`) : start;
-  if (Number.isNaN(start) || Number.isNaN(end) || end < start) return 1;
-  return Math.round((end - start) / 86_400_000) + 1;
-}
+/** 请假天数（含首尾两天）的口径见 approvalTypes.leaveDaysBetween —— 校验、门槛、额度扣减共用一份 */
 
 export function createApproval(input: {
   applicant: string;
@@ -152,11 +150,7 @@ export function createApproval(input: {
   hours?: number;
 }): ApprovalRow {
   const id = randomUUID();
-  // P2 多级审批：请假的结束日期 ≥3 天 → 需要 ADMIN 终审
-  let requiredRole: SystemRole = "HR";
-  if ((input.type ?? "leave") === "leave" && input.endDate) {
-    if (leaveDaysBetween(input.startDate, input.endDate) >= 3) requiredRole = "ADMIN";
-  }
+  const requiredRole = APPROVAL_TYPES[approvalKindOf(input.type)].requiredRole(input);
   db.prepare(
     `INSERT INTO approvals (id, applicant, type, leaveType, startDate, endDate, reason, punchDate, punchTime, punchKind, hours, requiredRole)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
@@ -241,42 +235,14 @@ export function decideApproval(
 
     const updated = getApproval(id)!;
 
-    // 领域动作：审批通过后自动执行（闭环）
+    // 领域动作：审批通过后自动执行（闭环）。动作表在文件末尾显式穷举，见 DOMAIN_ACTIONS。
     if (decision === "approved") {
-      if (updated.type === "makeup") {
-        applyMakeupPunch(updated);
-      } else if (updated.type === "conversion") {
-        applyConversion(updated);
-      } else if (updated.type === "resign") {
-        applyResign(updated);
-      } else if (updated.type === "overtime") {
-        applyOvertime(updated);
-      } else if (updated.type === "leave" && updated.leaveType === "调休") {
-        applyCompLeave(updated);
-      }
+      DOMAIN_ACTIONS[approvalKindOf(updated.type)]?.(updated);
     }
 
     // 通知申请人（recipients=申请人；同内容未读去重由 notificationsDb 负责）
-    const typeLabel: Record<string, string> = {
-      makeup: "补卡",
-      conversion: "转正",
-      resign: "离职",
-      overtime: "加班",
-    };
-    const subject =
-      updated.type === "makeup"
-        ? `你的${updated.punchKind || "补卡"}申请`
-        : updated.type === "overtime"
-          ? `你的加班申请（${updated.hours} 小时）`
-          : `你的${typeLabel[updated.type] ?? updated.leaveType}申请`;
-    const detail =
-      updated.type === "makeup"
-        ? `${updated.punchDate} ${updated.punchTime} 的补卡`
-        : updated.type === "resign"
-          ? `最后工作日 ${updated.startDate}`
-          : updated.type === "overtime"
-            ? `${updated.startDate} 共 ${updated.hours} 小时，已计入调休额度`
-            : `${updated.startDate} 提交的申请`;
+    const spec = APPROVAL_TYPES[approvalKindOf(updated.type)];
+    const { subject, detail } = spec.notify(updated);
     createNotification({
       title: `${subject}已${decision === "approved" ? "通过" : "被驳回"}`,
       message: `${detail}，审批人：${approver}${comment ? `，意见：${comment}` : ""}`,
@@ -548,4 +514,27 @@ export function withdrawApproval(
       WHERE id = ? AND status = 'pending'`
   ).run(id);
   return { row: getApproval(id)! };
+}
+
+/**
+ * 通过后的领域动作：**每个类型都必须在这里显式表态**。
+ *
+ * 用 Record<ApprovalKind, …| null> 而不是 if 链，是为了让"新增一个审批类型却忘了决定
+ * 通过后做什么"变成编译期错误 —— 原来那条 if 链加一类不改就静默什么都不做。
+ * 实现留在本模块（它们要写台账/档案/打卡），规格表只管文案与校验，避免模块互相引用成环。
+ */
+const DOMAIN_ACTIONS: Record<ApprovalKind, ((approval: ApprovalRow) => void) | null> = {
+  // 请假里只有「调休」有账务动作，其余假别只留档
+  leave: (approval) => {
+    if (approval.leaveType === "调休") applyCompLeave(approval);
+  },
+  makeup: applyMakeupPunch,
+  conversion: applyConversion,
+  resign: applyResign,
+  overtime: applyOvertime,
+};
+
+/** 测试与排障用：某个类型是否有领域动作（null = 通过后只留档） */
+export function domainActionOf(kind: ApprovalKind): ((approval: ApprovalRow) => void) | null {
+  return DOMAIN_ACTIONS[kind];
 }

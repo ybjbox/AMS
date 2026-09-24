@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User } from '@/types';
 import { renewContract, fetchContractRenewals, type ContractRenewal } from '@/services/userApi';
+import { formatDate } from '@/utils/dateUtils';
 
 interface RenewContractModalProps {
   isOpen: boolean;
@@ -23,7 +24,7 @@ function addYears(dateStr: string, years: number): string {
   const d = new Date(dateStr);
   if (Number.isNaN(d.getTime())) return '';
   d.setFullYear(d.getFullYear() + years);
-  return d.toISOString().slice(0, 10);
+  return formatDate(d);
 }
 
 /** 合同续签（HR 发起）：填写新期限 → 更新台账 + 写入续签历史 */
@@ -32,14 +33,14 @@ export default function RenewContractModal({ isOpen, onClose, user, onRenewed }:
   const [history, setHistory] = useState<ContractRenewal[]>([]);
   const [form, setForm] = useState({
     contractYears: 3,
-    contractSignDate: new Date().toISOString().slice(0, 10),
+    contractSignDate: formatDate(new Date()),
     contractExpiry: '',
   });
 
   // 打开时：默认签订日=今天，默认到期=今天+3年；加载历史
   useEffect(() => {
     if (!isOpen || !user) return;
-    const signDate = new Date().toISOString().slice(0, 10);
+    const signDate = formatDate(new Date());
     setForm({
       contractYears: 3,
       contractSignDate: signDate,

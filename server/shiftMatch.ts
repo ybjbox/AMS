@@ -107,11 +107,16 @@ export function matchShift(candidates: ShiftCandidate[], input: MatchInput): Mat
   const first = toMinutes(times[0]);
   const last = toMinutes(times[times.length - 1]);
   const scored = inWorkday
-    .map((candidate) => ({
-      candidate,
-      inDelta: Math.abs(first - toMinutes(candidate.startTime)),
-      outDelta: Math.abs(last - toMinutes(candidate.endTime)),
-    }))
+    .map((candidate) => {
+      const window = shiftWindow(candidate);
+      // 末卡可能打在次日（24 点班的凌晨收尾），比下班时间还早说明是次日的那一段
+      const lastAdj = last < window.start ? last + 1440 : last;
+      return {
+        candidate,
+        inDelta: Math.abs(first - window.start),
+        outDelta: Math.abs(lastAdj - window.end),
+      };
+    })
     .sort(
       (a, b) =>
         a.inDelta - b.inDelta ||
@@ -126,6 +131,102 @@ export function matchShift(candidates: ShiftCandidate[], input: MatchInput): Mat
     return { kind: "no-match", closestDelta: best.inDelta, tolerance, candidateCount: inWorkday.length };
   }
   return { kind: "matched", candidate: best.candidate, lateDeltaMinutes: best.inDelta };
+}
+
+/** 班次是否跨到次日：endTime ≤ startTime（16:00–00:00 的"24 点班"、20:00–04:00 的跨日夜班） */
+export function crossesMidnight(c: Pick<ShiftCandidate, "startTime" | "endTime">): boolean {
+  return toMinutes(c.endTime) <= toMinutes(c.startTime);
+}
+
+/**
+ * 班次相对"归属日 00:00"的绝对分钟区间。
+ * 跨日班次的下班时间 +1440，这样 16:00–00:00 得到 [960, 1440]、20:00–04:00 得到 [1200, 1680]，
+ * 迟到/早退的减法在跨午夜时仍然正确。
+ */
+export function shiftWindow(c: Pick<ShiftCandidate, "startTime" | "endTime">): { start: number; end: number } {
+  const start = toMinutes(c.startTime);
+  const rawEnd = toMinutes(c.endTime);
+  return { start, end: rawEnd <= start ? rawEnd + 1440 : rawEnd };
+}
+
+/** 一个班次实例：归属日 = 首卡那天，卡可能落在次日凌晨 */
+export interface ShiftInstance {
+  date: string;
+  /** 相对归属日 00:00 的分钟数（可 >1440 表示次日） */
+  offsets: number[];
+  /** 与 offsets 同序的原始 HH:mm，用于展示 */
+  times: string[];
+  candidate: ShiftCandidate;
+}
+
+/** 一个班次实例最长可跨 24 小时（覆盖跨日班 + 适度加班），再往后的卡另起一班 */
+export const MAX_INSTANCE_SPAN_MINUTES = 24 * 60;
+
+function dayIndex(date: string, baseDay: number): number {
+  const t = Date.parse(`${date}T00:00:00Z`);
+  return Number.isNaN(t) ? 0 : Math.round((t - baseDay) / 86_400_000);
+}
+
+/**
+ * 把某人按时间排序的打卡切成班次实例 —— 三班倒的关键一步。
+ *
+ * 按日历日分组会把"16:00–00:00 的人凌晨 00:03 打的下班卡"当成次日的上班卡，
+ * 于是同一个人被记成「昨天缺下班卡 + 今天缺上班卡」。改成：
+ *  1. 取最早的未归属卡当锚点，按它匹配班次（首卡偏差在容忍内）；
+ *  2. 从锚点起 24 小时内、且不早于锚点的卡都归进这个实例；
+ *  3. 归属日 = 锚点那天，实例内的最早卡是上班卡、最晚卡是下班卡。
+ * 这样凌晨交接的两种情况自动分开：上一班的人已有首卡 → 00:0x 被吸收成末卡；
+ * 新班的人没有首卡 → 00:0x 自己就是锚点，归属到当天。
+ */
+export function buildShiftInstances(
+  candidates: ShiftCandidate[],
+  punches: { date: string; time: string }[]
+): { instances: ShiftInstance[]; skipped: { date: string; time: string }[] } {
+  if (punches.length === 0) return { instances: [], skipped: [] };
+  // baseDay 取最小日期而不是"第一条"，调用方的传入顺序不参与语义
+  const baseDay = Date.parse(`${punches.map((p) => p.date.slice(0, 10)).sort()[0]}T00:00:00Z`);
+  const items = punches
+    .map((p) => {
+      const day = p.date.slice(0, 10);
+      const dayStart = dayIndex(day, baseDay) * 1440;
+      return { ...p, day, dayStart, abs: dayStart + toMinutes(p.time) };
+    })
+    .sort((a, b) => a.abs - b.abs || a.day.localeCompare(b.day));
+  const used = new Array<boolean>(items.length).fill(false);
+  const instances: ShiftInstance[] = [];
+  const skipped: { date: string; time: string }[] = [];
+
+  for (let i = 0; i < items.length; i += 1) {
+    if (used[i]) continue;
+    const anchor = items[i];
+    const match = matchShift(candidates, { date: anchor.day, times: [anchor.time] });
+    if (match.kind !== "matched") {
+      // 锚点对不上任何班：不吞掉后面的卡，原样交给调用方按"未对班"处理
+      skipped.push({ date: anchor.day, time: anchor.time });
+      used[i] = true;
+      continue;
+    }
+    const window = shiftWindow(match.candidate);
+    const members = [anchor];
+    used[i] = true;
+    for (let j = i + 1; j < items.length; j += 1) {
+      if (used[j]) continue;
+      const span = items[j].abs - anchor.abs;
+      if (span > MAX_INSTANCE_SPAN_MINUTES) break;
+      // 已经过了这个班的下班点还留出加班余量（+2h）之外的卡，不再往里收
+      if (items[j].abs - anchor.dayStart > window.end + 120) continue;
+      members.push(items[j]);
+      used[j] = true;
+    }
+    instances.push({
+      date: anchor.day,
+      // 相对锚点那天 00:00，才能直接和 shiftWindow 的分钟区间相减
+      offsets: members.map((m) => m.abs - anchor.dayStart),
+      times: members.map((m) => m.time),
+      candidate: match.candidate,
+    });
+  }
+  return { instances, skipped };
 }
 
 export interface DayFinding {
@@ -148,31 +249,40 @@ export interface DayJudgement {
  * description 里带上对上的班，让 HR 能看懂这条异常是拿哪条时段算出来的。
  */
 export function judgeDay(candidate: ShiftCandidate, date: string, times: string[]): DayJudgement {
-  const list = [...times].map((t) => t.slice(0, 5)).sort();
-  const start = toMinutes(candidate.startTime);
-  const end = toMinutes(candidate.endTime);
-  const note = `（对班：${candidate.label}）`;
   void date;
+  const list = [...times].map((t) => t.slice(0, 5)).sort();
   if (list.length === 0) return { findings: [], summary: "当天没有打卡记录" };
+  return judgeOffsets(candidate, list.map(toMinutes));
+}
 
-  if (list.length === 1) {
-    const t = toMinutes(list[0]);
+/**
+ * 判定核心：入参是相对**归属日 00:00** 的分钟数，跨午夜的卡会 >1440。
+ * 三班倒必须走这一层：16:00–00:00 的人凌晨 00:03 打的下班卡，
+ * 用"同一天"的减法会算成早退 -1443 分钟（即不判早退）并把那天判成缺上班卡。
+ */
+export function judgeOffsets(candidate: ShiftCandidate, offsets: number[]): DayJudgement {
+  const sorted = [...offsets].filter((n) => Number.isFinite(n)).sort((a, b) => a - b);
+  if (sorted.length === 0) return { findings: [], summary: "当天没有打卡记录" };
+  const { start, end } = shiftWindow(candidate);
+  const note = `（对班：${candidate.label}）`;
+
+  if (sorted.length === 1) {
     const midpoint = (start + end) / 2;
     const finding: DayFinding =
-      t <= midpoint
+      sorted[0] <= midpoint
         ? { type: "MISSING_OUT", minutes: null, description: `缺下班卡${note}` }
         : { type: "MISSING_IN", minutes: null, description: `缺上班卡${note}` };
     return { findings: [finding], summary: finding.description };
   }
 
   const findings: DayFinding[] = [];
-  const lateMinutes = toMinutes(list[0]) - start;
+  const lateMinutes = sorted[0] - start;
   if (lateMinutes > LATE_SERIOUS_MINUTES) {
     findings.push({ type: "LATE_15", minutes: lateMinutes, description: `迟到 ${lateMinutes} 分钟${note}` });
   } else if (lateMinutes > LATE_MINUTES) {
     findings.push({ type: "LATE_5", minutes: lateMinutes, description: `迟到 ${lateMinutes} 分钟${note}` });
   }
-  const earlyMinutes = end - toMinutes(list[list.length - 1]);
+  const earlyMinutes = end - sorted[sorted.length - 1];
   if (earlyMinutes > 0) {
     findings.push({ type: "EARLY_LEAVE", minutes: earlyMinutes, description: `早退 ${earlyMinutes} 分钟${note}` });
   }
@@ -212,4 +322,33 @@ export function resolveDay(candidates: ShiftCandidate[], input: MatchInput): Day
     lateDeltaMinutes: match.lateDeltaMinutes,
     judgement: judgeDay(match.candidate, input.date, input.times),
   };
+}
+
+export type InstanceOutcome =
+  | { kind: "judged"; date: string; candidate: ShiftCandidate; judgement: DayJudgement }
+  | { kind: "unmatched"; date: string; reason: string };
+
+/**
+ * 三班倒口径的整段判定：先把一个人的一串打卡切成班次实例，再逐个判定。
+ * 对不上任何班的锚点卡单独报 unmatched，不静默丢弃 —— 与按日分组时的覆盖率口径一致。
+ */
+export function resolveInstances(
+  candidates: ShiftCandidate[],
+  punches: { date: string; time: string }[]
+): InstanceOutcome[] {
+  const { instances, skipped } = buildShiftInstances(candidates, punches);
+  const out: InstanceOutcome[] = instances.map((inst) => ({
+    kind: "judged" as const,
+    date: inst.date,
+    candidate: inst.candidate,
+    judgement: judgeOffsets(inst.candidate, inst.offsets),
+  }));
+  for (const s of skipped) {
+    out.push({
+      kind: "unmatched",
+      date: s.date,
+      reason: `未对上任何班：${s.time} 的卡与任何时段的上班时间都超过容忍`,
+    });
+  }
+  return out.sort((a, b) => a.date.localeCompare(b.date));
 }

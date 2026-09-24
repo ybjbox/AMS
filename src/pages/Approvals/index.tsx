@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { approvalApi, Approval, ApprovalStatus, type CompBalance } from '@/services/approvalApi';
+import { APPROVAL_TABS, approvalSummary, approvalTitle } from './lib/approvalMeta';
 
 const LEAVE_TYPES = ['事假', '病假', '年假', '调休'] as const;
 const PUNCH_KINDS = ['上班卡', '下班卡'] as const;
@@ -42,28 +43,7 @@ function StatusBadge({ status }: { status: ApprovalStatus }) {
   return <Badge variant={meta.variant}>{meta.label}</Badge>;
 }
 
-/** 审批条目的单行摘要（按类型展示关键信息） */
-function approvalSummary(item: Approval): string {
-  if (item.type === 'makeup') {
-    return `${item.punchDate || item.startDate} ${item.punchTime} · ${item.punchKind}`;
-  }
-  if (item.type === 'resign') {
-    return `最后工作日 ${item.startDate}`;
-  }
-  if (item.type === 'conversion') {
-    return '试用期转正申请';
-  }
-  if (item.type === 'overtime') {
-    return `${item.startDate} · ${item.hours} 小时`;
-  }
-  return `${item.startDate}${item.endDate && item.endDate !== item.startDate ? ` ~ ${item.endDate}` : ''}`;
-}
-
-/** 条目主标题：补卡/转正/离职/加班显示类型名，请假显示假别 */
-function approvalTitle(item: Approval): string {
-  const map: Record<string, string> = { makeup: '补卡', conversion: '转正', resign: '离职', overtime: '加班' };
-  return map[item.type] ?? item.leaveType;
-}
+/** 审批条目的标题与摘要见 lib/approvalMeta.ts（与类型页签同一处维护） */
 
 export default function Approvals() {
   const confirm = useConfirm();
@@ -358,17 +338,9 @@ export default function Approvals() {
             <Send className="w-4 h-4 text-zinc-400" /> 提交申请
           </h2>
 
-          {/* 类型切换：请假 / 补卡 / 转正 / 离职 / 加班 */}
+          {/* 类型切换：请假 / 补卡 / 转正 / 离职 / 加班（清单见 lib/approvalMeta.ts） */}
           <div className="flex rounded-lg bg-zinc-100 dark:bg-zinc-700/50 p-0.5 flex-wrap gap-y-1" role="tablist" aria-label="申请类型">
-            {(
-              [
-                { id: 'leave', label: '请假' },
-                { id: 'makeup', label: '补卡' },
-                { id: 'conversion', label: '转正' },
-                { id: 'resign', label: '离职' },
-                { id: 'overtime', label: '加班' },
-              ] as const
-            ).map((t) => (
+            {APPROVAL_TABS.map((t) => (
               <button
                 key={t.id}
                 type="button"

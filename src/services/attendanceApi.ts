@@ -55,6 +55,8 @@ export interface EffectiveRulesView {
 /** 异常分析的覆盖统计：让人看见"多少人日根本没被判定" */
 export interface AnalyzeCoverage {
   days: number;
+  /** 切出的班次实例数：三班倒下一个实例可跨两个日历日，判定按实例走 */
+  instances: number;
   byRule: number;
   bySchedule: number;
   unmatched: number;

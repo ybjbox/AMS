@@ -32,6 +32,11 @@ function workdayText(workdays: number[]): string {
   return sorted.map((w) => `周${WORKDAYS.find((d) => d.value === w)?.label}`).join('、') || '未设置';
 }
 
+/** 跨日班次：下班时间不晚于上班时间（16:00–00:00 的 24 点班、20:00–04:00 的夜班） */
+function crossesMidnight(rule: Pick<DeptShiftRule, 'startTime' | 'endTime'>): boolean {
+  return rule.endTime < rule.startTime;
+}
+
 /** 把部门树摊平成带缩进的下拉选项（配置面板要能选到任意层级） */
 function flattenDepartments(
   nodes: { id: string; name: string; children?: { id: string; name: string; children?: unknown }[] }[],
@@ -112,8 +117,8 @@ export default function ShiftRules() {
       toast.error('请填写时段名称，例如「正常班」');
       return;
     }
-    if (draft.startTime >= draft.endTime) {
-      toast.error('下班时间必须晚于上班时间（暂不支持跨夜班）');
+    if (draft.startTime === draft.endTime) {
+      toast.error('上班时间与下班时间相同，请填一天的两个时点');
       return;
     }
     if (draft.workdays.length === 0) {
@@ -173,7 +178,7 @@ export default function ShiftRules() {
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">部门工作时段</h2>
           <p className="text-xs text-muted-foreground mt-1">
             不用逐日排班：按当天首卡时间在该部门的时段里自动对班，对不上就不判定（异常分析页会列出原因）。
-            未配置的部门自动沿用组织树上级部门的时段。
+            未配置的部门自动沿用组织树上级部门的时段。支持三班倒与跨午夜交接（见下方时段说明）。
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -251,8 +256,15 @@ export default function ShiftRules() {
                     {rule.departmentName || <span className="text-muted-foreground">（部门已删除）</span>}
                   </td>
                   <td className="px-4 py-2 text-sm text-zinc-900 dark:text-zinc-100">{rule.name}</td>
-                  <td className="px-4 py-2 text-sm tabular-nums text-zinc-900 dark:text-zinc-100">{rule.startTime}</td>
-                  <td className="px-4 py-2 text-sm tabular-nums text-zinc-900 dark:text-zinc-100">{rule.endTime}</td>
+                  <td className="px-4 py-2 text-sm tabular-nums text-zinc-900 dark:text-zinc-100">
+                    {rule.startTime}
+                  </td>
+                  <td className="px-4 py-2 text-sm tabular-nums text-zinc-900 dark:text-zinc-100">
+                    {rule.endTime}
+                    {crossesMidnight(rule) && (
+                      <span className="ml-1 text-2xs text-muted-foreground">次日</span>
+                    )}
+                  </td>
                   <td className="px-4 py-2 text-sm">
                     <Badge variant="neutral">{workdayText(rule.workdays)}</Badge>
                   </td>
@@ -382,6 +394,10 @@ export default function ShiftRules() {
             </div>
             <p className="text-xs text-muted-foreground">
               同一部门可以配多条时段（例如 8:00-17:00 与 9:00-18:00 并存），判定时取与首卡最接近的那条。
+              <span className="block mt-1">
+                三班倒直接填跨日时段：24 点下班填 00:00（会标「次日」），夜班 20:00–04:00 就填 20:00 与 04:00。
+                凌晨交接时，已有上班卡的人其 00:0x 的卡算上一班的下班卡，没有的人算本班上班卡。
+              </span>
             </p>
           </div>
         )}

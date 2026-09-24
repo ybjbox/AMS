@@ -11,7 +11,7 @@ import crypto from "crypto";
 import { resolvePaging, toListResult, ListResult } from "./listQuery.ts";
 import { type DbRow, asString, asNumber, asNullableNumber } from "./sqliteUtil.ts";
 import { resolveRulesForDepartment, toCandidates } from "./shiftRulesDb.ts";
-import { candidateFromShift, resolveDay, type ShiftCandidate } from "./shiftMatch.ts";
+import { candidateFromShift, resolveInstances, type ShiftCandidate } from "./shiftMatch.ts";
 
 // ---------- 行类型（typescript-best-practices：边界解析） ----------
 export interface ShiftRow {
@@ -502,11 +502,13 @@ export function buildShiftPlanner(): (employeeId: string) => EmployeeShiftPlan {
 
 /** 分析覆盖率：让用户看见"有多少人日根本没被判定"，而不是以为系统算过了 */
 export interface AnalyzeCoverage {
-  /** 参与分析的「员工×日期」总数 */
+  /** 有打卡的「员工×日历日」数（对账用；判定不按日历日，见 instances） */
   days: number;
+  /** 切出来的班次实例数 —— 三班倒下一个实例可跨两个日历日，判定按实例走 */
+  instances: number;
   byRule: number;
   bySchedule: number;
-  /** 配了时段/排班但对不上班（首卡偏差超容忍 / 非工作日）的人日 */
+  /** 配了时段/排班但对不上班（首卡偏差超容忍 / 非工作日）的实例锚点 */
   unmatched: number;
   /** 既没部门时段也没排班，完全无从判定的人日 */
   noPlan: number;
@@ -557,58 +559,55 @@ export function monthlySummary(month: string): MonthlySummaryRow[] {
     )
     .all(prefix);
 
-  // 按 员工+日期 分组
-  const grouped = new Map<string, { employeeName: string; department: string; punches: string[] }>();
+  // 按员工分组：三班倒的班次实例会跨零点（24 点班的下班卡打在次日 00:03），
+  // 所以判定不能按日历日切 —— 见 shiftMatch.buildShiftInstances。
+  const perEmployee = new Map<
+    string,
+    { employeeName: string; department: string; punches: { date: string; time: string }[] }
+  >();
   for (const r of rows) {
     const employeeId = asString(r.employeeId);
-    const date = asString(r.date);
-    const key = `${employeeId}__${date}`;
-    if (!grouped.has(key)) {
-      grouped.set(key, {
+    if (!perEmployee.has(employeeId)) {
+      perEmployee.set(employeeId, {
         employeeName: asString(r.employeeName),
         department: asString(r.department),
         punches: [],
       });
     }
-    grouped.get(key)!.punches.push(asString(r.time).slice(0, 5));
+    perEmployee.get(employeeId)!.punches.push({ date: asString(r.date), time: asString(r.time).slice(0, 5) });
   }
 
-  // 聚合到员工维度
   const leaveDays = approvedLeaveDayKeys();
-  const byEmployee = new Map<string, MonthlySummaryRow>();
-  for (const [key, info] of grouped) {
-    const [employeeId] = key.split("__");
-    if (!byEmployee.has(employeeId)) {
-      byEmployee.set(employeeId, {
-        employeeId,
-        employeeName: info.employeeName,
-        department: info.department,
-        workDays: 0,
-        punchCount: 0,
-        lateCount: 0,
-        earlyLeaveCount: 0,
-        missingCount: 0,
-      });
-    }
-    const agg = byEmployee.get(employeeId)!;
-    agg.workDays += 1;
-    agg.punchCount += info.punches.length;
-
-    // 与异常分析同一份判定（未配时段也没排班的人只计出勤/打卡，不计异常）
-    if (leaveDays.has(key)) continue;
-    const [, date] = key.split("__");
+  const summaryRows: MonthlySummaryRow[] = [];
+  for (const [employeeId, info] of perEmployee) {
+    const agg: MonthlySummaryRow = {
+      employeeId,
+      employeeName: info.employeeName,
+      department: info.department,
+      // 出勤天数与打卡次数仍按"有卡的日历日"计（与历史口径一致），只有判定改成班次实例
+      workDays: new Set(info.punches.map((p) => p.date)).size,
+      punchCount: info.punches.length,
+      lateCount: 0,
+      earlyLeaveCount: 0,
+      missingCount: 0,
+    };
     const plan = planner(employeeId);
-    if (plan.source === "none") continue;
-    const outcome = resolveDay(plan.candidates, { date, times: info.punches });
-    if (outcome.kind !== "judged") continue;
-    for (const finding of outcome.judgement.findings) {
-      if (finding.type === "LATE_5" || finding.type === "LATE_15") agg.lateCount += 1;
-      else if (finding.type === "EARLY_LEAVE") agg.earlyLeaveCount += 1;
-      else agg.missingCount += 1;
+    if (plan.source !== "none") {
+      for (const outcome of resolveInstances(plan.candidates, info.punches)) {
+        if (outcome.kind !== "judged") continue;
+        // 已批准请假日不判（半天请假只有一次打卡会被误标缺卡），与异常分析同口径
+        if (leaveDays.has(`${employeeId}__${outcome.date}`)) continue;
+        for (const finding of outcome.judgement.findings) {
+          if (finding.type === "LATE_5" || finding.type === "LATE_15") agg.lateCount += 1;
+          else if (finding.type === "EARLY_LEAVE") agg.earlyLeaveCount += 1;
+          else agg.missingCount += 1;
+        }
+      }
     }
+    summaryRows.push(agg);
   }
 
-  return [...byEmployee.values()].sort((a, b) => a.employeeId.localeCompare(b.employeeId));
+  return summaryRows.sort((a, b) => a.employeeId.localeCompare(b.employeeId));
 }
 
 /**
@@ -635,6 +634,8 @@ function approvedLeaveDayKeys(): Set<string> {
       const end = Number.isNaN(endRaw) ? start : endRaw;
       // 上限 366 天：防脏数据（超大区间日期）拖垮分析
       const capped = Math.min(end, start + 366 * 86_400_000);
+      // 起止日期按 UTC 解析、再按 UTC 渲染回日期串：两端同域，所以"哪天"与输入完全一致。
+      // 这里刻意不用本地口径（改成 localToday 反而会让 +8h 的机器上少一天）。
       for (let t = start; t <= capped; t += 86_400_000) {
         keys.add(`${asString(r.employeeId)}__${new Date(t).toISOString().slice(0, 10)}`);
       }
@@ -656,16 +657,19 @@ export function analyzeAttendance(): AnalyzeResult {
   const leaveDays = approvedLeaveDayKeys();
   const planner = buildShiftPlanner();
 
-  // 按 员工+日期 分组打卡
+  // 按员工分组（判定单位是班次实例，可能跨零点；这里仍统计"人·日历日"用于对账）
   const grouped = new Map<string, PunchRecordRow[]>();
+  const personDays = new Set<string>();
   for (const r of records) {
-    const key = `${r.employeeId}__${r.date}`;
+    personDays.add(`${r.employeeId}__${r.date}`);
+    const key = r.employeeId;
     if (!grouped.has(key)) grouped.set(key, []);
     grouped.get(key)!.push(r);
   }
 
   const coverage: AnalyzeCoverage = {
-    days: grouped.size,
+    days: personDays.size,
+    instances: 0,
     byRule: 0,
     bySchedule: 0,
     unmatched: 0,
@@ -673,6 +677,8 @@ export function analyzeAttendance(): AnalyzeResult {
     leaveSkipped: 0,
     unmatchedSample: [],
   };
+  const unmatchedDays = new Map<string, { employeeId: string; employeeName: string; date: string; reason: string }>();
+  const noPlanDays = new Map<string, { employeeId: string; employeeName: string; date: string; reason: string }>();
   const anomalies: {
     employeeId: string;
     employeeName: string;
@@ -682,48 +688,56 @@ export function analyzeAttendance(): AnalyzeResult {
     description: string;
   }[] = [];
 
-  for (const [key, punches] of grouped) {
-    const [employeeId, date] = key.split("__");
+  for (const [employeeId, punches] of grouped) {
     const employeeName = punches[0].employeeName;
-    if (leaveDays.has(key)) {
-      coverage.leaveSkipped += 1;
-      continue;
-    }
     const plan = planner(employeeId);
     if (plan.source === "none") {
-      coverage.noPlan += 1;
-      if (coverage.unmatchedSample.length < 20) {
-        coverage.unmatchedSample.push({ employeeId, employeeName, date, reason: `无判定依据：${plan.note}` });
-      }
-      continue;
-    }
-    const times = punches.map((p) => p.time);
-    const outcome = resolveDay(plan.candidates, { date, times });
-    if (outcome.kind !== "judged") {
-      coverage.unmatched += 1;
-      if (coverage.unmatchedSample.length < 20) {
-        coverage.unmatchedSample.push({
+      const days = new Set(punches.map((p) => p.date));
+      coverage.noPlan += days.size;
+      for (const date of days) {
+        noPlanDays.set(`${employeeId}__${date}`, {
           employeeId,
           employeeName,
           date,
-          reason: `${outcome.kind === "no-workday" ? "非工作日" : "未对上班"} · ${plan.note} · ${outcome.reason}`,
+          reason: `无判定依据：${plan.note}`,
         });
       }
       continue;
     }
-    if (plan.source === "rule") coverage.byRule += 1;
-    else coverage.bySchedule += 1;
-    for (const finding of outcome.judgement.findings) {
-      anomalies.push({
-        employeeId,
-        employeeName,
-        date,
-        type: finding.type,
-        minutes: finding.minutes ?? undefined,
-        description: finding.description,
-      });
+    for (const outcome of resolveInstances(
+      plan.candidates,
+      punches.map((p) => ({ date: p.date, time: p.time }))
+    )) {
+      if (leaveDays.has(`${employeeId}__${outcome.date}`)) {
+        coverage.leaveSkipped += 1;
+        continue;
+      }
+      if (outcome.kind === "unmatched") {
+        // 按「人·日」去重统计：一个日历日里可能有两个对不上的锚点，界面只关心"哪天没判"
+        const dayKey = `${employeeId}__${outcome.date}`;
+        if (!unmatchedDays.has(dayKey)) {
+          unmatchedDays.set(dayKey, { employeeId, employeeName, date: outcome.date, reason: outcome.reason });
+        }
+        continue;
+      }
+      coverage.instances += 1;
+      if (plan.source === "rule") coverage.byRule += 1;
+      else coverage.bySchedule += 1;
+      for (const finding of outcome.judgement.findings) {
+        anomalies.push({
+          employeeId,
+          employeeName,
+          date: outcome.date,
+          type: finding.type,
+          minutes: finding.minutes ?? undefined,
+          description: finding.description,
+        });
+      }
     }
   }
+
+  coverage.unmatched = unmatchedDays.size;
+  coverage.unmatchedSample = [...unmatchedDays.values(), ...noPlanDays.values()].slice(0, 20);
 
   // 持久化分析结果（整表替换包在事务里，避免中途失败丢失全部历史异常；
   // transact 可重入——被审批决定的外层事务调用时自动并入，不再嵌套 BEGIN）

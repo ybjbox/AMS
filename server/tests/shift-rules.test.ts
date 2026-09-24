@@ -32,7 +32,6 @@ import {
   deleteDeptShiftRule,
   listDeptShiftRules,
   resolveRulesForDepartment,
-  ShiftRuleError,
   updateDeptShiftRule,
 } from '../shiftRulesDb.ts';
 import type { DbRow } from '../sqliteUtil.ts';
@@ -40,7 +39,6 @@ import type { DbRow } from '../sqliteUtil.ts';
 const PW = 'Shift#Test2026-aa';
 const PARENT = 'qa-shift-parent';
 const CHILD = 'qa-shift-child';
-/** 既不建部门也不配规则，用来验证"完全没有依据"的分支 */
 const MON = '2026-09-21'; // 周一
 const SAT = '2026-09-26'; // 周六
 
@@ -99,8 +97,17 @@ function anomaliesOf(employeeId: string, date?: string): DbRow[] {
 }
 
 describe('时段配置与校验', () => {
-  it('拒绝下班早于上班（不支持跨夜班）、坏时间格式、空工作日、不存在的部门', () => {
-    expect(() => addRule(PARENT, '夜班', '20:00', '06:00')).toThrow(ShiftRuleError);
+  it('跨日班可以配（24 点班与真跨日班），拒绝上下班相同、坏格式、空工作日、不存在的部门', () => {
+    // 三班倒：16:00–00:00 表示"24 点下班"，20:00–04:00 表示次日 4 点下班
+    const tail = addRule(PARENT, '中班', '16:00', '00:00');
+    expect(tail.startTime).toBe('16:00');
+    addRule(PARENT, '夜班', '20:00', '04:00');
+    expect(listDeptShiftRules().filter((r) => r.departmentId === PARENT).map((r) => r.name).sort()).toEqual([
+      '中班',
+      '夜班',
+    ]);
+    clearRules();
+    expect(() => addRule(PARENT, '整日', '09:00', '09:00')).toThrow(/相同/u);
     expect(() => addRule(PARENT, '坏格式', '9:00', '18:00')).toThrow(/HH:mm/u);
     expect(() => addRule(PARENT, '没有工作日', '09:00', '18:00', [])).toThrow(/工作日/u);
     expect(() => addRule('qa-shift-missing', '乱挂', '09:00', '18:00')).toThrow(/部门不存在/u);
@@ -284,13 +291,24 @@ describe('/api/attendance/shift-rules HTTP 层（真 authGate）', () => {
 
     const bad = await call('POST', '/shift-rules', adminToken, {
       departmentId: PARENT,
-      name: '夜班',
-      startTime: '20:00',
-      endTime: '06:00',
+      name: '整日班',
+      startTime: '09:00',
+      endTime: '09:00',
       workdays: [1],
     });
     expect(bad.status).toBe(400);
-    expect((bad.json as { error: string }).error).toMatch(/跨夜班/u);
+    expect((bad.json as { error: string }).error).toMatch(/相同/u);
+
+    // 三班倒的 24 点班必须能配（下班 00:00 = 次日零点）
+    const crossing = await call('POST', '/shift-rules', adminToken, {
+      departmentId: PARENT,
+      name: '中班',
+      startTime: '16:00',
+      endTime: '00:00',
+      workdays: [1, 2, 3, 4, 5],
+    });
+    expect(crossing.status).toBe(201);
+    expect(crossing.json).toMatchObject({ endTime: '00:00' });
 
     const updated = await call('PUT', `/shift-rules/${id}`, adminToken, {
       name: '接口班改',
