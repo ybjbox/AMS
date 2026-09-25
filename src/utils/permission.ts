@@ -1,41 +1,17 @@
 import { useUserStore } from '../store/useUserStore';
-import { useAppSettings } from '../store/appSettings';
-import { usePermissionsStore } from '../store/permissions';
 
 /**
- * 检查当前登录用户是否具有指定的权限（体验层显隐判断；硬约束在后端策略表）。
+ * 界面显隐的唯一数据源：登录时由服务端按鉴权策略表算出、随会话下发的能力码列表
+ * （server/capabilities.ts）。真正的强制始终在后端 authGate，这里只决定看不看得到。
  *
- * 数据源是 usePermissionsStore（权限矩阵面板编辑的就是它，zustand persist）。
- * 此前这里读的是 config 静态字典——矩阵面板改了也不生效，两份真相漂移；
- * #14 对齐后 config 只作为 store 的初始值 /「恢复默认」来源。
- * 矩阵修改对新挂载的组件即时生效，已挂载组件在路由切换后生效。
+ * 此前它查的是 localStorage 里可编辑的权限矩阵，还被一个默认关闭的开关整体短路
+ * （默认状态下对所有码返回 true）—— 两套并行真相，且第二套基本没生效。
+ * 下发列表缺失时一律判无权限：让旧会话重新登录一次，比按旧矩阵放行更安全。
  */
 export function hasPermission(permissionCode: string): boolean {
-  // 获取严格权限拦截开关状态
-  const enableStrictPermission = useAppSettings.getState().enableStrictPermission;
-
-  // 如果未开启严格权限拦截，默认返回 true
-  if (!enableStrictPermission) {
-    return true;
-  }
-
-  // 获取当前用户信息
-  const userInfo = useUserStore.getState().userInfo;
-
-  // 如果未登录或没有角色信息，默认无权限
-  if (!userInfo || !userInfo.role) {
-    return false;
-  }
-
-  // 将角色转换为大写以匹配权限矩阵的键
-  const userRole = userInfo.role.toUpperCase();
-  const rolePermissions = usePermissionsStore.getState().permissions[userRole] || [];
-
-  // 如果角色拥有 '*' 权限，则代表拥有所有权限
-  if (rolePermissions.includes('*')) {
-    return true;
-  }
-
-  // 检查是否包含具体的权限代码
-  return rolePermissions.includes(permissionCode);
+  const user = useUserStore.getState().userInfo as { permissions?: unknown } | null;
+  if (!user) return false;
+  const list = user.permissions;
+  if (!Array.isArray(list)) return false;
+  return list.includes('*') || list.includes(permissionCode);
 }

@@ -3,7 +3,6 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Plus, Upload } from 'lucide-react';
 import { useBodyOverflow } from '@/hooks/useBodyOverflow';
 import { useDocumentStore } from '@/store/useDocumentStore';
-import { usePermissionsStore } from '@/store/permissions';
 import { hasPermission } from '@/utils/permission';
 
 import { FolderTree } from './components/FolderTree';
@@ -24,7 +23,6 @@ export default function Documents() {
   const fetchData = useDocumentStore((state) => state.fetchData);
   const isLoading = useDocumentStore((state) => state.isLoading);
   // 订阅权限矩阵，使设置页的矩阵修改即时反映到按钮可见性
-  usePermissionsStore((state) => state.permissions);
   const canManageDocs = hasPermission('documents:manage');
 
   const [activeTab, setActiveTab] = useState<'files' | 'sets'>('sets');

@@ -4,7 +4,6 @@ import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAppSettings } from '@/store/appSettings';
 import { DEFAULT_SYSTEM_ICON } from '@/config/constants';
 import { useUserStore } from '@/store/useUserStore';
-import { usePermissionsStore } from '@/store/permissions';
 import { useTodoStore } from '@/store/useTodoStore';
 import { routeConfig, applyNavOrder, RouteConfig } from '@/config/routes';
 import UserMenu from './UserMenu';
@@ -21,8 +20,8 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
   const location = useLocation();
   const systemIcon = useAppSettings((state) => state.systemIcon);
 
-  // 订阅权限矩阵与 hasPermission，变化时导航即时重渲染
-  const permissionsMap = usePermissionsStore((state) => state.permissions);
+  // 订阅下发能力表与 hasPermission：登录换人后导航要即时重算
+  const userPermissions = useUserStore((state) => state.userInfo?.permissions);
   const hasPermission = useUserStore((state) => state.hasPermission);
 
   const visibleNav = useMemo(() => {
@@ -35,7 +34,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
       }
       return true;
     });
-  }, [hasPermission, permissionsMap]);
+  }, [hasPermission, userPermissions]);
 
   // 待办未完成数（侧边栏角标）
   const pendingTodoCount = useTodoStore((state) => state.todos.filter((t) => !t.completed).length);

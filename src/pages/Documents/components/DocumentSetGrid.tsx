@@ -3,7 +3,6 @@ import { Folder, Edit2, Trash2, FileText, Printer, Plus } from 'lucide-react';
 import { DocumentSet, Document } from '@/store/useDocumentStore';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/button';
-import { usePermissionsStore } from '@/store/permissions';
 import { hasPermission } from '@/utils/permission';
 
 interface DocumentSetGridProps {
@@ -25,7 +24,6 @@ export function DocumentSetGrid({
   onPrintSetClick,
   handleCreateSetClick,
 }: DocumentSetGridProps) {
-  usePermissionsStore((state) => state.permissions);
   const canManageDocs = hasPermission('documents:manage');
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

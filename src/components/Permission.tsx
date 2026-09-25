@@ -1,7 +1,6 @@
 import React from 'react';
 import { hasPermission } from '../utils/permission';
 import { useUserStore } from '../store/useUserStore';
-import { usePermissionsStore } from '../store/permissions';
 
 export interface PermissionProps {
   /**
@@ -26,7 +25,6 @@ export interface PermissionProps {
 export const Permission: React.FC<PermissionProps> = React.memo(({ code, children }) => {
   // 订阅 userInfo 与权限矩阵，登录态或矩阵修改后即时重渲染
   useUserStore((state) => state.userInfo);
-  usePermissionsStore((state) => state.permissions);
 
   const isAllowed = hasPermission(code);
 

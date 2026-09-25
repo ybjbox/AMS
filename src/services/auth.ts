@@ -13,6 +13,8 @@ export interface AuthUser {
   systemRole: string;
   employeeId: string | null;
   mustChangePassword: boolean;
+  /** 服务端按鉴权策略表算出的能力码；缺失时界面一律不放行 */
+  permissions?: string[];
 }
 
 /** 后端 AuthUser → 前端 UserInfo（role 统一取 systemRole 权限键） */
@@ -24,6 +26,8 @@ export function toUserInfo(u: AuthUser): UserInfo {
     email: u.email,
     avatar: u.avatar || undefined,
     role: u.systemRole,
+    // 服务端下发的能力表必须原样带过来：在边界上漏一个字段，就等于又造了一份本地真相
+    permissions: u.permissions,
   };
 }
 

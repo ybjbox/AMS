@@ -7,7 +7,6 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/input';
 import { formatFileSize } from '@/utils/fileUtils';
 import { withAuthToken } from '@/services/api';
-import { usePermissionsStore } from '@/store/permissions';
 import { hasPermission } from '@/utils/permission';
 
 interface FileListProps {
@@ -31,7 +30,6 @@ export function FileList({
   onMoveDocClick,
   handleDeleteDocClick,
 }: FileListProps) {
-  usePermissionsStore((state) => state.permissions);
   const canManageDocs = hasPermission('documents:manage');
   const handleDownloadDocClick = useCallback((url: string, name: string) => {
     if (url) {

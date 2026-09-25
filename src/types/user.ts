@@ -43,5 +43,7 @@ export interface UserInfo {
   avatar?: string;
   status?: number;
   role?: string;
+  /** 服务端下发的能力码（界面显隐唯一依据）；缺失即无权限 */
+  permissions?: string[];
   createdAt?: string;
 }

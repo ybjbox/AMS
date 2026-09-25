@@ -2,7 +2,6 @@ import React from 'react';
 import { Folder, ChevronRight, ChevronDown, Plus, Edit2, Trash2, FolderOpen, FolderPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Folder as FolderType } from '@/store/useDocumentStore';
-import { usePermissionsStore } from '@/store/permissions';
 import { hasPermission } from '@/utils/permission';
 
 interface FolderTreeProps {
@@ -28,7 +27,6 @@ export function FolderTree({
   onDeleteFolderClick,
   handleCreateRootFolderClick,
 }: FolderTreeProps) {
-  usePermissionsStore((state) => state.permissions);
   const canManageDocs = hasPermission('documents:manage');
   const renderFolderTree = (parentId: string | null, level: number = 0): React.ReactNode => {
       const childFolders = folders.filter((f) => f.parentId === parentId);

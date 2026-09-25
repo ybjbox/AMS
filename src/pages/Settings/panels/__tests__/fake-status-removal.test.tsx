@@ -4,7 +4,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import PreferencesPanel from '@/pages/Settings/panels/PreferencesPanel';
 import ConnectivityListener from '@/components/ConnectivityListener';
 import { useUserStore } from '@/store/useUserStore';
-import { useAppSettings } from '@/store/appSettings';
 
 /**
  * 批次 E2：拆掉两处"看起来在用、其实不成立"的状态。
@@ -15,16 +14,15 @@ import { useAppSettings } from '@/store/appSettings';
  *    既不发 health 请求，也就永远关不掉遮罩；而遮罩的触发也只跟随浏览器 online 事件，后端失联时不出现。
  */
 
-function setLocalUser(role: string) {
+function setLocalUser(role: string, permissions: string[] = ['*']) {
   useUserStore.setState({
-    userInfo: { id: 1, username: 'admin', displayName: '管理员', email: '', role },
+    userInfo: { id: 1, username: 'admin', displayName: '管理员', email: '', role, permissions },
     token: 't',
   } as never);
 }
 
 beforeEach(() => {
   setLocalUser('SUPER_ADMIN');
-  useAppSettings.setState({ enableStrictPermission: false });
 });
 
 afterEach(() => {
@@ -45,17 +43,14 @@ describe('系统偏好：角色只显示、不可在本机改写', () => {
     }
   });
 
-  it('切换"按权限隐藏界面"不会动到角色', () => {
-    render(<PreferencesPanel />);
-    fireEvent.click(screen.getByRole('switch'));
-    expect(useAppSettings.getState().enableStrictPermission).toBe(true);
-    expect(useUserStore.getState().userInfo?.role).toBe('SUPER_ADMIN');
-  });
-
-  it('开关文案说清它只管界面显隐，不再暗示它是安全边界', () => {
-    render(<PreferencesPanel />);
-    const copy = screen.getByText('按权限隐藏界面').closest('div');
-    expect(copy?.textContent).toContain('不会多出任何权限');
+  it('面板不再提供任何本地门禁控件（开关与角色卡片都已删）', () => {
+    const { container } = render(<PreferencesPanel />);
+    expect(screen.queryByRole('switch')).toBeNull();
+    expect(container.querySelectorAll('[role="switch"], [data-role]').length).toBe(0);
+    // 权限范围来自服务端下发的列表（SUPER_ADMIN 下发 *），不是本地偏好
+    expect(screen.getByText('当前账号权限')).toBeInTheDocument();
+    // JSX 会把文本拆成相邻节点，分别断言而不是拼成一串去匹配
+    expect(screen.getByText(/可用功能 全部/)).toBeInTheDocument();
   });
 });
 

@@ -2,7 +2,6 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, RotateCcw, ListOrdered } from 'lucide-react';
 import { useAppSettings } from '@/store/appSettings';
 import { useUserStore } from '@/store/useUserStore';
-import { usePermissionsStore } from '@/store/permissions';
 import { routeConfig, applyNavOrder } from '@/config/routes';
 import { Button } from '@/components/ui/button';
 
@@ -13,17 +12,17 @@ import { Button } from '@/components/ui/button';
  */
 export default function NavOrderPanel() {
   const hasPermission = useUserStore((state) => state.hasPermission);
-  const permissionsMap = usePermissionsStore((state) => state.permissions);
+  const userPermissions = useUserStore((state) => state.userInfo?.permissions);
   const navOrder = useAppSettings((state) => state.navOrder);
   const setNavOrder = useAppSettings((state) => state.setNavOrder);
 
   // 可排序模块 = 侧边栏实际展示的模块（/settings 已收纳进账户弹窗，不参与）
   const defaultPaths = useMemo(() => {
-    void permissionsMap; // 权限矩阵变化时重算可见模块
+    void userPermissions; // 下发能力表变化时重算可见模块
     return routeConfig
       .filter((item) => item.path !== '/settings' && (!item.permission || hasPermission(item.permission)))
       .map((item) => item.path);
-  }, [hasPermission, permissionsMap]);
+  }, [hasPermission, userPermissions]);
 
   const [list, setList] = useState<string[]>(() => applyNavOrder(defaultPaths.map((p) => ({ path: p })), navOrder).map((i) => i.path));
 

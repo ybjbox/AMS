@@ -5,6 +5,7 @@
  * 其余端点都已被 authGate 保护，这里的 requireRole 只是纵深防御的第二道。
  */
 import express from "express";
+import { permissionsForRole } from "./capabilities.ts";
 import {
   AuthError,
   assertPasswordStrength,
@@ -77,6 +78,8 @@ function sessionUserPayload(username: string) {
     // 前端 permission.ts 按 role 查权限字典，这里直接给系统角色
     role: account.systemRole,
     systemRole: account.systemRole,
+    // 能力码由服务端策略表算出并随会话下发：前端不再持有可编辑的本地权限矩阵
+    permissions: permissionsForRole(account.systemRole),
     employeeId: account.employeeId,
     mustChangePassword: !!account.mustChangePassword,
   };

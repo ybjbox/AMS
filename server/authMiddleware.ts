@@ -185,7 +185,8 @@ const DEFAULT_POLICY = {
 
 const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
-function requiredRoleFor(method: string, path: string): SystemRole {
+/** 某次请求需要的最低角色。capabilities.ts 复用它，界面门禁与真实 403 因此同源。 */
+export function requiredRoleFor(method: string, path: string): SystemRole {
   for (const p of POLICIES) {
     if (p.methods !== "*" && !p.methods.includes(method)) continue;
     if (p.pattern.test(path)) return p.minRole;
