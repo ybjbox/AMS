@@ -1,6 +1,8 @@
 import React, { useCallback } from 'react';
 import { IdCard } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { PreviewZoomControl } from '@/components/PreviewZoomControl';
+import { usePreviewZoom, zoomStyle } from '@/hooks/usePreviewZoom';
 import { PrintSettings, VERTICAL_CHAR_STYLE, CARD_PADDING_STYLE } from '../constants';
 import { User } from '@/types';
 
@@ -23,6 +25,8 @@ export default function NameCardPreview({
   actualCardHeight,
   containerRef,
 }: NameCardPreviewProps) {
+  const { zoom, change, reset } = usePreviewZoom('name-cards');
+
   const renderJustifiedName = useCallback(
     (name: string, fontSize: number, isVertical: boolean = false) => {
       if (printSettings.textAlign === 'center' && name.length <= 4) {
@@ -187,8 +191,9 @@ export default function NameCardPreview({
         role="region"
         aria-label="台卡预览区"
       >
-        <div className="sticky top-0 self-start text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-zinc-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-8 -ml-8 mb-4">
-          打印预览 ({pages.length}页)
+        <div className="sticky top-0 z-10 -mt-8 -ml-8 mb-4 flex w-[calc(100%+4rem)] items-center justify-between gap-3 bg-white/90 py-1.5 pl-3 pr-2 text-xs font-medium uppercase tracking-wider text-zinc-500 shadow-sm backdrop-blur dark:bg-zinc-800/90 dark:text-zinc-400">
+          <span>打印预览 ({pages.length}页)</span>
+          <PreviewZoomControl zoom={zoom} onChange={change} onReset={reset} />
         </div>
 
         {pages.length === 0 ? (
@@ -196,7 +201,7 @@ export default function NameCardPreview({
             <EmptyState title="暂无预览" description="请选择人员以预览台卡" icon={IdCard} />
           </div>
         ) : (
-          <div className="flex flex-col gap-8 items-center w-full pt-2">
+          <div style={zoomStyle(zoom)} className="flex flex-col gap-8 items-center w-full pt-2">
             {pages.map((pageCards, pageIdx) => (
               <div key={`page-${pageIdx}`} className="flex flex-col items-center">
                 <div className="text-sm text-zinc-600 dark:text-zinc-400 mb-2">

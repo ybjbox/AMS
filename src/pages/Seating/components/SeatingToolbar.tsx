@@ -5,7 +5,6 @@ import {
   Trash2,
   FolderClock,
   Users,
-  Settings2,
   Printer,
 } from 'lucide-react';
 
@@ -18,7 +17,6 @@ interface SeatingToolbarProps {
   selectedCount: number;
   setIsPrintModalOpen: (isOpen: boolean) => void;
   setIsPlansModalOpen: (isOpen: boolean) => void;
-  handlePrint: () => void;
   /** 有排座结果但服务端还没有这个版本 */
   unsaved: boolean;
 }
@@ -32,7 +30,6 @@ export function SeatingToolbar({
   selectedCount,
   setIsPrintModalOpen,
   setIsPlansModalOpen,
-  handlePrint,
   unsaved,
 }: SeatingToolbarProps) {
   return (
@@ -80,16 +77,9 @@ export function SeatingToolbar({
           <span className="hidden sm:inline">选择人员 ({selectedCount})</span>
           <span className="sm:hidden">({selectedCount})</span>
         </button>
+        {/* 一个入口：弹窗里就是「左设置 + 右预览 + 打印」，不再单列一个跳过预览直接出纸的按钮 */}
         <button
           onClick={() => setIsPrintModalOpen(true)}
-          disabled={!hasTables}
-          className="btn-secondary disabled:opacity-50"
-        >
-          <Settings2 className="w-4 h-4 sm:mr-2" />
-          <span className="hidden sm:inline">台卡设置</span>
-        </button>
-        <button
-          onClick={handlePrint}
           disabled={!hasTables}
           className="btn-secondary disabled:opacity-50"
         >

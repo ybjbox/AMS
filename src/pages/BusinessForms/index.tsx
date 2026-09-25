@@ -3,6 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Download, FolderArchive, Loader2, Printer, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import PageContainer from '@/components/PageContainer';
+import { PreviewZoomControl } from '@/components/PreviewZoomControl';
+import { usePreviewZoom } from '@/hooks/usePreviewZoom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -76,6 +78,9 @@ export default function BusinessForms() {
   const [archiving, setArchiving] = useState(false);
   const [archivedCount, setArchivedCount] = useState(0);
   const [scale, setScale] = useState(1);
+  /** 容器自适应比例 × 用户手动缩放比例（100% = 只看容器自适应） */
+  const { zoom, change, reset } = usePreviewZoom('business-forms');
+  const fit = (scale * zoom) / 100;
   const previewRef = useRef<HTMLDivElement>(null);
 
   const form: BusinessForm = useMemo(
@@ -434,15 +439,13 @@ export default function BusinessForms() {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="section-title">A4 预览</h2>
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {scale < 1 ? `${Math.round(scale * 100)}%` : '100%'}
-            </span>
+            <PreviewZoomControl zoom={zoom} onChange={change} onReset={reset} />
           </div>
           <div ref={previewRef} className="overflow-auto rounded-xl border bg-muted/30 p-1">
-            <div style={{ width: SHEET_PX.w * scale, height: SHEET_PX.h * scale }}>
+            <div style={{ width: SHEET_PX.w * fit, height: SHEET_PX.h * fit }}>
               <div
                 className="bg-white shadow-sm"
-                style={{ width: SHEET_PX.w, transform: `scale(${scale})`, transformOrigin: 'top left' }}
+                style={{ width: SHEET_PX.w, transform: `scale(${fit})`, transformOrigin: 'top left' }}
                 // 预览与打印同源：版面 HTML/CSS 由 lib/printHtml 生成，正文经 escapeHtml 编码
                 dangerouslySetInnerHTML={{ __html: `<style>${sheetCss}</style>${sheetHtml}` }}
               />

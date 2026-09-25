@@ -1,5 +1,7 @@
 import React from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
+import { PreviewZoomControl } from '@/components/PreviewZoomControl';
+import { usePreviewZoom, zoomStyle } from '@/hooks/usePreviewZoom';
 import { FileSignature, Printer } from 'lucide-react';
 import { User } from '@/types';
 import { ContractTemplate } from './ContractTemplate';
@@ -21,6 +23,7 @@ export const ContractPreviewModal = ({
   setIsDoubleSided,
   handlePrint,
 }: ContractPreviewModalProps) => {
+  const { zoom, change, reset } = usePreviewZoom('contract');
   return (
     <BaseModal
       isOpen={isOpen}
@@ -34,8 +37,9 @@ export const ContractPreviewModal = ({
       size="4xl"
       bodyClassName="p-0"
       footer={
-        <div className="flex items-center w-full justify-between">
-          <div className="flex items-center bg-zinc-100 dark:bg-zinc-700 p-1 rounded-lg">
+        <div className="flex items-center w-full justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center bg-zinc-100 dark:bg-zinc-700 p-1 rounded-lg">
             <button
               onClick={() => setIsDoubleSided(false)}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${!isDoubleSided ? 'bg-white dark:bg-zinc-600 shadow-sm text-zinc-900 dark:text-white' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}`}
@@ -48,6 +52,8 @@ export const ContractPreviewModal = ({
             >
               双面
             </button>
+            </div>
+            <PreviewZoomControl zoom={zoom} onChange={change} onReset={reset} />
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -69,7 +75,9 @@ export const ContractPreviewModal = ({
     >
       <div className="flex-1 overflow-y-auto p-8 bg-zinc-100 dark:bg-zinc-900 w-full h-[70vh]">
         {/* Printable Contract Area */}
-        {selectedUser && <ContractTemplate user={selectedUser} />}
+        <div style={zoomStyle(zoom)}>
+          {selectedUser && <ContractTemplate user={selectedUser} />}
+        </div>
       </div>
     </BaseModal>
   );

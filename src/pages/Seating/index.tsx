@@ -236,7 +236,6 @@ export default function Seating() {
           selectedCount={selectedUserIds.size}
           setIsPrintModalOpen={setIsPrintModalOpen}
           setIsPlansModalOpen={setIsPlansModalOpen}
-          handlePrint={handlePrint}
           unsaved={seatingPlans.isDirty || seatingPlans.neverSaved}
         />
 

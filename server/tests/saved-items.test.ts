@@ -150,6 +150,39 @@ describe("HTTP 层接线", () => {
     expect((rows[0].payload as { startNo: number }).startNo).toBe(1300);
   });
 
+  it("打印台账一批一行：不同名不覆盖，同名才是覆盖", async () => {
+    const a = (await (
+      await post({
+        kind: "meal-voucher-print",
+        name: "2026-09-25T08:00:00.000Z",
+        payload: { at: "2026-09-25T08:00:00.000Z", startNo: 1200, count: 20, ranges: [{ from: 1200, to: 1209 }] },
+      })
+    ).json()) as { id: string };
+    OWNED.push(a.id);
+    const b = (await (
+      await post({
+        kind: "meal-voucher-print",
+        name: "2026-09-25T09:30:00.000Z",
+        payload: { at: "2026-09-25T09:30:00.000Z", startNo: 1220, count: 20, ranges: [{ from: 1220, to: 1229 }] },
+      })
+    ).json()) as { id: string };
+    OWNED.push(b.id);
+    expect(b.id).not.toBe(a.id);
+
+    const rows = listSavedItems("meal-voucher-print", "owner-a");
+    expect(rows).toHaveLength(2);
+    // 服务端按 (updatedAt DESC, name ASC) 排；同一毫秒写入的两批次序不保证，
+    // 所以界面侧一律自己按 payload.at 倒序（见 useVoucherHistory），这里只钉住"两批都在"。
+    expect(rows.map((r) => (r.payload as { startNo: number }).startNo).sort((a, b) => a - b)).toEqual([1200, 1220]);
+
+    const again = await post({
+      kind: "meal-voucher-print",
+      name: "2026-09-25T09:30:00.000Z",
+      payload: { at: "2026-09-25T09:30:00.000Z", startNo: 1250, count: 5, ranges: [] },
+    });
+    expect(((await again.json()) as { id: string }).id).toBe(b.id);
+  });
+
   it("未知 kind 与缺名都被 400 挡下，不写库", async () => {
     auth = session("owner-a");
     expect((await post({ kind: "evil-kind", name: "x", payload: {} })).status).toBe(400);

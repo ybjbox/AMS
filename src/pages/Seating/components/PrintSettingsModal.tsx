@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { PreviewZoomControl } from '@/components/PreviewZoomControl';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { usePreviewZoom, zoomStyle } from '@/hooks/usePreviewZoom';
 import { PrintSettings } from '../hooks/usePrintSettings';
 import { Table } from '../hooks/useSeatingArrange';
 import { User } from '@/types';
@@ -28,11 +30,25 @@ export function PrintSettingsModal({
   getTableDepartments,
   renderJustifiedName,
 }: PrintSettingsModalProps) {
+  const printRef = useRef<HTMLButtonElement>(null);
+  const { zoom, change, reset } = usePreviewZoom('seating-cards');
+
+  /**
+   * 打开即把焦点放在「打印」上：设置沿用上次（存在服务端），
+   * 所以"看一眼预览、回车出纸"就是原来那个一键打印按钮的完整替代。
+   * BaseModal 自己在 100ms 后聚焦首个可聚焦元素（标题栏的关闭钮），这里排在它之后接管。
+   */
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = setTimeout(() => printRef.current?.focus(), 160);
+    return () => clearTimeout(timer);
+  }, [isOpen]);
+
   return (
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title="台卡打印设置"
+      title="打印台卡"
       size="full"
       bodyClassName="p-0 overflow-hidden"
       footer={
@@ -45,11 +61,13 @@ export function PrintSettingsModal({
             取消
           </button>
           <button
+            ref={printRef}
             type="button"
             onClick={handlePrint}
+            title="回车即可出纸"
             className="btn-primary w-full sm:w-auto"
           >
-            直接打印
+            打印
           </button>
         </>
       }
@@ -389,11 +407,12 @@ export function PrintSettingsModal({
 
         {/* Preview Panel */}
         <div className="flex-1 flex flex-col items-center bg-zinc-100 dark:bg-zinc-900 rounded-lg p-6 overflow-y-auto relative min-h-[300px] md:min-h-0">
-          <div className="sticky top-0 self-start text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-zinc-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-6 -ml-6 mb-4">
-            打印预览 ({tables.length}桌)
+          <div className="sticky top-0 z-10 -mt-6 -ml-6 mb-4 flex w-[calc(100%+1.5rem)] items-center justify-between gap-3 bg-white/90 py-1.5 pl-3 pr-2 text-xs font-medium uppercase tracking-wider text-zinc-500 shadow-sm backdrop-blur dark:bg-zinc-800/90 dark:text-zinc-400">
+            <span>打印预览 ({tables.length}桌)</span>
+            <PreviewZoomControl zoom={zoom} onChange={change} onReset={reset} />
           </div>
 
-          <div className="flex flex-col gap-8 items-center w-full pt-2">
+          <div style={zoomStyle(zoom)} className="flex flex-col gap-8 items-center w-full pt-2">
             {tables.map((table, tableIndex) => (
               <div key={table.number} className="flex flex-col items-center">
                 <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">第 {tableIndex + 1} 页</div>

@@ -4,6 +4,8 @@ import { BaseModal } from '@/components/ui/BaseModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { PreviewZoomControl } from '@/components/PreviewZoomControl';
+import { usePreviewZoom, zoomStyle } from '@/hooks/usePreviewZoom';
 import { User } from '@/types';
 import { ExportColumn, TABLE_STYLE, TD_DEPT_STYLE, DEPT_COUNT_STYLE, TD_CENTER_STYLE } from '../constants';
 import {
@@ -108,6 +110,7 @@ export function AddressBookModal({
   previewLeft,
   previewRight,
 }: AddressBookModalProps) {
+  const { zoom, change, reset } = usePreviewZoom('address-book');
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -352,10 +355,11 @@ export function AddressBookModal({
         </div>
 
         <div className="w-full md:w-2/3 flex flex-col items-center bg-zinc-100 dark:bg-zinc-900 p-6 overflow-auto relative min-h-[400px] h-full">
-          <div className="sticky top-0 self-start text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider z-10 bg-white/90 dark:bg-zinc-800/90 backdrop-blur py-1.5 px-3 rounded-br-lg shadow-sm -mt-6 -ml-6 mb-4">
-            打印预览
+          <div className="sticky top-0 z-10 -mt-6 -ml-6 mb-4 flex w-[calc(100%+1.5rem)] items-center justify-between gap-3 bg-white/90 py-1.5 pl-3 pr-2 text-xs font-medium uppercase tracking-wider text-zinc-500 shadow-sm backdrop-blur dark:bg-zinc-800/90 dark:text-zinc-400">
+            <span>打印预览</span>
+            <PreviewZoomControl zoom={zoom} onChange={change} onReset={reset} />
           </div>
-          <div className="w-full bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl p-8">
+          <div style={zoomStyle(zoom)} className="w-full bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl p-8">
             <div className="text-center mb-6">
               {/* 纸张标题：页面已有 h1，打印 HTML 由 builder 单独生成 */}
               <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">{addressBookConfig.title}</h2>
