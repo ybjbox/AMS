@@ -9,7 +9,8 @@ import { http } from './api';
 export type SavedItemKind =
   | 'seating-plan'
   | 'seating-prefs'
-  | 'namecards-prefs';
+  | 'namecards-prefs'
+  | 'meal-voucher-spec';
 
 export interface SavedItem<T = unknown> {
   id: string;

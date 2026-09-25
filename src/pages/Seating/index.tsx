@@ -1,4 +1,3 @@
-import PageContainer from "@/components/PageContainer";
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { printReactTree } from '@/utils/printWindow';
@@ -212,7 +211,7 @@ export default function Seating() {
   );
 
   return (
-    <PageContainer className="space-y-6 animate-in fade-in duration-400 print:hidden">
+    <div className="w-full min-h-full flex flex-1 flex-col space-y-6 animate-in fade-in duration-400 print:hidden">
         <div className="page-header shrink-0">
           <div>
             <h1 className="page-title">座位安排</h1>
@@ -348,6 +347,6 @@ export default function Seating() {
         getTableDepartments={getTableDepartments}
         renderJustifiedName={renderJustifiedName}
       />
-    </PageContainer>
+    </div>
   );
 }

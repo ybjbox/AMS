@@ -37,7 +37,7 @@ test.describe('座位手动微调', () => {
   test.use({ viewport: { width: 1370, height: 770 } });
 
   test('拖到另一桌 → 桌内换序 → 移出到未入座 → 点选移回桌内', async ({ page }) => {
-    await page.goto('/seating', { timeout: 60000 });
+    await page.goto('/print-tools?tab=seating', { timeout: 60000 });
     await page.waitForLoadState('networkidle', { timeout: 60000 });
 
     await page.getByRole('button', { name: /自动排座/ }).first().click();
@@ -104,7 +104,7 @@ test.describe('座位手动微调', () => {
   });
 
   test('落点提示 → 删桌可撤销 → 桌号可改名（含撞号被拒）', async ({ page }) => {
-    await page.goto('/seating', { timeout: 60000 });
+    await page.goto('/print-tools?tab=seating', { timeout: 60000 });
     await page.waitForLoadState('networkidle', { timeout: 60000 });
     await page.getByRole('button', { name: /自动排座/ }).first().click();
     const cards = page.locator('[data-table-number]');

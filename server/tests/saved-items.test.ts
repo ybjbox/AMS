@@ -131,6 +131,25 @@ describe("HTTP 层接线", () => {
     expect((await fetch(`${base}/${item.id}`, { method: "DELETE" })).status).toBe(404);
   });
 
+  it("餐券版面参数用同一个 kind 覆盖存回", async () => {
+    const first = await post({
+      kind: "meal-voucher-spec",
+      name: "__self__",
+      payload: { startNo: 1200, cols: 2, perCol: 50, splitByColumn: true },
+    });
+    expect(first.status).toBe(201);
+    const item = (await first.json()) as { id: string };
+    OWNED.push(item.id);
+
+    const again = await post({ kind: "meal-voucher-spec", name: "__self__", payload: { startNo: 1300 } });
+    const updated = (await again.json()) as { id: string };
+    expect(updated.id).toBe(item.id); // 改一次参数多一行 = 版面历史垃圾
+
+    const rows = listSavedItems("meal-voucher-spec", "owner-a");
+    expect(rows).toHaveLength(1);
+    expect((rows[0].payload as { startNo: number }).startNo).toBe(1300);
+  });
+
   it("未知 kind 与缺名都被 400 挡下，不写库", async () => {
     auth = session("owner-a");
     expect((await post({ kind: "evil-kind", name: "x", payload: {} })).status).toBe(400);

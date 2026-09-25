@@ -39,10 +39,11 @@ const CAPABILITIES: Record<string, Capability> = {
   "notice:view": { method: "GET", path: "/notice/models" },
   "forms:view": { method: "GET", path: "/form/templates" },
   "dashboard:view": { method: "GET", path: "/stats/summary" },
-  "seating:view": { method: "GET", path: "/saved-items" },
   "todos:view": { method: "GET", path: "/todos" },
-  // 会议台卡：与排座同档，页面自身的布局存在 saved-items（按 username 隔离）
-  "name-cards:view": { method: "GET", path: "/saved-items" },
+  // 打印工具（宴会排座 / 会议台卡 / 工作餐券三个标签合成一个入口）：
+  // 三个面都只需要自己的名单与版面，全部存在 saved-items（按 username 隔离），
+  // 所以一个码就够，不再每页一个同源重复码。
+  "print-tools:view": { method: "GET", path: "/saved-items" },
 };
 
 /** 该能力要求的最低角色：策略表派生值与显式下限里更严的那个。 */

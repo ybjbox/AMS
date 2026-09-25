@@ -14,6 +14,7 @@ export const SAVED_ITEM_KINDS = [
   "seating-plan",
   "seating-prefs",
   "namecards-prefs",
+  "meal-voucher-spec",
 ] as const;
 
 export type SavedItemKind = (typeof SAVED_ITEM_KINDS)[number];

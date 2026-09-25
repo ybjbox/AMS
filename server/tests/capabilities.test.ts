@@ -72,6 +72,13 @@ describe("能力码与策略表同源", () => {
     }
   });
 
+  it("三个打印面收敛成一个入口码（同源重复码不再各留一份）", () => {
+    expect(permissionsForRole("EMPLOYEE")).toContain("print-tools:view");
+    for (const gone of ["seating:view", "name-cards:view", "meal-vouchers:view"]) {
+      expect(ALL_CAPABILITY_CODES).not.toContain(gone);
+    }
+  });
+
   it("前端用到的每个能力码都必须在表里登记（漏登记会被 fail-closed 一律拒绝）", () => {
     const missing = codesUsedByClient().filter((c) => !ALL_CAPABILITY_CODES.includes(c));
     expect(missing).toEqual([]);

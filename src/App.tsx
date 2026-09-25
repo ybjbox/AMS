@@ -79,6 +79,11 @@ export default function App() {
                   }
                 />
               ))}
+              {/* 三个打印页合并为 /print-tools 的标签：旧书签应落到对应标签，
+                  而不是被下面的 * 兜底弹回控制台（看起来像页面凭空消失）。 */}
+              <Route path="/seating" element={<Navigate to="/print-tools?tab=seating" replace />} />
+              <Route path="/name-cards" element={<Navigate to="/print-tools?tab=name-cards" replace />} />
+              <Route path="/meal-vouchers" element={<Navigate to="/print-tools?tab=meal-vouchers" replace />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>

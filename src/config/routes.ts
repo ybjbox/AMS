@@ -4,8 +4,7 @@ import {
   Users,
   Settings,
   ListTodo,
-  Armchair,
-  IdCard,
+  Printer,
   FileStack,
   Clock,
   FileSignature,
@@ -20,8 +19,7 @@ const UsersPage = lazy(() => import('../pages/Users'));
 const SettingsPage = lazy(() => import('../pages/Settings/index'));
 const Todos = lazy(() => import('../pages/Todos'));
 const Approvals = lazy(() => import('../pages/Approvals/index'));
-const Seating = lazy(() => import('../pages/Seating'));
-const NameCards = lazy(() => import('../pages/NameCards/index'));
+const PrintTools = lazy(() => import('../pages/PrintTools/index'));
 const Documents = lazy(() => import('../pages/Documents'));
 const Attendance = lazy(() => import('../pages/Attendance/index'));
 const Contracts = lazy(() => import('../pages/Contracts/index'));
@@ -44,8 +42,7 @@ export const routeConfig: RouteConfig[] = [
   { path: '/departments', label: '部门管理', icon: Building2, permission: 'departments:view', component: DepartmentsPage },
   { path: '/attendance', label: '考勤管理', icon: Clock, permission: 'attendance:view', component: Attendance },
   { path: '/contracts', label: '合同管理', icon: FileSignature, permission: 'contracts:view', component: Contracts },
-  { path: '/seating', label: '宴会排座', icon: Armchair, permission: 'seating:view', component: Seating },
-  { path: '/name-cards', label: '会议台卡', icon: IdCard, permission: 'name-cards:view', component: NameCards },
+  { path: '/print-tools', label: '打印工具', icon: Printer, permission: 'print-tools:view', component: PrintTools },
   { path: '/documents', label: '常用文件', icon: FileStack, permission: 'documents:view', component: Documents },
   { path: '/todos', label: '待办事项', icon: ListTodo, permission: 'todos:view', component: Todos },
   { path: '/approvals', label: '审批中心', icon: FileCheck2, permission: 'approvals:view', component: Approvals },
