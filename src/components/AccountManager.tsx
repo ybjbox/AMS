@@ -28,6 +28,7 @@ import {
   type Account,
   type AccountSystemRole,
 } from '@/services/accountApi';
+import { canManageAccount, grantableRoles } from '@/utils/accountCeiling';
 
 const ROLES: AccountSystemRole[] = ['SUPER_ADMIN', 'ADMIN', 'HR', 'EMPLOYEE'];
 
@@ -129,6 +130,7 @@ function EmployeePicker({
 export default function AccountManager() {
   const confirm = useConfirm();
   const me = useUserStore((state) => state.userInfo?.username ?? '');
+  const myRole = useUserStore((state) => state.userInfo?.role) as AccountSystemRole | undefined;
   const fetchUsers = useEmployeeStore((state) => state.fetchUsers);
 
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -331,6 +333,8 @@ export default function AccountManager() {
               {rows.map((a) => {
                 const emp = a.employeeId ? employeeById.get(a.employeeId) : null;
                 const isSelf = a.username === me;
+                const manageable = canManageAccount(myRole, a.systemRole, isSelf);
+                const ceilingTip = manageable ? '' : `（目标是${ACCOUNT_ROLE_LABELS[a.systemRole]}，只有权限更高的管理员可以操作）`;
                 return (
                   <tr key={a.username} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/30">
                     <td className="px-4 py-3">
@@ -378,33 +382,34 @@ export default function AccountManager() {
                       <div className="flex items-center justify-end gap-1">
                         {busy === `enable:${a.username}` && <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />}
                         <IconAction
-                          title={a.employeeId ? '改绑员工' : '绑定员工'}
+                          title={`${a.employeeId ? '改绑员工' : '绑定员工'}${ceilingTip}`}
                           icon={Link2}
+                          disabled={!manageable}
                           onClick={() => setEditing(a)}
                         />
                         <IconAction
-                          title={a.enabled ? '停用' : '启用'}
+                          title={`${a.enabled ? '停用' : '启用'}${ceilingTip}`}
                           icon={a.enabled ? Ban : CheckCircle2}
-                          disabled={isSelf || busy !== null}
+                          disabled={!manageable || isSelf || busy !== null}
                           onClick={() => void onToggleEnabled(a)}
                         />
                         <IconAction
-                          title="重置密码"
+                          title={`重置密码${ceilingTip}`}
                           icon={KeyRound}
-                          disabled={busy !== null}
+                          disabled={!manageable || busy !== null}
                           onClick={() => void onReset(a)}
                         />
                         <IconAction
-                          title="强制下线"
+                          title={`强制下线${ceilingTip}`}
                           icon={LogOut}
-                          disabled={isSelf || busy !== null}
+                          disabled={!manageable || isSelf || busy !== null}
                           onClick={() => void onRevoke(a)}
                         />
                         <IconAction
-                          title="删除账号"
+                          title={`删除账号${ceilingTip}`}
                           icon={Trash2}
                           danger
-                          disabled={isSelf || busy !== null}
+                          disabled={!manageable || isSelf || busy !== null}
                           onClick={() => void onDelete(a)}
                         />
                       </div>
@@ -433,6 +438,7 @@ export default function AccountManager() {
         <CreateAccountDialog
           accounts={accounts}
           selfUsername={me}
+          roles={grantableRoles(myRole)}
           onClose={() => setCreating(false)}
           onCreated={() => {
             setCreating(false);
@@ -446,6 +452,7 @@ export default function AccountManager() {
           account={editing}
           accounts={accounts}
           selfUsername={me}
+          roles={grantableRoles(myRole)}
           onClose={() => setEditing(null)}
           onSaved={(next) => {
             setEditing(null);
@@ -491,11 +498,13 @@ function IconAction({
 function CreateAccountDialog({
   accounts,
   selfUsername,
+  roles,
   onClose,
   onCreated,
 }: {
   accounts: Account[];
   selfUsername: string;
+  roles: AccountSystemRole[];
   onClose: () => void;
   onCreated: () => void;
 }) {
@@ -578,7 +587,7 @@ function CreateAccountDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {ROLES.map((r) => (
+                  {roles.map((r) => (
                     <SelectItem key={r} value={r}>
                       {ACCOUNT_ROLE_LABELS[r]}
                     </SelectItem>
@@ -628,12 +637,14 @@ function EditAccountDialog({
   account,
   accounts,
   selfUsername,
+  roles,
   onClose,
   onSaved,
 }: {
   account: Account;
   accounts: Account[];
   selfUsername: string;
+  roles: AccountSystemRole[];
   onClose: () => void;
   onSaved: (next: Account) => void;
 }) {
@@ -688,7 +699,8 @@ function EditAccountDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {ROLES.map((r) => (
+                {/* 自己的账号总在选项里（改自己资料时不该看到空值），其余只列可授予的角色 */}
+                {[...new Set([account.systemRole, ...roles])].map((r) => (
                   <SelectItem key={r} value={r}>
                     {ACCOUNT_ROLE_LABELS[r]}
                   </SelectItem>

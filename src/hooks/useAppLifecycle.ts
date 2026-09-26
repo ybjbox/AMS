@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useAppSettings } from '../store/appSettings';
 import { useInitData } from './useInitData';
 import { useNotificationStore } from '../store/useNotificationStore';
+import { useUserStore } from '../store/useUserStore';
 import { useBrandingSync } from './useBrandingSync';
 import { EVENT_KEYS, DEFAULT_SYSTEM_ICON } from '../config/constants';
 
@@ -58,6 +59,10 @@ export function useAppLifecycle() {
   // Auth expired listener
   useEffect(() => {
     const handleAuthExpired = () => {
+      // api.ts 的 401 分支只清了 localStorage；内存里那份 userInfo 还在，
+      // 于是「被弹到登录页 → 点后退」时 ProtectedRoute 照样放行，
+      // 剩下的是一个看起来登录着、全是空表、一句错误都没有的空壳。
+      useUserStore.getState().logout();
       navigate('/login', { replace: true });
     };
 

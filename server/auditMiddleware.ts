@@ -271,6 +271,9 @@ const DESCRIPTORS: Descriptor[] = [
   },
   { pattern: /^\/export-templates\/?$/, action: "template", category: "模板", targetType: "scriptTemplate" },
   { pattern: /^\/audit-logs\/export\/?$/, methods: ["GET"], action: () => "audit.export", category: "系统", targetType: "auditLog" },
+  // 备份下载交出的是整库副本（含口令哈希与各条凭据），比审计导出更敏感，
+  // 必须和 /files/:id 一样留痕；此前只挂在 auditGate 的「未命中即不记」规则上漏掉了。
+  { pattern: /^\/backup\/export\/(.+)\/?$/, methods: ["GET"], action: () => "backup.export", category: "系统", targetType: "backup" },
 
   // ---- 系统 ----
   { pattern: /^\/themes\/?$/, action: "theme", category: "系统", targetType: "theme" },

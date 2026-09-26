@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Users, Briefcase, FileText, Activity, Building2, Settings, LucideIcon } from 'lucide-react';
 import { ChartData } from '../components/DashboardChart';
 import { fetchUsersPage } from '@/services/userApi';
+import { useUserStore } from '@/store/useUserStore';
 import { attendanceApi } from '@/services/attendanceApi';
 import { notificationApi } from '@/services/notificationApi';
 import { announcementApi, type Announcement } from '@/services/announcementApi';
@@ -35,6 +36,8 @@ export interface QuickActionItem {
   color: string;
   bg: string;
   href: string;
+  /** 入口对应的能力码；缺省 = 全员可见。没有它就会出现「员工点了进 /403」的假入口 */
+  permission?: string;
 }
 
 export interface UseDashboardReturn {
@@ -52,6 +55,7 @@ const QUICK_ACTIONS: QuickActionItem[] = [
   {
     name: '添加员工',
     href: '/users',
+    permission: 'users:manage',
     icon: Users,
     color: 'text-brand-600 dark:text-brand-400',
     bg: 'bg-brand-50 dark:bg-brand-900/30',
@@ -59,6 +63,7 @@ const QUICK_ACTIONS: QuickActionItem[] = [
   {
     name: '待办事项',
     href: '/todos',
+    permission: 'todos:view',
     icon: FileText,
     color: 'text-brand-600 dark:text-brand-400',
     bg: 'bg-brand-50 dark:bg-brand-900/30',
@@ -66,6 +71,7 @@ const QUICK_ACTIONS: QuickActionItem[] = [
   {
     name: '部门调整',
     href: '/departments',
+    permission: 'departments:manage',
     icon: Building2,
     color: 'text-brand-600 dark:text-brand-400',
     bg: 'bg-brand-50 dark:bg-brand-900/30',
@@ -73,6 +79,7 @@ const QUICK_ACTIONS: QuickActionItem[] = [
   {
     name: '系统设置',
     href: '/settings',
+    permission: 'settings:view',
     icon: Settings,
     color: 'text-zinc-600 dark:text-zinc-400',
     bg: 'bg-zinc-50 dark:bg-zinc-800',
@@ -80,6 +87,11 @@ const QUICK_ACTIONS: QuickActionItem[] = [
 ];
 
 const WEEKDAY = '日一二三四五六';
+
+/** 快捷入口按能力码过滤（导出以便单测钉住「不摆出点了必 403 的入口」这条规则） */
+export function filterQuickActions(hasPermission: (code: string) => boolean): QuickActionItem[] {
+  return QUICK_ACTIONS.filter((a) => !a.permission || hasPermission(a.permission));
+}
 
 export function useDashboard(): UseDashboardReturn {
   const [raw, setRaw] = useState<{
@@ -203,10 +215,14 @@ export function useDashboard(): UseDashboardReturn {
     ];
   }, [raw, departments, pendingTodos]);
 
+  // 快捷入口与侧栏同一套能力码过滤：写死的常量会摆出「员工点了进 /403」的假入口
+  const hasPermission = useUserStore((state) => state.hasPermission);
+  const quickActions = useMemo(() => filterQuickActions(hasPermission), [hasPermission]);
+
   return {
     stats,
     notices: raw?.notices ?? [],
-    quickActions: QUICK_ACTIONS,
+    quickActions,
     chartData: raw?.chartData ?? [],
     workforce,
     attendance,

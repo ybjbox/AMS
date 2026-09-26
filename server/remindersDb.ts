@@ -14,6 +14,7 @@ import { db } from "./db.ts";
 import { getSetting, setSetting } from "./settingsDb.ts";
 import { createTodo } from "./todosDb.ts";
 import { createNotification } from "./notificationsDb.ts";
+import { daysUntilLocalOrNull } from "./localDate.ts";
 import { ROLE_LEVEL, type SystemRole } from "./authDb.ts";
 
 const CONFIG_KEY = "reminderConfig";
@@ -86,15 +87,6 @@ export function listReminderRecipients(): string[] {
     .sort();
 }
 
-/** 'YYYY-MM-DD' → 距今天的天数（按日历日，避免 new Date('YYYY-MM-DD') 的 UTC 偏移） */
-function daysUntil(iso: string, today = new Date()): number | null {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso ?? "");
-  if (!m) return null;
-  const target = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-  const base = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
-  return Math.round((target - base) / 86_400_000);
-}
-
 /** 入职日 + N 个月（同样按日历日算，转正日与客户端旧口径一致） */
 function plusMonths(iso: string, months: number): string | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso ?? "");
@@ -130,7 +122,7 @@ export function collectReminderItems(config = getReminderConfig()): ReminderItem
   const items: ReminderItem[] = [];
   for (const emp of employees) {
     if (emp.contractExpiry) {
-      const days = daysUntil(emp.contractExpiry);
+      const days = daysUntilLocalOrNull(emp.contractExpiry);
       if (days !== null && days > 0 && days <= config.contractExpiryDays) {
         items.push({
           kind: "contract",
@@ -143,7 +135,7 @@ export function collectReminderItems(config = getReminderConfig()): ReminderItem
     }
     if (emp.status === "试用期" && emp.joinDate) {
       const due = plusMonths(emp.joinDate, 3);
-      const days = due ? daysUntil(due) : null;
+      const days = due ? daysUntilLocalOrNull(due) : null;
       if (due && days !== null && days > 0 && days <= config.probationConversionDays) {
         items.push({
           kind: "probation",

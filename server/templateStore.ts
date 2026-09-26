@@ -1,5 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
+import { DATA_DIR } from "./db.ts";
 
 /**
  * 导出脚本模板的安全存取层。
@@ -10,7 +11,37 @@ import path from "path";
  * 3. 限制模板代码体积，避免磁盘/内存被打爆。
  */
 
-export const TEMPLATES_DIR = path.resolve(process.cwd(), "server", "templates");
+/**
+ * 模板存在数据卷里，不存在镜像层里。
+ *
+ * 原来这里是 `process.cwd()/server/templates`，而 Docker 只挂 `ams-data:/app/data`：
+ * 管理员在生产里录好的自定义模板会在下一次 `docker compose up -d` 换镜像时**静默回到
+ * 出厂默认值**，导出结果悄悄变了，也没有任何告警。改成 DATA_DIR 后它跟着数据卷活，
+ * 镜像里的 server/templates 退化成「首次启动的只读种子」（缺失的文件才拷过去，
+ * 管理员改过的不会被覆盖）。
+ */
+export const TEMPLATES_DIR = path.join(DATA_DIR, "templates");
+const BUNDLED_TEMPLATES_DIR = path.resolve(process.cwd(), "server", "templates");
+
+async function seedFromBundle(): Promise<void> {
+  let bundled: string[];
+  try {
+    bundled = (await fs.readdir(BUNDLED_TEMPLATES_DIR)).filter((f) => f.toLowerCase().endsWith(".js"));
+  } catch {
+    return; // 镜像里没有种子目录（例如被裁剪掉），live 目录自己就是全部真相
+  }
+  for (const file of bundled) {
+    const dest = path.join(TEMPLATES_DIR, file);
+    try {
+      // copyFile 在 dest 已存在时抛 EEXIST —— 这正是"只在没有时种一次"的语义
+      await fs.copyFile(path.join(BUNDLED_TEMPLATES_DIR, file), dest, fs.constants.COPYFILE_EXCL);
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== "EEXIST") {
+        console.warn(`[templates] 种子模板 ${file} 未落盘：`, e);
+      }
+    }
+  }
+}
 
 /** 单个模板代码最大体积 */
 export const MAX_TEMPLATE_BYTES = 64 * 1024;
@@ -59,6 +90,7 @@ export function resolveTemplatePath(rawName: unknown): string {
 
 async function ensureDir(): Promise<void> {
   await fs.mkdir(TEMPLATES_DIR, { recursive: true });
+  await seedFromBundle();
 }
 
 export interface TemplateRecord {

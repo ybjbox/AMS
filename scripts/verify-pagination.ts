@@ -43,7 +43,7 @@ async function main() {
 
   const { listEmployees, db } = await import("../server/db.ts");
   const { listDocuments, createDocumentFromUpload } = await import("../server/documentsDb.ts");
-  const { listRecords, replaceRecords } = await import("../server/attendanceDb.ts");
+  const { listRecords, upsertRecords } = await import("../server/attendanceDb.ts");
   // departments 表由迁移脚本建立（与真实启动 server.ts -> runMigrations 一致），
   // 此处直接调用迁移确保 JOIN 可用。
   const { runMigrations } = await import("../server/migrate.ts");
@@ -64,7 +64,8 @@ async function main() {
   const docTotal = (db.prepare("SELECT COUNT(*) AS c FROM documents").get() as any).c;
   check("文档共 25 条", docTotal === 25, `count=${docTotal}`);
 
-  // 打卡记录：replaceRecords 整体写入 30 条（按员工/日期分散）。
+  // 打卡记录：upsertRecords 写入 30 条（按员工/日期分散）；本用例跑在空库上，
+  // upsert-only 与整表写入在这里等价，计数断言不受影响。
   const recs: any[] = [];
   for (let i = 0; i < 30; i++) {
     const empNum = (i % 5) + 1; // 1..5
@@ -76,7 +77,7 @@ async function main() {
       time: "09:00:00",
     });
   }
-  replaceRecords(recs);
+  upsertRecords(recs);
   const recTotal = (db.prepare("SELECT COUNT(*) AS c FROM punch_records").get() as any).c;
   check("打卡记录共 30 条", recTotal === 30, `count=${recTotal}`);
 

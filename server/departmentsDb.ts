@@ -51,7 +51,38 @@ function assertUniqueIds(rows: { id?: string }[], label: string): asserts rows i
   }
 }
 
-// ---------- Departments（树 <-> 扁平） ----------
+/**
+ * 同一父部门下不允许同名部门。
+ *
+ * 部门名不只是显示文字 —— 员工表还留着 `department` 这个名字字符串做显示缓存，
+ * 回填外键时用的是 `WHERE d.name = employees.department`。两处同名（哪怕分属不同分公司）
+ * 会让这条子查询返回多行：MySQL 直接报错，SQLite **静默取一行**，于是员工的部门归属
+ * 变成一个看运气的结果。跨父级重名仍然允许（连锁门店确实会有两个「前厅部」）。
+ */
+function assertUniqueSiblingNames(
+  rows: { id: string; name: string; parentId: string | null }[]
+): void {
+  const seen = new Map<string, string>();
+  for (const row of rows) {
+    const name = row.name.trim();
+    if (!name) throw new DeptDataError(`部门 ${row.id} 的名称不能为空`);
+    const key = `${row.parentId ?? ""}\u0000${name}`;
+    const first = seen.get(key);
+    if (first) {
+      throw new DeptDataError(`同一上级下有两个同名部门「${name}」（id: ${first} 与 ${row.id}）`);
+    }
+    seen.set(key, row.id);
+  }
+}
+
+/** 只在一处按名字反查得到唯一解时才回填，避免上面说的「SQLite 静默取一行」。 */
+function unambiguousByNameSql(): string {
+  return `(
+    SELECT d.id FROM departments d
+     WHERE d.name = employees.department
+       AND NOT EXISTS (SELECT 1 FROM departments x WHERE x.name = d.name AND x.id <> d.id)
+  )`;
+}
 export function listDepartmentsTree(): DeptNode[] {
   // rows 已按 priority DESC 排序，children 挂载顺序即展示顺序
   const rows = db.prepare("SELECT * FROM departments ORDER BY priority DESC, rowid").all();
@@ -80,7 +111,8 @@ export function listDepartmentsTree(): DeptNode[] {
  * 整树替换部门。
  *
  * 注意：departments.parentId 现在是自引用外键（ON DELETE CASCADE），
- * employees.departmentId / roles.departmentId 也指向 departments（SET NULL）。
+ * employees.departmentId 指向 departments（SET NULL），roles.departmentId 也是外键但
+ * 是 CASCADE（职位依附于部门：部门没了职位行留着只会变成谁也选不到的死选项）。
  * 因此这里不能用「DELETE FROM departments 再全量 INSERT」——那会把所有员工的
  * departmentId 级联置空。改为差量更新：
  *   1. 先把传入的整棵树 upsert 进去（新增/改名/改父级一次性搞定）；
@@ -100,6 +132,7 @@ export function listDepartmentsTree(): DeptNode[] {
 export function replaceDepartmentsTree(tree: DeptNode[]): DeptNode[] {
   const incoming = flattenTree(tree);
   assertUniqueIds(incoming, "部门树");
+  assertUniqueSiblingNames(incoming);
   const existingIds = new Set(
     (db.prepare("SELECT id FROM departments").all() as { id: string }[]).map((r) => r.id)
   );
@@ -136,7 +169,7 @@ export function replaceDepartmentsTree(tree: DeptNode[]): DeptNode[] {
     //     这里在部门树就绪后统一补挂，保证部门列可读且外键完整）
     db.prepare(
       `UPDATE employees
-          SET departmentId = (SELECT d.id FROM departments d WHERE d.name = employees.department)
+          SET departmentId = ${unambiguousByNameSql()}
         WHERE (departmentId IS NULL OR departmentId = '')
           AND department != ''
           AND EXISTS (SELECT 1 FROM departments d WHERE d.name = employees.department)`
@@ -188,6 +221,17 @@ export function listRoles(): RoleNode[] {
 
 export function replaceRoles(roles: RoleNode[]): RoleNode[] {
   assertUniqueIds(roles, "职位列表");
+  // departmentId 是外键。不先查一遍的话，一个不存在的部门会在 INSERT 时抛
+  // SqliteError: FOREIGN KEY constraint failed，被全局错误处理算成 500 ——
+  // 用户只知道"保存失败"，不知道是哪一行、哪个部门不存在。
+  const known = new Set(
+    (db.prepare("SELECT id FROM departments").all() as { id: string }[]).map((r) => r.id)
+  );
+  for (const r of roles || []) {
+    if (!known.has(r.departmentId)) {
+      throw new DeptDataError(`职位「${r.name || r.id}」指向不存在的部门（${r.departmentId}）`);
+    }
+  }
   const insert = db.prepare("INSERT INTO roles (id, name, departmentId, priority) VALUES (?, ?, ?, ?)");
   db.exec("BEGIN");
   try {

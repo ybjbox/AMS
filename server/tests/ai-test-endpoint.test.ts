@@ -37,7 +37,9 @@ async function stop() {
 }
 
 const DRAFT = {
-  baseUrl: 'https://api.example.test/v1',
+  // 用 TEST-NET-3 的文档地址（203.0.113.0/24，永不路由到真机）：字面量 IP 不需要 DNS，
+  // 断言因此与本机是否有代理/解析器无关；fetch 本来就被测试打桩接管。
+  baseUrl: 'http://203.0.113.7/v1',
   apiKey: 'sk-draft',
   model: 'some-model',
 };
@@ -67,7 +69,7 @@ describe('POST /api/ai/test', () => {
 
   it('连接成功：返回 ok + latencyMs + 模型回复', async () => {
     const fetchMock = vi.fn(async (url: unknown, init?: { headers?: Record<string, string>; body?: string }) => {
-      expect(String(url)).toBe('https://api.example.test/v1/chat/completions');
+      expect(String(url)).toBe('http://203.0.113.7/v1/chat/completions');
       expect(init?.headers?.Authorization).toBe('Bearer sk-draft');
       expect(JSON.parse(init!.body!).model).toBe('some-model');
       return new Response(
@@ -111,6 +113,6 @@ describe('POST /api/ai/test', () => {
     const r = await callTest({ ...DRAFT, baseUrl: 'http://10.0.0.2:46351/v1' });
     expect(r.status).toBe(400);
     const j = (await r.json()) as { error?: string };
-    expect(j.error).toContain('不允许访问内网或本机地址');
+    expect(j.error).toContain('不允许访问内网地址');
   });
 });

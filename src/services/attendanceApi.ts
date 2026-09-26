@@ -8,8 +8,8 @@ import type { Anomaly, EmployeeSchedule, PunchRecord, Shift } from '../store/use
  * 后端约定：shifts/schedules/records/anomalies 不传分页参数时返回完整数组。
  *
  * 两套写语义别混用（这正是历史上「排班删不掉」的根因）：
- * - PUT /schedules 是 **upsert-only 批量**（未出现的行不会被删）；PUT /records 是
- *   Excel 导入式的**整表替换**（空数组被服务端拒）。
+ * - PUT /schedules 与 PUT /records 都是 **upsert-only 批量**（未出现的行不会被删）；
+ *   PUT /records 传空数组会被服务端拒。
  * - 删除一律走 DELETE：单条 /schedules/:employeeId、/records/:id；整表清空
  *   /schedules、/records 仅 ADMIN。
  * 写入后重新 GET，以服务器状态为准。

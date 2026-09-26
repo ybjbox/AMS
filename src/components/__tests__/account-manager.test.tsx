@@ -81,6 +81,33 @@ describe('账号管理面板（第 8 批）', () => {
     expect(screen.getAllByText('从未登录')).toHaveLength(4);
   });
 
+  it('普通管理员对秩 ≥ 自己的账号拿不到任何管理动作（服务端同规则会 403）', async () => {
+    useUserStore.setState({ userInfo: { username: 'op_admin', role: 'ADMIN' } as never });
+    listMock.mockResolvedValue([
+      acct({ username: 'op_admin', systemRole: 'ADMIN' }),
+      acct({ username: 'root', systemRole: 'SUPER_ADMIN' }),
+      acct({ username: 'peer', systemRole: 'ADMIN' }),
+      acct({ username: 'staff', systemRole: 'EMPLOYEE' }),
+    ]);
+    renderManager();
+    await waitFor(() => expect(screen.getByText('root')).toBeTruthy());
+
+    const rowActions = (username: string) => {
+      const row = screen.getByText(username).closest('tr') as HTMLTableRowElement;
+      return ['重置密码', '强制下线', '删除账号'].map((label) =>
+        within(row).getByTitle(new RegExp(`^${label}`)).hasAttribute('disabled')
+      );
+    };
+    // 自己的账号：停用/下线/删除按自锁禁用，重置密码仍可用；超管与同级：全禁用；下级：全可用
+    expect(rowActions('op_admin')).toEqual([false, true, true]);
+    expect(rowActions('root')).toEqual([true, true, true]);
+    expect(rowActions('peer')).toEqual([true, true, true]);
+    expect(rowActions('staff')).toEqual([false, false, false]);
+    // 禁用态要说清为什么，而不是让人对着灰按钮猜
+    const rootRow = screen.getByText('root').closest('tr') as HTMLTableRowElement;
+    expect(within(rootRow).getByTitle(/^重置密码/).getAttribute('title')).toContain('只有权限更高的管理员');
+  });
+
   it('当前登录账号的停用/下线/删除按钮禁用（服务端也会拒）', async () => {
     listMock.mockResolvedValue([acct({ username: 'admin' }), acct({ username: 'other' })]);
     renderManager();

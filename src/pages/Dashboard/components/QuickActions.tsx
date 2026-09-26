@@ -28,7 +28,7 @@ export default function QuickActions({ quickActions, isLoading }: QuickActionsPr
         <EmptyState
           icon={Zap}
           title="暂无快捷操作"
-          description="管理员可在设置中配置快捷入口"
+          description="当前账号没有可快速进入的模块"
           className="py-12"
         />
       ) : (

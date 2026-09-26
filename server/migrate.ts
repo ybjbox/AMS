@@ -34,15 +34,16 @@
  *     否则 `SELECT FROM 不存在的表` 会让迁移在启动时直接崩溃。
  *   每个 rebuild* 都先判断源表是否存在，从而两种前提都能正确升级。
  */
-import { db } from "./db.ts";
+import { db, EMPLOYEE_COLUMNS } from "./db.ts";
 import { ensureTodosTable } from "./todosDb.ts";
 import { ensureNotificationsTable } from "./notificationsDb.ts";
 import { ensureImportJobsTable } from "./importJobsDb.ts";
 import { ensureOrgTables } from "./departmentsDb.ts";
 import { ensurePunchSourceColumns } from "./attendanceDb.ts";
+import { DEPT_SHIFT_RULE_COLUMNS, ensureShiftRulesTable } from "./shiftRulesDb.ts";
 
 /** 当前 schema 版本。导出供回归脚本断言（不要再硬编码数字）。 */
-export const SCHEMA_VERSION = 13;
+export const SCHEMA_VERSION = 14;
 
 /** 判断某张表当前是否已存在（用于区分「全新库」与「旧库已有表」两种迁移前提）。 */
 function tableExists(name: string): boolean {
@@ -65,6 +66,10 @@ export function runMigrations(): void {
     // 老备份恢复回来可能缺 source 列（企微同步才引入），常驻补列比抬版本更稳：
     // 恢复路径不经过版本号变化，靠版本步骤会漏
     ensurePunchSourceColumns();
+    // v14 的四项收口同样常驻。它们**每一项都按库里的实际形状判定**（列在不在、DDL 里有没有
+    // localtime / FOREIGN KEY、值是不是 Z 结尾），所以重复执行是安全的，而且能治这一种情况：
+    // user_version 已经被某次启动抬到 14、但当时步骤还没写全 —— 真发生过，靠版本号兜不住。
+    alignDataConsistency();
     syncDisplaySnapshots();
   };
 
@@ -108,6 +113,8 @@ export function runMigrations(): void {
     if (current < 10) ensureUniqueAccountEmployeeBinding();
     // v13：清掉指向已删除员工的待办与周期提醒通知（新删除路径已在 deleteEmployee 里同步清）
     if (current < 13) pruneOrphanReminderRefs();
+    // v14：时间戳口径统一成本地时间、剩余天数不再存列、班次规则补部门外键 —— 放在常驻维护里
+    //      而不是 `current < 14`，理由见 runResidentMaintenance 的注释。
     db.exec("COMMIT");
   } catch (e) {
     db.exec("ROLLBACK");
@@ -277,35 +284,13 @@ const ROLES_SCHEMA = `
   FOREIGN KEY (departmentId) REFERENCES departments(id) ON DELETE CASCADE
 `;
 
+/**
+ * employees 的最终定义 = db.ts 里那份唯一列定义 + 外键。
+ * 列定义绝不在这里重抄一遍：曾经这里和 db.ts 各存一份 27 列，改一处漏一处就是
+ * 「新库有这列、老库没有」或反过来（rebuild 的 INSERT 列表一漏就是静默丢数据）。
+ */
 const EMPLOYEES_SCHEMA = `
-  id                TEXT PRIMARY KEY,
-  name              TEXT NOT NULL,
-  idCard            TEXT DEFAULT '',
-  gender            TEXT DEFAULT '男',
-  age               INTEGER DEFAULT 0,
-  phone             TEXT DEFAULT '',
-  department        TEXT DEFAULT '',
-  role              TEXT DEFAULT '',
-  status            TEXT DEFAULT '在职',
-  joinDate          TEXT DEFAULT '',
-  yearsOfService    TEXT DEFAULT '0.0',
-  employmentType    TEXT DEFAULT '全职',
-  hasSocialSecurity INTEGER DEFAULT 1,
-  contractYears     INTEGER DEFAULT 3,
-  contractSignDate  TEXT DEFAULT '',
-  contractExpiry    TEXT DEFAULT '',
-  daysToExpiry      INTEGER DEFAULT 0,
-  changeStatus      TEXT DEFAULT '无',
-  registeredAddress TEXT DEFAULT '',
-  currentAddress    TEXT DEFAULT '',
-  isVeteran         INTEGER DEFAULT 0,
-  formerUnit        TEXT DEFAULT '无',
-  militaryDates     TEXT DEFAULT '无',
-  remarks           TEXT DEFAULT '',
-  systemRole        TEXT DEFAULT 'EMPLOYEE',
-  departmentId      TEXT,
-  createdAt         TEXT DEFAULT (datetime('now', 'localtime')),
-  updatedAt         TEXT DEFAULT (datetime('now', 'localtime')),
+  ${EMPLOYEE_COLUMNS},
   FOREIGN KEY (departmentId) REFERENCES departments(id) ON DELETE SET NULL
 `;
 
@@ -356,133 +341,208 @@ const DOCUMENTS_SCHEMA = `
   FOREIGN KEY (folderId) REFERENCES folders(id) ON DELETE CASCADE
 `;
 
+/** 班次规则的部门外键（列定义仍归 shiftRulesDb 所有，这里只补 FK，理由见 EMPLOYEES_SCHEMA）。 */
+const DEPT_SHIFT_RULES_SCHEMA = `
+  ${DEPT_SHIFT_RULE_COLUMNS},
+  FOREIGN KEY (departmentId) REFERENCES departments(id) ON DELETE CASCADE
+`;
+
 /**
  * 重建带 FK 的表：源表存在 → rename 重建（旧库迁移，保留数据）；
  * 源表不存在 → 直接创建（全新库，无需拷贝）。两种前提都能正确升级。
  * 事务内执行；DROP TABLE IF EXISTS <name>_new 保证上一次崩溃残留的 _new 表不会让重建失败。
  */
-function rebuildDepartments(): void {
-  if (!tableExists("departments")) {
-    db.exec(`CREATE TABLE departments (${DEPARTMENTS_SCHEMA})`);
+/** 某张表当前的列名（顺序即建表顺序）。 */
+function columnsOf(table: string): string[] {
+  return (db.prepare(`SELECT name FROM pragma_table_info(?)`).all(table) as Array<{ name: string }>).map(
+    (c) => c.name
+  );
+}
+
+function quoteIdent(name: string): string {
+  return `"${name.replace(/"/g, '""')}"`;
+}
+
+/**
+ * 通用「重建以补外键」：源表存在 → rename 重建（旧库迁移，保留数据）；
+ * 源表不存在 → 直接创建（全新库，无需拷贝）。两种前提都能正确升级。
+ *
+ * 拷贝哪些列由**新旧两边的列名交集**决定，不再手维护 INSERT 列表：
+ * 手维护的那份一旦和列定义脱节，就是「迁移时静默丢一列数据」——
+ * 表名与列名都来自本模块的字面量与该库自己的 pragma，不存在外部输入。
+ */
+function rebuildTable(name: string, schema: string): void {
+  if (!tableExists(name)) {
+    db.exec(`CREATE TABLE ${name} (${schema})`);
     return;
   }
-  db.exec("DROP TABLE IF EXISTS departments_new");
-  db.exec(`CREATE TABLE departments_new (${DEPARTMENTS_SCHEMA})`);
-  db.exec(`INSERT INTO departments_new (id, name, priority, parentId)
-           SELECT id, name, priority, parentId FROM departments;`);
-  db.exec("DROP TABLE departments");
-  db.exec("ALTER TABLE departments_new RENAME TO departments");
+  db.exec(`DROP TABLE IF EXISTS ${name}_new`);
+  db.exec(`CREATE TABLE ${name}_new (${schema})`);
+  const target = new Set(columnsOf(`${name}_new`));
+  const shared = columnsOf(name).filter((c) => target.has(c));
+  const list = shared.map(quoteIdent).join(", ");
+  db.exec(`INSERT INTO ${name}_new (${list}) SELECT ${list} FROM ${name};`);
+  db.exec(`DROP TABLE ${name}`);
+  db.exec(`ALTER TABLE ${name}_new RENAME TO ${name}`);
+}
+
+/**
+ * 把「部门名字符串」回填成 departmentId。
+ * 只补 NULL：老库里已经指对的 id 不能被名字重新解析一遍 —— 部门改过名之后，
+ * 陈旧的名字缓存列指向的可能是**另一个**部门，而 id 才是真值。匹配不上的保持 NULL。
+ */
+function backfillEmployeeDepartment(): void {
+  db.exec(`
+    UPDATE employees
+       SET departmentId = (
+         SELECT MIN(d.id) FROM departments d
+          WHERE d.name = employees.department
+            AND NOT EXISTS (SELECT 1 FROM departments x WHERE x.name = d.name AND x.id <> d.id)
+       )
+     WHERE (departmentId IS NULL OR departmentId = '')
+       AND department IS NOT NULL AND department != '';
+  `);
+}
+
+function rebuildDepartments(): void {
+  rebuildTable("departments", DEPARTMENTS_SCHEMA);
 }
 
 function rebuildRoles(): void {
-  if (!tableExists("roles")) {
-    db.exec(`CREATE TABLE roles (${ROLES_SCHEMA})`);
-    return;
-  }
-  db.exec("DROP TABLE IF EXISTS roles_new");
-  db.exec(`CREATE TABLE roles_new (${ROLES_SCHEMA})`);
-  db.exec(`INSERT INTO roles_new (id, name, departmentId, priority)
-           SELECT id, name, departmentId, priority FROM roles;`);
-  db.exec("DROP TABLE roles");
-  db.exec("ALTER TABLE roles_new RENAME TO roles");
+  rebuildTable("roles", ROLES_SCHEMA);
 }
 
 function rebuildEmployees(): void {
-  if (!tableExists("employees")) {
-    db.exec(`CREATE TABLE employees (${EMPLOYEES_SCHEMA})`);
-    return;
-  }
-  db.exec("DROP TABLE IF EXISTS employees_new");
-  db.exec(`CREATE TABLE employees_new (${EMPLOYEES_SCHEMA})`);
-  db.exec(`
-    INSERT INTO employees_new (
-      id, name, idCard, gender, age, phone, department, role, status, joinDate,
-      yearsOfService, employmentType, hasSocialSecurity, contractYears,
-      contractSignDate, contractExpiry, daysToExpiry, changeStatus,
-      registeredAddress, currentAddress, isVeteran, formerUnit, militaryDates,
-      remarks, systemRole, createdAt, updatedAt
-    )
-    SELECT
-      id, name, idCard, gender, age, phone, department, role, status, joinDate,
-      yearsOfService, employmentType, hasSocialSecurity, contractYears,
-      contractSignDate, contractExpiry, daysToExpiry, changeStatus,
-      registeredAddress, currentAddress, isVeteran, formerUnit, militaryDates,
-      remarks, systemRole, createdAt, updatedAt
-    FROM employees;
-  `);
-  // 把「部门名字符串」回填成 departmentId；匹配不上的（部门已被删）保持 NULL。
-  db.exec(`
-    UPDATE employees_new
-       SET departmentId = (SELECT d.id FROM departments d WHERE d.name = employees_new.department)
-     WHERE department IS NOT NULL AND department != '';
-  `);
-  db.exec("DROP TABLE employees");
-  db.exec("ALTER TABLE employees_new RENAME TO employees");
+  rebuildTable("employees", EMPLOYEES_SCHEMA);
+  backfillEmployeeDepartment();
 }
 
 function rebuildSchedules(): void {
-  if (!tableExists("schedules")) {
-    db.exec(`CREATE TABLE schedules (${SCHEDULES_SCHEMA})`);
-    return;
-  }
-  db.exec("DROP TABLE IF EXISTS schedules_new");
-  db.exec(`CREATE TABLE schedules_new (${SCHEDULES_SCHEMA})`);
-  db.exec(`INSERT INTO schedules_new (employeeId, employeeName, shiftIds)
-           SELECT employeeId, employeeName, shiftIds FROM schedules;`);
-  db.exec("DROP TABLE schedules");
-  db.exec("ALTER TABLE schedules_new RENAME TO schedules");
+  rebuildTable("schedules", SCHEDULES_SCHEMA);
 }
 
 function rebuildPunchRecords(): void {
-  if (!tableExists("punch_records")) {
-    db.exec(`CREATE TABLE punch_records (${PUNCH_RECORDS_SCHEMA})`);
-    return;
-  }
-  db.exec("DROP TABLE IF EXISTS punch_records_new");
-  db.exec(`CREATE TABLE punch_records_new (${PUNCH_RECORDS_SCHEMA})`);
-  db.exec(`INSERT INTO punch_records_new (id, employeeId, employeeName, date, time)
-           SELECT id, employeeId, employeeName, date, time FROM punch_records;`);
-  db.exec("DROP TABLE punch_records");
-  db.exec("ALTER TABLE punch_records_new RENAME TO punch_records");
+  rebuildTable("punch_records", PUNCH_RECORDS_SCHEMA);
 }
 
 function rebuildAnomalies(): void {
-  if (!tableExists("anomalies")) {
-    db.exec(`CREATE TABLE anomalies (${ANOMALIES_SCHEMA})`);
-    return;
-  }
-  db.exec("DROP TABLE IF EXISTS anomalies_new");
-  db.exec(`CREATE TABLE anomalies_new (${ANOMALIES_SCHEMA})`);
-  db.exec(`INSERT INTO anomalies_new (id, employeeId, employeeName, date, type, minutes, description)
-           SELECT id, employeeId, employeeName, date, type, minutes, description FROM anomalies;`);
-  db.exec("DROP TABLE anomalies");
-  db.exec("ALTER TABLE anomalies_new RENAME TO anomalies");
+  rebuildTable("anomalies", ANOMALIES_SCHEMA);
 }
 
 function rebuildFolders(): void {
-  if (!tableExists("folders")) {
-    db.exec(`CREATE TABLE folders (${FOLDERS_SCHEMA})`);
-    return;
-  }
-  db.exec("DROP TABLE IF EXISTS folders_new");
-  db.exec(`CREATE TABLE folders_new (${FOLDERS_SCHEMA})`);
-  db.exec(`INSERT INTO folders_new (id, name, parentId)
-           SELECT id, name, parentId FROM folders;`);
-  db.exec("DROP TABLE folders");
-  db.exec("ALTER TABLE folders_new RENAME TO folders");
+  rebuildTable("folders", FOLDERS_SCHEMA);
 }
 
 function rebuildDocuments(): void {
-  if (!tableExists("documents")) {
-    db.exec(`CREATE TABLE documents (${DOCUMENTS_SCHEMA})`);
-    return;
+  rebuildTable("documents", DOCUMENTS_SCHEMA);
+}
+
+// ---------------------------------------------------------------- v14：数据一致性收口
+
+/** 读某张表当前的建表语句（用来判断它是新形状还是旧形状，而不是靠版本号猜）。 */
+function tableSql(name: string): string {
+  const row = db
+    .prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?")
+    .get(name) as { sql: string } | undefined;
+  return String(row?.sql ?? "");
+}
+
+/**
+ * 剩余天数不再存列：用「已经不含这一列」的定义重建，顺带把外键补回来。
+ * 判定按列是否存在，所以全新库（本来就没有）与恢复回来的老库都能正确收敛。
+ */
+function dropDerivedEmployeeColumn(): void {
+  if (!tableExists("employees")) return;
+  if (!columnsOf("employees").includes("daysToExpiry")) return;
+  rebuildEmployees();
+}
+
+/**
+ * 把旧形状的时间列换算成本地时间并重建表（改的是**列默认值**，SQLite 不能 ALTER 默认值）。
+ *
+ * 只认「有 createdAt 列、但建表语句里完全没有 localtime」这一种旧形状 —— 一旦重建过，
+ * 新表自带 localtime，判定就不再命中，所以本步骤重复执行不会二次加时差。
+ */
+function rebuildTimestampColumnsToLocal(
+  table: string,
+  ensure: () => void,
+  timestampCols: string[]
+): void {
+  const ddl = tableSql(table);
+  const legacyShape = ddl !== "" && /\bcreatedAt\b/i.test(ddl) && !ddl.includes("localtime");
+  if (!legacyShape) return;
+
+  const backup = `${table}_v13_utc`;
+  db.exec(`DROP TABLE IF EXISTS ${backup}`);
+  db.exec(`ALTER TABLE ${table} RENAME TO ${backup}`);
+  ensure(); // 先建新表（此刻旧索引名还被旧表占着，索引可能建不出来，下面补一次）
+  const legacyCols = new Set(columnsOf(backup));
+  const shared = columnsOf(table).filter((c) => legacyCols.has(c));
+  const list = shared.map(quoteIdent).join(", ");
+  const select = shared
+    .map((c) =>
+      timestampCols.includes(c)
+        // 空串与坏值一律原样保留：一次性改写绝不能把时间列变成 NULL
+        ? `COALESCE(NULLIF(datetime(NULLIF(${quoteIdent(c)}, ''), 'localtime'), ''), ${quoteIdent(c)}) AS ${quoteIdent(c)}`
+        : quoteIdent(c)
+    )
+    .join(", ");
+  db.exec(`INSERT INTO ${table} (${list}) SELECT ${select} FROM ${backup};`);
+  db.exec(`DROP TABLE ${backup}`);
+  ensure(); // 旧表的同名索引随 DROP 释放，这里把索引补回来
+  console.log(`[migrate] ${table} 的旧 UTC 时间戳已换算为本地时间（${timestampCols.join("/")}）`);
+}
+
+/**
+ * 只换算值、不动 DDL 的列：这几张表曾经用 `new Date().toISOString()` 写 `...T...Z`，
+ * 而列的默认值是空格分隔的本地时间。两种格式混在一列里，`ORDER BY createdAt` 是文本序，
+ * 'T'(0x54) > ' '(0x20)，同一天内两种来源的行会串位。
+ * WHERE 条件限定「以 Z 结尾的 ISO 串」，换算完就不再命中，因此可重复执行。
+ */
+function convertIsoZValues(table: string, column: string): void {
+  if (!tableExists(table)) return;
+  const col = quoteIdent(column);
+  const changed = db
+    .prepare(
+      `UPDATE ${quoteIdent(table)}
+          SET ${col} = datetime(substr(${col}, 1, 19), 'localtime')
+        WHERE ${col} LIKE '____-__-__T__:__:%' AND ${col} LIKE '%Z'`
+    )
+    .run();
+  if (Number(changed.changes) > 0) {
+    console.log(`[migrate] ${table}.${column}：${changed.changes} 行 ISO/UTC 时间戳已换算为本地时间`);
   }
-  db.exec("DROP TABLE IF EXISTS documents_new");
-  db.exec(`CREATE TABLE documents_new (${DOCUMENTS_SCHEMA})`);
-  db.exec(`INSERT INTO documents_new (id, name, type, url, size, uploadedAt, folderId, storedPath)
-           SELECT id, name, type, url, size, uploadedAt, folderId, storedPath FROM documents;`);
-  db.exec("DROP TABLE documents");
-  db.exec("ALTER TABLE documents_new RENAME TO documents");
+}
+
+/**
+ * 班次规则补部门外键。先清孤儿：没有外键时删部门会留下谁也匹配不到的死规则
+ * （resolveRulesForDepartment 按 departmentId 查，孤儿行既不命中也不清理，只会越积越多）。
+ */
+function ensureShiftRuleDepartmentFk(): void {
+  if (!tableExists("dept_shift_rules")) return;
+  if (tableSql("dept_shift_rules").includes("FOREIGN KEY")) return;
+  const orphans = db
+    .prepare(
+      `DELETE FROM dept_shift_rules
+        WHERE departmentId NOT IN (SELECT id FROM departments)`
+    )
+    .run();
+  if (Number(orphans.changes) > 0) {
+    console.warn(`[migrate] 部门工作时段：删除 ${orphans.changes} 条指向已不存在部门的规则`);
+  }
+  rebuildTable("dept_shift_rules", DEPT_SHIFT_RULES_SCHEMA);
+  ensureShiftRulesTable(); // rebuild 会连带丢掉索引，这里按模块自己的定义补回
+}
+
+/** v14 总入口。每一步都自带形状判定，因此整步可重复执行。 */
+function alignDataConsistency(): void {
+  dropDerivedEmployeeColumn();
+  rebuildTimestampColumnsToLocal("todos", ensureTodosTable, ["createdAt", "updatedAt"]);
+  rebuildTimestampColumnsToLocal("notifications", ensureNotificationsTable, ["createdAt"]);
+  convertIsoZValues("contract_renewals", "createdAt");
+  convertIsoZValues("announcements", "createdAt");
+  convertIsoZValues("business_forms", "createdAt");
+  ensureShiftRuleDepartmentFk();
 }
 
 /**

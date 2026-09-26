@@ -7,10 +7,12 @@ import { loadSingle, PREFS_NAME, savedItemApi, savedItemError, type SavedItemKin
  *
  * 只用于体积小、写入频率低的偏好（打印参数这类），不拿它存业务数据。
  * 写入是防抖的：先本地生效，再落库；失败只提示不回滚（下一次改动会再试）。
+ * 读失败时进入降级态：不回写、并说清楚为什么（否则默认值会盖掉服务端那份真值）。
  */
 export function useServerPrefs<T extends object>(kind: SavedItemKind, defaults: T) {
   const [value, setValue] = useState<T>(defaults);
   const [ready, setReady] = useState(false);
+  const [degraded, setDegraded] = useState(false);
   const [saving, setSaving] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pending = useRef<T | null>(null);
@@ -20,12 +22,25 @@ export function useServerPrefs<T extends object>(kind: SavedItemKind, defaults: 
     void (async () => {
       const stored = await loadSingle<Partial<T>>(kind, PREFS_NAME);
       if (cancelled) return;
-      if (stored && typeof stored === 'object') setValue((prev) => ({ ...prev, ...stored }));
+      if (stored.state === 'error') {
+        setDegraded(true);
+        toast.warning('未能读取已保存的参数，界面显示的是默认值；为避免覆盖服务端那份，本次改动不会自动保存。请恢复网络后刷新。');
+        return;
+      }
+      if (stored.state === 'ok') setValue((prev) => ({ ...prev, ...stored.payload }));
       setReady(true);
     })();
     return () => {
       cancelled = true;
       if (timer.current) clearTimeout(timer.current);
+      // 卸载（例如切换打印工具的标签页）不该吞掉最后 700ms 内的改动
+      if (pending.current) {
+        const payload = pending.current;
+        pending.current = null;
+        savedItemApi.save(kind, PREFS_NAME, payload).catch((e) => {
+          toast.error(savedItemError(e, '参数保存失败'));
+        });
+      }
     };
   }, [kind]);
 
@@ -59,5 +74,5 @@ export function useServerPrefs<T extends object>(kind: SavedItemKind, defaults: 
     [ready, flush]
   );
 
-  return { value, setValue: update, ready, saving };
+  return { value, setValue: update, ready, degraded, saving };
 }

@@ -8,7 +8,13 @@ interface UserStore {
   isLoading: boolean;
   error: string | null;
   initialized: boolean;
-  fetchUsers: () => Promise<string | null>;
+  /**
+   * 默认是「没有名单才去拉」的懒加载（多个面板共用，不该各 mount 一次就打一次全量）。
+   * 批量写入之后必须 `{ force: true }`：`initialized` 一旦为真，非强制调用会永久短路，
+   * 于是导入 200 人后表格仍停在旧名单，而 users 又是排座/台卡/餐券/通讯录/业务单共用的名单源
+   * —— 新人在这些面上根本不存在，出纸整批漏人且界面无任何异常提示。
+   */
+  fetchUsers: (opts?: { force?: boolean }) => Promise<string | null>;
   addUser: (user: Omit<User, 'id'>) => Promise<string | null>;
   updateUser: (user: User) => Promise<string | null>;
   deleteUser: (id: string) => Promise<string | null>;
@@ -20,8 +26,8 @@ export const useEmployeeStore = create<UserStore>()((set, get) => ({
   error: null,
   initialized: false,
 
-  fetchUsers: async () => {
-    if (get().initialized && get().users.length > 0) return null;
+  fetchUsers: async (opts) => {
+    if (!opts?.force && get().initialized && get().users.length > 0) return null;
 
     return createAsyncAction(set, async () => {
       const users = await userApi.fetchUsers();

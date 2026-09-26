@@ -32,6 +32,35 @@ export function asNullableString(v: SQLOutputValue | undefined): string | null {
   return asString(v);
 }
 
+/**
+ * LIKE 通配符转义。
+ *
+ * 用户输入的 `%` 与 `_` 在 SQLite 里是通配符，不转义有两重后果：
+ * 1) 搜索语义错 —— 想搜姓名里真的带「%」的人搜不到，`?keyword=_` 会匹配所有单字符值；
+ * 2) **`?keyword=%` 等于「把所有行都给我」** —— 走 listEmployees / listRecords /
+ *    文档列表这些「不带 page 就返回全表」的路径，审计列表的 `?q=%` 更是直接全表扫
+ *    最敏感的那张表（导出上限 1 万行含 before/after 快照）。
+ * 绑定参数本身防的是注入，防不了这个 —— 通配符是 LIKE 的语义，不是值。
+ */
+export function escapeLike(input: string): string {
+  return input.replace(/[\\%_]/g, (c) => `\\${c}`);
+}
+
+/** `%…%` 包含式匹配值（配合 likeClause 使用；单独用会漏掉 ESCAPE 而失效） */
+export function likeContains(input: string): string {
+  return `%${escapeLike(input)}%`;
+}
+
+/**
+ * 生成 `列 LIKE ? ESCAPE '\'`。
+ *
+ * 把 ESCAPE 焊在子句里而不是指望调用方记得写：漏一次就等于转义白做，
+ * 而且 `\\` 会被 SQLite 当成转义符吃掉，行为比不做转义更难懂。
+ */
+export function likeClause(column: string): string {
+  return `${column} LIKE ? ESCAPE '\\'`;
+}
+
 /** 必填数字：null/undefined/非数字 → 0（与旧 `.get() as any` 的用法兼容） */
 export function asNumber(v: SQLOutputValue | undefined): number {
   if (v === null || v === undefined) return 0;

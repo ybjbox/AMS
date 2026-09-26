@@ -122,7 +122,7 @@ GitHub Actions 两个 job（verify：typecheck / lint / 单测 / 11 个服务端
 ## 四、推荐路线图
 
 ```
-Phase 0 · 安全与底座 ✅ 已完成（AUDIT 27 项修 26 项；CI 双 job；schema v13；256 单测 + 42 e2e）
+Phase 0 · 安全与底座 ✅ 已完成（AUDIT 27 项修 26 项；CI 双 job；schema v14；568 单测 + 56 e2e + 19 个自包含服务端回归）
 
 Phase 1 · 数据源与流程（下一批就做）
    ├─ N1 企微打卡同步      ← 链路 + 自动对班判定已落地；只剩「真实凭据 + 可信 IP」

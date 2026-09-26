@@ -23,6 +23,7 @@ import { createNotification } from "./notificationsDb.ts";
 import { upsertRecord, analyzeAnomalies } from "./attendanceDb.ts";
 import { ROLE_LEVEL, type SystemRole } from "./authDb.ts";
 import { APPROVAL_TYPES, approvalKindOf, leaveDaysBetween, type ApprovalKind } from "./approvalTypes.ts";
+import { formatLocalDateTime } from "./localDate.ts";
 
 /** 天数口径的唯一实现住在 approvalTypes，这里再导出给既有调用方（路由校验、测试） */
 export { leaveDaysBetween };
@@ -372,7 +373,7 @@ function applyConversion(approval: ApprovalRow): void {
     return;
   }
   db.prepare("UPDATE employees SET status = '在职', updatedAt = ? WHERE id = ?").run(
-    new Date().toISOString(),
+    formatLocalDateTime(),
     emp.employeeId
   );
 }
@@ -383,7 +384,7 @@ function applyConversion(approval: ApprovalRow): void {
  * 避免"已批准离职但账号仍可登录"的权限悬空。
  */
 function applyResign(approval: ApprovalRow): void {
-  const now = new Date().toISOString();
+  const now = formatLocalDateTime();
 
   const emp = findApplicantEmployee(approval.applicant);
   if (emp) {

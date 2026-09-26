@@ -7,6 +7,7 @@
  *  3. restoreBackup 热重载连接后数据正确回退（恢复前先打安全备份）
  *  4. 无效备份文件（非 SQLite）被拒绝
  *  5. 文件名穿越被拒绝
+ *  6. 截断/损坏的备份被 integrity_check 拦下，线上库原封不动
  */
 import fs from "fs";
 import os from "os";
@@ -109,6 +110,28 @@ async function main() {
     threwDelete = /非法的备份文件名/.test(e?.message ?? "");
   }
   check("删除穿越文件名同样被拒", threwDelete);
+
+  console.log("[6] 校验不通过的备份不能换掉线上库");
+  const backupsDir = path.dirname(meta2.path);
+  const srcSnap = backup.createBackup("integrity-src");
+  // 必须走 dbMod.db：恢复之后 reloadDb() 换了连接，脚本开头抓的那个 handle 已经关掉了
+  dbMod.db.prepare("INSERT INTO employees (id, name) VALUES (?, ?)").run("BKUP03", "可辨识的行");
+  // 半份拷贝：魔数（头 16 字节）在、正文缺 —— isSqliteFile 挡不住，只有 integrity_check 挡得住
+  const full = fs.readFileSync(srcSnap.path);
+  fs.writeFileSync(path.join(backupsDir, "truncated.db"), full.subarray(0, Math.floor(full.length * 0.55)));
+  let corruptErr = "";
+  try {
+    backup.restoreBackup("truncated.db");
+  } catch (e: unknown) {
+    corruptErr = e instanceof Error ? e.message : String(e);
+  }
+  check("截断过的备份被拒，并说明是校验没过", /校验未通过/.test(corruptErr), corruptErr);
+  check(
+    "线上库没有被换掉（可辨识的行还在）",
+    (dbMod.db.prepare("SELECT name FROM employees WHERE id = ?").get("BKUP03") as { name?: string })?.name ===
+      "可辨识的行"
+  );
+  check("失败路径没留下 .restore-tmp 垃圾", !fs.existsSync(path.join(tmp, "ams.db.restore-tmp")));
 
   // 收尾
   dbMod.closeDb();

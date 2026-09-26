@@ -7,7 +7,7 @@ import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 import { resolvePaging, toListResult } from "./listQuery.ts";
-import { type DbRow, asString, asNumber, asNullableString, asCount } from "./sqliteUtil.ts";
+import { type DbRow, asString, asNumber, asNullableString, asCount, likeClause, likeContains } from "./sqliteUtil.ts";
 
 // ---------- 行类型（与表结构一致，typescript-best-practices：边界解析）---------
 interface FolderRow {
@@ -209,8 +209,8 @@ export function listDocuments(query: Record<string, unknown> = {}): PagedOrArray
   }
   const keyword = typeof query.keyword === "string" ? query.keyword.trim() : "";
   if (keyword) {
-    clauses.push("name LIKE ?");
-    params.push(`%${keyword}%`);
+    clauses.push(likeClause("name"));
+    params.push(likeContains(keyword));
   }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
 

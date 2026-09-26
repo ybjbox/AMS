@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Search, Trash2, Eye, X, MessagesSquare, User as UserIcon, Clock } from 'lucide-react';
-import { STORAGE_KEYS } from '@/config/constants';
+import { toast } from 'sonner';
+import { http } from '@/services/api';
+import { describeSaveError } from '@/store/saveFailureCore';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 
@@ -23,12 +25,8 @@ interface AdminConvDetail extends AdminConvMeta {
   createdAt: string;
 }
 
-function authHeaders(): Record<string, string> {
-  const t = localStorage.getItem(STORAGE_KEYS.TOKEN);
-  return {
-    'Content-Type': 'application/json',
-    ...(t ? { Authorization: `Bearer ${t}` } : {}),
-  };
+function reportFailure(title: string, e: unknown) {
+  toast.error(describeSaveError(e, title));
 }
 
 function fmt(ts: string): string {
@@ -49,10 +47,13 @@ export default function AiHistoryPanel() {
 
   const load = useCallback(() => {
     setLoading(true);
-    fetch('/api/ai/admin/conversations', { headers: authHeaders() })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((j: AdminConvMeta[]) => setList(Array.isArray(j) ? j : []))
-      .catch(() => setList([]))
+    http
+      .get<AdminConvMeta[]>('/ai/admin/conversations')
+      .then((rows) => setList(Array.isArray(rows) ? rows : []))
+      .catch((e) => {
+        setList([]);
+        reportFailure('对话列表读取失败', e);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -64,10 +65,10 @@ export default function AiHistoryPanel() {
     setDetailLoading(true);
     setDetail(null);
     try {
-      const r = await fetch(`/api/ai/admin/conversations/${id}`, { headers: authHeaders() });
-      if (r.ok) setDetail((await r.json()) as AdminConvDetail);
-    } catch {
-      /* 忽略 */
+      setDetail(await http.get<AdminConvDetail>(`/ai/admin/conversations/${encodeURIComponent(id)}`));
+    } catch (e) {
+      // 失败时抽屉保持关闭，但要说清原因，否则看起来像按钮坏了
+      reportFailure('对话详情读取失败', e);
     } finally {
       setDetailLoading(false);
     }
@@ -78,14 +79,11 @@ export default function AiHistoryPanel() {
       if (!window.confirm('确认删除这条对话？此操作不可撤销，会从该用户账户中移除。')) return;
       setDeletingId(id);
       try {
-        await fetch(`/api/ai/admin/conversations/${id}`, {
-          method: 'DELETE',
-          headers: authHeaders(),
-        });
+        await http.delete<{ success: boolean }>(`/ai/admin/conversations/${encodeURIComponent(id)}`);
         if (detail?.id === id) setDetail(null);
         load();
-      } catch {
-        /* 忽略 */
+      } catch (e) {
+        reportFailure('删除对话失败', e);
       } finally {
         setDeletingId(null);
       }
@@ -98,16 +96,11 @@ export default function AiHistoryPanel() {
     if (!window.confirm('再次确认：所有用户的 AI 对话都将被永久删除，无法恢复。')) return;
     setClearingAll(true);
     try {
-      const r = await fetch('/api/ai/admin/conversations', {
-        method: 'DELETE',
-        headers: authHeaders(),
-      });
-      if (r.ok) {
-        setDetail(null);
-        load();
-      }
-    } catch {
-      /* 忽略 */
+      await http.delete<{ success: boolean; deleted?: number }>('/ai/admin/conversations');
+      setDetail(null);
+      load();
+    } catch (e) {
+      reportFailure('清空对话记录失败', e);
     } finally {
       setClearingAll(false);
     }

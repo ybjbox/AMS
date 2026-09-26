@@ -1,164 +1,136 @@
 /**
- * P1-3 回归：验证考勤排班/打卡从「整表替换 DELETE ALL + INSERT」改为增量接口后，
- * 多人并发编辑不再互相覆盖、单条增删不影响他人数据。
+ * P1-3 回归：考勤排班/打卡从「整表替换 DELETE ALL + INSERT」改为增量/upsert-only 之后，
+ * 多人并发编辑不互相覆盖、单条增删不影响他人数据。
  *
- * 关键风险：schedules/punch_records.employeeId 有 FK → employees(id) ON DELETE CASCADE，
- * 因此测试必须使用真实存在的员工 id。脚本会创建两个临时员工 T_A / T_B，
- * 全程只用它们的 id 做写入，并在结束时删除（CASCADE 自动清理其排班/记录），
- * 对库中的真实业务数据零侵入（records 导入测试额外做了备份+还原）。
+ * 运行：node scripts/verify-concurrency.mjs（也包含在 npm run test:server 里）
+ *
+ * 关键风险：schedules/punch_records.employeeId 是 FK → employees(id) ON DELETE CASCADE，
+ * 所以必须用真实存在的员工 id。脚本自起私有实例（临时 DATA_DIR），
+ * 临时员工与它名下的排班/记录随目录一起消失 —— 不再需要"备份整表 + 还原"这类收尾
+ * （那套收尾本身要求整表写入权限，正是它想验的那个洞）。
  */
-import fs from "node:fs";
+import { bootServer, summarize } from "./lib/liveServer.mjs";
 
-const BASE = "http://127.0.0.1:3000";
 let pass = 0;
 let fail = 0;
+const failures = [];
+
 function ok(name, cond, extra = "") {
   if (cond) {
     pass++;
     console.log("  ✓ " + name);
   } else {
     fail++;
+    failures.push(name + (extra ? ` -> ${extra}` : ""));
     console.log("  ✗ " + name + (extra ? "  -> " + extra : ""));
   }
 }
 
-async function req(method, path, { token, body } = {}) {
-  const headers = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = "Bearer " + token;
-  const res = await fetch(BASE + path, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  let json = {};
-  try {
-    json = await res.json();
-  } catch {
-    /* ignore */
-  }
-  return { status: res.status, body: json };
-}
-
-// 读取 admin 口令并登录（处理首次强制改密）
-function readAdminPassword() {
-  try {
-    const txt = fs.readFileSync("data/ADMIN_CREDENTIALS.txt", "utf8");
-    const m = txt.match(/密码:\s*(.+)/);
-    return m ? m[1].trim() : "admin";
-  } catch {
-    return "admin";
-  }
-}
-
 async function main() {
-  const adminPw = readAdminPassword();
-  const login = await req("POST", "/api/auth/login", {
-    body: { username: "admin", password: adminPw },
-  });
-  if (login.status !== 200 || !login.body.token) {
-    console.error("登录失败：", login.status, JSON.stringify(login.body));
-    process.exit(1);
-  }
-  let TOKEN = login.body.token;
-  const mustChange = !!login.body.user?.mustChangePassword;
-  if (mustChange) {
-    const cp = await req("POST", "/api/auth/change-password", {
-      token: TOKEN,
-      body: { currentPassword: adminPw, newPassword: "TempChangePwd123" },
-    });
-    TOKEN = cp.body.token;
-  }
+  const { req, stop } = await bootServer({ tag: "concurrency" });
 
-  // 创建两个临时测试员工（真实存在的 id，满足 FK 约束）
-  const ta = await req("POST", "/api/users", {
-    token: TOKEN,
-    body: { id: "T_A", name: "测试员工A" },
-  });
-  const tb = await req("POST", "/api/users", {
-    token: TOKEN,
-    body: { id: "T_B", name: "测试员工B" },
-  });
+  const ta = await req("POST", "/api/users", { name: "测试员工A" });
+  const tb = await req("POST", "/api/users", { name: "测试员工B" });
   const TA = ta.body.id;
   const TB = tb.body.id;
   ok("创建临时测试员工 T_A / T_B", !!TA && !!TB, `TA=${TA} TB=${TB}`);
 
-  // 备份真实数据（records 导入测试会整表替换，需还原）
-  const backupSchedules = (await req("GET", "/api/attendance/schedules", { token: TOKEN })).body;
-  const backupRecords = (await req("GET", "/api/attendance/records", { token: TOKEN })).body;
-
   try {
     console.log("\n=== 1. 排班并发 upsert 不互相覆盖（修复前 DELETE ALL 会丢） ===");
-    const base = (await req("GET", "/api/attendance/schedules", { token: TOKEN })).body;
-    // 用户 A 基于同一快照只追加 T_A
+    const base = (await req("GET", "/api/attendance/schedules")).body;
+    // 两个用户基于同一份快照各自只追加自己那一条
     const aSubmit = [...base, { employeeId: TA, employeeName: "测试员工A", shiftIds: ["1"] }];
-    // 用户 B 基于同一快照只追加 T_B
     const bSubmit = [...base, { employeeId: TB, employeeName: "测试员工B", shiftIds: ["1"] }];
-    await req("PUT", "/api/attendance/schedules", { token: TOKEN, body: { schedules: aSubmit } });
-    await req("PUT", "/api/attendance/schedules", { token: TOKEN, body: { schedules: bSubmit } });
-    const after = (await req("GET", "/api/attendance/schedules", { token: TOKEN })).body;
+    await req("PUT", "/api/attendance/schedules", { schedules: aSubmit });
+    await req("PUT", "/api/attendance/schedules", { schedules: bSubmit });
+    const after = (await req("GET", "/api/attendance/schedules")).body;
     ok(
-      "并发编辑：A 的 T_A 与 B 的 T_B 排班均保留（无互相覆盖）",
+      "并发编辑：T_A 与 T_B 排班均保留（无互相覆盖）",
       after.some((s) => s.employeeId === TA) && after.some((s) => s.employeeId === TB)
     );
 
     console.log("\n=== 2. 增量删除单个排班不影响他人 ===");
-    await req("DELETE", `/api/attendance/schedules/${TA}`, { token: TOKEN });
-    const afterDel = (await req("GET", "/api/attendance/schedules", { token: TOKEN })).body;
+    await req("DELETE", `/api/attendance/schedules/${TA}`);
+    const afterDel = (await req("GET", "/api/attendance/schedules")).body;
     ok(
-      "删除 T_A 后 T_B 仍在",
+      "删除 T_A 的排班后 T_B 仍在",
       !afterDel.some((s) => s.employeeId === TA) && afterDel.some((s) => s.employeeId === TB)
     );
 
     console.log("\n=== 3. 打卡记录并发 POST 不互相覆盖 ===");
-    await req("POST", "/api/attendance/records", {
-      token: TOKEN,
-      body: { id: "REC_A1", employeeId: TA, employeeName: "测试员工A", date: "2026-01-01", time: "09:00:00" },
+    const recA = await req("POST", "/api/attendance/records", {
+      employeeId: TA,
+      employeeName: "测试员工A",
+      date: "2026-01-01",
+      time: "09:00:00",
     });
-    await req("POST", "/api/attendance/records", {
-      token: TOKEN,
-      body: { id: "REC_B1", employeeId: TB, employeeName: "测试员工B", date: "2026-01-01", time: "09:00:00" },
+    const recB = await req("POST", "/api/attendance/records", {
+      employeeId: TB,
+      employeeName: "测试员工B",
+      date: "2026-01-01",
+      time: "09:00:00",
     });
-    const afterRec = (await req("GET", "/api/attendance/records", { token: TOKEN })).body;
+    ok("两条打卡都建成功", recA.status === 201 && recB.status === 201, `${recA.status}/${recB.status}`);
+    const afterRec = (await req("GET", "/api/attendance/records")).body;
     ok(
-      "并发 POST：REC_A1 与 REC_B1 均保留",
-      afterRec.some((r) => r.id === "REC_A1") && afterRec.some((r) => r.id === "REC_B1")
+      "并发 POST：两条记录均保留",
+      afterRec.some((r) => r.employeeId === TA) && afterRec.some((r) => r.employeeId === TB)
     );
 
     console.log("\n=== 4. 增量删除单条记录不影响他人 ===");
-    await req("DELETE", `/api/attendance/records/REC_A1`, { token: TOKEN });
-    const afterDelRec = (await req("GET", "/api/attendance/records", { token: TOKEN })).body;
+    const idA = afterRec.find((r) => r.employeeId === TA)?.id;
+    await req("DELETE", `/api/attendance/records/${idA}`);
+    const afterDelRec = (await req("GET", "/api/attendance/records")).body;
     ok(
-      "删除 REC_A1 后 REC_B1 仍在",
-      !afterDelRec.some((r) => r.id === "REC_A1") && afterDelRec.some((r) => r.id === "REC_B1")
+      "删除 T_A 的记录后 T_B 仍在",
+      !afterDelRec.some((r) => r.employeeId === TA) && afterDelRec.some((r) => r.employeeId === TB)
     );
 
-    console.log("\n=== 5. 整表替换（Excel 导入语义）仍生效，且可还原 ===");
+    console.log("\n=== 5. PUT /records 是 upsert-only：未提及的行不会被删 ===");
+    const beforeImport = (await req("GET", "/api/attendance/records")).body;
+    const keepId = beforeImport.find((r) => r.employeeId === TB)?.id; // 本次清单里故意不提它
     const importData = [
       { id: "REC_IMP1", employeeId: TA, employeeName: "测试员工A", date: "2026-02-01", time: "08:30:00" },
       { id: "REC_IMP2", employeeId: TB, employeeName: "测试员工B", date: "2026-02-01", time: "08:30:00" },
     ];
-    await req("PUT", "/api/attendance/records", { token: TOKEN, body: { records: importData } });
-    const afterImport = (await req("GET", "/api/attendance/records", { token: TOKEN })).body;
-    ok("导入后仅含导入的 2 条（DELETE ALL + INSERT 生效）", afterImport.length === 2);
-    // 还原真实记录
-    await req("PUT", "/api/attendance/records", { token: TOKEN, body: { records: backupRecords } });
-    const afterRestore = (await req("GET", "/api/attendance/records", { token: TOKEN })).body;
-    ok("导入后已还原原始记录数量", afterRestore.length === backupRecords.length);
-  } finally {
-    // 还原排班：先清空再 upsert 备份，避免测试员工的排班残留
-    await req("DELETE", "/api/attendance/schedules", { token: TOKEN });
-    await req("PUT", "/api/attendance/schedules", { token: TOKEN, body: { schedules: backupSchedules } });
-    // 删除临时员工（CASCADE 清理其排班/记录/异常）
-    await req("DELETE", `/api/users/${TA}`, { token: TOKEN });
-    await req("DELETE", `/api/users/${TB}`, { token: TOKEN });
-    // 恢复 admin 种子态
-    if (mustChange) {
-      await req("POST", "/api/auth/accounts/admin/reset-password", { token: TOKEN, body: { newPassword: adminPw } });
+    const putRes = await req("PUT", "/api/attendance/records", { records: importData });
+    ok("批量写入返回 200", putRes.status === 200, `status ${putRes.status}`);
+    const afterImport = (await req("GET", "/api/attendance/records")).body;
+    const importedIds = new Set(importData.map((r) => r.id));
+    ok("批量写入生效", afterImport.filter((r) => importedIds.has(r.id)).length === 2);
+    ok(
+      "只传 2 行不清空全库：未提及的既有记录仍在",
+      !!keepId && afterImport.some((r) => r.id === keepId)
+    );
+
+    console.log("\n=== 6. 空清单被拒；整表清空只给 ADMIN+ ===");
+    const empty = await req("PUT", "/api/attendance/records", { records: [] });
+    ok("records: [] → 400", empty.status === 400, `status ${empty.status}`);
+    // 拿一个真实 HR 会话来撞这道门槛：路由内 requireRole("ADMIN") 比默认写策略更严
+    await req("POST", "/api/auth/accounts", { username: "cc_hr", password: "CcHr#Tmp2026-a", systemRole: "HR" });
+    const hrLogin = await req("POST", "/api/auth/login", { username: "cc_hr", password: "CcHr#Tmp2026-a" }, "");
+    const hrFirst = hrLogin.body?.token ?? "";
+    const hrChanged = await req("POST", "/api/auth/change-password", { currentPassword: "CcHr#Tmp2026-a", newPassword: "CcHr#Tmp2026-b" }, hrFirst);
+    const hrToken = hrChanged.body?.token || hrFirst;
+    const purgeAsHr = await req("DELETE", "/api/attendance/records", undefined, hrToken);
+    ok("HR 整表清空打卡记录 → 403", purgeAsHr.status === 403, `status ${purgeAsHr.status}`);
+    const recordsIntact = (await req("GET", "/api/attendance/records")).body;
+    ok("被拒的清空没有真的删任何东西", recordsIntact.length === afterImport.length, `${recordsIntact.length} 条`);
+
+    // 本脚本造出来的行自己收掉（PUT 只加不减，不再靠整表替换顺手还原）
+    for (const id of ["REC_IMP1", "REC_IMP2", keepId].filter(Boolean)) {
+      await req("DELETE", `/api/attendance/records/${id}`);
     }
+    const afterCleanup = (await req("GET", "/api/attendance/records")).body;
+    ok("测试行已清理", afterCleanup.length === 0, `剩余 ${afterCleanup.length} 条`);
+  } finally {
+    // 临时员工与其排班/打卡随 CASCADE 一起消失；私有实例跑完连目录一起删
+    await req("DELETE", `/api/users/${TA}`);
+    await req("DELETE", `/api/users/${TB}`);
+    await stop();
   }
 
-  console.log(`\n结果：通过 ${pass} / 失败 ${fail}`);
-  process.exit(fail === 0 ? 0 : 1);
+  process.exit(summarize({ pass, fail, failures }));
 }
 
 main().catch((e) => {

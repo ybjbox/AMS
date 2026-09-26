@@ -1,14 +1,15 @@
 /**
  * P1-2 回归：外键约束（删除员工级联清考勤 / 删除部门置空员工引用）+ 表结构校验。
  *
- * 运行前置：dev server 已在 127.0.0.1:3000 启动（且已应用外键迁移）。
- * 该脚本会创建/删除名为 FK_TEMP_* 的临时员工与部门，并在结束时还原
- * 考勤排班、打卡记录与部门树，保证对开发库无副作用。
+ * 运行：node scripts/verify-fk.mjs（也包含在 npm run test:server 里）
+ * 自起临时 DATA_DIR + 随机端口的私有实例：外键看的是**真库文件**，所以直接打开
+ * 那个临时 DATA_DIR/ams.db 做 PRAGMA 校验；创建/删除的临时员工与部门随目录一起消失，
+ * 不再需要"还原考勤/还原 admin 口令"这类收尾（这些收尾曾经把开发库改坏过）。
  */
-import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
+import path from "node:path";
+import { bootServer, summarize } from "./lib/liveServer.mjs";
 
-const BASE = "http://127.0.0.1:3000";
 let pass = 0;
 let fail = 0;
 const failures = [];
@@ -24,148 +25,109 @@ function ok(name, cond, extra = "") {
   }
 }
 
-async function req(method, path, body) {
-  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` };
-  const res = await fetch(`${BASE}${path}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-  const text = await res.text();
-  let json;
-  try { json = JSON.parse(text); } catch { json = text; }
-  return { status: res.status, body: json };
-}
+async function main() {
+  const { req, dataDir, stop } = await bootServer({ tag: "fk" });
+  let db;
+  try {
+    // 外键定义只能从真实库文件里读；此时服务还活着（WAL 已建立），只读打开做 PRAGMA 校验
+    db = new DatabaseSync(path.join(dataDir, "ams.db"), { readOnly: true });
 
-// ---------- 鉴权 ----------
-const pwMatch = readFileSync("data/ADMIN_CREDENTIALS.txt", "utf8").match(/密码:\s*(.+)/);
-const adminPw = pwMatch ? pwMatch[1].trim() : "";
-const loginRes = await fetch(`${BASE}/api/auth/login`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ username: "admin", password: adminPw }),
-});
-const loginJson = await loginRes.json();
-let TOKEN = loginJson.token;
-ok("管理员登录成功（获取 Bearer token）", !!TOKEN, `status ${loginRes.status}`);
+    // ---------- 1. 表结构：外键定义存在 ----------
+    console.log("\n=== 1. 表结构外键定义（PRAGMA foreign_key_list）===");
+    const fkMap = {};
+    for (const t of ["employees", "schedules", "punch_records", "anomalies", "departments", "roles", "folders", "documents", "dept_shift_rules"]) {
+      fkMap[t] = db.prepare(`PRAGMA foreign_key_list(${t})`).all().map((r) => ({ from: r.from, table: r.table, onDelete: r.on_delete }));
+    }
+    const has = (t, from, table) => fkMap[t]?.some((f) => f.from === from && f.table === table);
+    const cascade = (t, from, table) => fkMap[t]?.some((f) => f.from === from && f.table === table && f.onDelete === "CASCADE");
 
-// 种子态 admin 需要改密才能调用业务接口；改密后换取可用 token
-if (loginJson.user?.mustChangePassword) {
-  const chRes = await fetch(`${BASE}/api/auth/change-password`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
-    body: JSON.stringify({ currentPassword: adminPw, newPassword: "FkVerifyTemp123!" }),
-  });
-  const chJson = await chRes.json();
-  if (chJson.token) TOKEN = chJson.token;
-  ok("种子态改密以获得可用 token", !!TOKEN && chRes.status === 200, `status ${chRes.status}`);
-}
-
-// ---------- 1. 表结构：外键定义存在 ----------
-console.log("\n=== 1. 表结构外键定义（PRAGMA foreign_key_list）===");
-let db;
-try {
-  db = new DatabaseSync("data/ams.db", { readOnly: true });
-} catch (e) {
-  ok("以只读方式打开 data/ams.db", false, String(e));
-}
-if (db) {
-  const fkMap = {};
-  for (const t of ["employees", "schedules", "punch_records", "anomalies", "departments", "roles", "folders", "documents"]) {
-    const rows = db.prepare(`PRAGMA foreign_key_list(${t})`).all();
-    fkMap[t] = rows.map((r) => ({ from: r.from, table: r.table, onDelete: r.on_delete }));
+    ok("employees.departmentId → departments", has("employees", "departmentId", "departments"));
+    ok("schedules.employeeId → employees (CASCADE)", cascade("schedules", "employeeId", "employees"));
+    ok("punch_records.employeeId → employees (CASCADE)", cascade("punch_records", "employeeId", "employees"));
+    ok("anomalies.employeeId → employees (CASCADE)", cascade("anomalies", "employeeId", "employees"));
+    ok("departments.parentId → departments (CASCADE)", cascade("departments", "parentId", "departments"));
+    // 职位依附部门：删部门要连职位一起走（SET NULL 只会留下谁也选不到的死选项）。
+    // 原断言写的是 SET NULL，与 migrate.ts 的 ROLES_SCHEMA（CASCADE）不符 —— 这个脚本
+    // 从来不进 CI，所以这条错断言一直没人踩到。
+    ok("roles.departmentId → departments (CASCADE)", cascade("roles", "departmentId", "departments"));
+    ok("folders.parentId → folders (CASCADE)", cascade("folders", "parentId", "folders"));
+    ok("documents.folderId → folders (CASCADE)", cascade("documents", "folderId", "folders"));
+    // 部门工作时段：没有外键时删部门会留下谁也匹配不到的死规则（v14 补的）
+    ok("dept_shift_rules.departmentId → departments (CASCADE)", cascade("dept_shift_rules", "departmentId", "departments"));
+    // 用户名是归属键，删账号后不能复用 → 墓碑表必须在（v14 补的）
+    ok(
+      "account_tombstones 表存在",
+      db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='account_tombstones'").get() !== undefined
+    );
+  } catch (e) {
+    ok("以只读方式打开临时库并读取外键", false, String(e));
+  } finally {
+    db?.close();
   }
-  const has = (t, from, table) => fkMap[t]?.some((f) => f.from === from && f.table === table);
 
-  ok("employees.departmentId → departments", has("employees", "departmentId", "departments"));
-  ok("schedules.employeeId → employees (CASCADE)", fkMap.schedules?.some((f) => f.from === "employeeId" && f.table === "employees" && f.onDelete === "CASCADE"));
-  ok("punch_records.employeeId → employees (CASCADE)", fkMap.punch_records?.some((f) => f.from === "employeeId" && f.table === "employees" && f.onDelete === "CASCADE"));
-  ok("anomalies.employeeId → employees (CASCADE)", fkMap.anomalies?.some((f) => f.from === "employeeId" && f.table === "employees" && f.onDelete === "CASCADE"));
-  ok("departments.parentId → departments (CASCADE)", fkMap.departments?.some((f) => f.from === "parentId" && f.table === "departments" && f.onDelete === "CASCADE"));
-  ok("roles.departmentId → departments (SET NULL)", fkMap.roles?.some((f) => f.from === "departmentId" && f.table === "departments" && f.onDelete === "SET NULL"));
-  ok("folders.parentId → folders (CASCADE)", fkMap.folders?.some((f) => f.from === "parentId" && f.table === "folders" && f.onDelete === "CASCADE"));
-  ok("documents.folderId → folders (CASCADE)", fkMap.documents?.some((f) => f.from === "folderId" && f.table === "folders" && f.onDelete === "CASCADE"));
+  try {
+    // ---------- 2. 删除员工级联清除考勤数据 ----------
+    console.log("\n=== 2. 删除员工级联清除 schedules / punch_records / anomalies ===");
+    const emp = (await req("POST", "/api/users", { name: "FK_TEMP_EMP" })).body;
+    ok("创建临时员工", !!emp && !!emp.id, JSON.stringify(emp).slice(0, 80));
+    const empId = emp?.id;
+
+    await req("PUT", "/api/attendance/schedules", {
+      schedules: [{ employeeId: empId, employeeName: emp.name, shiftIds: ["1"] }],
+    });
+    await req("PUT", "/api/attendance/records", {
+      records: [{ id: "fk_temp_rec", employeeId: empId, employeeName: emp.name, date: "2026-01-01", time: "09:00" }],
+    });
+    // 触发异常分析，会往 anomalies 写入该员工的记录
+    await req("POST", "/api/attendance/analyze");
+
+    ok("删除前员工存在", (await req("GET", `/api/users/${empId}`)).status === 200);
+    const del = await req("DELETE", `/api/users/${empId}`);
+    ok("删除临时员工返回成功", del.status === 200, `status ${del.status}`);
+
+    const afterSchedules = (await req("GET", "/api/attendance/schedules")).body || [];
+    const afterRecords = (await req("GET", "/api/attendance/records")).body || [];
+    const afterAnomalies = (await req("GET", "/api/attendance/anomalies")).body || [];
+    ok("级联删除：schedules 中无该员工残留", !afterSchedules.some((s) => s.employeeId === empId));
+    ok("级联删除：punch_records 中无该员工残留", !afterRecords.some((r) => r.employeeId === empId));
+    ok("级联删除：anomalies 中无该员工残留", !afterAnomalies.some((a) => a.employeeId === empId));
+
+    // ---------- 3. 删除部门置空员工引用 ----------
+    console.log("\n=== 3. 删除部门后员工 departmentId 置空、部门名解析为空 ===");
+    const origDepts = (await req("GET", "/api/departments")).body?.departments || [];
+
+    const tempDept = { id: "fk_temp_dept", name: "FK_TEMP_DEPT", priority: 1, children: [] };
+    const putDept = await req("PUT", "/api/departments/tree", { departments: [...origDepts, tempDept] });
+    ok("临时部门已加入架构树", putDept.status === 200, `status ${putDept.status}`);
+
+    const emp2Id = (await req("POST", "/api/users", { name: "FK_TEMP_EMP2", department: "FK_TEMP_DEPT" })).body?.id;
+    ok("创建指向临时部门的员工", !!emp2Id, String(emp2Id));
+    const linked = await req("GET", `/api/users/${emp2Id}`);
+    ok("写入后 departmentId 已关联临时部门", linked.body?.departmentId === "fk_temp_dept", `departmentId=${linked.body?.departmentId}`);
+
+    // 同部门下挂一个职位，用来验 roles 的 CASCADE（与 employees 的 SET NULL 是两种口径）
+    const origRoles = (await req("GET", "/api/departments")).body?.roles || [];
+    const tempRole = { id: "fk_temp_role", name: "FK_TEMP_ROLE", departmentId: "fk_temp_dept", priority: 1 };
+    const putRoles = await req("PUT", "/api/departments/roles", { roles: [...origRoles, tempRole] });
+    ok("临时职位已挂到临时部门", putRoles.status === 200, `status ${putRoles.status}`);
+
+    const rmDept = await req("PUT", "/api/departments/tree", { departments: origDepts });
+    ok("从架构树移除临时部门", rmDept.status === 200, `status ${rmDept.status}`);
+
+    const afterEmp2 = (await req("GET", `/api/users/${emp2Id}`)).body;
+    ok("部门删除后员工 departmentId 置空（SET NULL）", afterEmp2?.departmentId === null, `departmentId=${afterEmp2?.departmentId}`);
+    ok("部门删除后部门名解析为空（无陈旧字符串）", afterEmp2?.department === "", `department='${afterEmp2?.department}'`);
+    const rolesAfter = (await req("GET", "/api/departments")).body?.roles || [];
+    ok("部门删除后其职位一并级联消失（CASCADE）", !rolesAfter.some((r) => r.id === "fk_temp_role"), `剩余 ${rolesAfter.length} 个职位`);
+  } finally {
+    await stop();
+  }
+
+  console.log(fail === 0 ? "P1-2 外键约束验证全部通过 ✅" : "");
+  process.exit(summarize({ pass, fail, failures }));
 }
 
-// ---------- 2. 删除员工级联清除考勤数据 ----------
-console.log("\n=== 2. 删除员工级联清除 schedules / punch_records / anomalies ===");
-const origSchedulesRes = await req("GET", "/api/attendance/schedules");
-const origRecordsRes = await req("GET", "/api/attendance/records");
-const origSchedules = Array.isArray(origSchedulesRes.body) ? origSchedulesRes.body : [];
-const origRecords = Array.isArray(origRecordsRes.body) ? origRecordsRes.body : [];
-
-const emp = (await req("POST", "/api/users", { name: "FK_TEMP_EMP" })).body;
-ok("创建临时员工", !!emp && !!emp.id, JSON.stringify(emp).slice(0, 80));
-const empId = emp?.id;
-
-await req("PUT", "/api/attendance/schedules", {
-  schedules: [...(origSchedules || []), { employeeId: empId, employeeName: emp.name, shiftIds: ["1"] }],
-});
-await req("PUT", "/api/attendance/records", {
-  records: [...(origRecords || []), { id: "fk_temp_rec", employeeId: empId, employeeName: emp.name, date: "2026-01-01", time: "09:00" }],
-});
-
-// 触发异常分析，会往 anomalies 写入该员工的记录
-await req("POST", "/api/attendance/analyze");
-
-const before = await req("GET", `/api/users/${empId}`);
-ok("删除前员工存在", before.status === 200);
-
-const del = await req("DELETE", `/api/users/${empId}`);
-ok("删除临时员工返回成功", del.status === 200, `status ${del.status}`);
-
-const afterSchedules = (await req("GET", "/api/attendance/schedules")).body || [];
-const afterRecords = (await req("GET", "/api/attendance/records")).body || [];
-const afterAnomalies = (await req("GET", "/api/attendance/anomalies")).body || [];
-
-ok("级联删除：schedules 中无该员工残留", !afterSchedules.some((s) => s.employeeId === empId));
-ok("级联删除：punch_records 中无该员工残留", !afterRecords.some((r) => r.employeeId === empId));
-ok("级联删除：anomalies 中无该员工残留", !afterAnomalies.some((a) => a.employeeId === empId));
-
-// 还原考勤数据
-await req("PUT", "/api/attendance/schedules", { schedules: origSchedules || [] });
-await req("PUT", "/api/attendance/records", { records: origRecords || [] });
-
-// ---------- 3. 删除部门置空员工引用 ----------
-console.log("\n=== 3. 删除部门后员工 departmentId 置空、部门名解析为空 ===");
-const deptResp = (await req("GET", "/api/departments")).body;
-const origDepts = deptResp?.departments || [];
-
-const tempDept = { id: "fk_temp_dept", name: "FK_TEMP_DEPT", priority: 1, children: [] };
-const putDept = await req("PUT", "/api/departments/tree", { departments: [...origDepts, tempDept] });
-ok("临时部门已加入架构树", putDept.status === 200, `status ${putDept.status}`);
-
-const emp2 = (await req("POST", "/api/users", { name: "FK_TEMP_EMP2", department: "FK_TEMP_DEPT" })).body;
-const emp2Id = emp2?.id;
-ok("创建指向临时部门的员工", !!emp2Id, JSON.stringify(emp2).slice(0, 80));
-const linked = await req("GET", `/api/users/${emp2Id}`);
-ok("写入后 departmentId 已关联临时部门", linked.body?.departmentId === "fk_temp_dept", `departmentId=${linked.body?.departmentId}`);
-
-// 删除该部门（从树中去掉）
-const rmDept = await req("PUT", "/api/departments/tree", { departments: origDepts });
-ok("从架构树移除临时部门", rmDept.status === 200, `status ${rmDept.status}`);
-
-const afterEmp2 = (await req("GET", `/api/users/${emp2Id}`)).body;
-ok("部门删除后 departmentId 置空（SET NULL）", afterEmp2?.departmentId === null, `departmentId=${afterEmp2?.departmentId}`);
-ok("部门删除后部门名解析为空（无陈旧字符串）", afterEmp2?.department === "", `department='${afterEmp2?.department}'`);
-
-// 清理
-await req("DELETE", `/api/users/${emp2Id}`);
-
-// 还原 admin 为种子态（与 data/ADMIN_CREDENTIALS.txt 一致，保证脚本可重复运行）
-const resetRes = await fetch(`${BASE}/api/auth/accounts/admin/reset-password`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
-  body: JSON.stringify({ newPassword: adminPw }),
-});
-ok("还原 admin 初始密码（种子态）", resetRes.status === 200, `status ${resetRes.status}`);
-
-// ---------- 汇总 ----------
-console.log(`\n结果：通过 ${pass} / 失败 ${fail}`);
-if (fail > 0) {
-  console.log("失败项：");
-  for (const f of failures) console.log("  - " + f);
+main().catch((e) => {
+  console.error("verify crashed:", e);
   process.exit(1);
-}
-console.log("P1-2 外键约束验证全部通过 ✅");
-process.exit(0);
+});

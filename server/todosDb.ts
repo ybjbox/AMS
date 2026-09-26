@@ -53,8 +53,8 @@ export function ensureTodosTable(): void {
       targetId   TEXT,
       createdBy TEXT NOT NULL,
       assignee  TEXT NOT NULL,
-      createdAt TEXT DEFAULT (datetime('now')),
-      updatedAt TEXT DEFAULT (datetime('now'))
+      createdAt TEXT DEFAULT (datetime('now', 'localtime')),
+      updatedAt TEXT DEFAULT (datetime('now', 'localtime'))
     );
   `);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_todos_createdBy ON todos(createdBy)`);
@@ -119,7 +119,7 @@ export function createTodo(input: TodoInput) {
   const id = randomUUID();
   db.prepare(
     `INSERT INTO todos (id, title, description, dueDate, completed, type, targetId, createdBy, assignee, createdAt, updatedAt)
-     VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+     VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, datetime('now', 'localtime'), datetime('now', 'localtime'))`
   ).run(
     id,
     input.title.trim(),
@@ -167,7 +167,7 @@ export function updateTodo(
          dueDate = COALESCE(?, dueDate),
          completed = COALESCE(?, completed),
          assignee = COALESCE(?, assignee),
-         updatedAt = datetime('now')
+         updatedAt = datetime('now', 'localtime')
      WHERE id = ?`
   ).run(
     patch.title !== undefined ? patch.title : null,

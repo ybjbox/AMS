@@ -3,7 +3,7 @@
  *   GET/POST/PUT/DELETE /shifts     — 班次 CRUD
  *   GET/PUT  /schedules             — 批量排班（upsert-only，未出现的行不删）
  *   POST/PUT/DELETE /schedules[/:employeeId] — 单条排班增删改；DELETE /schedules 清空（仅 ADMIN）
- *   GET/PUT  /records               — Excel 导入语义的整表替换（空数组被拒）
+ *   GET/PUT  /records               — 批量写入（upsert-only，未出现的行不删；空数组被拒）
  *   POST/PUT/DELETE /records[/:id]  — 单条打卡记录增删改；DELETE /records 清空（仅 ADMIN）
  *   GET      /anomalies /summary    — 异常列表 / 月报
  *   POST     /analyze               — 触发真实异常分析
@@ -17,7 +17,7 @@ import {
   listShifts, createShift, updateShift, deleteShift,
   listSchedules, replaceSchedules,
   upsertSchedule, deleteSchedule, clearSchedules,
-  listRecords, replaceRecords,
+  listRecords, upsertRecords,
   upsertRecord, deleteRecord, clearRecords,
   listAnomalies, analyzeAnomalies, analyzeAttendance, getAttendanceAnalysisStatus,
   PunchFormatError, VersionConflictError, monthlySummary } from "./attendanceDb.ts";
@@ -42,6 +42,18 @@ import {
   previewAttendanceImport,
   runAttendanceImportJob,
 } from "./attendanceImportDb.ts";
+import {
+  validateBody,
+  shiftUpsertSchema,
+  shiftUpdateSchema,
+  deptShiftRuleSchema,
+  deptShiftRuleUpdateSchema,
+  schedulesBulkSchema,
+  scheduleCreateSchema,
+  scheduleUpdateSchema,
+  punchRecordsBulkSchema,
+  punchRecordCreateSchema,
+} from "./validation.ts";
 
 /**
  * P2 考勤异常通知：分析完成后按员工汇总当日异常，发给已关联账号的当事员工。
@@ -81,11 +93,14 @@ attendanceRouter.get("/shifts", (_req, res) => {
   res.json(listShifts());
 });
 
-attendanceRouter.post("/shifts", (req, res, next) => {
-  const { name, startTime, endTime } = req.body || {};
-  if (!name || !startTime || !endTime) {
-    return res.status(400).json({ error: "name, startTime, endTime are required" });
-  }
+/**
+ * 班次新增/改名。
+ *
+ * validateBody 之后 body 只剩 name/startTime/endTime —— **刻意不再让客户端带 id**：
+ * 原先 `createShift(req.body)` 里 `input.id || randomUUID()`，前端同一毫秒造出两个 id 相同的新班次
+ * 会直接撞主键变 500（第 12 批在部门/职位上已按"编号由服务端生成"收过一次，这里补齐）。
+ */
+attendanceRouter.post("/shifts", validateBody(shiftUpsertSchema), (req, res, next) => {
   try {
     res.status(201).json(createShift(req.body));
   } catch (e) {
@@ -94,7 +109,7 @@ attendanceRouter.post("/shifts", (req, res, next) => {
   }
 });
 
-attendanceRouter.put("/shifts/:id", (req, res, next) => {
+attendanceRouter.put("/shifts/:id", validateBody(shiftUpdateSchema), (req, res, next) => {
   try {
     const updated = updateShift(req.params.id, req.body || {});
     if (!updated) return res.status(404).json({ error: "Shift not found" });
@@ -149,7 +164,7 @@ attendanceRouter.get("/shift-rules/effective", (req, res) => {
   });
 });
 
-attendanceRouter.post("/shift-rules", (req, res) => {
+attendanceRouter.post("/shift-rules", validateBody(deptShiftRuleSchema), (req, res) => {
   try {
     res.status(201).json(createDeptShiftRule(req.body || {}));
   } catch (e) {
@@ -157,7 +172,7 @@ attendanceRouter.post("/shift-rules", (req, res) => {
   }
 });
 
-attendanceRouter.put("/shift-rules/:id", (req, res) => {
+attendanceRouter.put("/shift-rules/:id", validateBody(deptShiftRuleUpdateSchema), (req, res) => {
   try {
     const updated = updateDeptShiftRule(req.params.id, req.body || {});
     if (!updated) return res.status(404).json({ error: "时段不存在" });
@@ -178,18 +193,15 @@ attendanceRouter.get("/schedules", (_req, res) => {
 });
 
 // 整表替换（批量改/导入）：upsert-only，不删除未提及行，避免并发覆盖
-attendanceRouter.put("/schedules", (req, res) => {
+attendanceRouter.put("/schedules", validateBody(schedulesBulkSchema), (req, res) => {
   const { schedules } = req.body || {};
   if (!Array.isArray(schedules)) return res.status(400).json({ error: "schedules array is required" });
   res.json(replaceSchedules(schedules));
 });
 
 // 增量：单个员工排班 upsert（body.expectedVersion 可选启用乐观锁）
-attendanceRouter.post("/schedules", (req, res, next) => {
+attendanceRouter.post("/schedules", validateBody(scheduleCreateSchema), (req, res, next) => {
   const { employeeId, employeeName, shiftIds, expectedVersion } = req.body || {};
-  if (!employeeId || !employeeName) {
-    return res.status(400).json({ error: "employeeId and employeeName are required" });
-  }
   try {
     res.status(201).json(upsertSchedule({ employeeId, employeeName, shiftIds, expectedVersion }));
   } catch (e) {
@@ -201,9 +213,8 @@ attendanceRouter.post("/schedules", (req, res, next) => {
 });
 
 // 增量：更新单个员工排班
-attendanceRouter.put("/schedules/:employeeId", (req, res, next) => {
+attendanceRouter.put("/schedules/:employeeId", validateBody(scheduleUpdateSchema), (req, res, next) => {
   const { employeeName, shiftIds, expectedVersion } = req.body || {};
-  if (!employeeName) return res.status(400).json({ error: "employeeName is required" });
   try {
     res.json(
       upsertSchedule({
@@ -238,18 +249,17 @@ attendanceRouter.get("/records", (req, res) => {
   res.json(listRecords(req.query));
 });
 
-// 整表替换（Excel 导入语义）：清空后整体写入——考勤页导入功能的承载端点，
-// 维持默认写策略（HR+）；如需收紧到 ADMIN，须同步调整前端导入入口的角色门槛。
-// 空数组在这里被拒：它是「全库打卡记录清零」的唯一整表入口，而清空本有
-// DELETE /records（仅 ADMIN）这条带角色门槛的路，不该由导入语义顺带触发。
-attendanceRouter.put("/records", (req, res, next) => {
+// 批量写入（Excel 导入语义）：upsert-only，未出现的行保持原样，维持默认写策略（HR+）。
+// 这里此前是先 DELETE 全表再整体插入 —— 于是任何 HR 提交一行就能清空全库打卡记录，
+// 而整表清空本有 DELETE /records（仅 ADMIN，界面上单独确认）这条带门槛的路。
+// 空数组仍然被拒：它从来不是有效的导入清单，而更像是「误触了清空」。
+attendanceRouter.put("/records", validateBody(punchRecordsBulkSchema), (req, res, next) => {
   const { records } = req.body || {};
-  if (!Array.isArray(records)) return res.status(400).json({ error: "records array is required" });
-  if (records.length === 0) {
+  if (!Array.isArray(records) || records.length === 0) {
     return res.status(400).json({ error: "导入清单为空，已取消；确需清空全部打卡记录请用「全部清空打卡记录」" });
   }
   try {
-    res.json(replaceRecords(records));
+    res.json(upsertRecords(records));
   } catch (e) {
     if (punchFormatErrorResponse(res, e)) return;
     next(e);
@@ -257,11 +267,8 @@ attendanceRouter.put("/records", (req, res, next) => {
 });
 
 // 增量：单条打卡记录 upsert（body.expectedVersion 可选启用乐观锁）
-attendanceRouter.post("/records", (req, res, next) => {
+attendanceRouter.post("/records", validateBody(punchRecordCreateSchema), (req, res, next) => {
   const { employeeId, employeeName, date, time, expectedVersion } = req.body || {};
-  if (!employeeId || !employeeName || !date || !time) {
-    return res.status(400).json({ error: "employeeId, employeeName, date, time are required" });
-  }
   try {
     res.status(201).json(upsertRecord({ id: req.body.id, employeeId, employeeName, date, time, expectedVersion }));
   } catch (e) {
@@ -273,12 +280,9 @@ attendanceRouter.post("/records", (req, res, next) => {
   }
 });
 
-// 增量：更新单条打卡记录
-attendanceRouter.put("/records/:id", (req, res, next) => {
+// 增量：更新单条打卡记录（id 在路径上，body 里那个不作数）
+attendanceRouter.put("/records/:id", validateBody(punchRecordCreateSchema), (req, res, next) => {
   const { employeeId, employeeName, date, time, expectedVersion } = req.body || {};
-  if (!employeeId || !employeeName || !date || !time) {
-    return res.status(400).json({ error: "employeeId, employeeName, date, time are required" });
-  }
   try {
     res.json(
       upsertRecord({

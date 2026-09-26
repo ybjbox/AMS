@@ -231,6 +231,48 @@ async function main() {
     const listAfter = await req("GET", "/api/users", undefined, adminToken);
     const hasEmp = Array.isArray(listAfter.body) && listAfter.body.some((u: any) => u.name === "正常员工");
     ok("合法员工已写入并可被列表查到", hasEmp);
+    // ---- 批次 5：这些入口以前"缺字段 → TypeError → 500"，现在是 400 + 指名字段 ----
+    {
+      const noName = await req("POST", "/api/attendance/shift-rules", { departmentId: "1", startTime: "08:00", endTime: "17:00" }, adminToken);
+      ok("部门时段缺 name → 400（曾为 500）", noName.status === 400, `-> ${noName.status} ${JSON.stringify(noName.body)}`);
+      const badTime = await req("POST", "/api/attendance/shift-rules", { departmentId: "1", name: "白班", startTime: 42, endTime: "17:00" }, adminToken);
+      ok("时段上班时间给数字 → 400", badTime.status === 400, `-> ${badTime.status}`);
+      const ruleOk = await req("POST", "/api/attendance/shift-rules", { departmentId: "1", name: "验证白班", startTime: "08:00", endTime: "17:00" }, adminToken);
+      ok("合法时段仍创建 → 201", ruleOk.status === 201, `-> ${ruleOk.status} ${JSON.stringify(ruleOk.body)}`);
+
+      const shiftNoBody = await req("PUT", "/api/attendance/shifts/nonexistent", { name: 42 }, adminToken);
+      ok("班次改名给数字 → 400（不再静默写 \"42.0\"）", shiftNoBody.status === 400, `-> ${shiftNoBody.status}`);
+
+      const punchMissing = await req("POST", "/api/attendance/records", { employeeId: "E1" }, adminToken);
+      ok("打卡缺 date/time → 400（曾为 500）", punchMissing.status === 400, `-> ${punchMissing.status}`);
+      const punchBadType = await req("POST", "/api/attendance/records", { employeeId: "E1", employeeName: "甲", date: {}, time: "09:00:00" }, adminToken);
+      ok("打卡日期给对象 → 400", punchBadType.status === 400, `-> ${punchBadType.status}`);
+
+      const tooMany = await req(
+        "PUT",
+        "/api/attendance/records",
+        { records: Array.from({ length: 5001 }, (_, i) => ({ employeeId: "E1", employeeName: "甲", date: "2026-01-01", time: "09:00:00", id: `X${i}` })) },
+        adminToken
+      );
+      ok("一次提交 5001 条打卡被上限挡下 → 400", tooMany.status === 400, `-> ${tooMany.status}`);
+
+      const roleBadFk = await req("PUT", "/api/departments/roles", { roles: [{ id: "r1", name: "验证职位", departmentId: "no-such-dept" }] }, adminToken);
+      ok("职位指向不存在的部门 → 400 并点名是哪个（曾为 500）", roleBadFk.status === 400, `-> ${roleBadFk.status} ${JSON.stringify(roleBadFk.body)}`);
+      ok("400 里给出职位名与缺失的部门 id", /验证职位/.test(String(roleBadFk.body?.error)) && /no-such-dept/.test(String(roleBadFk.body?.error)), `-> ${roleBadFk.body?.error}`);
+
+      const hugeName = await req("POST", "/api/users", { name: "甲".repeat(5000) }, adminToken);
+      ok("姓名 5000 字 → 400（以前只有 100kb 的 body 上限挡着）", hugeName.status === 400, `-> ${hugeName.status}`);
+
+      const exportNoConfig = await req("POST", "/api/export/employees", { data: [] }, adminToken);
+      ok("导出缺 config → 400（曾为 500 Export failed）", exportNoConfig.status === 400, `-> ${exportNoConfig.status}`);
+
+      // keyword=% 以前等于「把整张表给我」；转义后必须按字面量匹配，返回空集
+      const wildcard = await req("GET", "/api/users?keyword=%25", undefined, adminToken);
+      const wildcardRows = Array.isArray(wildcard.body) ? wildcard.body : (wildcard.body?.items ?? []);
+      ok("?keyword=% 不再返回全表（按字面量匹配）", wildcard.status === 200 && wildcardRows.length === 0, `-> ${wildcard.status} 命中 ${wildcardRows.length} 行`);
+      const literal = await req("GET", "/api/users?keyword=%E7%94%B2%25", undefined, adminToken);
+      ok("含 % 的字面量关键字仍按普通字符串搜索（不报错）", literal.status === 200, `-> ${literal.status}`);
+    }
   } finally {
     server.kill("SIGKILL");
   }

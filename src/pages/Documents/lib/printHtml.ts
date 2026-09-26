@@ -82,7 +82,9 @@ function partContent(part: PrintPart): string {
         (part.truncated ? `<p class="dp-trunc">工作表或行数过多，仅输出前部分数据。</p>` : '');
     case 'pages':
       return (
-        part.pages.map((src) => `<img class="dp-page" src="${src}" alt="">`).join('') +
+        // src 也必须转义：这个文件里其它插值都过了 escapeHtml，唯独这里没有 ——
+        // 一个含引号的 src 就能从属性里逃出去，在打印文档里塞任意标签。
+        part.pages.map((src) => `<img class="dp-page" src="${escapeHtml(src)}" alt="">`).join('') +
         (part.truncated ? `<p class="dp-trunc">页数较多，仅输出前面若干页。</p>` : '')
       );
     case 'unsupported':

@@ -35,7 +35,7 @@ jobs:
       - name: 前端与服务端单元测试（含死 UI 可达性守门）
         run: npm run test:run
 
-      - name: 服务端验证脚本（11 个自包含回归）
+      - name: 服务端验证脚本（19 个自包含回归，含鉴权网关/审计/外键/并发/导出沙箱）
         run: npm run test:server
 
       - name: 生产构建（含分包验证）

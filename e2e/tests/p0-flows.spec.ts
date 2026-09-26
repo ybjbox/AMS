@@ -1,3 +1,4 @@
+import { acct } from '../runScoped';
 import { test, expect } from '@playwright/test';
 import { resolveAdminPassword } from '../adminCredentials';
 
@@ -11,7 +12,7 @@ import { resolveAdminPassword } from '../adminCredentials';
  */
 
 const ADMIN_PASSWORD = resolveAdminPassword();
-const TEST_ACCOUNT = 'e2e-makeup';
+const TEST_ACCOUNT = acct('e2e-makeup');
 const PW_1 = 'E2e-P0#2026a';
 const PW_2 = 'E2e-P0#2026b';
 const PUNCH_DATE = '2026-09-15';

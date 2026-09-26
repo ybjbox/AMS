@@ -6,8 +6,9 @@ import { DatabaseSync } from "node:sqlite";
 import path from "path";
 import fs from "fs";
 import { resolvePaging, toListResult } from "./listQuery.ts";
+import { daysUntilLocal, formatLocalDate } from "./localDate.ts";
 import { instrumentDatabase } from "./sqliteUtil.ts";
-import { asString, asNumber, asCount } from "./sqliteUtil.ts";
+import { asString, asNumber, asCount, likeClause, likeContains } from "./sqliteUtil.ts";
 
 export const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), "data");
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -158,10 +159,15 @@ export function reloadDb(): void {
   }
 }
 
-// 模块加载时初始化：开启 WAL + 确保 employees 表存在（首次启动播种依赖此表）
-db.exec(`
-  PRAGMA journal_mode = WAL;
-  CREATE TABLE IF NOT EXISTS employees (
+/**
+ * employees 的列定义 —— **只有这一份**。
+ *
+ * 迁移期的重建（migrate.ts）与这里的兜底建表共用同一段文本，谁加字段都不用再改两处。
+ * 外键刻意**不**写在列定义里：兜底建表发生在模块加载期，此刻 departments 可能还不存在，
+ * 带着 FK 的表会让首次播种直接抛错（server/tests/fresh-schema.test.ts 就是守这条顺序的）；
+ * FK 由 migrate 的重建步骤补上。
+ */
+export const EMPLOYEE_COLUMNS = `
     id                TEXT PRIMARY KEY,
     name              TEXT NOT NULL,
     idCard            TEXT DEFAULT '',
@@ -178,7 +184,6 @@ db.exec(`
     contractYears     INTEGER DEFAULT 3,
     contractSignDate  TEXT DEFAULT '',
     contractExpiry    TEXT DEFAULT '',
-    daysToExpiry      INTEGER DEFAULT 0,
     changeStatus      TEXT DEFAULT '无',
     registeredAddress TEXT DEFAULT '',
     currentAddress    TEXT DEFAULT '',
@@ -190,7 +195,12 @@ db.exec(`
     departmentId      TEXT,
     createdAt         TEXT DEFAULT (datetime('now', 'localtime')),
     updatedAt         TEXT DEFAULT (datetime('now', 'localtime'))
-  );
+`;
+
+// 模块加载时初始化：开启 WAL + 确保 employees 表存在（首次启动播种依赖此表）
+db.exec(`
+  PRAGMA journal_mode = WAL;
+  CREATE TABLE IF NOT EXISTS employees (${EMPLOYEE_COLUMNS});
 `);
 
 // ---------- 行 <-> 对象 转换（SQLite 无布尔类型，用 0/1） ----------
@@ -213,7 +223,6 @@ export interface EmployeeRow {
   contractYears: number;
   contractSignDate: string;
   contractExpiry: string;
-  daysToExpiry: number;
   changeStatus: string;
   registeredAddress: string;
   currentAddress: string;
@@ -284,7 +293,9 @@ export function rowToUser(row: unknown): User | null {
     contractYears: r.contractYears,
     contractSignDate: r.contractSignDate,
     contractExpiry: r.contractExpiry,
-    daysToExpiry: r.daysToExpiry,
+    // 剩余天数按**本地日历日**从 contractExpiry 现算，不存列：存下来的倒数第二天就陈旧，
+    // 而客户端 PUT 能把任意数字写进这一列（原 FIELDS 里有它）。派生之后不可能不一致。
+    daysToExpiry: daysUntilLocal(r.contractExpiry),
     changeStatus: r.changeStatus,
     registeredAddress: r.registeredAddress,
     currentAddress: r.currentAddress,
@@ -370,10 +381,11 @@ function employeeQueryParts(): { base: string; select: string; deptFilter: strin
 const FIELDS = [
   "name", "idCard", "gender", "age", "phone", "department", "role", "status",
   "joinDate", "yearsOfService", "employmentType", "hasSocialSecurity",
-  "contractYears", "contractSignDate", "contractExpiry", "daysToExpiry",
+  "contractYears", "contractSignDate", "contractExpiry",
   "changeStatus", "registeredAddress", "currentAddress", "isVeteran",
   "formerUnit", "militaryDates", "remarks",
   // 刻意不含 systemRole：真实角色只存 accounts，员工表那列是遗留死列（写它不改变任何权限）
+  // 刻意不含 daysToExpiry：剩余天数是**派生值**，见 rowToUser
 ] as const;
 
 function normalize(input: Record<string, unknown>) {
@@ -393,14 +405,30 @@ export type EmployeeListResult = ReturnType<typeof rowToUser>[] | import("./list
 // ---------- CRUD ----------
 // 返回类型：运行时根据是否传入分页参数返回 完整数组 或
 // 分页信封 { items, total, page, pageSize, totalPages }。调用方用 Array.isArray 区分。
-export function listEmployees(query: Record<string, unknown> = {}): EmployeeListResult {
+export function listEmployees(
+  query: Record<string, unknown> = {},
+  opts: { canSearchPhone?: boolean } = {}
+): EmployeeListResult {
   const paging = resolvePaging(query);
   const keyword = typeof query.keyword === "string" ? query.keyword.trim() : "";
   const { base, select, deptFilter } = employeeQueryParts();
-  const where = keyword
-    ? `WHERE e.name LIKE ? OR e.phone LIKE ? OR ${deptFilter} LIKE ?`
-    : "";
-  const params = keyword ? [`%${keyword}%`, `%${keyword}%`, `%${keyword}%`] : [];
+  // 谓词与占位参数一起 push，顺序绝不会和 ? 错位。
+  // phone 只在调用方有 PII 读权限时才进 WHERE：响应里的 maskPhone 裁的是**输出列**，
+  // 而在未裁剪的原始列上做 LIKE 等于开了第二条出口 —— 拿 ?keyword=138 逐位试
+  // （1380…/1381…，每步看命中数变化）就能还原别人的完整手机号。
+  const conds: string[] = [];
+  const params: string[] = [];
+  if (keyword) {
+    conds.push(likeClause("e.name"));
+    params.push(likeContains(keyword));
+    conds.push(likeClause(deptFilter));
+    params.push(likeContains(keyword));
+    if (opts.canSearchPhone) {
+      conds.push(likeClause("e.phone"));
+      params.push(likeContains(keyword));
+    }
+  }
+  const where = conds.length ? `WHERE ${conds.join(" OR ")}` : "";
 
   const total = asCount(db.prepare(`SELECT COUNT(*) AS c ${base} ${where}`).get(...params)?.c);
 
@@ -496,7 +524,8 @@ function isMissingTableError(e: unknown): boolean {
   return /no such table/i.test(e instanceof Error ? e.message : String(e));
 }
 
-function execIfTable(sql: string, ...params: unknown[]): boolean {
+/** 表可能还没被自己的模块建出来（测试进程、精简启动、刚从旧备份恢复的窗口）。 */
+export function execIfTable(sql: string, ...params: unknown[]): boolean {
   try {
     db.prepare(sql).run(...(params as (string | number | null)[]));
     return true;
@@ -615,10 +644,10 @@ function seedIfEmpty() {
   const insert = db.prepare(`INSERT INTO employees (
     id, name, idCard, gender, age, phone, department, role, status, joinDate,
     yearsOfService, employmentType, hasSocialSecurity, contractYears,
-    contractSignDate, contractExpiry, daysToExpiry, changeStatus,
+    contractSignDate, contractExpiry, changeStatus,
     registeredAddress, currentAddress, isVeteran, formerUnit, militaryDates,
     remarks, systemRole
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
 
   const departments = ["研发部", "产品部", "设计部", "市场部", "人力资源中心"];
   const roles = ["前端工程师", "后端工程师", "产品经理", "UI设计师", "HR"];
@@ -629,14 +658,15 @@ function seedIfEmpty() {
     const birthYear = parseInt(idCard.substring(6, 10));
     const age = new Date().getFullYear() - birthYear;
     const gender = parseInt(idCard.charAt(16)) % 2 === 0 ? "女" : "男";
-    const joinDate = new Date(Date.now() - Math.random() * 100000000000).toISOString().split("T")[0];
+    const joinDate = formatLocalDate(new Date(Date.now() - Math.random() * 100000000000));
     const yearsOfService = ((Date.now() - new Date(joinDate).getTime()) / 31536000000).toFixed(1);
-    const contractSignDate = new Date(Date.now() - Math.random() * 31536000000).toISOString().split("T")[0];
+    const contractSignDate = formatLocalDate(new Date(Date.now() - Math.random() * 31536000000));
     const contractYears = [1, 3, 5][Math.floor(Math.random() * 3)];
     const expiry = new Date(contractSignDate);
     expiry.setFullYear(expiry.getFullYear() + contractYears);
-    const contractExpiry = expiry.toISOString().split("T")[0];
-    const daysToExpiry = Math.ceil((expiry.getTime() - Date.now()) / 86400000);
+    // 播种的日期一律取本地日历日：全站把 YYYY-MM-DD 当本地日比较，用 toISOString() 会在
+    // 每天 00:00–07:59（UTC+8）少一天，见 localDate.ts 的说明
+    const contractExpiry = formatLocalDate(expiry);
     const isVeteran = Math.random() > 0.9;
 
     insert.run(
@@ -650,7 +680,7 @@ function seedIfEmpty() {
       joinDate, yearsOfService,
       ["全职", "兼职", "实习", "外包"][Math.floor(Math.random() * 4)],
       Math.random() > 0.1 ? 1 : 0,
-      contractYears, contractSignDate, contractExpiry, daysToExpiry,
+      contractYears, contractSignDate, contractExpiry,
       ["无", "晋升", "调岗", "降职"][Math.floor(Math.random() * 4)],
       "广东省广州市天河区XX路XX号",
       "广东省广州市海珠区XX路XX号",

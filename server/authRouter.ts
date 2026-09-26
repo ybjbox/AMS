@@ -5,9 +5,11 @@
  * 其余端点都已被 authGate 保护，这里的 requireRole 只是纵深防御的第二道。
  */
 import express from "express";
+import type { Request, Response } from "express";
 import { permissionsForRole } from "./capabilities.ts";
 import {
   AuthError,
+  ROLE_LEVEL,
   assertPasswordStrength,
   burnPasswordTime,
   createAccount,
@@ -25,6 +27,7 @@ import {
   toPublicAccount,
   updateAccountMeta,
   verifyPassword,
+  type SystemRole,
 } from "./authDb.ts";
 import { clientIp, listSecurityEvents, logSecurityEvent, requireRole } from "./authMiddleware.ts";
 import { validateBody, loginSchema, changePasswordSchema, accountCreateSchema, accountUpdateSchema, profileUpdateSchema } from "./validation.ts";
@@ -49,6 +52,49 @@ function accountBindingError(employeeId: unknown, selfUsername: string): string 
     .get(id, selfUsername);
   const occupied = asString((holder as { username?: string } | undefined)?.username);
   return occupied ? `该员工已绑定账号 ${occupied}，请先在对方账号上解除绑定` : null;
+}
+
+/**
+ * 角色天花板：对**别人**的账号动手时，调用者的秩必须严格高于目标；
+ * 只有超级管理员之间可以互管（已经同处最高档，不存在向上接管）。
+ *
+ * 为什么非得在这一层比较一次：策略表和 requireRole 都只看「调用者的秩够不够下限」，
+ * 从来没人看「目标的秩是多少」。于是 ADMIN 对着超管的用户名调 reset-password
+ * 就能把超管口令改成自己知道的值（setPassword 顺带吊销对方会话），再用那个账号登录，
+ * 拿到只有 SUPER_ADMIN 才有的东西：/ai/config 里的系统 apiKey 与出站地址、
+ * /ai/admin/conversations 全员对话、/branding 写入。同一文件里「授予超管」「创建超管」
+ * 「删除超管」三处都刻意收了口，唯独没比较秩，天花板被这一条路整体绕过。
+ * 反向也一样：{enabled:false} 能把唯一超管停用。
+ */
+function aboveRole(actorRole: SystemRole | undefined, targetRole: SystemRole): boolean {
+  return (
+    actorRole === "SUPER_ADMIN" ||
+    (!!actorRole && ROLE_LEVEL[actorRole] > ROLE_LEVEL[targetRole])
+  );
+}
+
+/**
+ * 目标账号不存在 → 404；秩不低于自己 → 403。status 为 0 表示放行。
+ * 自己的账号不在这里管：改自己的角色/停用自己由各 handler 里原有的自锁保护挡掉，
+ * 而改自己的显示名/邮箱/头像属自助范围，收紧到「不能碰秩 ≥ 自己」会把自助一起掐掉。
+ */
+function roleCeilingError(
+  actor: { username?: string; systemRole?: SystemRole } | undefined,
+  targetUsername: string
+): { status: number; error: string } {
+  const target = getAccount(targetUsername);
+  if (!target) return { status: 404, error: "账号不存在" };
+  if (target.username === actor?.username) return { status: 0, error: "" };
+  if (aboveRole(actor?.systemRole, target.systemRole)) return { status: 0, error: "" };
+  return { status: 403, error: `只能管理权限低于自己的账号（目标是 ${target.systemRole}）` };
+}
+
+/** 已经写好 403/404 并返回 true，handler 直接 return。 */
+function denyUnlessBelow(req: Request, res: Response, targetUsername: string): boolean {
+  const denied = roleCeilingError(req.auth, targetUsername);
+  if (denied.status === 0) return false;
+  res.status(denied.status).json({ error: denied.error });
+  return true;
 }
 
 // ---------------------------------------------------------------- 登录限流
@@ -218,9 +264,12 @@ authRouter.post("/accounts", requireRole("ADMIN"), validateBody(accountCreateSch
   try {
     const { username, password, systemRole, employeeId, displayName, email } = req.body;
 
-    // 不允许通过该接口直接造出比自己更高权限的账号
-    if (systemRole === "SUPER_ADMIN" && req.auth?.systemRole !== "SUPER_ADMIN") {
-      return res.status(403).json({ error: "只有超级管理员才能创建超级管理员账号" });
+    // 造出的账号秩必须低于自己（超管例外）：否则「创建账号」就是另一条绕过天花板的路。
+    // 不传 systemRole 时落库取最低档（EMPLOYEE），任何管理员都够格，不必比较。
+    if (systemRole !== undefined && !aboveRole(req.auth?.systemRole, systemRole)) {
+      return res
+        .status(403)
+        .json({ error: `只能创建权限低于自己的账号${systemRole === "SUPER_ADMIN" ? "（超级管理员账号只能由超级管理员创建）" : ""}` });
     }
     const bindError = accountBindingError(employeeId, username);
     if (bindError) return res.status(400).json({ error: bindError });
@@ -256,6 +305,12 @@ authRouter.put("/accounts/:username", requireRole("ADMIN"), validateBody(account
     if (target === req.auth?.username && (patch.systemRole !== undefined || patch.enabled === false)) {
       return res.status(400).json({ error: "不能修改自己的角色或停用自己的账号" });
     }
+    // 目标当前的秩、以及要改成的新秩，都必须低于自己：只查当前秩的话，
+    // ADMIN 就能把手下 HR 提成 ADMIN，凭空造出一个与自己同级、又能被自己随手重置口令接管的账号。
+    if (denyUnlessBelow(req, res, target)) return;
+    if (patch.systemRole !== undefined && !aboveRole(req.auth?.systemRole, patch.systemRole)) {
+      return res.status(403).json({ error: "只能把账号改成权限低于自己的角色" });
+    }
 
     const account = updateAccountMeta(target, patch);
     logSecurityEvent("account.update", req.auth?.username ?? "", clientIp(req), `修改 ${target}`);
@@ -268,6 +323,8 @@ authRouter.put("/accounts/:username", requireRole("ADMIN"), validateBody(account
 authRouter.post("/accounts/:username/reset-password", requireRole("ADMIN"), (req, res) => {
   try {
     const target = req.params.username;
+    // 这一条是角色天花板的主战场：不比较目标的秩，ADMIN 改完超管口令就能以超管身份登录
+    if (denyUnlessBelow(req, res, target)) return;
     const { newPassword } = (req.body ?? {}) as Record<string, unknown>;
     assertPasswordStrength(newPassword);
     setPassword(target, newPassword, true);
@@ -284,8 +341,8 @@ authRouter.delete("/accounts/:username", requireRole("ADMIN"), (req, res) => {
     return res.status(400).json({ error: "不能删除自己的账号" });
   }
   const account = getAccount(target);
-  if (account?.systemRole === "SUPER_ADMIN" && req.auth?.systemRole !== "SUPER_ADMIN") {
-    return res.status(403).json({ error: "只有超级管理员才能删除超级管理员账号" });
+  if (account && !aboveRole(req.auth?.systemRole, account.systemRole)) {
+    return res.status(403).json({ error: `只能删除权限低于自己的账号（目标是 ${account.systemRole}，超级管理员之间才可互删）` });
   }
   const ok = deleteAccount(target);
   if (!ok) return res.status(404).json({ error: "账号不存在" });
@@ -295,6 +352,7 @@ authRouter.delete("/accounts/:username", requireRole("ADMIN"), (req, res) => {
 
 /** 强制踢下线某账号的所有会话 */
 authRouter.post("/accounts/:username/revoke-sessions", requireRole("ADMIN"), (req, res) => {
+  if (denyUnlessBelow(req, res, req.params.username)) return;
   revokeAllSessions(req.params.username);
   logSecurityEvent("account.revoke_sessions", req.auth?.username ?? "", clientIp(req), req.params.username);
   res.json({ success: true });

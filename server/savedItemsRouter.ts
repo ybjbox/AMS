@@ -12,7 +12,8 @@ import {
   upsertSavedItem,
   type SavedItemKind,
 } from './savedItemsDb.ts';
-import { validateBody, savedItemUpsertSchema, errMessage } from './validation.ts';
+import { validateBody, savedItemUpsertSchema } from './validation.ts';
+import { clientErrorResponse } from './errorHandler.ts';
 
 export const savedItemsRouter = Router();
 savedItemsRouter.use(json({ limit: '512kb' }));
@@ -31,7 +32,7 @@ savedItemsRouter.post('/', validateBody(savedItemUpsertSchema), (req, res) => {
   try {
     res.status(201).json(upsertSavedItem({ kind, name, payload, owner: req.auth!.username }));
   } catch (error) {
-    res.status(400).json({ error: errMessage(error) });
+    clientErrorResponse(res, error);
   }
 });
 

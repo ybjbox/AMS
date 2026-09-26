@@ -141,7 +141,10 @@ export function useDocumentActions() {
   const handleDeleteSetClick = useCallback(
     async (setId: string) => {
       if (await confirm({ title: '确定要删除该套件吗？', description: '此操作不可恢复。', variant: 'danger' })) {
-        removeDocumentSet(setId);
+        const failure = await removeDocumentSet(setId);
+        // 确认框都过了却不动声色，比报错更让人怀疑人生
+        if (failure) toast.error(failure);
+        else toast.success('套件已删除');
       }
     },
     [removeDocumentSet, confirm]
@@ -213,17 +216,20 @@ export function useDocumentActions() {
   }, [printingSet, documents, setIsPrintModalOpen]);
 
   const handleSaveSet = useCallback(
-    (e: React.FormEvent<HTMLFormElement>) => {
+    async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       const formData = new FormData(e.currentTarget);
       const name = formData.get('name') as string;
       const description = formData.get('description') as string;
 
-      if (editingSet) {
-        updateDocumentSet(editingSet.id, { name, description, documentIds: selectedDocIds, printSettings });
-      } else {
-        // id 由服务端生成（uuid），前端不再自造
-        addDocumentSet({ name, description, documentIds: selectedDocIds, printSettings });
+      const failure = editingSet
+        ? await updateDocumentSet(editingSet.id, { name, description, documentIds: selectedDocIds, printSettings })
+        : // id 由服务端生成（uuid），前端不再自造
+          await addDocumentSet({ name, description, documentIds: selectedDocIds, printSettings });
+      // 弹窗关闭＝成功语义，所以失败时必须留着它并说清原因
+      if (failure) {
+        toast.error(failure);
+        return;
       }
       setIsSetModalOpen(false);
       setEditingSet(null);
@@ -232,28 +238,34 @@ export function useDocumentActions() {
   );
 
   const handleSaveFolder = useCallback(
-    (e: React.FormEvent<HTMLFormElement>) => {
+    async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       const formData = new FormData(e.currentTarget);
       const name = formData.get('name') as string;
 
-      if (editingFolder) {
-        updateFolder(editingFolder.id, { name });
-      } else {
-        // id 由服务端生成（uuid），前端不再自造
-        addFolder({ name, parentId: folderParentId });
-        if (folderParentId) {
-          setExpandedFolders((prev) => new Set(prev).add(folderParentId));
-        }
+      const failure = editingFolder
+        ? await updateFolder(editingFolder.id, { name })
+        : // id 由服务端生成（uuid），前端不再自造
+          await addFolder({ name, parentId: folderParentId });
+      if (failure) {
+        toast.error(failure);
+        return;
+      }
+      if (!editingFolder && folderParentId) {
+        setExpandedFolders((prev) => new Set(prev).add(folderParentId));
       }
       setIsFolderModalOpen(false);
     },
     [editingFolder, folderParentId, updateFolder, addFolder]
   );
 
-  const handleMoveFile = useCallback(() => {
+  const handleMoveFile = useCallback(async () => {
     if (movingDocId) {
-      updateDocument(movingDocId, { folderId: targetFolderId });
+      const failure = await updateDocument(movingDocId, { folderId: targetFolderId });
+      if (failure) {
+        toast.error(failure);
+        return;
+      }
     }
     setIsMoveModalOpen(false);
   }, [movingDocId, targetFolderId, updateDocument]);
@@ -297,7 +309,9 @@ export function useDocumentActions() {
           variant: 'danger',
         })
       ) {
-        removeFolder(folderId);
+        const failure = await removeFolder(folderId);
+        if (failure) toast.error(failure);
+        else toast.success('文件夹已删除');
       }
     },
     [removeFolder, confirm]
@@ -312,7 +326,9 @@ export function useDocumentActions() {
           variant: 'danger',
         })
       ) {
-        removeDocument(docId);
+        const failure = await removeDocument(docId);
+        if (failure) toast.error(failure);
+        else toast.success('文件已删除');
       }
     },
     [removeDocument, confirm]

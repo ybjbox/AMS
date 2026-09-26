@@ -151,4 +151,44 @@ describe("HTTP 层：不同角色的实际响应", () => {
     expect(self.id).toBe(me.id);
     expect(self.idCard).toBe(me.idCard);
   });
+
+  // 批次 1：keyword 走的是**未裁剪的原始列**。响应裁了 phone，谓词没裁，
+  // 于是 ?keyword=1380000 逐位试探就能把别人的完整手机号一位位问出来。
+  describe("keyword 搜索不得旁路手机号裁剪", () => {
+    const PHONE = "13900007777";
+    let empId = "";
+    let empName = "";
+
+    beforeAll(async () => {
+      const { createEmployee, db } = await import("../db.ts");
+      const created = createEmployee({ name: "PII搜索测试甲", phone: PHONE })!;
+      empId = created.id;
+      empName = created.name;
+      // 种子数据里可能已有同名员工，保证本用例的姓名前缀唯一
+      db.prepare("UPDATE employees SET name = ? WHERE id = ?").run(empName, empId);
+    });
+
+    afterAll(async () => {
+      const { deleteEmployee } = await import("../db.ts");
+      deleteEmployee(empId);
+    });
+
+    const search = async (keyword: string, as: SessionContext) => {
+      authRef = as;
+      const res = await fetch(`${base}?page=1&pageSize=50&keyword=${encodeURIComponent(keyword)}`);
+      const body = (await res.json()) as { items: EmployeeView[] };
+      return body.items.map((u) => u.id);
+    };
+
+    it("HR 可以按手机号搜到人；EMPLOYEE 按整号和前缀都搜不到", async () => {
+      expect(await search(PHONE, session("HR", null))).toContain(empId);
+      expect(await search(PHONE, session("EMPLOYEE", null))).not.toContain(empId);
+      // 逐位前缀试探（攻击者实际用的手法）同样问不出人
+      expect(await search(PHONE.slice(0, 7), session("EMPLOYEE", null))).not.toContain(empId);
+    });
+
+    it("收掉手机号谓词不影响按姓名/部门搜索", async () => {
+      expect(await search(empName, session("EMPLOYEE", null))).toContain(empId);
+    });
+  });
 });

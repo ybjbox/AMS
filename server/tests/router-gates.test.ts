@@ -16,18 +16,22 @@ import { createAccount, createSession, deleteAccount, revokeSession } from "../a
 import { auditRouter } from "../auditRouter.ts";
 import { systemRouter } from "../systemRouter.ts";
 import { statsRouter } from "../statsRouter.ts";
+import { authRouter } from "../authRouter.ts";
+import { approvalsRouter } from "../approvalsRouter.ts";
+import { backupRopter } from "../backupRopter.ts";
 import { writeAuditLog } from "../auditDb.ts";
 
 const PW = "Gates#Test2026-aa";
 const USERS = {
   admin: "qa-gates-admin",
+  admin2: "qa-gates-admin2",
   hr: "qa-gates-hr",
   emp: "qa-gates-emp",
 } as const;
 
 let server: Server;
 let base = "";
-const tokens: Record<keyof typeof USERS, string> = { admin: "", hr: "", emp: "" };
+const tokens: Record<keyof typeof USERS, string> = { admin: "", admin2: "", hr: "", emp: "" };
 
 async function call(path: string, who: keyof typeof USERS | "anon", method = "GET") {
   const res = await fetch(base + path, {
@@ -50,15 +54,20 @@ beforeAll(async () => {
   app.use("/api/audit-logs", auditRouter);
   app.use("/api/system", systemRouter);
   app.use("/api/stats", statsRouter);
+  app.use("/api/auth", authRouter);
+  app.use("/api/approvals", approvalsRouter);
+  app.use("/api/backup", backupRopter);
   server = await new Promise<Server>((r) => {
     const s = app.listen(0, "127.0.0.1", () => r(s));
   });
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`;
 
   createAccount({ username: USERS.admin, password: PW, systemRole: "SUPER_ADMIN" } as never);
+  createAccount({ username: USERS.admin2, password: PW, systemRole: "ADMIN" } as never);
   createAccount({ username: USERS.hr, password: PW, systemRole: "HR" } as never);
   createAccount({ username: USERS.emp, password: PW, systemRole: "EMPLOYEE" } as never);
   tokens.admin = createSession(USERS.admin, "127.0.0.1", "vitest").token;
+  tokens.admin2 = createSession(USERS.admin2, "127.0.0.1", "vitest").token;
   tokens.hr = createSession(USERS.hr, "127.0.0.1", "vitest").token;
   tokens.emp = createSession(USERS.emp, "127.0.0.1", "vitest").token;
   writeAuditLog({ level: "INFO", action: "qa.batchH.seed", actor: USERS.admin, actorRole: "SUPER_ADMIN", detail: "regression seed" });
@@ -142,5 +151,45 @@ describe("看板聚合：员工可读，但只能拿到聚合", () => {
 
   it("未登录仍然 401（聚合也不是公开信息）", async () => {
     expect((await call("/stats/workforce", "anon")).status).toBe(401);
+  });
+});
+
+describe("批次 1：凭据出口与员工自助面", () => {
+  // 备份文件是整库副本：passwordHash、AI apiKey、SMTP 凭据、企微 corpSecret 全在里面。
+  // 普通 ADMIN 在任何其他接口上都只能读到这些字段的掩码值，所以一次性打包带走只给超管。
+  it("下载备份：ADMIN 也 403，只有超管能走到「文件不存在」", async () => {
+    expect((await call("/backup/export/nope.db", "emp")).status).toBe(403);
+    expect((await call("/backup/export/nope.db", "hr")).status).toBe(403);
+    expect((await call("/backup/export/nope.db", "admin2")).status).toBe(403);
+    // 404 说明网关放行了，只有文件名这一步拦住了它
+    expect((await call("/backup/export/nope.db", "admin")).status).toBe(404);
+  });
+
+  it("含凭据的出口不再接受 ?access_token=（token 不进 URL/历史/代理日志）", async () => {
+    const superToken = tokens.admin;
+    const viaQuery = await fetch(`${base}/backup/export/nope.db?access_token=${superToken}`);
+    expect(viaQuery.status).toBe(401);
+    // 同一份凭据走请求头照常可用（证明拦的是暴露面，不是功能）
+    const viaHeader = await fetch(`${base}/backup/export/nope.db`, {
+      headers: { Authorization: `Bearer ${superToken}` },
+    });
+    expect(viaHeader.status).toBe(404);
+  });
+
+  // 这两条此前落在 DEFAULT_POLICY.write = HR 上：界面把入口摆给了员工，点了必 403。
+  it("员工可以改自己的资料（PUT /auth/profile 不再要 HR）", async () => {
+    const ok = await fetch(`${base}/auth/profile`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${tokens.emp}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ displayName: "网关测试员工", email: "" }),
+    });
+    expect(ok.status).toBe(200);
+    expect(JSON.stringify(await ok.json())).toContain("网关测试员工");
+  });
+
+  it("员工可以试着自己的申请撤回（网关不再先拦 403）", async () => {
+    const res = await call("/approvals/qa-does-not-exist/withdraw", "emp", "PUT");
+    expect(res.status).toBe(404);
+    expect(JSON.stringify(res.json)).not.toContain("权限");
   });
 });

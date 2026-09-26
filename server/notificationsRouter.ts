@@ -14,7 +14,8 @@ import {
   clearNotifications,
 } from './notificationsDb.ts';
 import { ROLE_LEVEL, type SystemRole } from './authDb.ts';
-import { validateBody, notificationCreateSchema, errMessage } from './validation.ts';
+import { validateBody, notificationCreateSchema } from './validation.ts';
+import { clientErrorResponse } from './errorHandler.ts';
 
 export const notificationsRouter = Router();
 notificationsRouter.use(json());
@@ -42,7 +43,7 @@ notificationsRouter.post('/', validateBody(notificationCreateSchema), (req, res)
     });
     res.status(201).json(notification);
   } catch (error) {
-    res.status(400).json({ error: errMessage(error) });
+    clientErrorResponse(res, error);
   }
 });
 

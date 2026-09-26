@@ -18,6 +18,21 @@ export function formatLocalDate(d: Date = new Date()): string {
   return `${y}-${m}-${day}`;
 }
 
+/**
+ * Date → 本地 `YYYY-MM-DD HH:MM:SS`，与 SQLite `datetime('now','localtime')` **逐字符同形**。
+ *
+ * 必须由 JS 生成时间戳的场合（同一事务里多个写入要共享同一个"现在"）只能走这里：
+ * 之前 approvals/续签用 `new Date().toISOString()` 往同一列里写 `...T...Z`，
+ * 而列默认值是 `datetime('now','localtime')`（空格分隔、无 Z），一列两种格式 ——
+ * `ORDER BY createdAt` 是**文本序**，'T'(0x54) > ' '(0x20)，同一天内两种来源的行会串位。
+ */
+export function formatLocalDateTime(d: Date = new Date()): string {
+  const time = [d.getHours(), d.getMinutes(), d.getSeconds()]
+    .map((n) => String(n).padStart(2, "0"))
+    .join(":");
+  return `${formatLocalDate(d)} ${time}`;
+}
+
 /** 本地今天（YYYY-MM-DD） */
 export function localToday(): string {
   return formatLocalDate(new Date());
@@ -38,8 +53,21 @@ export function localDateOffset(days: number, from: Date = new Date()): string {
  * 两端都归到本地日历日之后再除以 86400000，结果与"看日历数天数"一致。
  */
 export function daysUntilLocal(dateStr: string | null | undefined, from: Date = new Date()): number {
+  return daysUntilLocalOrNull(dateStr, from) ?? 0;
+}
+
+/**
+ * 同 `daysUntilLocal`，但**日期缺失/格式不对时返回 null** 而不是 0。
+ *
+ * 「还剩 0 天 = 今天到期」和「没有日期」是两回事：提醒扫描必须能区分二者，
+ * 否则一条空 contractExpiry 就会给所有人发出「今天到期」。
+ */
+export function daysUntilLocalOrNull(
+  dateStr: string | null | undefined,
+  from: Date = new Date()
+): number | null {
   const raw = String(dateStr ?? "").trim().slice(0, 10);
-  if (!/^\d{4}-\d{2}-\d{2}$/u.test(raw)) return 0;
+  if (!/^\d{4}-\d{2}-\d{2}$/u.test(raw)) return null;
   const [y, m, d] = raw.split("-").map(Number);
   const target = Date.UTC(y, m - 1, d);
   const today = Date.UTC(from.getFullYear(), from.getMonth(), from.getDate());

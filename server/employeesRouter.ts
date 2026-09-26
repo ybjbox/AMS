@@ -68,7 +68,9 @@ export function redactPii(u: EmployeeView): EmployeeView {
 /** GET /api/users — 员工列表（支持 ?page&pageSize&keyword 服务端分页） */
 employeesRouter.get("/", (req, res) => {
   try {
-    const result = listEmployees(req.query);
+    // 搜索列必须与响应裁剪列同源：否则 keyword 能在未裁剪的 phone 上做 LIKE，
+    // 逐位前缀试探就把 maskPhone 绕过去了（见 listEmployees 的 canSearchPhone）。
+    const result = listEmployees(req.query, { canSearchPhone: canViewPii(req.auth) });
     if (canViewPii(req.auth)) return res.json(result);
     res.json(
       Array.isArray(result)

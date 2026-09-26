@@ -1,3 +1,4 @@
+import { acct } from '../runScoped';
 import { test, expect } from '@playwright/test';
 import { resolveAdminPassword } from '../adminCredentials';
 
@@ -11,6 +12,9 @@ import { resolveAdminPassword } from '../adminCredentials';
 
 const ADMIN_PASSWORD = resolveAdminPassword();
 const PW_1 = 'E2e-P2#2026a';
+const MLV_ACCOUNT = acct('e2e-mlv');
+const HR2_ACCOUNT = acct('e2e-hr2');
+const OT_ACCOUNT = acct('e2e-ot');
 const PW_2 = 'E2e-P2#2026b';
 
 async function login(
@@ -86,12 +90,12 @@ test.describe.serial('P2 功能闭环', () => {
     const auth = { Authorization: `Bearer ${adminToken}` };
     // 员工（提交 ≥3 天请假）+ HR 账号（尝试初审）
     const emp = await createLinkedEmployee(request, adminToken, {
-      account: 'e2e-mlv',
+      account: MLV_ACCOUNT,
       name: 'E2E多级员工',
       idCard: '110101199705055555',
     });
     const hr = await createLinkedEmployee(request, adminToken, {
-      account: 'e2e-hr2',
+      account: HR2_ACCOUNT,
       name: 'E2E多级HR',
       idCard: '110101199706066666',
       systemRole: 'HR',
@@ -143,8 +147,8 @@ test.describe.serial('P2 功能闭环', () => {
     });
 
     // 清理账号与员工
-    await request.delete('/api/auth/accounts/e2e-mlv', { headers: auth });
-    await request.delete('/api/auth/accounts/e2e-hr2', { headers: auth });
+    await request.delete(`/api/auth/accounts/${MLV_ACCOUNT}`, { headers: auth });
+    await request.delete(`/api/auth/accounts/${HR2_ACCOUNT}`, { headers: auth });
     await request.delete(`/api/users/${emp.employeeId}`, { headers: auth });
     await request.delete(`/api/users/${hr.employeeId}`, { headers: auth });
   });
@@ -152,7 +156,7 @@ test.describe.serial('P2 功能闭环', () => {
   test('加班闭环：审批计入调休台账 + 调休余额校验', async ({ request }) => {
     const auth = { Authorization: `Bearer ${adminToken}` };
     const emp = await createLinkedEmployee(request, adminToken, {
-      account: 'e2e-ot',
+      account: OT_ACCOUNT,
       name: 'E2E加班员工',
       idCard: '110101199707077777',
     });
@@ -210,7 +214,7 @@ test.describe.serial('P2 功能闭环', () => {
     expect(otBad.status(), '超 24h 加班应 400').toBe(400);
 
     // 清理
-    await request.delete('/api/auth/accounts/e2e-ot', { headers: auth });
+    await request.delete(`/api/auth/accounts/${OT_ACCOUNT}`, { headers: auth });
     await request.delete(`/api/users/${emp.employeeId}`, { headers: auth });
   });
 

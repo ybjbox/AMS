@@ -19,14 +19,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="/brand-mark.png" />
-    <!-- 打印字体（思源宋体）：非阻塞加载。该字体仅用于台卡/排座打印排版，
-         通过 media=print + onload 切换避免阻塞首屏渲染；加载前后均不影响屏幕阅读，
-         打印时若无网络字体则回退系统宋体（SimSun / Songti SC）。 -->
+    <!-- 打印字体（思源宋体）：只用于台卡/排座的打印排版，因此挂在 media="print" 上。
+         这里原本还带一个 onload="this.media='all'" 做非阻塞切换 —— 批次 5 把 script-src
+         收成 nonce 之后，内联事件处理器会被 CSP 直接挡掉（每次进首页一条 console 违规，
+         而页面照常起、冒烟测试也照常绿，所以是被 e2e 的 CSP 断言抓出来的）。
+         去掉它而不是给 CSP 开 'unsafe-hashes' 例外：字体留在 print 媒体下本就够用，
+         为一个非必要的优化放开内联执行不值得。 -->
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&display=swap"
       media="print"
-      onload="this.media='all'"
     />
     <noscript>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&display=swap" />

@@ -14,17 +14,31 @@ import { type DbRow, asString } from "./sqliteUtil.ts";
 import type { ShiftCandidate } from "./shiftMatch.ts";
 import { formatWorkdays } from "./shiftMatch.ts";
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS dept_shift_rules (
+/**
+ * 列定义唯一在此（外键由 migrate 补，理由同 EMPLOYEE_COLUMNS：兜底建表发生在模块加载期，
+ * 那一刻 departments 可能还不存在，带着 FK 的表会让本模块的写入直接抛错）。
+ *
+ * departmentId 必须有外键：规则是指向部门的「工作时段」，部门删掉之后它就无人可匹配，
+ * 而 listRules 会给出 departmentName='' 的行；更要紧的是 resolveRulesForDepartment 按 id 查，
+ * 幽灵规则既不会被命中也不会被清理，只在表里越积越多。
+ */
+export const DEPT_SHIFT_RULE_COLUMNS = `
     id           TEXT PRIMARY KEY,
     departmentId TEXT NOT NULL,
     name         TEXT NOT NULL,
     startTime    TEXT NOT NULL,
     endTime      TEXT NOT NULL,
     workdays     TEXT NOT NULL DEFAULT '1,2,3,4,5'
-  );
-  CREATE INDEX IF NOT EXISTS idx_dept_shift_rules_department ON dept_shift_rules(departmentId);
-`);
+`;
+
+/** 幂等建表；migrate 的 v14 重建会先 rename 再调它把表与索引建回来。 */
+export function ensureShiftRulesTable(): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS dept_shift_rules (${DEPT_SHIFT_RULE_COLUMNS});
+    CREATE INDEX IF NOT EXISTS idx_dept_shift_rules_department ON dept_shift_rules(departmentId);
+  `);
+}
+ensureShiftRulesTable();
 
 export interface DeptShiftRule {
   id: string;

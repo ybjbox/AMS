@@ -7,7 +7,7 @@
  * - 权限：写操作走默认写策略（HR+）；历史读取默认读策略（EMPLOYEE+）
  */
 import { db } from "./db.ts";
-import { daysUntilLocal } from "./localDate.ts";
+import { formatLocalDateTime } from "./localDate.ts";
 import { type DbRow, asString, asNumber } from "./sqliteUtil.ts";
 import { randomUUID } from "node:crypto";
 
@@ -77,20 +77,18 @@ export function renewContract(
   renewedBy: string
 ): ContractRenewalRow {
   const id = randomUUID();
-  const now = new Date().toISOString();
-  const daysToExpiry = daysUntilLocal(input.contractExpiry);
+  const now = formatLocalDateTime();
 
   db.exec("BEGIN");
   try {
     db.prepare(
       `UPDATE employees
-          SET contractYears = ?, contractSignDate = ?, contractExpiry = ?, daysToExpiry = ?, updatedAt = ?
+          SET contractYears = ?, contractSignDate = ?, contractExpiry = ?, updatedAt = ?
         WHERE id = ?`
     ).run(
       input.contractYears,
       input.contractSignDate,
       input.contractExpiry,
-      Number.isFinite(daysToExpiry) ? daysToExpiry : 0,
       now,
       employee.id
     );

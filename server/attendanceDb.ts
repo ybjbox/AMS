@@ -9,7 +9,7 @@ import { db, transact } from "./db.ts";
 import { getSetting, setSetting } from "./settingsDb.ts";
 import crypto from "crypto";
 import { resolvePaging, toListResult, ListResult } from "./listQuery.ts";
-import { type DbRow, asString, asNumber, asNullableNumber } from "./sqliteUtil.ts";
+import { type DbRow, asString, asNumber, asNullableNumber, likeClause, likeContains } from "./sqliteUtil.ts";
 import { resolveRulesForDepartment, toCandidates } from "./shiftRulesDb.ts";
 import { candidateFromShift, resolveInstances, type ShiftCandidate } from "./shiftMatch.ts";
 
@@ -154,8 +154,29 @@ export function updateShift(id: string, input: { name?: string; startTime?: stri
   return row ? rowToShift(row) : null;
 }
 
-export function deleteShift(id: string) {
-  return db.prepare("DELETE FROM shifts WHERE id = ?").run(id).changes > 0;
+/**
+ * 删除班次。schedules.shiftIds 是一段 JSON 文本，SQLite 无法对它建外键，
+ * 所以这里手工把该 id 从所有排班里摘掉 —— 否则排班会留下指向已删班次的幽灵 id：
+ * 读侧一律是 `shiftIds.map(id => shiftMap.get(id)).find(Boolean)`，
+ * 于是被删的那个 id 会让「当天实际班次」静默变成同一条里的下一个，考勤结果错得看不见。
+ */
+export function deleteShift(id: string): boolean {
+  return transact(() => {
+    const removed = db.prepare("DELETE FROM shifts WHERE id = ?").run(id).changes > 0;
+    if (!removed) return false;
+    let stripped = 0;
+    for (const row of db.prepare("SELECT employeeId, shiftIds, version FROM schedules").all() as DbRow[]) {
+      const ids = parseShiftIds(asString(row.shiftIds));
+      if (!ids.includes(id)) continue;
+      const next = ids.filter((x) => x !== id);
+      db.prepare(
+        `UPDATE schedules SET shiftIds = ?, version = version + 1 WHERE employeeId = ?`
+      ).run(JSON.stringify(next), asString(row.employeeId));
+      stripped++;
+    }
+    if (stripped > 0) console.log(`[attendance] 删除班次 ${id}：已从 ${stripped} 条排班中摘掉该班次`);
+    return true;
+  });
 }
 
 // ---------- Schedules ----------
@@ -232,7 +253,9 @@ export class PunchFormatError extends Error {
  * 存了 2026-9-21 就永远查不到， yet 它在库里看着完全正常。
  */
 export function normalizePunchDate(value: unknown): string {
-  const raw = String(value ?? "").trim();
+  // 原文回显进 400 响应体，必须先截断：这条路由的 body 上限是 20MB，
+  // 不截断的话一个坏日期就能让服务端把上百万字原样吐回调用方。
+  const raw = String(value ?? "").trim().slice(0, 40);
   const m = /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/u.exec(raw);
   if (!m) throw new PunchFormatError(`打卡日期格式不正确（需要 YYYY-MM-DD）：${raw || "空值"}`);
   const [, y, mo, d] = m;
@@ -248,7 +271,7 @@ export function normalizePunchDate(value: unknown): string {
  * "9:00" 与 "09:00" 会被认成两个不同分钟，同一分钟就会落两条卡（月报与缺卡判定跟着错）。
  */
 export function normalizePunchTime(value: unknown): string {
-  const raw = String(value ?? "").trim();
+  const raw = String(value ?? "").trim().slice(0, 40); // 同 normalizePunchDate：坏值会被原样回显
   const m = /^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/u.exec(raw);
   if (!m) throw new PunchFormatError(`打卡时间格式不正确（需要 HH:mm 或 HH:mm:ss）：${raw || "空值"}`);
   const [, h, mi, s] = m;
@@ -319,8 +342,8 @@ export function listRecords(query: Record<string, unknown> = {}): PunchRecordRow
     params.push(query.employeeId);
   }
   if (typeof query.employeeName === "string" && query.employeeName) {
-    clauses.push("employeeName LIKE ?");
-    params.push(`%${query.employeeName}%`);
+    clauses.push(likeClause("employeeName"));
+    params.push(likeContains(query.employeeName));
   }
   if (typeof query.dateFrom === "string" && query.dateFrom) {
     clauses.push("date >= ?");
@@ -347,17 +370,21 @@ export function listRecords(query: Record<string, unknown> = {}): PunchRecordRow
 }
 
 /**
- * 整表替换（Excel 导入语义）：清空后整体写入。保留该语义（导入即全量覆盖），
- * 但用事务包裹，避免中途失败留下半截数据。
+ * 批量写入（Excel 导入语义）：按 (employeeId, date, time) 幂等 upsert，
+ * **只加不减** —— 未出现在本次清单里的记录保持原样。
+ *
+ * 这里原先是 `DELETE FROM punch_records` 再整体插入。那个语义配合默认写策略（HR+）
+ * 等于「任何 HR 提交一行就清空全库打卡记录」，而整表清空本有 DELETE /records
+ * （仅 ADMIN，且界面单独确认）这条带门槛的路。破坏性动作必须走它自己的门，
+ * 不能由导入语义顺带触发 —— 与 replaceSchedules 的 upsert-only 口径一致。
  */
-export function replaceRecords(records: { id?: string; employeeId: string; employeeName: string; date: string; time: string }[]): PunchRecordRow[] | ListResult<PunchRecordRow> {
+export function upsertRecords(records: { id?: string; employeeId: string; employeeName: string; date: string; time: string }[]): PunchRecordRow[] | ListResult<PunchRecordRow> {
   const insert = db.prepare(
     `INSERT INTO punch_records (id, employeeId, employeeName, date, time, version) VALUES (?, ?, ?, ?, ?, 1)
      ON CONFLICT(employeeId, date, time) DO NOTHING`
   );
   db.exec("BEGIN");
   try {
-    db.exec("DELETE FROM punch_records");
     for (const r of records || []) {
       insert.run(
         r.id || crypto.randomUUID(),
@@ -454,7 +481,8 @@ export function clearRecords() {
 /**
  * 外部数据源增量写入（企业微信同步通道）。
  *
- * 与 replaceRecords 的「整表替换」语义相反：这里只加、不改、不删。
+ * 与 upsertRecords 的区别：那条服务于 Excel 导入（同一分钟已有行则跳过），
+ * 这里只加、不改、不删。
  * (employeeId,date,time) 唯一索引命中即跳过，所以同一区间重复同步是幂等的，
  * 而 HR 手工补的卡与 Excel 导入的行都不会被同步冲掉。
  */

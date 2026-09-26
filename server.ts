@@ -1,4 +1,5 @@
 import "./server/env.ts";
+import crypto from "node:crypto";
 import express from "express";
 import compression from "compression";
 import fs from "fs";
@@ -9,7 +10,8 @@ import { EXCEL_THEMES } from "./server/themes.ts";
 import { runMigrations } from "./server/migrate.ts";
 import { db, optimizeDb } from "./server/db.ts";
 import { accessLog, installProcessGuards } from "./server/accessLog.ts";
-import { authGate } from "./server/authMiddleware.ts";
+import { authGate, pruneSecurityEvents } from "./server/authMiddleware.ts";
+import { probeHealth } from "./server/health.ts";
 import { auditGate } from "./server/auditMiddleware.ts";
 import { errorHandler } from "./server/errorHandler.ts";
 import { getThemes, setThemes } from "./server/settingsDb.ts";
@@ -26,6 +28,7 @@ import { statsRouter } from "./server/statsRouter.ts";
 import { runTemplateSandbox } from "./server/scriptSandbox.ts";
 import { applyTemplateOps } from "./server/excelReplay.ts";
 import { startBackupScheduler } from "./server/backupDb.ts";
+import { otherInstances, startInstanceHeartbeat, stopInstanceHeartbeat } from "./server/instanceLock.ts";
 import { remindersRouter } from "./server/remindersRouter.ts";
 import { startReminderScheduler } from "./server/remindersDb.ts";
 import { wecomRouter } from "./server/wecomRouter.ts";
@@ -54,6 +57,7 @@ import { noticeRouter } from "./server/wechatNoticeRouter.ts";
 import { businessFormRouter } from "./server/businessFormRouter.ts";
 import { savedItemsRouter } from "./server/savedItemsRouter.ts";
 import { brandingRouter } from "./server/brandingRouter.ts";
+import { validateBody, exportEmployeesSchema } from "./server/validation.ts";
 
 // In-memory theme storage (initialized with default themes, startup 时从 settings 回填)
 let dynamicThemes: Record<string, Record<string, unknown>> = { ...EXCEL_THEMES };
@@ -99,13 +103,20 @@ async function startServer() {
     // CSP 说明：
     // - style-src 放行 fonts.googleapis.com：打印字体（仅打印场景）
     // - connect-src 开发模式放行 ws:（Vite HMR）；生产模式收紧为 self
+    // - script-src：**生产模式下用一次性 nonce，不再放行 'unsafe-inline'**（批次 5）。
+    //   'unsafe-inline' 与 nonce 同时存在时浏览器会忽略 unsafe-inline，所以"注入任意脚本"
+    //   从"能跑"变成"必须有 nonce"。整份 index.html 里只有一个内联 <script>（主题启动脚本，
+    //   首屏前上色），由下面的 sendSpa 逐个补 nonce；开发模式仍放行内联（Vite HMR 需要）。
     const isDev = process.env.NODE_ENV !== "production";
+    const cspNonce = crypto.randomBytes(12).toString("base64");
+    (res as import("express").Response & { locals: Record<string, unknown> }).locals.cspNonce = cspNonce;
     const connectSrc = isDev ? "connect-src 'self' ws: wss:" : "connect-src 'self'";
+    const scriptSrc = isDev ? "script-src 'self' 'unsafe-inline'" : `script-src 'self' 'nonce-${cspNonce}'`;
     res.setHeader(
       "Content-Security-Policy",
       [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline'",
+        scriptSrc,
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "img-src 'self' data: blob:",
         "font-src 'self' data: https://fonts.gstatic.com",
@@ -118,6 +129,14 @@ async function startServer() {
   const PORT = Number(process.env.PORT) || 3000;
   // 安全默认只绑本机回环（AUDIT P0-2）；Docker/局域网部署显式设 HOST=0.0.0.0
   const HOST = process.env.HOST || "127.0.0.1";
+
+  // 反向代理后面才需要设 TRUST_PROXY（跳数，或 true=信任所有）。不设时 Express 一律不读
+  // X-Forwarded-For，clientIp() 因此永远拿到 socket 地址 —— 按旧文档配了 Nginx 之后，
+  // 审计日志与登录暴破限流看到的会全是代理那一个 IP。
+  const trustProxy = process.env.TRUST_PROXY;
+  if (trustProxy && trustProxy !== "false") {
+    app.set("trust proxy", trustProxy === "true" ? true : Number(trustProxy) || 1);
+  }
 
   // ===== 全栈后端接线（调试环境搭建时补齐，2026-09-14 安全对齐批次完善）=====
   // 1) 幂等数据库迁移（按 user_version 判重），必须先于业务模块使用数据库执行。
@@ -165,22 +184,10 @@ async function startServer() {
 
   // API routes
   app.get("/api/health", (req, res) => {
-    // 增强健康检查：供负载均衡/监控探针与运维排障使用。
-    // 注意：保持轻量（不做重量级查询），且不泄露敏感信息。
-    const mem = process.memoryUsage();
-    let dbOk = true;
-    try {
-      db.prepare("SELECT 1").get();
-    } catch {
-      dbOk = false;
-    }
-    res.json({
-      status: dbOk ? "ok" : "degraded",
-      db: dbOk ? "up" : "down",
-      uptimeSec: Math.round(process.uptime()),
-      memMB: Math.round(mem.heapUsed / 1024 / 1024),
-      version: APP_VERSION,
-    });
+    // 状态码本身要能反映"还能不能服务"：库打不开时返回 503，容器探活才会真的失败。
+    // 判定与响应体收敛在 server/health.ts，理由见那个文件的头注释。
+    const { code, body } = probeHealth(APP_VERSION);
+    res.status(code).json(body);
   });
 
   // Theme management APIs（读写穿透 settings 表，重启不丢）
@@ -238,7 +245,7 @@ async function startServer() {
     }
   });
 
-  app.post("/api/export/employees", express.json(), async (req, res) => {
+  app.post("/api/export/employees", express.json(), validateBody(exportEmployeesSchema), async (req, res) => {
     try {
       const { data, config } = req.body;
       const { title, columns, includeResigned, themeId = 'default', mode = 'theme', templateName } = config;
@@ -384,8 +391,29 @@ async function startServer() {
     });
     // 静态资源缓存策略：Vite 构建产物带内容哈希（index-XXXX.js），可长缓存 immutable；
     // 根路径落盘的其它静态文件（如未来 public/ 资源）用保守的 1 天缓存。
+    // index:false —— index.html 只由下面的 sendSpa 出（它要往里补 CSP nonce）；
+    // 否则直接命中 /index.html 的那条响应没有 nonce，内联的主题脚本会被 CSP 挡掉。
+    const sendSpa = (req: express.Request, res: express.Response) => {
+      const indexPath = path.join(distPath, "index.html");
+      let html: string;
+      try {
+        html = fs.readFileSync(indexPath, "utf8");
+      } catch (e) {
+        res.status(500).json({ error: "前端产物不可用（先 npm run build）" });
+        console.error("[static] 读取 index.html 失败：", e);
+        return;
+      }
+      const nonce = String(res.locals.cspNonce ?? "");
+      res.type("html").setHeader("Cache-Control", "no-cache");
+      // 前瞻 (?=[\s>]) 而不是 (\s)：主题启动脚本写成 `<script>` 紧跟换行，
+      // 只匹配 `<script ` 会漏掉它 —— 而漏掉的后果不是报错，是这段脚本被 CSP 静默拦掉、
+      // 主题退回默认值，页面照样起得来，所以 e2e 全绿也发现不了（实测踩过）。
+      res.send(nonce ? html.replace(/<script(?=[\s>])/g, `<script nonce="${nonce}"`) : html);
+    };
+    app.get(["/", "/index.html"], sendSpa);
     app.use(
       express.static(distPath, {
+        index: false,
         setHeaders(res, filePath) {
           if (/[/\\]assets[/\\]/.test(filePath)) {
             res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
@@ -395,11 +423,7 @@ async function startServer() {
         },
       })
     );
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'), {
-        headers: { 'Cache-Control': 'no-cache' },
-      });
-    });
+    app.get('*', sendSpa);
   }
 
   // 统一错误兜底（AUDIT P3-1）：必须注册在所有路由/中间件之后，
@@ -409,6 +433,17 @@ async function startServer() {
   app.listen(PORT, HOST, () => {
     console.log(`Server running on http://localhost:${PORT}`);
   installProcessGuards();
+    // 数据目录互斥登记：不禁止多实例（:3000 开发与 :3001 验证共用是常态），
+    // 但必须让"恢复备份会让另一台实例的写入静默丢失"这件事在日志里看得见。
+    startInstanceHeartbeat(PORT, HOST);
+    const others = otherInstances();
+    if (others.length > 0) {
+      console.warn(
+        `[instance] 同一个数据目录上还有 ${others.length} 个实例在跑（端口 ${others
+          .map((o) => o.port)
+          .join("、")}）。恢复备份会被这些实例拒 409：请先停掉它们，否则它们的写入会落到已被替换的旧库文件上。`
+      );
+    }
     if (HOST === "0.0.0.0") {
       console.warn(
         "[security] HOST=0.0.0.0：服务正暴露给所有网络接口，请确认这是受信任的部署环境"
@@ -427,15 +462,40 @@ async function startServer() {
   // 导入/同步任务台账对账：上一代进程留下的 running 行必须判中断，否则前端会一直轮询；
   // 顺带按保留期清理终态行（这张表只增不删的话，定时同步每天都要留几条）。
   startImportJobSweeper();
-  pruneAuditLogs();
+  // 保留期清理：审计日志 + 安全事件。
+  // 原来 pruneAuditLogs() 只在启动时跑一次 —— 长期不重启的容器里"180 天保留"形同虚设，
+  // 而 security_events 压根没有删除路径（每个失效 token 的请求都要留一行）。
+  const sweepRetention = () => {
+    try {
+      pruneAuditLogs();
+      pruneSecurityEvents();
+    } catch (e) {
+      console.warn("[retention] 保留期清理失败：", e);
+    }
+  };
+  sweepRetention();
+  const retentionTimer = setInterval(sweepRetention, 24 * 60 * 60 * 1000);
+  if (typeof retentionTimer.unref === "function") retentionTimer.unref();
   startOrphanUploadScan();
 
   // PRAGMA optimize（sqlite-best-practices）：定期更新查询规划器统计。
   // 轻量（无变更时 no-op），每小时一次足够；退出时再跑一次收尾。
   const optimizeTimer = setInterval(optimizeDb, 60 * 60 * 1000);
   if (typeof optimizeTimer.unref === "function") optimizeTimer.unref();
-  process.on("SIGINT", () => { optimizeDb(); process.exit(0); });
-  process.on("SIGTERM", () => { optimizeDb(); process.exit(0); });
+  const shutdown = () => {
+    stopInstanceHeartbeat();
+    try {
+      // 退出前把 WAL 落回主库：docker stop 只有 10 秒窗口，留着几 MB WAL 意味着
+      // 下一次启动要先重放，而备份走的是 VACUUM INTO（只读主库）——不该把已提交数据留在外面
+      db.exec("PRAGMA wal_checkpoint(TRUNCATE)");
+    } catch {
+      /* 库已经不可用时不该挡住退出 */
+    }
+    optimizeDb();
+    process.exit(0);
+  };
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
 }
 
 startServer();

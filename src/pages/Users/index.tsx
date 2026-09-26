@@ -259,7 +259,7 @@ export default function Users() {
         onClose={() => setRenewUser(null)}
         user={renewUser}
         onRenewed={() => {
-          void fetchUsers();
+          void fetchUsers({ force: true });
         }}
       />
       <UserFormModal
@@ -277,7 +277,8 @@ export default function Users() {
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
         onImported={() => {
-          void fetchUsers();
+          // 批量写入后必须强制重拉：非 force 的 fetchUsers 在已初始化时是空操作
+          void fetchUsers({ force: true });
         }}
       />
       {/* ── 打印模板（hidden，不参与布局） ── */}

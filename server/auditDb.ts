@@ -22,7 +22,7 @@
  * BEFORE / AFTER 在 SQLite 里是触发器保留字，避免每次查询都要加引号。
  */
 import { db, onDbReload } from "./db.ts";
-import { type DbRow, asString, asNumber } from "./sqliteUtil.ts";
+import { type DbRow, asString, asNumber, likeClause, likeContains } from "./sqliteUtil.ts";
 
 // ---------------------------------------------------------------- 表结构
 
@@ -299,8 +299,8 @@ function buildWhere(query: AuditQuery): { sql: string; params: Array<string | nu
     params.push(query.result);
   }
   if (query.actor) {
-    clauses.push("actor LIKE ?");
-    params.push(`%${query.actor}%`);
+    clauses.push(likeClause("actor"));
+    params.push(likeContains(query.actor));
   }
   if (query.action) {
     clauses.push("action = ?");
@@ -316,10 +316,18 @@ function buildWhere(query: AuditQuery): { sql: string; params: Array<string | nu
     params.push(/^\d{4}-\d{2}-\d{2}$/.test(query.to) ? `${query.to} 23:59:59` : query.to);
   }
   if (query.q) {
+    // 六个列各自带 ESCAPE（见 likeClause）：这里少写一个就等于没转义
     clauses.push(
-      "(action LIKE ? OR actor LIKE ? OR targetName LIKE ? OR targetId LIKE ? OR detail LIKE ? OR path LIKE ?)"
+      `(${[
+        likeClause("action"),
+        likeClause("actor"),
+        likeClause("targetName"),
+        likeClause("targetId"),
+        likeClause("detail"),
+        likeClause("path"),
+      ].join(" OR ")})`
     );
-    const like = `%${query.q}%`;
+    const like = likeContains(query.q);
     params.push(like, like, like, like, like, like);
   }
 

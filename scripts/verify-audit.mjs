@@ -11,13 +11,14 @@
  *   7. 非管理员读不到审计日志；任何删除入口被拒（405，只增不删）
  *   8. 过滤 / 分页 / facets / CSV 导出可用
  *
- * 运行前置：dev server 已在 127.0.0.1:3000 启动。
- * 脚本会创建并删除 AUDIT_TEMP_* 临时数据，结束时把 admin 还原为种子态。
+ * 运行：node scripts/verify-audit.mjs（也包含在 npm run test:server 里）
+ * 自起临时 DATA_DIR + 随机端口的私有实例：审计看的是**真库里的行**，
+ * 因此直接只读打开那个临时 DATA_DIR/ams.db 做表结构校验；创建的临时数据随目录消失。
  */
-import { readFileSync } from "node:fs";
+import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import { bootServer, summarize } from "./lib/liveServer.mjs";
 
-const BASE = "http://127.0.0.1:3000";
 let pass = 0;
 let fail = 0;
 const failures = [];
@@ -57,36 +58,18 @@ async function recentLogs(params = "limit=100") {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ---------------------------------------------------------------- 鉴权
-const pwMatch = readFileSync("data/ADMIN_CREDENTIALS.txt", "utf8").match(/密码:\s*(.+)/);
-const adminPw = pwMatch ? pwMatch[1].trim() : "";
-const loginRes = await fetch(`${BASE}/api/auth/login`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ username: "admin", password: adminPw }),
-});
-const loginJson = await loginRes.json();
-TOKEN = loginJson.token;
-ok("管理员登录成功（获取 Bearer token）", !!TOKEN, `status ${loginRes.status}`);
-
-if (loginJson.user?.mustChangePassword) {
-  const ch = await fetch(`${BASE}/api/auth/change-password`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
-    body: JSON.stringify({ currentPassword: adminPw, newPassword: "AuditVerifyTemp123!" }),
-  });
-  const chJson = await ch.json();
-  if (chJson.token) TOKEN = chJson.token;
-  ok("种子态改密以获得可用 token", !!TOKEN && ch.status === 200, `status ${ch.status}`);
-}
+const { base: BASE, token: bootToken, dataDir, stop } = await bootServer({ tag: "audit" });
+TOKEN = bootToken;
+ok("管理员登录成功（获取 Bearer token）", !!TOKEN);
 
 // ---------------------------------------------------------------- 1. 表结构
 console.log("\n=== 1. audit_logs 表结构 ===");
 {
   let db;
   try {
-    db = new DatabaseSync("data/ams.db", { readOnly: true });
+    db = new DatabaseSync(path.join(dataDir, "ams.db"), { readOnly: true });
   } catch (e) {
-    ok("以只读方式打开 data/ams.db", false, String(e));
+    ok("以只读方式打开临时库", false, String(e));
   }
   if (db) {
     const cols = db.prepare("PRAGMA table_info(audit_logs)").all().map((c) => c.name);
@@ -319,20 +302,8 @@ console.log("\n=== 9. 删除动作留痕 ===");
   ok("删除记录带对象名称便于检索", l?.targetName === "AUDIT_TEMP_张三", `targetName=${l?.targetName}`);
 }
 
-// 还原 admin 为种子态
-const resetRes = await fetch(`${BASE}/api/auth/accounts/admin/reset-password`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
-  body: JSON.stringify({ newPassword: adminPw }),
-});
-ok("还原 admin 初始密码（种子态）", resetRes.status === 200, `status ${resetRes.status}`);
+// 私有实例跑完即拆（临时目录一起删），不需要"把 admin 还原成种子态"
+await stop();
 
 // ---------------------------------------------------------------- 汇总
-console.log(`\n结果：通过 ${pass} / 失败 ${fail}`);
-if (fail > 0) {
-  console.log("失败项：");
-  for (const f of failures) console.log("  - " + f);
-  process.exit(1);
-}
-console.log("P1-5 操作审计落库验证全部通过 ✅");
-process.exit(0);
+process.exit(summarize({ pass, fail, failures }));

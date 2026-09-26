@@ -1,15 +1,21 @@
 /**
- * P0-2（API 无鉴权 / 假登录）修复验证。
- * 用法：npm run test:auth   （需要 dev server 已在 3000 端口运行）
+ * P0-2（API 无鉴权 / 假登录）修复验证 + 批次 1 的角色天花板。
  *
- * 覆盖：未认证拦截、令牌伪造、暴力破解锁定、用户名枚举、越权、
- *       会话吊销、改密后旧会话失效、强制改密拦截、安全事件留痕。
+ * 运行：node scripts/verify-auth.mjs（也包含在 npm run test:server 里）
+ *
+ * 覆盖：未认证拦截、令牌伪造、暴力破解锁定、用户名枚举、越权、会话吊销、
+ *       改密后旧会话失效、强制改密拦截、安全事件留痕、**低秩管理员管不到高秩账号**。
+ *
+ * 自起私有实例（临时 DATA_DIR + 随机端口）。这里刻意**不**预设 AMS_ADMIN_PASSWORD：
+ * 让服务端走「随机口令 + ADMIN_CREDENTIALS.txt」那条播种路径，才能验到
+ * mustChangePassword=1 期间的放行面（预设口令的账号是不带该标记的）。
  */
 import fs from "node:fs";
 import path from "node:path";
+import { bootServer, summarize } from "./lib/liveServer.mjs";
 
-const BASE = "http://127.0.0.1:3000";
-const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), "data");
+let BASE = "";
+let DATA = "";
 
 let passed = 0;
 let failed = 0;
@@ -50,12 +56,9 @@ async function req(method, url, { token, body, headers = {} } = {}) {
 }
 
 function readSeededPassword() {
-  const file = path.join(DATA_DIR, "ADMIN_CREDENTIALS.txt");
-  if (process.env.AMS_ADMIN_PASSWORD) return process.env.AMS_ADMIN_PASSWORD;
+  const file = path.join(DATA, "ADMIN_CREDENTIALS.txt");
   if (!fs.existsSync(file)) {
-    throw new Error(
-      `找不到 ${file}。若 accounts 表已存在但凭据文件被删除，请设置 AMS_ADMIN_PASSWORD 或删除 data/ams.db 重新播种。`
-    );
+    throw new Error(`随机管理员口令文件未出现：${file}（播种路径异常，无法验证 mustChangePassword 放行面）`);
   }
   const m = /密码:\s*(\S+)/.exec(fs.readFileSync(file, "utf-8"));
   if (!m) throw new Error("凭据文件格式异常，无法解析密码");
@@ -77,6 +80,11 @@ const PROTECTED = [
 ];
 
 async function main() {
+  const booted = await bootServer({ tag: "auth", seedAdminPassword: null, autoLogin: false });
+  BASE = booted.base;
+  DATA = booted.dataDir;
+  const { stop } = booted;
+  try {
   console.log("\n=== P0-2 鉴权修复验证 ===");
 
   // ---------------------------------------------------------------- 0. 服务可达
@@ -89,7 +97,9 @@ async function main() {
   ok(
     "初始密码不是常见弱口令",
     !["123456", "admin", "admin123", "password", "12345678"].includes(adminPassword.toLowerCase()),
-    `-> ${adminPassword}`
+    // 不把口令值打到日志里：这次是随临时目录一起消失的一次性口令，
+    // 但"顺手把口令 print 出来"这个习惯在别的脚本里就是泄露源
+    `-> 长度 ${adminPassword.length}`
   );
 
   // ---------------------------------------------------------------- 1. 未认证一律拦截
@@ -148,10 +158,12 @@ async function main() {
   ok("管理员角色为 SUPER_ADMIN", login.data?.user?.systemRole === "SUPER_ADMIN", `-> ${login.data?.user?.systemRole}`);
 
   const mustChange = !!login.data?.user?.mustChangePassword;
-  ok("随机初始密码带 mustChangePassword 标记", mustChange || !!process.env.AMS_ADMIN_PASSWORD);
+  // 本脚本不再预设 AMS_ADMIN_PASSWORD，所以这里必须是 true；
+  // 曾经是 `mustChange || !!process.env.AMS_ADMIN_PASSWORD` —— 那会让第 4 节在CI上整段静默跳过
+  ok("随机初始口令带 mustChangePassword 标记", mustChange);
 
   // ---------------------------------------------------------------- 4. 强制改密拦截
-  if (mustChange) {
+  {
     section("4. 强制改密期间只放行 /auth/*");
     const blocked = await req("GET", "/api/users", { token: adminToken });
     ok("未改密时访问业务接口 403", blocked.status === 403, `-> ${blocked.status}`);
@@ -207,7 +219,7 @@ async function main() {
   section("7. 角色越权拦截");
   const EMP_USER = "verify_employee";
   const EMP_PASS = "EmployeePass99";
-  await req("DELETE", `/api/auth/accounts/${EMP_USER}`, { token: freshToken }); // 清理上一轮残留
+  await req("DELETE", `/api/auth/accounts/${EMP_USER}`, { token: freshToken }); // 防御：万一前一次跑到这里就中断了
 
   const created = await req("POST", "/api/auth/accounts", {
     token: freshToken,
@@ -332,17 +344,69 @@ async function main() {
     const r = await req("DELETE", "/api/auth/accounts/admin", { token: freshToken });
     ok("管理员不能删除自己", r.status === 400, `-> ${r.status}`);
   }
+  // 用户名是全站唯一的归属键（approvals.applicant / todos.assignee / saved_items.owner /
+  // ai_* 都用它），删掉账号后同名重建会让新人直接继承上一个人的待办、审批余额和 API Key。
+  {
+    const again = await req("POST", "/api/auth/accounts", {
+      token: freshToken,
+      body: { username: EMP_USER, password: EMP_PASS, systemRole: "EMPLOYEE" },
+    });
+    ok("已删除的用户名不能复用（409）", again.status === 409, `-> ${again.status}`);
+    ok("复用被拒时给出可读原因", /不能复用/.test(again.data?.error ?? ""), `-> ${JSON.stringify(again.data)}`);
+    const other = await req("POST", "/api/auth/accounts", {
+      token: freshToken,
+      body: { username: `${EMP_USER}_b`, password: EMP_PASS, systemRole: "EMPLOYEE" },
+    });
+    ok("换一个用户名仍可创建", other.status === 201, `-> ${other.status}`);
+    await req("DELETE", `/api/auth/accounts/${EMP_USER}_b`, { token: freshToken });
+  }
 
-  // 还原管理员密码与「首次需改密」标记，保证脚本可重复执行且回到种子状态
-  // 注意：必须用 reset-password（内部 setPassword(..., true) 会置 mustChangePassword=1），
-  // 而不能用 change-password（会清掉该标记，导致第 151 行断言在二次运行时误报）。
-  const restore = await req("POST", `/api/auth/accounts/admin/reset-password`, {
-    token: freshToken,
-    body: { newPassword: adminPassword },
-  });
-  ok("已还原初始管理员密码（脚本可重复运行）", restore.status === 200, `-> ${restore.status}`);
+  // ---------------------------------------------------------------- 12. 角色天花板（真网关 + 真会话）
+  // server/tests/account-role-ceiling.test.ts 用 mock 身份直连 handler；这一节补的是
+  // 「过完整 authGate 的真实会话」也拦得住 —— 那是批次 1 那个 blocker 的实际形态：
+  // 管理员改一次超管口令，就能以超管身份登录。
+  section("12. 角色天花板：管理员碰不到超管");
+  {
+    const CEIL_USER = "verify_ceiling_admin";
+    const CEIL_PASS = "CeilingAdmin2026a";
+    const mk = await req("POST", "/api/auth/accounts", {
+      token: freshToken,
+      body: { username: CEIL_USER, password: CEIL_PASS, systemRole: "ADMIN" },
+    });
+    ok("超管可创建管理员账号", mk.status === 201, `-> ${mk.status}`);
+    const cLogin = await req("POST", "/api/auth/login", { body: { username: CEIL_USER, password: CEIL_PASS } });
+    const cChanged = await req("POST", "/api/auth/change-password", {
+      token: cLogin.data?.token,
+      body: { currentPassword: CEIL_PASS, newPassword: "CeilingAdmin2026b" },
+    });
+    const adminRoleToken = cChanged.data?.token;
+    ok("管理员探针账号已可用", !!adminRoleToken, `-> ${cChanged.status}`);
+
+    const reset = await req("POST", "/api/auth/accounts/admin/reset-password", {
+      token: adminRoleToken,
+      body: { newPassword: "StolenByAdmin2026a" },
+    });
+    ok("ADMIN 重置超管口令 → 403", reset.status === 403, `-> ${reset.status}`);
+    const disable = await req("PUT", "/api/auth/accounts/admin", { token: adminRoleToken, body: { enabled: false } });
+    ok("ADMIN 停用超管 → 403", disable.status === 403, `-> ${disable.status}`);
+    const del = await req("DELETE", "/api/auth/accounts/admin", { token: adminRoleToken });
+    ok("ADMIN 删除超管 → 403", del.status === 403, `-> ${del.status}`);
+    // 备份文件是含口令哈希与各类凭据的整库副本：连下载都只给超管
+    const exportRes = await req("GET", "/api/backup/export/whatever.db", { token: adminRoleToken });
+    ok("ADMIN 下载备份 → 403（只有超管能取走整库副本）", exportRes.status === 403, `-> ${exportRes.status}`);
+    const superStillWorks = await req("POST", "/api/auth/login", {
+      body: { username: "admin", password: NEW_PASSWORD },
+    });
+    ok("超管账号未被动过（新口令仍可登录）", superStillWorks.status === 200, `-> ${superStillWorks.status}`);
+
+    await req("DELETE", `/api/auth/accounts/${CEIL_USER}`, { token: freshToken });
+  }
 
   // ---------------------------------------------------------------- 汇总
+  } finally {
+    // 私有实例跑完即拆：不需要"把 admin 还原成种子态"这类收尾
+    await stop();
+  }
   console.log(`\n${"=".repeat(46)}`);
   console.log(`  通过 ${passed} / ${passed + failed}`);
   if (failed > 0) {
@@ -350,7 +414,7 @@ async function main() {
     failures.forEach((f) => console.log(`  - ${f}`));
   }
   console.log(`${"=".repeat(46)}\n`);
-  process.exit(failed > 0 ? 1 : 0);
+  process.exit(summarize({ pass: passed, fail: failed, failures }));
 }
 
 main().catch((e) => {

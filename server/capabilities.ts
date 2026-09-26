@@ -27,23 +27,28 @@ const CAPABILITIES: Record<string, Capability> = {
   "attendance:manage": { method: "POST", path: "/attendance/records" },
   // 整表清空排班/打卡：策略表落到默认写=HR，但路由里另 requireRole("ADMIN")
   "attendance:purge": { method: "DELETE", path: "/attendance/records", atLeast: "ADMIN" },
-  "approvals:view": { method: "GET", path: "/approvals" },
+  "approvals:view": { method: "GET", path: "/approvals/mine" },
   "approvals:approve": { method: "PUT", path: "/approvals/APPROVAL_ID" },
   // 合同预览含身份证：接口本身是默认读=EMPLOYEE，但读侧已按角色裁剪，页面收到 HR+
   "contracts:view": { method: "GET", path: "/users/EMP0001", atLeast: "HR" },
   "documents:view": { method: "GET", path: "/documents" },
-  "documents:manage": { method: "POST", path: "/documents" },
+  "documents:manage": { method: "POST", path: "/documents/upload" },
   "departments:view": { method: "GET", path: "/departments", atLeast: "HR" },
-  "departments:manage": { method: "POST", path: "/departments" },
-  "settings:view": { method: "GET", path: "/settings" },
-  "notice:view": { method: "GET", path: "/notice/models" },
-  "forms:view": { method: "GET", path: "/form/templates" },
-  "dashboard:view": { method: "GET", path: "/stats/summary" },
+  "departments:manage": { method: "PUT", path: "/departments/tree" },
+  // 系统设置是一个容器页（个人设置对全员开放，各面板自己收口），没有单一后端接口，
+  // 因此指向它必定发出的那个请求；atLeast 写死成派生值，避免日后被默认策略无声放宽。
+  "settings:view": { method: "GET", path: "/auth/me", atLeast: "EMPLOYEE" },
+  "notice:view": { method: "POST", path: "/notice/generate" },
+  "forms:view": { method: "GET", path: "/form/records" },
+  "dashboard:view": { method: "GET", path: "/stats/workforce" },
   "todos:view": { method: "GET", path: "/todos" },
   // 打印工具（宴会排座 / 会议台卡 / 工作餐券三个标签合成一个入口）：
   // 三个面都只需要自己的名单与版面，全部存在 saved-items（按 username 隔离），
   // 所以一个码就够，不再每页一个同源重复码。
   "print-tools:view": { method: "GET", path: "/saved-items" },
+  // 下载备份 = 取走含口令哈希与各类凭据的整库副本，策略表已收到 SUPER_ADMIN，
+  // 界面按同一个码隐藏按钮（BackupPanel）。
+  "backup:export": { method: "GET", path: "/backup/export" },
 };
 
 /** 该能力要求的最低角色：策略表派生值与显式下限里更严的那个。 */

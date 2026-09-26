@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { toast } from 'sonner';
 import { STORAGE_KEYS } from '@/config/constants';
 
 export interface ChatMessage {
@@ -91,21 +92,7 @@ export function useAiChat() {
     if (aiEnabled) refreshConversations();
   }, [aiEnabled, refreshConversations]);
 
-  const replaceLast = (list: ChatMessage[], content: string): ChatMessage[] => {
-    const c = [...list];
-    if (c.length) c[c.length - 1] = { ...c[c.length - 1], content };
-    return c;
-  };
-  const appendToLast = (list: ChatMessage[], delta: string): ChatMessage[] => {
-    const c = [...list];
-    if (c.length)
-      c[c.length - 1] = {
-        ...c[c.length - 1],
-        content: c[c.length - 1].content + delta,
-      };
-    return c;
-  };
-
+  /** 会话落库。失败必须说出来：不然用户以为历史存住了，下次打开是一片空白 */
   const persist = useCallback(
     async (full: ChatMessage[], userText: string) => {
       const t = token();
@@ -113,26 +100,26 @@ export function useAiChat() {
       const title = userText.trim().slice(0, 30) || '新对话';
       try {
         if (activeIdRef.current) {
-          await fetch(`/api/ai/conversations/${activeIdRef.current}`, {
+          const res = await fetch(`/api/ai/conversations/${activeIdRef.current}`, {
             method: 'PUT',
             headers: authHeaders(),
             body: JSON.stringify({ title, messages: full }),
           });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
         } else {
           const res = await fetch('/api/ai/conversations', {
             method: 'POST',
             headers: authHeaders(),
             body: JSON.stringify({ title, messages: full }),
           });
-          if (res.ok) {
-            const j = (await res.json()) as { id: string };
-            activeIdRef.current = j.id;
-            setActiveId(j.id);
-          }
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const j = (await res.json()) as { id: string };
+          activeIdRef.current = j.id;
+          setActiveId(j.id);
         }
         refreshConversations();
       } catch {
-        /* 持久化失败不阻断对话 */
+        toast.error('对话未能保存到服务端');
       }
     },
     [refreshConversations]
@@ -147,12 +134,12 @@ export function useAiChat() {
         ...messages,
         { role: 'user', content },
       ];
-      // 先追加一条空的 assistant 消息占位，后续流式填充
-      const fullWithAssistant: ChatMessage[] = [
-        ...history,
-        { role: 'assistant', content: '' },
-      ];
-      setMessages(fullWithAssistant);
+      // assistant 内容在本地累积，再由 paint 整体覆盖画面。
+      // 副作用不能写进 setMessages 的 updater（StrictMode 会把 updater 调两次 → 发两次落库请求，
+      // 留下一条只存在一半的孤儿会话），而落库要的正是这份最终完整内容。
+      let assistantText = '';
+      const paint = () => setMessages([...history, { role: 'assistant', content: assistantText }]);
+      paint();
       setStreaming(true);
 
       const ctrl = new AbortController();
@@ -168,7 +155,8 @@ export function useAiChat() {
 
         if (!res.ok || !res.body) {
           const errText = await res.text().catch(() => '');
-          setMessages((m) => replaceLast(m, `[请求失败] ${res.status} ${errText}`));
+          assistantText = `[请求失败] ${res.status} ${errText}`;
+          paint();
           return;
         }
 
@@ -189,10 +177,13 @@ export function useAiChat() {
             if (data === '[DONE]' || data === '') continue;
             try {
               const j = JSON.parse(data);
-              if (typeof j.content === 'string' && j.content)
-                setMessages((m) => appendToLast(m, j.content));
-              else if (j.error)
-                setMessages((m) => replaceLast(m, `⚠️ ${j.error}`));
+              if (typeof j.content === 'string' && j.content) {
+                assistantText += j.content;
+                paint();
+              } else if (j.error) {
+                assistantText = `⚠️ ${j.error}`;
+                paint();
+              }
             } catch {
               /* 跳过无法解析的分片 */
             }
@@ -201,16 +192,14 @@ export function useAiChat() {
       } catch (e: unknown) {
         const name = (e as { name?: string })?.name;
         if (name !== 'AbortError') {
-          setMessages((m) => replaceLast(m, '⚠️ 网络错误，请稍后重试'));
+          assistantText = '⚠️ 网络错误，请稍后重试';
+          paint();
         }
       } finally {
         setStreaming(false);
         abortRef.current = null;
         // 用最终完整消息落库（含已流式填充的 assistant 内容）
-        setMessages((m) => {
-          void persist(m, content);
-          return m;
-        });
+        void persist([...history, { role: 'assistant', content: assistantText }], content);
         // 刷新额度计数 / 个人模型状态
         void refreshStatus();
       }
@@ -226,24 +215,35 @@ export function useAiChat() {
 
   const selectConversation = useCallback(
     async (id: string) => {
-      const res = await fetch(`/api/ai/conversations/${id}`, {
-        headers: authHeaders(),
-      });
-      if (!res.ok) return;
-      const conv = (await res.json()) as { messages: ChatMessage[]; title: string };
-      activeIdRef.current = id;
-      setActiveId(id);
-      setMessages(Array.isArray(conv.messages) ? conv.messages : []);
+      try {
+        const res = await fetch(`/api/ai/conversations/${encodeURIComponent(id)}`, {
+          headers: authHeaders(),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const conv = (await res.json()) as { messages: ChatMessage[]; title: string };
+        activeIdRef.current = id;
+        setActiveId(id);
+        setMessages(Array.isArray(conv.messages) ? conv.messages : []);
+      } catch {
+        // 点了历史条目却什么都不发生，和按钮坏掉没区别
+        toast.error('这条对话打不开');
+      }
     },
     []
   );
 
   const removeConversation = useCallback(
     async (id: string) => {
-      await fetch(`/api/ai/conversations/${id}`, {
-        method: 'DELETE',
-        headers: authHeaders(),
-      });
+      try {
+        const res = await fetch(`/api/ai/conversations/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          headers: authHeaders(),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      } catch {
+        toast.error('删除失败，这条对话还在');
+        return;
+      }
       if (activeIdRef.current === id) newChat();
       refreshConversations();
     },

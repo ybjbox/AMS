@@ -9,10 +9,11 @@ import {
   createBackup,
   restoreBackup,
   deleteBackup,
-  backupExportUrl,
+  downloadBackup,
   type BackupListResponse,
   type BackupMeta,
 } from '@/services/backupApi';
+import { useUserStore } from '@/store/useUserStore';
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -28,6 +29,8 @@ function formatDate(iso: string): string {
 
 export default function BackupPanel() {
   const confirm = useConfirm();
+  // 备份文件是含凭据的整库副本，服务端只让超管下载；按钮同源收口，免得 ADMIN 点了必 403
+  const canDownload = useUserStore((state) => state.hasPermission('backup:export'));
   const [data, setData] = useState<BackupListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -61,13 +64,12 @@ export default function BackupPanel() {
     }
   }, [load]);
 
-  const handleDownload = useCallback((name: string) => {
-    const a = document.createElement('a');
-    a.href = backupExportUrl(name);
-    a.download = name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+  const handleDownload = useCallback(async (name: string) => {
+    try {
+      await downloadBackup(name);
+    } catch (err) {
+      notifySaveFailure({ title: '下载备份失败', error: err });
+    }
   }, []);
 
   const handleRestore = useCallback(
@@ -88,6 +90,9 @@ export default function BackupPanel() {
         );
         if (res.uploadsRestored === false) {
           toast.warning('该备份不含上传文件快照，uploads 目录保持现状未回滚');
+        }
+        if (res.templatesRestored === false) {
+          toast.warning('该备份不含导出脚本模板快照，模板保持现状未回滚');
         }
         if (res.schemaOk === false) {
           // 恢复的是老 schema 且补跑迁移失败：不提醒的话用户只会看到后续写入莫名 500
@@ -141,7 +146,7 @@ export default function BackupPanel() {
       </div>
 
       {cfg && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 text-sm">
           <div className="rounded-lg bg-muted dark:bg-background/50 p-3">
             <div className="text-muted-foreground">自动备份</div>
             <div className="font-medium mt-0.5">{cfg.enabled ? '已开启' : '已关闭'}</div>
@@ -156,7 +161,30 @@ export default function BackupPanel() {
           </div>
           <div className="rounded-lg bg-muted dark:bg-background/50 p-3">
             <div className="text-muted-foreground">已有备份</div>
-            <div className="font-medium mt-0.5">{cfg.count} 份</div>
+            <div className="font-medium mt-0.5">
+              {cfg.count} / {cfg.maxCount} 份
+            </div>
+          </div>
+          {/* 备份断了最要命的是没人知道：这两块把"最近一次成功吗"和"还塞得下吗"摊开 */}
+          <div className="rounded-lg bg-muted dark:bg-background/50 p-3">
+            <div className="text-muted-foreground">最近一次备份</div>
+            <div
+              className={
+                cfg.lastRun === null
+                  ? 'font-medium mt-0.5 text-muted-foreground'
+                  : `font-medium mt-0.5 ${cfg.lastRun.ok ? '' : 'text-amber-700 dark:text-amber-400'}`
+              }
+              title={cfg.lastRun?.detail ?? '本次运行还没有备份过（定时任务尚未到点）'}
+            >
+              {cfg.lastRun === null ? '尚未备份' : cfg.lastRun.ok ? '成功' : '失败'}
+              {cfg.lastRun ? <span className="block text-xs font-normal text-muted-foreground">{formatDate(cfg.lastRun.at)}</span> : null}
+            </div>
+          </div>
+          <div className="rounded-lg bg-muted dark:bg-background/50 p-3">
+            <div className="text-muted-foreground">磁盘剩余</div>
+            <div className="font-medium mt-0.5">
+              {cfg.freeMb === null ? '未知' : `${cfg.freeMb >= 1024 ? (cfg.freeMb / 1024).toFixed(1) + ' GB' : cfg.freeMb + ' MB'}`}
+            </div>
           </div>
         </div>
       )}
@@ -219,16 +247,18 @@ export default function BackupPanel() {
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex justify-end gap-1.5">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        title="下载"
-                        aria-label={`下载备份：${b.name}`}
-                        onClick={() => handleDownload(b.name)}
-                      >
-                        <Download className="size-4" />
-                      </Button>
+                      {canDownload && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          title="下载"
+                          aria-label={`下载备份：${b.name}`}
+                          onClick={() => void handleDownload(b.name)}
+                        >
+                          <Download className="size-4" />
+                        </Button>
+                      )}
                       <Button
                         type="button"
                         variant="ghost"

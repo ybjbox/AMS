@@ -1,31 +1,45 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { http } from '@/services/api';
 import AiHistoryPanel from '@/pages/Settings/panels/AiHistoryPanel';
 
 /**
  * 详情抽屉必须走 ui/sheet：此前是手搓 fixed inset-0，读屏听得到"对话框"却关不掉。
- * 这里用假 fetch 喂一条会话，验证打开后的 dialog 语义与 Esc 关闭。
+ * 另外钉住一条：这一层的数据请求走统一的 http（api.ts 拦截器），不再自己 fetch —
+ * 否则 401/网络错误既不清会话也不提示，删除失败只会"那条又回来了"。
  */
-const CONV = { id: 'c1', username: 'admin', title: '年度排座咨询', updatedAt: '2026-09-22T10:00:00Z' };
-const DETAIL = { ...CONV, messages: [{ role: 'user', content: '帮我排年会座位' }] };
+const fixture = vi.hoisted(() => ({
+  list: [{ id: 'c1', username: 'admin', title: '年度排座咨询', updatedAt: '2026-09-22T10:00:00Z', messageCount: 1 }],
+  detail: {
+    id: 'c1',
+    username: 'admin',
+    title: '年度排座咨询',
+    updatedAt: '2026-09-22T10:00:00Z',
+    messageCount: 1,
+    createdAt: '2026-09-22T09:00:00Z',
+    messages: [{ role: 'user', content: '帮我排年会座位' }],
+  },
+}));
 
-let fetchSpy: ReturnType<typeof vi.fn>;
+vi.mock('@/services/api', () => ({
+  http: {
+    get: vi.fn(),
+    delete: vi.fn(),
+  },
+}));
+
+const getMock = vi.mocked(http.get);
 
 beforeEach(() => {
-  localStorage.setItem('app_auth_token', 'test-token');
-  fetchSpy = vi.fn(async (url: string) => {
-    if (String(url).endsWith('/conversations')) {
-      return { ok: true, json: async () => [CONV] } as Response;
-    }
-    return { ok: true, json: async () => DETAIL } as Response;
-  });
-  vi.stubGlobal('fetch', fetchSpy);
+  getMock.mockReset();
+  getMock.mockImplementation(async (url: string) =>
+    String(url).endsWith('/conversations') ? fixture.list : (fixture.detail as unknown)
+  );
 });
 
 afterEach(() => {
-  vi.unstubAllGlobals();
-  localStorage.clear();
+  vi.clearAllMocks();
 });
 
 describe('AI 会话记录详情抽屉', () => {
@@ -46,5 +60,15 @@ describe('AI 会话记录详情抽屉', () => {
 
     fireEvent.keyDown(document, { key: 'Escape' });
     await waitFor(() => expect(document.querySelector('[role="dialog"]')).toBeNull());
+  });
+
+  it('读的是统一 http 通道（列表 + 详情各一次），不是绕开的 fetch', async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+    render(<AiHistoryPanel />);
+    await waitFor(() => expect(screen.getByText('年度排座咨询')).toBeTruthy());
+    expect(getMock).toHaveBeenCalled();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 });

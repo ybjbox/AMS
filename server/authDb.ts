@@ -12,7 +12,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { db, DATA_DIR } from "./db.ts";
+import { db, DATA_DIR, transact, execIfTable } from "./db.ts";
 
 // ---------------------------------------------------------------- 常量
 
@@ -84,6 +84,21 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_sessions_username ON sessions(username);
   CREATE INDEX IF NOT EXISTS idx_accounts_employee ON accounts(employeeId);
+
+  /*
+   * 已删用户名墓碑。username 是全站**唯一的**归属键（approvals.applicant、todos.createdBy/assignee、
+   * audit_logs.actor、saved_items.owner、ai_* 都用它），而 accounts 没有代理主键可换 ——
+   * 于是「删账号 + 用同名重建」会让新的人直接继承上一个人名下的待办、审批（含调休余额）、
+   * 打印偏好、AI 对话与**个人 API Key**。这些归属记录是审计证据，删账号时不该连带销毁，
+   * 所以改为：私人且无证据价值的状态在删除时清掉（见 deleteAccount），其余保留，
+   * 同时把用户名永久下架，保证留下来的记录不会再指向一个新身份。
+   */
+  CREATE TABLE IF NOT EXISTS account_tombstones (
+    username  TEXT PRIMARY KEY,
+    displayName TEXT NOT NULL DEFAULT '',
+    systemRole  TEXT NOT NULL DEFAULT '',
+    deletedAt   TEXT DEFAULT (datetime('now','localtime'))
+  );
 `);
 
 // 兼容老库：补头像列（存 base64 data URL，空串 = 使用默认头像）。与 ai_config.assistantLogo 同模式。
@@ -229,6 +244,15 @@ export function createAccount(input: CreateAccountInput): PublicAccount {
   }
   assertPasswordStrength(input.password);
   if (getAccount(username)) throw new AuthError(409, "用户名已存在");
+  const tombstone = db
+    .prepare("SELECT deletedAt FROM account_tombstones WHERE username = ?")
+    .get(username) as { deletedAt: string } | undefined;
+  if (tombstone) {
+    throw new AuthError(
+      409,
+      `用户名 ${username} 已于 ${tombstone.deletedAt} 随账号删除而下架，不能复用（同名重建会把那个人的待办、审批与个人模型配置接到新账号上）。请换一个用户名。`
+    );
+  }
 
   const role: SystemRole = isSystemRole(input.systemRole) ? input.systemRole : "EMPLOYEE";
   db.prepare(
@@ -246,9 +270,34 @@ export function createAccount(input: CreateAccountInput): PublicAccount {
   return toPublicAccount(getAccount(username)!);
 }
 
+/**
+ * 删除账号：吊销会话 + 清掉「只属于这个人、且不构成业务证据」的状态 + 下架用户名。
+ *
+ * 清的都是按 username 归属的私人工作区：AI 对话（含完整聊天内容）、个人模型配置
+ * （**里面有 API Key**）、当日已用额度、保存的打印偏好/排座方案/餐券台账、通知收件箱。
+ * 留下的：审批、待办、审计与安全事件、续签/业务单的操作人署名 —— 那些是别人也会看到的
+ * 业务记录与追责线索，销毁它们等于给删除操作本身擦掉证据；这些行不会再被误认成新人的，
+ * 因为同名账号已经被墓碑挡住。
+ */
 export function deleteAccount(username: string): boolean {
+  const account = getAccount(username);
+  if (!account) return false;
   revokeAllSessions(username);
-  return db.prepare("DELETE FROM accounts WHERE username = ?").run(username).changes > 0;
+  transact(() => {
+    execIfTable("DELETE FROM ai_conversations WHERE username = ?", username);
+    execIfTable("DELETE FROM user_ai_config WHERE username = ?", username);
+    execIfTable("DELETE FROM ai_usage WHERE username = ?", username);
+    execIfTable("DELETE FROM saved_items WHERE owner = ?", username);
+    execIfTable("DELETE FROM notifications WHERE recipient = ?", username);
+    db.prepare(
+      `INSERT INTO account_tombstones (username, displayName, systemRole) VALUES (?, ?, ?)
+       ON CONFLICT(username) DO UPDATE SET deletedAt = datetime('now','localtime'),
+                                            displayName = excluded.displayName,
+                                            systemRole = excluded.systemRole`
+    ).run(username, account.displayName ?? "", account.systemRole ?? "");
+    db.prepare("DELETE FROM accounts WHERE username = ?").run(username);
+  });
+  return true;
 }
 
 /** 口令强度下限。刻意不强制特殊字符——长度比字符类别更有效 */

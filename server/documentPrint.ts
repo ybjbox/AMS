@@ -11,6 +11,7 @@ import fs from "fs";
 import ExcelJS from "exceljs";
 import mammoth from "mammoth";
 import { getDocumentRaw } from "./documentsDb.ts";
+import { withPdfWorker } from "./pdfWorker.ts";
 import { asString } from "./sqliteUtil.ts";
 import { formatLocalDate } from "./localDate.ts";
 
@@ -63,30 +64,24 @@ function toDataUrl(buffer: Buffer, mime: string): string {
 
 /**
  * PDF 逐页转 PNG。
- * unpdf 打包的 pdf.js 6.1 会把 worker 挂在 globalThis.pdfjsWorker，与 pdf-to-img
- * 需要的 6.2 worker 冲突（首次使用即被缓存），因此渲染窗口内先换入 6.2、结束后还原
- * ——与 wechatNoticeRouter 的扫描件 OCR 同一套处置。
+ *
+ * 全局 pdf.js worker 的换入换出与串行由 withPdfWorker 统一负责 ——
+ * 扫描件 OCR（wechatNoticeRouter）用的是同一条链，两处各自排队才会互相踩。
  */
 async function renderPdfPages(
   buffer: Buffer,
   maxPages: number
 ): Promise<{ pages: Buffer[]; total: number }> {
-  const { pdf } = await import("pdf-to-img");
-  const g = globalThis as { pdfjsWorker?: unknown };
-  const prev = g.pdfjsWorker;
-  g.pdfjsWorker = await import("pdfjs-dist/build/pdf.worker.mjs");
-  const pages: Buffer[] = [];
-  try {
+  return withPdfWorker(async () => {
+    const { pdf } = await import("pdf-to-img");
+    const pages: Buffer[] = [];
     const doc = await pdf(buffer, { format: "png", scale: 2 });
     for await (const page of doc) {
       pages.push(page);
       if (pages.length >= maxPages) break;
     }
     return { pages, total: doc.length };
-  } finally {
-    if (prev === undefined) delete g.pdfjsWorker;
-    else g.pdfjsWorker = prev;
-  }
+  });
 }
 
 /** Excel 取值 → 打印用字符串：数字不带浮点尾巴，日期取本地日，公式取结果 */

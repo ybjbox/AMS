@@ -6,6 +6,7 @@
  * 不做二次加工；employeeName 一律由路由从员工表回填，不接受前端传入（防止伪造归属）。
  */
 import { db } from "./db.ts";
+import { formatLocalDateTime } from "./localDate.ts";
 import { type DbRow, asString, asNumber } from "./sqliteUtil.ts";
 import { randomUUID } from "node:crypto";
 
@@ -110,7 +111,7 @@ export function createBusinessForm(
     Number(input.amount) || 0,
     input.body,
     operator,
-    new Date().toISOString()
+    formatLocalDateTime()
   );
   const row = db.prepare("SELECT * FROM business_forms WHERE id = ?").get(id);
   if (!row) throw new Error(`createBusinessForm: 写入后未找到业务单记录 ${id}`);

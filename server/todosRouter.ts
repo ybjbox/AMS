@@ -10,7 +10,8 @@ import {
   deleteTodo,
 } from './todosDb.ts';
 import { ROLE_LEVEL, type SystemRole } from './authDb.ts';
-import { validateBody, todoCreateSchema, todoUpdateSchema, errMessage } from './validation.ts';
+import { validateBody, todoCreateSchema, todoUpdateSchema } from './validation.ts';
+import { clientErrorResponse } from './errorHandler.ts';
 
 export const todosRouter = Router();
 todosRouter.use(json());
@@ -29,7 +30,7 @@ todosRouter.post('/', validateBody(todoCreateSchema), (req, res) => {
     });
     res.status(201).json(todo);
   } catch (error) {
-    res.status(400).json({ error: errMessage(error) });
+    clientErrorResponse(res, error);
   }
 });
 

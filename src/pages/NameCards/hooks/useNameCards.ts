@@ -33,12 +33,16 @@ export function useNameCards() {
     DEFAULT_PRINT_SETTINGS
   );
 
+  // 与排座同一处修：判据不能是 size === 0，否则「逐个取消到最后一个」会立刻把
+  // 整张名册重新全选，而台卡是要出纸的。只在名单本身变化时播种一次。
+  const rosterKey = useMemo(() => activeUsers.map((u) => u.id).join('|'), [activeUsers]);
+  const seededRosterKey = useRef<string | null>(null);
   useEffect(() => {
-    if (!uploadedUsers && activeUsers.length > 0 && selectedUserIds.size === 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedUserIds(new Set(activeUsers.map((u) => u.id)));
-    }
-  }, [activeUsers, uploadedUsers, selectedUserIds.size]);
+    if (uploadedUsers || !activeUsers.length || seededRosterKey.current === rosterKey) return;
+    seededRosterKey.current = rosterKey;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedUserIds(new Set(activeUsers.map((u) => u.id)));
+  }, [activeUsers, uploadedUsers, rosterKey]);
 
   const handleManualInputSubmit = useCallback(() => {
     if (!manualInputText.trim()) {

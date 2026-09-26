@@ -1,26 +1,20 @@
 /**
  * 导出脚本模板沙箱安全回归测试（P0-1 RCE 修复的守门脚本）。
  *
- * 前置：先启动开发服务 `npm run dev`（监听 3000）。
- * 运行：`npm run test:sandbox`
+ * 运行：node scripts/verify-export-sandbox.mjs（也包含在 npm run test:server 里）
+ * 自起临时 DATA_DIR + 随机端口的私有实例，不依赖 :3000、不碰开发库。
  *
  * 覆盖：路径穿越、体积上限、宿主 API 可达性、vm 逃逸链、
  *       模块加载、死循环超时，以及正常模板的功能回归。
- *
- * 说明：P0-2 之后所有 /api 接口都要求登录鉴权，本脚本会自动用
- *       data/ADMIN_CREDENTIALS.txt 里的初始管理员口令登录，
- *       若账号处于「首次登录必须改密」状态则先改一次密，结束前再改回原口令，
- *       保证测试对开发库无副作用、凭据文件始终有效。
  */
-import crypto from "node:crypto";
-import fs from "node:fs";
-import path from "node:path";
 import ExcelJS from "exceljs";
+import { bootServer, summarize } from "./lib/liveServer.mjs";
 
-const BASE = "http://127.0.0.1:3000";
+let BASE = "";
 let TOKEN = "";
 let pass = 0;
 let fail = 0;
+const failures = [];
 
 function ok(name, cond, extra = "") {
   if (cond) {
@@ -28,55 +22,9 @@ function ok(name, cond, extra = "") {
     console.log(`  PASS  ${name}`);
   } else {
     fail++;
+    failures.push(name + (extra ? ` -> ${extra}` : ""));
     console.log(`  FAIL  ${name} ${extra}`);
   }
-}
-
-// ---------------------------------------------------------------- 鉴权引导
-
-function readAdminPassword() {
-  const file = path.join(process.cwd(), "data", "ADMIN_CREDENTIALS.txt");
-  if (fs.existsSync(file)) {
-    const txt = fs.readFileSync(file, "utf8");
-    const m = /^密码:\s*(.+)$/m.exec(txt);
-    if (m) return m[1].trim();
-  }
-  if (process.env.AMS_ADMIN_PASSWORD) return process.env.AMS_ADMIN_PASSWORD;
-  throw new Error("无法获取管理员密码：请设置 AMS_ADMIN_PASSWORD 或确保 data/ADMIN_CREDENTIALS.txt 存在");
-}
-
-function genPassword() {
-  // 同时含字母与数字、长度 >=10，通过口令强度校验
-  return `Ams${crypto.randomBytes(10).toString("base64url").replace(/[-_]/g, "x")}9`;
-}
-
-async function loginAdmin() {
-  const originalPassword = readAdminPassword();
-  const res = await fetch(`${BASE}/api/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username: "admin", password: originalPassword }),
-  });
-  if (!res.ok) throw new Error(`登录失败 HTTP ${res.status}`);
-  const body = await res.json();
-  let token = body.token;
-  let currentPassword = originalPassword;
-  let changed = false;
-
-  // 初始管理员口令是随机生成时，首次登录强制改密，否则其余接口会被网关拦下
-  if (body.user?.mustChangePassword) {
-    const newPassword = genPassword();
-    const cp = await fetch(`${BASE}/api/auth/change-password`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ currentPassword, newPassword }),
-    });
-    if (!cp.ok) throw new Error(`强制改密失败 HTTP ${cp.status}`);
-    token = (await cp.json()).token;
-    currentPassword = newPassword;
-    changed = true;
-  }
-  return { token, currentPassword, originalPassword, changed };
 }
 
 const COLUMNS = [
@@ -85,7 +33,8 @@ const COLUMNS = [
   { header: "状态", key: "status" },
 ];
 const DATA = [
-  { name: "张三", department: "人事部", status: "在职" },
+  // 部门名必须与 default_script.js 的浅绿规则一致，否则断言是空跑
+  { name: "张三", department: "人力资源中心", status: "在职" },
   { name: "李四", department: "研发部", status: "离职" },
   { name: "王五", department: "研发部", status: "在职" },
 ];
@@ -144,9 +93,11 @@ function dumpText(ws) {
 }
 
 async function main() {
-  const { token, currentPassword, originalPassword, changed } = await loginAdmin();
-  TOKEN = token;
-  console.log("  [auth] 已用管理员账号登录并获得会话 token" + (changed ? "（已通过首次改密）" : ""));
+  const booted = await bootServer({ tag: "sandbox" });
+  BASE = booted.base;
+  TOKEN = booted.token;
+  const { stop } = booted;
+  console.log("  [auth] 已用管理员账号登录私有实例并获得会话 token");
 
   try {
     console.log("\n=== 1. 路径穿越防护（写入） ===");
@@ -258,9 +209,14 @@ async function main() {
       // 注意：xlsx 格式不保存列 key，重新加载后只能按列序号取单元格（name 是第 1 列）
       ok("张三在第 3 行", ws.getRow(3).getCell(1).value === "张三", `-> ${ws.getRow(3).getCell(1).value}`);
       ok(
-        "人事部浅绿底色规则生效",
+        "人力资源中心浅绿底色规则生效",
         ws.getRow(3).getCell(1).fill?.fgColor?.argb === "FFF0FDF4",
         JSON.stringify(ws.getRow(3).getCell(1).fill)
+      );
+      ok(
+        "全行都被染色（第 3 列同样有浅绿底色）",
+        ws.getRow(3).getCell(3).fill?.fgColor?.argb === "FFF0FDF4",
+        JSON.stringify(ws.getRow(3).getCell(3).fill)
       );
       ok(
         "研发部不应有浅绿底色",
@@ -298,26 +254,11 @@ async function main() {
 
     console.log(`\n========== ${pass} passed / ${fail} failed ==========\n`);
   } finally {
-    // 把口令改回凭据文件里的值，保证开发库无副作用、凭据文件始终有效。
-    //
-    // 必须用 reset-password 而不是 change-password：前者内部走 setPassword(..., true)，
-    // 会把 mustChangePassword 重新置 1，完整还原种子态；后者会清掉该标记，
-    // 导致随后运行的 verify-auth.mjs 里「随机初始密码带 mustChangePassword 标记」误报失败。
-    if (changed && currentPassword !== originalPassword) {
-      try {
-        await fetch(`${BASE}/api/auth/accounts/admin/reset-password`, {
-          method: "POST",
-          headers: authHeaders(),
-          body: JSON.stringify({ newPassword: originalPassword }),
-        });
-        console.log("  [auth] 已把管理员口令与首次改密标记恢复为种子态");
-      } catch (e) {
-        console.warn("  [auth] 恢复口令失败（不影响测试结果）:", e.message);
-      }
-    }
+    // 私有实例跑完即拆：不再需要"把 admin 口令改回凭据文件里的值"这类收尾
+    await stop();
   }
 
-  process.exit(fail === 0 ? 0 : 1);
+  process.exit(summarize({ pass, fail, failures }));
 }
 
 main().catch((e) => {

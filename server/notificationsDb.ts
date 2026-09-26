@@ -32,7 +32,13 @@ export interface NotificationInput {
 
 const ALLOWED_TYPES = new Set(['info', 'warning', 'success', 'error']);
 
-/** 幂等建表，供迁移调用。 */
+/**
+ * 幂等建表，供迁移调用。
+ *
+ * createdAt 用 **localtime**：全站日期字符串都是本地日历日口径（见 localDate.ts 顶部说明），
+ * 而这两张表原先用 UTC 的 `datetime('now')`，于是铃铛里的「14:05」其实是 22:05 发生的，
+ * 且与其它表的时间戳不可比。v14 迁移会把存量行一起换算过来。
+ */
 export function ensureNotificationsTable(): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS notifications (
@@ -42,7 +48,7 @@ export function ensureNotificationsTable(): void {
       type      TEXT DEFAULT 'info',
       read      INTEGER DEFAULT 0,
       recipient TEXT NOT NULL,
-      createdAt TEXT DEFAULT (datetime('now')),
+      createdAt TEXT DEFAULT (datetime('now', 'localtime')),
       refKey    TEXT DEFAULT ''
     );
   `);
@@ -126,7 +132,7 @@ export function createNotification(input: NotificationInput) {
   const id = randomUUID();
   db.prepare(
     `INSERT INTO notifications (id, title, message, type, recipient, createdAt, refKey)
-     VALUES (?, ?, ?, ?, ?, datetime('now'), ?)`
+     VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'), ?)`
   ).run(id, title, message, type, recipient, refKey);
   // 站内落库成功后镜像推送到出站通道（webhook/邮件）；fire-and-forget，失败不影响本请求。
   // 走 onAfterCommit：邮件/webhook 撤不回，事务回滚（磁盘满、database is locked）时不能已经发出去了。

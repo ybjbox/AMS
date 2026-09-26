@@ -1,3 +1,4 @@
+import { acct } from '../runScoped';
 import { test, expect } from '@playwright/test';
 import ExcelJS from 'exceljs';
 import { resolveAdminPassword } from '../adminCredentials';
@@ -13,6 +14,8 @@ import { resolveAdminPassword } from '../adminCredentials';
 
 const ADMIN_PASSWORD = resolveAdminPassword();
 const PW_1 = 'E2e-P1#2026a';
+const CONV_ACCOUNT = acct('e2e-conv');
+const RESIGN_ACCOUNT = acct('e2e-resign');
 const PW_2 = 'E2e-P1#2026b';
 
 async function login(
@@ -157,7 +160,7 @@ test.describe.serial('P1 功能闭环', () => {
   test('转正流程：试用期员工申请 → 审批通过 → 状态自动转「在职」', async ({ request }) => {
     const auth = { Authorization: `Bearer ${adminToken}` };
     const { employeeId, token } = await createLinkedEmployee(request, adminToken, {
-      account: 'e2e-conv',
+      account: CONV_ACCOUNT,
       name: 'E2E转正员工',
       idCard: '110101199601011111',
       status: '试用期',
@@ -185,7 +188,7 @@ test.describe.serial('P1 功能闭环', () => {
     expect((await check.json()).status, '应转为在职').toBe('在职');
 
     // 清理
-    await request.delete('/api/auth/accounts/e2e-conv', { headers: auth });
+    await request.delete(`/api/auth/accounts/${CONV_ACCOUNT}`, { headers: auth });
     await request.delete(`/api/users/${employeeId}`, { headers: auth });
   });
 
@@ -193,7 +196,7 @@ test.describe.serial('P1 功能闭环', () => {
   test('离职流程：申请 → 审批通过 → 状态「离职」+ 账号停用', async ({ request }) => {
     const auth = { Authorization: `Bearer ${adminToken}` };
     const { employeeId, token } = await createLinkedEmployee(request, adminToken, {
-      account: 'e2e-resign',
+      account: RESIGN_ACCOUNT,
       name: 'E2E离职员工',
       idCard: '110101199602022222',
       status: '在职',
@@ -221,7 +224,7 @@ test.describe.serial('P1 功能闭环', () => {
 
     // 4) 账号已停用（重新登录被拒）
     const relogin = await request.post('/api/auth/login', {
-      data: { username: 'e2e-resign', password: PW_2 },
+      data: { username: RESIGN_ACCOUNT, password: PW_2 },
     });
     expect(relogin.status(), '停用账号登录应被拒').not.toBe(200);
 
@@ -230,7 +233,7 @@ test.describe.serial('P1 功能闭环', () => {
     expect(meRes.status(), '旧会话应失效').toBe(401);
 
     // 清理
-    await request.delete('/api/auth/accounts/e2e-resign', { headers: auth });
+    await request.delete(`/api/auth/accounts/${RESIGN_ACCOUNT}`, { headers: auth });
     await request.delete(`/api/users/${employeeId}`, { headers: auth });
   });
 

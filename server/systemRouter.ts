@@ -10,9 +10,13 @@
 import { Router } from "express";
 import fs from "fs";
 import path from "path";
-import { db } from "./db.ts";
+import { db, DATA_DIR } from "./db.ts";
 import { recentAccessLogs, accessLogSummary } from "./accessLog.ts";
 import { asNumber } from "./sqliteUtil.ts";
+import { SCHEMA_VERSION } from "./migrate.ts";
+import { freeBytesAt, getBackupConfig, getLastBackupRun } from "./backupDb.ts";
+import { otherInstances } from "./instanceLock.ts";
+import { pdfRenderQueueDepth } from "./pdfWorker.ts";
 
 export const systemRouter = Router();
 
@@ -52,6 +56,8 @@ systemRouter.get("/diagnostics", (req, res) => {
     dbOk = false;
   }
   const mem = process.memoryUsage();
+  const backupConfig = getBackupConfig();
+  const free = freeBytesAt(DATA_DIR);
 
   // 2) 关键表行数
   const tableCounts: Record<string, number> = {};
@@ -77,6 +83,23 @@ systemRouter.get("/diagnostics", (req, res) => {
       memRssMB: Math.round(mem.rss / 1024 / 1024),
       version: APP_VERSION,
       nodeVersion: process.version,
+      // 运维三问：库结构是什么版本、盘还剩多少、备份还是不是活的。
+      // 这些信息只给管理员（诊断面板），公开探针 /api/health 保持最小面。
+      schemaVersion: SCHEMA_VERSION,
+      dataDir: DATA_DIR,
+      diskFreeMB: free === null ? null : Math.round(free / 1024 / 1024),
+      backups: {
+        enabled: backupConfig.enabled,
+        count: backupConfig.count,
+        maxCount: backupConfig.maxCount,
+        retentionDays: backupConfig.retentionDays,
+        intervalMinutes: Math.round(backupConfig.intervalMs / 60000),
+        last: getLastBackupRun(),
+      },
+      // 同一数据目录上的其它实例：恢复备份前必须先看清这一项
+      otherInstances: otherInstances(),
+      // PDF 渲染串行链的积压（>0 说明有人正在逐页栅格化，全站会短暂变慢）
+      pdfRenderQueue: pdfRenderQueueDepth(),
     },
     accessLog: {
       ...summary,

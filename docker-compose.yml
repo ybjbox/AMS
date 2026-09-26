@@ -16,13 +16,30 @@ services:
       NODE_ENV: production
       HOST: "0.0.0.0"
       PORT: "3000"
+      # 业务按本地日历日判定（考勤归属日、合同剩余天数、提醒扫描的"今天"），
+      # 容器默认 UTC 会让这些口径整体偏移 8 小时，而 CI 钉在 Asia/Shanghai 测不出来。
+      TZ: "Asia/Shanghai"
       # 留空则首启随机生成管理员口令并写入容器日志；
       # 设置后可复现登录口令（至少 10 位，含字母与数字）。
       AMS_ADMIN_PASSWORD: "${AMS_ADMIN_PASSWORD:-}"
+      # 备份容量上限：每份备份都带 uploads + 模板快照，只按天数删的话
+      # 份数由 BACKUP_INTERVAL_MS 决定（调成 1 小时就是 168 份），磁盘放大没有上界。
+      BACKUP_MAX_COUNT: "${BACKUP_MAX_COUNT:-14}"
+      BACKUP_MAX_TOTAL_MB: "${BACKUP_MAX_TOTAL_MB:-0}"
+      # 只有真正放在 Nginx/Traefik 这类反代后面才设（跳数，如 1）；
+      # 不设时服务端一律不读 X-Forwarded-For，审计与暴破限流拿的是真实 socket 地址。
+      # TRUST_PROXY: "1"
     volumes:
-      # SQLite 数据 + 凭据持久化；不挂卷则容器删除即丢数据
+      # SQLite 数据 + 备份 + 上传文件 + 导出脚本模板，全部在 DATA_DIR 下；不挂卷则容器删除即丢
       - ams-data:/app/data
+    logging:
+      # 无上限的 json-file 会把宿主盘写满（失效 token 的每个请求都会留日志行）
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
     healthcheck:
+      # /api/health 在库不可用时返回 503，这里因此能真正发现"进程活着但服务不可用"
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 5s

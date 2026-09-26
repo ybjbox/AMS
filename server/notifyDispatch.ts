@@ -9,6 +9,7 @@
  * 账号没有邮箱则跳过该收件人（不视为错误）。
  */
 import { createTransport } from "nodemailer";
+import { assertSafeOutboundUrl } from "./outbound.ts";
 import { db } from "./db.ts";
 import { asString } from "./sqliteUtil.ts";
 import { getNotifyConfig, type NotifyConfig, type WebhookFormat } from "./notifyDb.ts";
@@ -65,6 +66,12 @@ export async function sendWebhook(
   m: OutboundMessage
 ): Promise<string | null> {
   if (!cfg.enabled || !cfg.url) return null;
+  // 出站目标必须"先解析再判 IP"（见 server/outbound.ts）：这一路原先什么都不判，
+  // 而机器人接口的返回内容会被回显到通知面板上 —— 配一个指内网的地址就等于
+  // 给配置者一条读内网 HTTP 的通道。放行 RFC1918（内网自建机器人是本机的正常用法），
+  // 但回环 / 169.254.*（云元数据）/ 链路本地一律挡。
+  const safe = await assertSafeOutboundUrl(cfg.url, { blockPrivate: false });
+  if (!safe.ok) return `webhook 地址被拒：${safe.reason}`;
   try {
     const res = await fetch(cfg.url, {
       method: "POST",
@@ -90,6 +97,9 @@ export async function sendEmail(
   cfg: NotifyConfig["email"],
   m: OutboundMessage
 ): Promise<string | null> {
+  // SMTP 主机刻意**不做** outbound.ts 的地址判定：本机跑 mrelay、内网自建邮件服务器
+  // 都是这套部署的常态，而邮件通道没有 webhook 那条"把对端返回内容读回来展示"的
+  // 回显面 —— 拿不到的东西不构成 SSRF 读取通道。要收口就单独加开关，别默认挡死。
   if (!cfg.enabled || !cfg.host) return null;
   const to = recipientEmail(m.recipient);
   if (!to) return null; // 无邮箱账号：跳过而非失败

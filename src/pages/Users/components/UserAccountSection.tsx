@@ -22,6 +22,7 @@ import {
   type Account,
   type AccountSystemRole,
 } from '@/services/accountApi';
+import { canManageAccount, grantableRoles } from '@/utils/accountCeiling';
 
 const ROLE_LABELS = ACCOUNT_ROLE_LABELS;
 
@@ -43,6 +44,7 @@ type Mode = 'none' | 'create' | 'link';
 export function UserAccountSection({ employee }: { employee: User }) {
   const canManage = useCanManageAccounts();
   const myUsername = useUserStore((state) => state.userInfo?.username ?? '');
+  const myRole = useUserStore((state) => String(state.userInfo?.role ?? '').toUpperCase()) as AccountSystemRole;
   const [accounts, setAccounts] = useState<Account[] | null>(null);
   const [loadError, setLoadError] = useState('');
   const [mode, setMode] = useState<Mode>('none');
@@ -71,6 +73,10 @@ export function UserAccountSection({ employee }: { employee: User }) {
     () => accounts?.find((a) => a.employeeId === employee.id) ?? null,
     [accounts, employee.id]
   );
+  // 与账号管理页同一条规则：秩不低于自己的账号只能由更高的管理员处置
+  const touchable = bound ? canManageAccount(myRole, bound.systemRole, bound.username === myUsername) : false;
+  const ceilingTip =
+    touchable || !bound ? '' : `目标是${ROLE_LABELS[bound.systemRole]}，只有权限更高的管理员可以操作`;
   /** 可以关联的账号：尚未绑定任何人，且不含当前登录的自己（避免把管理员账号挪走） */
   const freeAccounts = useMemo(
     () => (accounts ?? []).filter((a) => !a.employeeId && a.username !== myUsername),
@@ -172,7 +178,8 @@ export function UserAccountSection({ employee }: { employee: User }) {
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={pending}
+                disabled={pending || !touchable}
+                title={ceilingTip}
                 onClick={() => void resetPassword(bound.username)}
               >
                 <KeyRound className="w-3.5 h-3.5" aria-hidden="true" />
@@ -182,7 +189,8 @@ export function UserAccountSection({ employee }: { employee: User }) {
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={pending || bound.username === myUsername}
+                disabled={pending || bound.username === myUsername || !touchable}
+                title={ceilingTip}
                 onClick={() =>
                   void run('已要求重新登录', () => accountApi.revokeSessions(bound.username))
                 }
@@ -194,7 +202,8 @@ export function UserAccountSection({ employee }: { employee: User }) {
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={pending || bound.username === myUsername}
+                disabled={pending || bound.username === myUsername || !touchable}
+                title={ceilingTip}
                 onClick={() =>
                   void run(bound.enabled ? '账号已停用' : '账号已启用', () =>
                     accountApi.update(bound.username, { enabled: !bound.enabled })
@@ -262,11 +271,15 @@ export function UserAccountSection({ employee }: { employee: User }) {
                       <SelectValue>{(v: unknown) => ROLE_LABELS[String(v) as AccountSystemRole] ?? ''}</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      {(['EMPLOYEE', 'HR', 'ADMIN'] as AccountSystemRole[]).map((r) => (
-                        <SelectItem key={r} value={r}>
-                          {ROLE_LABELS[r]}
-                        </SelectItem>
-                      ))}
+                      {/* 这里历来不开放「创建超管」（超管只在账号管理页由现有超管授予），
+                          再叠一层角色天花板：秩 ≥ 自己的选项直接不列，避免提交后 403 */}
+                      {grantableRoles(myRole)
+                        .filter((r) => r !== 'SUPER_ADMIN')
+                        .map((r) => (
+                          <SelectItem key={r} value={r}>
+                            {ROLE_LABELS[r]}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>

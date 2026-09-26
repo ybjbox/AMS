@@ -46,6 +46,49 @@ export function serverErrorResponse(
 }
 
 /**
+ * 4xx 统一出口：**只有"业务代码主动要告诉调用方"的错误**才原样回文案。
+ *
+ * 三个个人数据路由（待办/通知/留存）原先一律 `res.status(400).json({ error: errMessage(error) })`，
+ * 于是 SqliteError（`UNIQUE constraint failed: saved_items.kind, saved_items.owner, saved_items.name`、
+ * `database is locked`、`disk I/O error`）也被当成"参数不合法"原样回前端 —— 表名、列名、库的状态
+ * 全暴露，而且状态码还骗人。判别方式用错误自身的身份而不是猜文案：
+ * 我们自己的领域错误都有类名（AuthError / DeptDataError / PunchFormatError / ExtractError…），
+ * 落到这里还叫得出名字的基本就是它们；系统级错误则是固定几个内建名。
+ */
+const SYSTEM_ERROR_NAMES = new Set([
+  "SqliteError",
+  "TypeError",
+  "RangeError",
+  "ReferenceError",
+  "SyntaxError",
+  "EvalError",
+]);
+
+export function clientErrorResponse(
+  res: import("express").Response,
+  error: unknown,
+  fallback = "请求参数不合法"
+): void {
+  const declared = (error as { status?: number; statusCode?: number })?.status
+    ?? (error as { statusCode?: number })?.statusCode
+    ?? 400;
+  const name = (error as { name?: string })?.name ?? "";
+  const nodeErrCode = (error as { code?: string })?.code ?? "";
+  const looksSystemic =
+    SYSTEM_ERROR_NAMES.has(name) ||
+    nodeErrCode.startsWith("ERR_") ||
+    nodeErrCode.startsWith("SQLITE_") ||
+    name === "Error" && declared >= 500;
+  if (looksSystemic) {
+    console.error("[client-error] 非业务错误，已收敛为通用文案：", error);
+    if (!res.headersSent) res.status(500).json({ error: "服务器内部错误" });
+    return;
+  }
+  const status = declared >= 400 && declared < 500 ? declared : 400;
+  if (!res.headersSent) res.status(status).json({ error: errMessage(error) || fallback });
+}
+
+/**
  * 包装 async 路由处理器，使 Promise rejection 也能流入 errorHandler。
  * 当前各 router 主体均为同步函数（node:sqlite 是同步 API），本工具主要面向
  * 未来可能出现或个别异步分支，保证异常不被静默吞掉。

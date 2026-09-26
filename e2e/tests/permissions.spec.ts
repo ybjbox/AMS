@@ -1,3 +1,4 @@
+import { acct } from '../runScoped';
 import { test, expect } from '@playwright/test';
 import { resolveAdminPassword } from '../adminCredentials';
 
@@ -23,9 +24,13 @@ const TEST_PASSWORD_1 = 'E2e-Matrix#2026';
 const TEST_PASSWORD_2 = 'E2e-Matrix#2027';
 
 const ACCOUNTS = {
-  employee: { username: 'e2e-employee', systemRole: 'EMPLOYEE', displayName: 'E2E 普通员工' },
-  hr: { username: 'e2e-hr', systemRole: 'HR', displayName: 'E2E HR 专员' },
+  employee: { username: acct('e2e-employee'), systemRole: 'EMPLOYEE', displayName: 'E2E 普通员工' },
+  hr: { username: acct('e2e-hr'), systemRole: 'HR', displayName: 'E2E HR 专员' },
 };
+
+// 用户名每轮不同（删号会下架用户名，见 e2e/runScoped.ts），下面按变量引用
+const EMP = ACCOUNTS.employee.username;
+const HR = ACCOUNTS.hr.username;
 
 interface Session {
   username: string;
@@ -177,9 +182,9 @@ test.describe.serial('角色权限矩阵', () => {
   // ---- 写操作：默认 HR+（EMPLOYEE 应 403）----
   test('写操作：EMPLOYEE 被拒（403），HR 可写', async ({ request }) => {
     // POST /users 创建员工（默认写策略 → HR+）
-    await expectStatus(request, tokens['e2e-employee'].token, 'POST', '/api/users', 403,
+    await expectStatus(request, tokens[EMP].token, 'POST', '/api/users', 403,
       'POST /users as EMPLOYEE 应 403', { name: 'E2E测试', idCard: '110101199001011234' });
-    await expectStatus(request, tokens['e2e-hr'].token, 'POST', '/api/users', 201,
+    await expectStatus(request, tokens[HR].token, 'POST', '/api/users', 201,
       'POST /users as HR 应 201', {
         name: 'E2E测试员工',
         idCard: '110101199001011234',
@@ -196,7 +201,7 @@ test.describe.serial('角色权限矩阵', () => {
   // ---- 审批自助提交：EMPLOYEE+ ----
   test('审批自助提交：EMPLOYEE 可提交（特例策略）', async ({ request }) => {
     // 先造一条待审批数据；注意返回结构可能是数组或信封
-    const res = await expectStatus(request, tokens['e2e-employee'].token, 'POST', '/api/approvals', 201,
+    const res = await expectStatus(request, tokens[EMP].token, 'POST', '/api/approvals', 201,
       'POST /approvals as EMPLOYEE 应 201', {
         type: 'leave',
         leaveType: '事假',
@@ -210,9 +215,9 @@ test.describe.serial('角色权限矩阵', () => {
 
   // ---- 审计日志：仅 ADMIN ----
   test('审计日志：EMPLOYEE / HR 被拒（403），ADMIN 可读', async ({ request }) => {
-    await expectStatus(request, tokens['e2e-employee'].token, 'GET', '/api/audit-logs', 403,
+    await expectStatus(request, tokens[EMP].token, 'GET', '/api/audit-logs', 403,
       'GET /audit-logs as EMPLOYEE 应 403');
-    await expectStatus(request, tokens['e2e-hr'].token, 'GET', '/api/audit-logs', 403,
+    await expectStatus(request, tokens[HR].token, 'GET', '/api/audit-logs', 403,
       'GET /audit-logs as HR 应 403');
     await expectStatus(request, adminToken, 'GET', '/api/audit-logs', 200,
       'GET /audit-logs as ADMIN 应 200');
@@ -220,9 +225,9 @@ test.describe.serial('角色权限矩阵', () => {
 
   // ---- 运行诊断：仅 ADMIN ----
   test('运行诊断：EMPLOYEE / HR 被拒（403），ADMIN 可读且响应结构完整', async ({ request }) => {
-    await expectStatus(request, tokens['e2e-employee'].token, 'GET', '/api/system/diagnostics', 403,
+    await expectStatus(request, tokens[EMP].token, 'GET', '/api/system/diagnostics', 403,
       'GET /system/diagnostics as EMPLOYEE 应 403');
-    await expectStatus(request, tokens['e2e-hr'].token, 'GET', '/api/system/diagnostics', 403,
+    await expectStatus(request, tokens[HR].token, 'GET', '/api/system/diagnostics', 403,
       'GET /system/diagnostics as HR 应 403');
     const res = await expectStatus(request, adminToken, 'GET', '/api/system/diagnostics', 200,
       'GET /system/diagnostics as ADMIN 应 200');
@@ -240,9 +245,9 @@ test.describe.serial('角色权限矩阵', () => {
 
   // ---- 账号管理：仅 ADMIN ----
   test('账号管理：EMPLOYEE / HR 被拒（403）', async ({ request }) => {
-    await expectStatus(request, tokens['e2e-employee'].token, 'GET', '/api/auth/accounts', 403,
+    await expectStatus(request, tokens[EMP].token, 'GET', '/api/auth/accounts', 403,
       'GET /auth/accounts as EMPLOYEE 应 403');
-    await expectStatus(request, tokens['e2e-hr'].token, 'POST', '/api/auth/accounts', 403,
+    await expectStatus(request, tokens[HR].token, 'POST', '/api/auth/accounts', 403,
       'POST /auth/accounts as HR 应 403', { username: 'x', password: 'y' });
   });
 
@@ -250,9 +255,9 @@ test.describe.serial('角色权限矩阵', () => {
   test('组织架构写：EMPLOYEE / HR 被拒（403），ADMIN 通过鉴权', async ({ request }) => {
     // 该 Router 的写端点是整树替换 PUT /departments/tree（无单点 POST）。
     // 为不修改真实组织数据，ADMIN 用例发送非法载荷：预期 400（证明已通过鉴权层、止步于校验）。
-    await expectStatus(request, tokens['e2e-employee'].token, 'PUT', '/api/departments/tree', 403,
+    await expectStatus(request, tokens[EMP].token, 'PUT', '/api/departments/tree', 403,
       'PUT /departments/tree as EMPLOYEE 应 403', { departments: [] });
-    await expectStatus(request, tokens['e2e-hr'].token, 'PUT', '/api/departments/tree', 403,
+    await expectStatus(request, tokens[HR].token, 'PUT', '/api/departments/tree', 403,
       'PUT /departments/tree as HR 应 403', { departments: [] });
     await expectStatus(request, adminToken, 'PUT', '/api/departments/tree', 400,
       'PUT /departments/tree as ADMIN 应 400（鉴权通过，载荷非法）', { notAnArray: true });
@@ -261,7 +266,7 @@ test.describe.serial('角色权限矩阵', () => {
   // ---- 越权提升防护：HR 不能创建更高权限账号 ----
   test('HR 尝试创建账号被拒 + EMPLOYEE 无法访问他人数据面', async ({ request }) => {
     // HR 不能动账号管理（ADMIN 特例）
-    await expectStatus(request, tokens['e2e-hr'].token, 'GET', '/api/auth/security-events', 403,
+    await expectStatus(request, tokens[HR].token, 'GET', '/api/auth/security-events', 403,
       'GET /auth/security-events as HR 应 403');
   });
 
@@ -269,7 +274,7 @@ test.describe.serial('角色权限矩阵', () => {
   test('登出后旧 token 失效（401）', async ({ request }) => {
     // 用员工账号单独登录一个临时会话，登出，验证 token 失效
     const loginRes = await request.post('/api/auth/login', {
-      data: { username: 'e2e-employee', password: TEST_PASSWORD_2 },
+      data: { username: EMP, password: TEST_PASSWORD_2 },
     });
     expect(loginRes.status()).toBe(200);
     const { token } = await loginRes.json();

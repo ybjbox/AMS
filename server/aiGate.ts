@@ -1,3 +1,4 @@
+import { assertSafeOutboundUrl } from "./outbound.ts";
 import type { Request, Response } from "express";
 import { getAiConfig, quotaLimitForRole, type AiConfig } from "./aiConfigDb.ts";
 import { getUserAiConfig, isUserAiConfigUsable, getUsageToday, incrementUsage } from "./aiUserDb.ts";
@@ -83,9 +84,16 @@ export async function callModel(
   userContent: string | unknown[],
   systemPrompt: string
 ): Promise<string> {
+  // 出站目标必须在**发请求前**判（带着 API Key；保存时判过一次会被 DNS 变更绕过）。
+  // 原因里有主机名与解析出的 IP，只进日志：这条链路的调用方是 EMPLOYEE 可达的路由。
+  const safe = await assertSafeOutboundUrl(config.baseUrl, { blockPrivate: true });
+  if (!safe.ok) {
+    console.error(`[ai-gate] 拒绝出站请求（${config.baseUrl}）：${safe.reason}`);
+    throw new Error("模型服务地址不被允许，请联系管理员检查 AI 配置");
+  }
   let upstream: globalThis.Response;
   try {
-    upstream = await fetch(`${config.baseUrl.replace(/\/$/, "")}/chat/completions`, {
+    upstream = await fetch(`${safe.url.toString().replace(/\/$/, "")}/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -103,12 +111,18 @@ export async function callModel(
     });
   } catch (e) {
     if (e instanceof Error && e.name === "TimeoutError") throw e;
-    throw new Error(`模型服务连接失败（${config.baseUrl}），请检查 AI 配置中的接口地址与网络`, { cause: e });
+    // 出错的**原因**（配好的 baseUrl、底层 undici 报文）留在日志里，不回给调用方：
+    // 这两条路由（/api/form/polish、/api/notice/generate）是 EMPLOYEE 可达的，
+    // 原样回显等于让任何登录员工探到系统配置的模型服务地址与内网拓扑。
+    console.error("[ai-gate] 连接模型服务失败：", config.baseUrl, e);
+    throw new Error("模型服务连接失败，请检查网络或稍后重试（管理员可在系统设置 → AI 助手查看服务端日志）", { cause: e });
   }
   if (!upstream.ok) {
     const raw = (await upstream.text().catch(() => "")).trim();
     const detail = raw && !raw.startsWith("<") && !raw.startsWith('{"') ? raw.slice(0, 160) : "";
-    throw new Error(`模型服务返回 ${upstream.status}${detail ? `：${detail}` : ""}`);
+    // 服务商的响应体可能包含请求上下文回显、配额信息或内部错误串，同样只进日志
+    console.error(`[ai-gate] 模型服务返回 HTTP ${upstream.status}：`, detail);
+    throw new Error(`模型服务返回 HTTP ${upstream.status}，请稍后重试或由管理员检查 AI 配置`);
   }
   const json = (await upstream.json()) as { choices?: Array<{ message?: { content?: unknown } }> };
   const content = json.choices?.[0]?.message?.content;

@@ -116,8 +116,28 @@ export async function sendBinary<T>(url: string, blob: Blob): Promise<T> {
 }
 
 /**
- * 直接下载链接（审计 CSV 导出、备份文件下载）无法走 axios 拦截器，
- * 用 access_token 查询参数携带凭据。后端 authGate 仅对文件下载类端点放行 query token。
+ * 二进制下载（走请求头带凭据）：给「内容敏感、不该把 token 落进 URL」的下载用，
+ * 例如备份文件导出。目前消费方：/api/backup/export/:name。
+ */
+export async function fetchBlob(url: string): Promise<Blob> {
+  const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+  const res = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  if (!res.ok) {
+    let err: unknown;
+    try {
+      err = await res.json();
+    } catch {
+      err = { error: `HTTP ${res.status}` };
+    }
+    throw err;
+  }
+  return await res.blob();
+}
+
+/**
+ * 直接下载链接（审计 CSV 导出、文档原件下载）无法走 axios 拦截器，
+ * 用 access_token 查询参数携带凭据。后端 authGate 仅对文件下载类端点放行 query token；
+ * 交出整库凭据的备份下载不在其列，走上面的 fetchBlob。
  */
 export function withAuthToken(url: string): string {
   const token = localStorage.getItem(STORAGE_KEYS.TOKEN);

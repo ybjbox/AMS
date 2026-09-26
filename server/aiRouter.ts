@@ -21,6 +21,8 @@ import {
   type StoredMsg,
 } from "./aiDb.ts";
 import { ROLE_LEVEL, getAccount } from "./authDb.ts";
+import { validateBody, aiConversationSchema, chatMessagesSchema, formatZodError } from "./validation.ts";
+import { assertSafeOutboundUrl } from "./outbound.ts";
 import {
   getUserAiConfig,
   setUserAiConfig,
@@ -75,9 +77,16 @@ async function streamFromUpstream(
   payload: Record<string, unknown>,
   config: AiConfig
 ): Promise<boolean> {
+  // **每次真正发请求前**都要判一次目标地址：保存时判过一次不够 —— DNS 之后可以改指，
+  // 而这里带着 API Key，被指向内网就是"带着凭据打内网"。见 server/outbound.ts。
+  const safe = await assertSafeOutboundUrl(config.baseUrl, { blockPrivate: true });
+  if (!safe.ok) {
+    console.error(`[ai] 拒绝出站请求（${config.baseUrl}）：${safe.reason}`);
+    return false;
+  }
   let upstream: Response;
   try {
-    upstream = await fetch(`${config.baseUrl.replace(/\/$/, "")}/chat/completions`, {
+    upstream = await fetch(`${safe.url.toString().replace(/\/$/, "")}/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -140,8 +149,13 @@ async function summarizeMessages(
   }
 
   try {
+    const safe = await assertSafeOutboundUrl(config.baseUrl, { blockPrivate: true });
+    if (!safe.ok) {
+      console.error(`[ai] 拒绝摘要出站请求（${config.baseUrl}）：${safe.reason}`);
+      return "";
+    }
     const upstream = await fetch(
-      `${config.baseUrl.replace(/\/$/, "")}/chat/completions`,
+      `${safe.url.toString().replace(/\/$/, "")}/chat/completions`,
       {
         method: "POST",
         headers: {
@@ -205,42 +219,13 @@ function isSuperAdmin(req: Request): boolean {
 }
 
 /**
- * SSRF 防护（OWASP ssrf-attacks）：校验出站 baseUrl。
- * 策略：https 优先；阻止指向内网/回环/元数据地址的请求（即使管理员误配也不至于
- * 让服务器变成内网探针）。允许 http:// 仅为兼容局域网自建 AI 服务（如 ollama），
- * 但仅当显式允许时——目前策略：非 https 一律检查主机名，禁止回环/内网段/元数据。
+ * SSRF 防护：出站 baseUrl 校验统一走 `server/outbound.ts`（先解析再判 IP）。
+ * 这里曾经有一份按主机名正则判的版本 —— 与新模块的差别正是它挡不住的那种：
+ * 一个把 A 记录指向 127.0.0.1 的公网域名。保留同名薄封装，是为了让四个调用点
+ * 仍然只有一处口径（并且**每次真正发请求前都要判**，不能只在保存配置时判一次）。
  */
-function validateOutboundBaseUrl(raw: string): { ok: true; url: URL } | { ok: false; reason: string } {
-  let url: URL;
-  try {
-    url = new URL(raw);
-  } catch {
-    return { ok: false, reason: "Base URL 格式无效" };
-  }
-  if (url.protocol !== "https:" && url.protocol !== "http:") {
-    return { ok: false, reason: "仅支持 http/https 协议" };
-  }
-  const host = url.hostname.toLowerCase();
-  // 云元数据地址（AWS/GCP/Azure 通用）
-  if (host === "169.254.169.254" || host === "metadata.google.internal") {
-    return { ok: false, reason: "不允许访问云元数据地址" };
-  }
-  // 回环与私有网段（含 IPv6 回环）
-  const privatePatterns: RegExp[] = [
-    /^localhost$/,
-    /^127\./,
-    /^10\./,
-    /^192\.168\./,
-    /^172\.(1[6-9]|2\d|3[01])\./,
-    /^0\./,
-    /^\[?::1\]?$/,
-    /^\[?fc00:/i,
-    /^\[?fe80:/i,
-  ];
-  if (privatePatterns.some((p) => p.test(host))) {
-    return { ok: false, reason: "不允许访问内网或本机地址" };
-  }
-  return { ok: true, url };
+async function validateOutboundBaseUrl(raw: string): Promise<{ ok: true; url: URL } | { ok: false; reason: string }> {
+  return assertSafeOutboundUrl(raw, { blockPrivate: true });
 }
 
 aiRouter.get("/config", (req: Request, res: ExpressResponse) => {
@@ -293,7 +278,7 @@ aiRouter.get("/models", async (req: Request, res: ExpressResponse) => {
       .status(400)
       .json({ error: "请先填写 API Key（或在配置中已保存密钥）" });
   }
-  const validated = validateOutboundBaseUrl(baseUrl);
+  const validated = await validateOutboundBaseUrl(baseUrl);
   if (!validated.ok) {
     return res.status(400).json({ error: validated.reason });
   }
@@ -355,7 +340,7 @@ aiRouter.post("/test", async (req: Request, res: ExpressResponse) => {
   if (!model) {
     return res.status(400).json({ error: "请先选择或填写模型" });
   }
-  const validated = validateOutboundBaseUrl(baseUrl);
+  const validated = await validateOutboundBaseUrl(baseUrl);
   if (!validated.ok) {
     return res.status(400).json({ error: validated.reason });
   }
@@ -435,14 +420,14 @@ function truncateTestSnippet(s: string): string {
   return s.length > 60 ? `${s.slice(0, 60)}…` : s;
 }
 
-aiRouter.put("/config", (req: Request, res: ExpressResponse) => {
+aiRouter.put("/config", async (req: Request, res: ExpressResponse) => {
   if (!isSuperAdmin(req)) {
     return res.status(403).json({ error: "仅超级管理员可访问" });
   }
   const b = (req.body ?? {}) as Partial<AiConfig>;
   // SSRF 纵深防御：保存 baseUrl 时校验（非空时才验）
   if (typeof b.baseUrl === "string" && b.baseUrl.trim()) {
-    const v = validateOutboundBaseUrl(b.baseUrl.trim());
+    const v = await validateOutboundBaseUrl(b.baseUrl.trim());
     if (!v.ok) {
       return res.status(400).json({ error: `Base URL 不合法：${v.reason}` });
     }
@@ -605,7 +590,7 @@ aiRouter.get("/me/config", (req: Request, res: ExpressResponse) => {
   });
 });
 
-aiRouter.put("/me/config", (req: Request, res: ExpressResponse) => {
+aiRouter.put("/me/config", async (req: Request, res: ExpressResponse) => {
   const user = req.auth?.username;
   if (!user) return res.status(401).json({ error: "未登录" });
   if (!getAiConfig().allowPersonalModel) {
@@ -625,7 +610,7 @@ aiRouter.put("/me/config", (req: Request, res: ExpressResponse) => {
     return res.status(400).json({ error: "请填写 API Key" });
   }
   // 与系统配置同一 SSRF 防线：员工自配地址也不允许指向内网/元数据
-  const v = validateOutboundBaseUrl(baseUrl);
+  const v = await validateOutboundBaseUrl(baseUrl);
   if (!v.ok) {
     return res.status(400).json({ error: `Base URL 不合法：${v.reason}` });
   }
@@ -699,16 +684,17 @@ aiRouter.get("/conversations", (req: Request, res: ExpressResponse) => {
   res.json(listConversations(user));
 });
 
-aiRouter.post("/conversations", (req: Request, res: ExpressResponse) => {
+/**
+ * 会话存档。`StoredMsg` 只是 TS 类型，运行时不存在 —— 之前只有 `Array.isArray` 一道闸，
+ * 于是 `content` 可以是对象/数组/10 万字，`role` 可以是任意字符串，全部 JSON.stringify 进
+ * `ai_conversations.messages`，之后又被当作上下文回灌给模型（等于一条自增长的注入面）。
+ */
+aiRouter.post("/conversations", validateBody(aiConversationSchema), (req: Request, res: ExpressResponse) => {
   const user = req.auth?.username;
   if (!user) return res.status(401).json({ error: "未登录" });
   const b = (req.body ?? {}) as { title?: string; messages?: StoredMsg[] };
-  const msgs = Array.isArray(b.messages) ? b.messages : [];
-  const id = createConversation(
-    user,
-    typeof b.title === "string" ? b.title : "新对话",
-    msgs
-  );
+  const msgs = b.messages ?? [];
+  const id = createConversation(user, b.title?.trim() || "新对话", msgs);
   res.json({ id });
 });
 
@@ -721,17 +707,12 @@ aiRouter.get("/conversations/:id", (req: Request, res: ExpressResponse) => {
   res.json(conv);
 });
 
-aiRouter.put("/conversations/:id", (req: Request, res: ExpressResponse) => {
+aiRouter.put("/conversations/:id", validateBody(aiConversationSchema), (req: Request, res: ExpressResponse) => {
   const user = req.auth?.username;
   if (!user) return res.status(401).json({ error: "未登录" });
   const b = (req.body ?? {}) as { title?: string; messages?: StoredMsg[] };
-  const msgs = Array.isArray(b.messages) ? b.messages : [];
-  const ok = updateConversation(
-    req.params.id,
-    user,
-    typeof b.title === "string" ? b.title : "新对话",
-    msgs
-  );
+  const msgs = b.messages ?? [];
+  const ok = updateConversation(req.params.id, user, b.title?.trim() || "新对话", msgs);
   if (!ok) return res.status(404).json({ error: "对话不存在" });
   res.json({ ok: true });
 });
@@ -788,13 +769,18 @@ aiRouter.post("/chat", async (req: Request, res: ExpressResponse) => {
       return res.status(403).json({ error: "当前仅管理员可使用 AI 助手" });
     }
 
-    const { messages, useData } = (req.body ?? {}) as {
-      messages?: ChatMsg[];
-      useData?: boolean;
-    };
-    if (!Array.isArray(messages) || messages.length === 0) {
-      return res.status(400).json({ error: "messages 不能为空" });
+    const parsed = chatMessagesSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      // 这条链路的错误协议是 SSE（前端只读 data: 帧），所以不返 JSON 400
+      res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+      res.setHeader("Cache-Control", "no-cache, no-transform");
+      res.flushHeaders?.();
+      sse(res, { error: formatZodError(parsed.error) });
+      sse(res, { done: true });
+      res.end();
+      return;
     }
+    const { messages, useData } = parsed.data;
 
     // 3) 凭据来源：个人模型（不占额度，需管理员启用）优先，否则走系统配置并按角色档位受每日额度约束
     const user = req.auth?.username ?? "";

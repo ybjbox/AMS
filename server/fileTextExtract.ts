@@ -72,6 +72,18 @@ function decodeText(buffer: Buffer): string {
   return utf8;
 }
 
+/**
+ * xlsx / docx 是压缩包：3MB 的表可以膨胀成几十万行（zip 炸弹）。
+ * `MAX_FILE_BYTES` 只挡得住压缩后的体积，而真正吃内存的是"逐格转字符串再拼接"这一步 ——
+ * 所以解压后再收一道行/格上限，到量就停（调用方还会把文本截到 MAX_TEXT_CHARS，
+ * 多解出来的部分本来就用不上）。
+ */
+const MAX_SHEET_ROWS = 20_000;
+const MAX_SHEET_CELLS = 200_000;
+
+/** eachRow 没有 break，用哨兵异常中断遍历 */
+class ExtractLimitReached extends Error {}
+
 async function extractXlsx(buffer: Buffer): Promise<string> {
   const wb = new ExcelJS.Workbook();
   try {
@@ -80,18 +92,28 @@ async function extractXlsx(buffer: Buffer): Promise<string> {
     throw new ExtractError("Excel 文件无法解析（请确认为 .xlsx 格式）");
   }
   const lines: string[] = [];
-  wb.eachSheet((sheet) => {
-    if (sheet.rowCount === 0) return;
-    lines.push(`【工作表：${sheet.name}】`);
-    sheet.eachRow({ includeEmpty: false }, (row) => {
-      const cells: string[] = [];
-      row.eachCell({ includeEmpty: true }, (cell) => {
-        cells.push(cellText(cell.value));
+  let rows = 0;
+  let cells = 0;
+  try {
+    wb.eachSheet((sheet) => {
+      if (sheet.rowCount === 0) return;
+      lines.push(`【工作表：${sheet.name}】`);
+      sheet.eachRow({ includeEmpty: false }, (row) => {
+        if (++rows > MAX_SHEET_ROWS || (cells += row.cellCount) > MAX_SHEET_CELLS) {
+          throw new ExtractLimitReached();
+        }
+        const texts: string[] = [];
+        row.eachCell({ includeEmpty: true }, (cell) => {
+          texts.push(cellText(cell.value));
+        });
+        const line = texts.join(" | ").replace(/\s+$/, "");
+        if (line.replace(/[|\s]/g, "")) lines.push(line);
       });
-      const line = cells.join(" | ").replace(/\s+$/, "");
-      if (line.replace(/[|\s]/g, "")) lines.push(line);
     });
-  });
+  } catch (e) {
+    if (!(e instanceof ExtractLimitReached)) throw e;
+    lines.push(`…（表格过大，仅解析前 ${MAX_SHEET_ROWS} 行 / ${MAX_SHEET_CELLS} 格）`);
+  }
   return lines.join("\n");
 }
 

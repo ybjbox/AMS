@@ -4,6 +4,7 @@ import { pdf } from "pdf-to-img";
 import type { AiConfig } from "./aiConfigDb.ts";
 import { extractFileText, ExtractError, NoTextLayerError, MAX_FILE_BYTES, isSupportedFile, truncateText } from "./fileTextExtract.ts";
 import { gate, gateCore, tryChargeQuota, chargeQuota, callModel } from "./aiGate.ts";
+import { withPdfWorker } from "./pdfWorker.ts";
 
 /**
  * 微信通知一键生成器。
@@ -120,44 +121,30 @@ function ocrImage(effective: AiConfig, bytes: Buffer, mime: string, hint = ""): 
 /** 扫描版 PDF 逐页渲染上限（每页一次模型调用；额度按整份文档计 1 次） */
 const MAX_OCR_PAGES = 8;
 
-/** 串行化渲染窗口，避免并发请求交错改写全局 worker */
-let scannedPdfChain: Promise<unknown> = Promise.resolve();
-
 /** 扫描版 PDF：pdf-to-img 逐页渲染 PNG → 视觉模型逐页 OCR → 拼接 */
 async function ocrScannedPdf(
   effective: AiConfig,
   buffer: Buffer,
   onStage?: (page: number, total: number) => void
 ): Promise<string> {
-  const run = async (): Promise<string> => {
-    // unpdf 打包的 pdf.js 6.1 把 worker 挂在 globalThis.pdfjsWorker 上，与
-    // pdf-to-img 需要的 6.2 worker 冲突（首次使用即被缓存）。渲染窗口内先换入 6.2。
-    const g = globalThis as { pdfjsWorker?: unknown };
-    const prev = g.pdfjsWorker;
-    g.pdfjsWorker = await import("pdfjs-dist/build/pdf.worker.mjs");
-    try {
-      const doc = await pdf(buffer, { scale: 2 });
-      const pages: string[] = [];
-      let page = 0;
-      for await (const image of doc) {
-        page += 1;
-        if (page > MAX_OCR_PAGES) {
-          pages.push(`…（共 ${doc.length} 页，后续 ${doc.length - MAX_OCR_PAGES} 页未识别）`);
-          break;
-        }
-        onStage?.(page, doc.length);
-        const text = await ocrImage(effective, Buffer.from(image), "image/png", `（第 ${page}/${doc.length} 页）`);
-        if (text) pages.push(text);
+  // 串行与全局 worker 交换交给 withPdfWorker：文档打印那条路用的是同一个全局，
+  // 只在这里排队等于两条路照样会互相踩。
+  return withPdfWorker(async () => {
+    const doc = await pdf(buffer, { scale: 2 });
+    const pages: string[] = [];
+    let page = 0;
+    for await (const image of doc) {
+      page += 1;
+      if (page > MAX_OCR_PAGES) {
+        pages.push(`…（共 ${doc.length} 页，后续 ${doc.length - MAX_OCR_PAGES} 页未识别）`);
+        break;
       }
-      return pages.join("\n\n").trim();
-    } finally {
-      if (prev === undefined) delete g.pdfjsWorker;
-      else g.pdfjsWorker = prev;
+      onStage?.(page, doc.length);
+      const text = await ocrImage(effective, Buffer.from(image), "image/png", `（第 ${page}/${doc.length} 页）`);
+      if (text) pages.push(text);
     }
-  };
-  const task = scannedPdfChain.then(run, run);
-  scannedPdfChain = task.catch(() => undefined);
-  return task;
+    return pages.join("\n\n").trim();
+  });
 }
 
 /**

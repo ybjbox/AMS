@@ -64,7 +64,7 @@
 
 **已知能力限制**（需在编辑器提示中说明）：脚本无法**读取**单元格既有值（getter 返回 undefined），也无法使用定时器与任何 IO；`import` / `require` 会被直接拒绝。
 
-**回归测试**：`npm run test:sandbox`（`scripts/verify-export-sandbox.mjs`），41 项断言全部通过，含 6 种路径穿越写法、8 项宿主 API 探测、3 条 vm 逃逸链、动态 import、死循环超时。
+**回归测试**：`node scripts/verify-export-sandbox.mjs`（已纳入 `npm run test:server`），42 项断言全部通过，含 6 种路径穿越写法、8 项宿主 API 探测、3 条 vm 逃逸链、动态 import、死循环超时。脚本自起随机端口的私有实例，不依赖 :3000。
 
 > ✅ 补充：自 2026-07-31 起，`/api/export-templates` 与 `/api/export/employees` 已被 `authGate` 纳管（写模板需 ADMIN、批量导出需 HR），原「无鉴权」风险已随 P0-2 一并消除。
 
@@ -102,7 +102,7 @@ P0-2 与 P0-3（假登录）、P0-4（仅前端权限）一并修复，落地为
 8. **监听地址**：默认 `127.0.0.1`；仅当显式设置 `HOST=0.0.0.0` 时打印安全告警。
 9. **凭据引导**：首启随机生成 admin 口令写入 `data/ADMIN_CREDENTIALS.txt`（权限 0600）并在控制台高亮打印；也可由 `AMS_ADMIN_PASSWORD` 环境变量指定，杜绝 `admin/123456` 这类弱口令。
 
-**回归测试**：`node scripts/verify-auth.mjs` 77/77 通过；`npm run test:sandbox` 41/41 通过（沙箱测试已补登录步骤以适配新网关）。
+**回归测试**：`node scripts/verify-auth.mjs` 86/86 通过；`node scripts/verify-export-sandbox.mjs` 42/42 通过（两者已自包含并纳入 `npm run test:server`，沙箱测试保留登录步骤以适配新网关）。
 
 > 说明：审计原建议用 JWT，实际采用「随机 token + 服务端会话表」方案——可主动吊销、DB 不存明文、离职/降权即时生效，比无状态 JWT 更适合本系统的后台管理场景。
 
@@ -177,7 +177,7 @@ P0-2 与 P0-3（假登录）、P0-4（仅前端权限）一并修复，落地为
 - `deleteDocument(id)`：同样包事务（`DELETE FROM documents` + `removeDocIdsFromSets([id])`），提交成功后才删磁盘文件。
 - `deleteDocumentSet(id)`：单行 `DELETE`，SQLite 单语句本身原子，无需事务。
 - **顺序严格性**：磁盘文件删除置于 `COMMIT` 之后，确保「DB 已提交 → 文件可安全删除」；若提交失败回滚，DB 行与磁盘文件保持一致，不会残留悬空引用。
-- **回归测试**：`npm run test:cascade`（`scripts/verify-cascade-tx.ts`，`tsx` 直接 import 数据层在临时 DATA_DIR 上运行，无需启动 HTTP），20 项断言全绿：
+- **回归测试**：`npx tsx scripts/verify-cascade-tx.ts`（`tsx` 直接 import 数据层在临时 DATA_DIR 上运行，无需启动 HTTP；已纳入 `npm run test:server`），20 项断言全绿：
   - 级联删除成功路径：文件夹树 + 文档 + 套件引用 + 磁盘文件一起消失；
   - 级联删除中途失败（注入 `removeDocIdsFromSets` 的 SELECT 抛错，模拟「删完实体后清理引用时崩」）：整体回滚，文件夹/文档/套件引用/磁盘文件全部保留，且回滚后可再次正常删除；
   - 单文档删除：成功路径删库 + 删磁盘；中途失败回滚保留。
@@ -241,7 +241,7 @@ P0-2 与 P0-3（假登录）、P0-4（仅前端权限）一并修复，落地为
   - **恢复是热恢复**：先打「恢复前」安全备份 → `wal_checkpoint` → 关旧连接 → 拷贝覆盖 `ams.db` → 通过 `db.reloadDb()` 重开连接；`auditDb`/`authMiddleware` 的模块级缓存语句注册了 `onDbReload` 钩子，重连后自动重 prepare，审计/安全写入不中断。
   - 前端 `src/pages/Settings/panels/BackupPanel.tsx`（仅管理员可见）：展示自动备份状态、立即备份、下载、恢复（带确认）、删除，错误复用 P1-9 的 `notifySaveFailure` 兜底。
 - **说明**：`db.ts` 的 `db` 改为可热重载（`let` + `reloadDb`/`closeDb`/`onDbReload`），ESM 实时绑定保证其它模块读到新连接；`server/migrate.ts` 重建表顺序也顺带调整为满足 FK 依赖（departments/roles 先于 employees）。
-- **回归**：`scripts/verify-backup.ts`（`npm run test:backup`，16/16）：VACUUM 产出合法 SQLite、列表倒序、按保留期清理、热恢复后数据正确回退、拒绝非 SQLite 文件、拒绝路径穿越。
+- **回归**：`npx tsx scripts/verify-backup.ts`（16/16，已纳入 `npm run test:server`）：VACUUM 产出合法 SQLite、列表倒序、按保留期清理、热恢复后数据正确回退、拒绝非 SQLite 文件、拒绝路径穿越。
 - **实测**：重启 dev server 后 `[backup] 自动备份已启动`；端到端（管理员登录→列表→创建→下载为合法 SQLite→删除）全部 200，匿名访问 401。
 
 ### P1-8 【部署】Dockerfile / nginx.conf 与实际架构完全不匹配，照此部署必然 502 ✅ 已修复（2026-07-31）
@@ -276,7 +276,7 @@ P0-2 与 P0-3（假登录）、P0-4（仅前端权限）一并修复，落地为
 - **避免重复弹窗**：网络错误 / 401 由 `api.ts` 拦截器已弹通用提示并可能跳转登录，故这两类 `isGloballyToasted` 置真、只写通知中心、不再弹第二条 toast。
 - 接口签名 `setDepartments/setRoles` 返回 `Promise<void>`，调用方（Departments 页）保持 fire-and-forget 用法，无需改动。
 
-新增回归 `scripts/verify-save-failure.mjs`（`npm run test:save-failure`，10/10）：锁定前端所依赖的后端契约——部门/职位整树 PUT 校验失败必须返回 400 且响应体带 `error` 字符串（前端展示文案的直接来源），防止后端改错误体形状后前端静默回退。
+新增回归 `scripts/verify-save-failure.mjs`（`node scripts/verify-save-failure.mjs`，10/10，已纳入 `npm run test:server`）：锁定前端所依赖的后端契约——部门/职位整树 PUT 校验失败必须返回 400 且响应体带 `error` 字符串（前端展示文案的直接来源），防止后端改错误体形状后前端静默回退。
 
 `tsc --noEmit` 与 `npm run build` 均通过；其余后端回归套件（audit/fk/concurrency/sandbox/auth）不受影响（本修复只动前端 store）。
 
@@ -290,7 +290,7 @@ P0-2 与 P0-3（假登录）、P0-4（仅前端权限）一并修复，落地为
 改造：
 
 - 抽 `src/store/saveFailureCore.ts`（纯函数 `describeSaveError` / `isNetworkOrAuthError`，可单测）+ `src/store/saveFailure.ts`（`notifySaveFailure`：弹带后端原因 + 「重试」的红色 toast，并写通知中心；网络/401 由全局拦截器已提示故跳过 toast）。
-- **修掉一个潜在 bug**：原 `isGloballyToasted` / 初版 `isNetworkOrAuthError` 用 `response === undefined` 判定网络，会把后端 4xx 的 `{ error }` 纯对象误判为网络从而**吞掉 toast**；改为仅对 `isAxiosError: true`（网络/超时）与 `code: UNAUTHENTICATED/SESSION_EXPIRED`（401）返回 true。这条契约由 `scripts/verify-save-failure-core.ts`（`npm run test:save-failure-core`，17/17）永久锁定。
+- **修掉一个潜在 bug**：原 `isGloballyToasted` / 初版 `isNetworkOrAuthError` 用 `response === undefined` 判定网络，会把后端 4xx 的 `{ error }` 纯对象误判为网络从而**吞掉 toast**；改为仅对 `isAxiosError: true`（网络/超时）与 `code: UNAUTHENTICATED/SESSION_EXPIRED`（401）返回 true。这条契约由 `scripts/verify-save-failure-core.ts`（`npx tsx scripts/verify-save-failure-core.ts`，17/17，已纳入 `npm run test:server`）永久锁定。
 - `createAsyncAction` 增加可选 `options.title`；**写操作**传入中文标题后失败自动弹 toast + 重试 + 通知；**读操作**（如 `fetchData`）不传标题，保持静默，避免加载失败误弹「保存失败」。文档 store 9 个、考勤 store 11 个写操作已全部接入。
 - 部门 store 删除内联重复逻辑，改用共享 `notifySaveFailure`；两个设置面板改用 `notifySaveFailure`，并修复 `handleDeleteTheme` 乐观删除失败回滚（`setThemes(prev)`）。
 - 纯本地 store（`useTodoStore` / `useContractStore` / `appSettings`）无网络，不属此类，未动。
@@ -339,7 +339,7 @@ DOMPurify 3.4 的 `Config` 类型**不支持** `ALLOWED_CSS_PROPERTIES` 之类�
 - 三个 router（`employeesRouter` / `documentsRouter` / `attendanceRouter`）的 `GET` 列表均透传 `req.query`。
 - 前端：考勤「打卡记录」卡片由「全量载入 + 客户端 slice」改为**服务端分页**——`useAttendanceStore` 新增 `recordsPage/recordsPageSize/recordsTotal` 与 `fetchRecords(page)`；`setRecords/clearRecords/deleteRecord` 操作后回到当前页/第 1 页重取；`Table` 用 `<Pagination>` 翻页、去掉客户端 slice；`Stats` 打卡记录数改用 `recordsTotal`（不再依赖全量数组）。员工/文档因依赖全局 store 与打印、改动风险高，保留客户端分页，但后端已具备分页能力，按需可平滑切换。
 
-**验证**：`npm run test:pagination` → **29/29 PASS**（信封形状、分页数学、末页/越界、pageSize 上限、三表服务端筛选、无参向后兼容数组）；`tsc --noEmit` 全绿；完整 `vitest run` 32 passed（仅 `dateUtils.test.ts` 3 例预存失败，与本任务无关）。
+**验证**：`npx tsx scripts/verify-pagination.ts` → **29/29 PASS**（信封形状、分页数学、末页/越界、pageSize 上限、三表服务端筛选、无参向后兼容数组）；`tsc --noEmit` 全绿；完整 `vitest run` 32 passed（仅 `dateUtils.test.ts` 3 例预存失败，与本任务无关）。
 
 ### ~~P2-4~~ ✅ 已修复 【性能】base64 上传内存放大
 `server/documentsRouter.ts`（`json({ limit: "50mb" })`）
@@ -383,11 +383,13 @@ DOMPurify 3.4 的 `Config` 类型**不支持** `ALLOWED_CSS_PROPERTIES` 之类�
 1. 新增 `server/validation.ts`：集中导出 `formatZodError(error)`（中文错误串）、`errMessage(e: unknown)`（未知异常安全取消息）、`validateBody(schema, status?)`（Express 中间件工厂，失败 `400` + `{ error }`、成功把类型收窄后的 `result.data` 写回 `req.body`），以及覆盖各路由的 schema：`employeeCreateSchema`（`z.object().loose()`，缺失 `name` 报「姓名不能为空」）、`employeeUpdateSchema`（`.partial()`）、`todoCreateSchema`/`todoUpdateSchema`、`notificationCreateSchema`、`folderCreateSchema`/`.partial()`、`documentSetCreateSchema`/`.partial()`、`documentUpdateSchema`（空 `loose`，不拦截未知键）、`loginSchema`/`changePasswordSchema`/`accountCreateSchema`/`accountUpdateSchema`（账号 `systemRole` 用 `z.enum` 收口，替代原 `if (!isSystemRole)`）。
 2. `server/db.ts` 收紧类型：`rowToUser(row: any)` → `rowToUser(row: unknown): User | null`（新增 `EmployeeRow`/`User` 接口，显式映射每个字段、对 `unknown` 做类型守卫）；`normalize`/`resolveDepartmentId`/`listEmployees`/`createEmployee`/`updateEmployee` 的 `Record<string, any>` 入参改为 `Record<string, unknown>`，`normalize` 出参收紧为 `Record<string, string | number | null>` 以契合 `SQLInputValue`。
 3. 五个 router 接入：`employeesRoot`/`todosRoot`/`notificationsRoot` 的 POST/PUT 改用 `validateBody(schema)`，删除散落的手写 `if (!req.body?.name)` 与 `(req.body ?? {})` 强转；`authRoot` 的 login/改密/账号增改全部 `validateBody`，移除 `(req.body ?? {}) as Record<string, any>` 与 `any` 守卫；`documentsRoot` 的 folders/document-sets/文档更新接入 `validateBody`，`(req as any).body` 改为 `req.body`，所有 `catch (e: any)` 统一替换为 `catch (error)` + `res.status(500).json({ error: errMessage(error) })`。`attendanceRoot` 因本就用 `Array.isArray` 做数组校验且未被审计点名，未动。
-4. 回归：`scripts/verify-validation.ts`（`npm run test:validation`，自起随机端口 + 临时 `DATA_DIR` + `AMS_ADMIN_PASSWORD` 落库，31 项断言全绿）：员工缺 `name`→400（含「姓名」）、`age="abc"`→400、布尔+枚举→201；待办缺 `title`→400、坏枚举→400；通知缺 `title`/坏 `type`→400；登录缺密码→400；账号 `systemRole` 非法枚举「GOD」→400；改密缺 `newPassword`→400；文件夹/套件缺 `name`→400；文档更新合法对象（loose）走 404 而非 400；合法员工持久化且可列表。
+4. 回归：`scripts/verify-validation.ts`（`npx tsx scripts/verify-validation.ts`，自起随机端口 + 临时 `DATA_DIR` + `AMS_ADMIN_PASSWORD` 落库，31 项断言全绿）：员工缺 `name`→400（含「姓名」）、`age="abc"`→400、布尔+枚举→201；待办缺 `title`→400、坏枚举→400；通知缺 `title`/坏 `type`→400；登录缺密码→400；账号 `systemRole` 非法枚举「GOD」→400；改密缺 `newPassword`→400；文件夹/套件缺 `name`→400；文档更新合法对象（loose）走 404 而非 400；合法员工持久化且可列表。
 
-**验证**：`tsc --noEmit` 全绿；`npm run test:validation` 31/31；`vitest run` 前端单测 38/38（均含原 `dateUtils.test.ts` 3 例预存失败，现已 6/6 全绿，与 P2-8 无关）；P2-8 改动仅落在 employees/todos/notifications/auth/documents 五个 router 与 `db.ts`，`attendance`/`audit`/`departments`/`backup` 等其余路由字节级未变。
+**验证**：`tsc --noEmit` 全绿；`npx tsx scripts/verify-validation.ts` 31/31；`vitest run` 前端单测 38/38（均含原 `dateUtils.test.ts` 3 例预存失败，现已 6/6 全绿，与 P2-8 无关）；P2-8 改动仅落在 employees/todos/notifications/auth/documents 五个 router 与 `db.ts`，`attendance`/`audit`/`departments`/`backup` 等其余路由字节级未变。
 
 > **已知回归限制（与 P2-8 无关）**：`scripts/verify-auth.mjs` / `verify-audit.mjs` / `verify-fk.mjs` / `verify-concurrency.mjs` 是**针对 3000 端口实时 dev server 的集成测试**（自身不拉起 server，注释明示「需要 dev server 已在 3000 端口运行」），依赖 `data/ADMIN_CREDENTIALS.txt` 或 `AMS_ADMIN_PASSWORD` 获取管理员口令。P2-7 将管理员口令重置为 `123456` 并删除了 `ADMIN_CREDENTIALS.txt`，导致这 4 个脚本在现有 `data/ams.db` 上必然失败（首条断言「`admin/123456` 应被拒」反而得到 200，因其恰为当前口令）。该损坏是 **P2-7 的后遗症，非 P2-8 所致**；P2-8 的回归已由其自包含 e2e `verify-validation.ts` 独立证明。如需让这 4 个集成脚本恢复，应在干净库上以强随机口令重新播种（恢复 `ADMIN_CREDENTIALS.txt`），或改造为自起临时 `DATA_DIR` 的端到端脚本。
+>
+> **✅ 已于 2026-09-26 按后一种方案解决**：上述 4 个脚本（另加 `verify-save-failure.mjs`、`verify-export-sandbox.mjs`）改造成经 `scripts/lib/liveServer.mjs` 自起随机端口 + 临时 `DATA_DIR` 的端到端脚本，不再读开发库、不再需要 dev server，全部登记进 `npm run test:server`（19 个自包含回归，CI 阻塞闸门）。管理员口令改由进程内随机种子提供，脚本不再从 `data/ADMIN_CREDENTIALS.txt` 取值。
 
 ---
 

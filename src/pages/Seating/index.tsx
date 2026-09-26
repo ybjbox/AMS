@@ -100,12 +100,17 @@ export default function Seating() {
     onApply: applyPlanState,
   });
 
+  // 「默认全选」只在名单本身变化时播种一次。此前判据是 size === 0，于是逐个取消到
+  // 最后一个会立刻命中它 → 整张名册被重新全选，包括用户刚刚明确排除的部门。
+  // 排座产物是要出纸的，错一次就是一叠废卡。
+  const rosterKey = useMemo(() => activeUsers.map((u) => u.id).join('|'), [activeUsers]);
+  const seededRosterKey = useRef<string | null>(null);
   useEffect(() => {
-    if (activeUsers.length > 0 && selectedUserIds.size === 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedUserIds(new Set(activeUsers.map((u) => u.id)));
-    }
-  }, [activeUsers, selectedUserIds.size]);
+    if (!activeUsers.length || seededRosterKey.current === rosterKey) return;
+    seededRosterKey.current = rosterKey;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedUserIds(new Set(activeUsers.map((u) => u.id)));
+  }, [activeUsers, rosterKey]);
 
   useBodyOverflow(isParticipantModalOpen || isPrintModalOpen || isPlansModalOpen);
 

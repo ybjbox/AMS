@@ -34,13 +34,25 @@ export const savedItemApi = {
   remove: (id: string): Promise<{ success: boolean }> => http.delete<{ success: boolean }>(`/saved-items/${id}`),
 };
 
-/** 读单条（草稿/参数）；不存在或网络失败都返回 null，让调用方走默认值而不是弹错误 */
-export async function loadSingle<T>(kind: SavedItemKind, name: string): Promise<T | null> {
+/**
+ * 读单条（参数/草稿）。三种结果必须分开：
+ * - `ok` 服务端确实存着这一条；
+ * - `absent` 请求成功但没有这一条 —— 首次使用，写默认值下去是对的；
+ * - `error` 请求失败 —— **不能**当成「用户没有偏好」，否则调用方一旦把界面回落到默认值
+ *   再随手改一个字段，就会用整套默认值覆盖服务端那份真值（参数页共一条链）。
+ */
+export type SingleResult<T> =
+  | { state: 'ok'; payload: T }
+  | { state: 'absent' }
+  | { state: 'error' };
+
+export async function loadSingle<T>(kind: SavedItemKind, name: string): Promise<SingleResult<T>> {
   try {
     const rows = await savedItemApi.list<T>(kind);
-    return rows.find((r) => r.name === name)?.payload ?? null;
+    const hit = rows.find((r) => r.name === name);
+    return hit ? { state: 'ok', payload: hit.payload } : { state: 'absent' };
   } catch {
-    return null;
+    return { state: 'error' };
   }
 }
 

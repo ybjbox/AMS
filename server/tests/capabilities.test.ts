@@ -72,6 +72,19 @@ describe("能力码与策略表同源", () => {
     }
   });
 
+  it("含凭据的整库副本只给超管；员工自助的两条动作不再要 HR（批次 1）", () => {
+    expect(requiredRoleFor("GET", "/backup/export/ams-2026.db")).toBe("SUPER_ADMIN");
+    expect(permissionsForRole("ADMIN")).not.toContain("backup:export");
+    expect(permissionsForRole("SUPER_ADMIN")).toContain("backup:export");
+
+    // 这两条此前不在 POLICIES 里 ⇒ 落默认写 = HR：登录强制改密后被引导去改资料、
+    // 员工撤回自己的申请，界面摆了入口却必然 403。
+    expect(requiredRoleFor("PUT", "/auth/profile")).toBe("EMPLOYEE");
+    expect(requiredRoleFor("PUT", "/approvals/APPROVAL-1/withdraw")).toBe("EMPLOYEE");
+    // 撤回仍然只有决定权在 HR+：网关放开下限，归属由数据层把
+    expect(requiredRoleFor("PUT", "/approvals/APPROVAL-1/decide")).toBe("HR");
+  });
+
   it("三个打印面收敛成一个入口码（同源重复码不再各留一份）", () => {
     expect(permissionsForRole("EMPLOYEE")).toContain("print-tools:view");
     for (const gone of ["seating:view", "name-cards:view", "meal-vouchers:view"]) {

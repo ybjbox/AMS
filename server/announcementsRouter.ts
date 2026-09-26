@@ -77,7 +77,10 @@ announcementsRouter.post("/", (req, res, next) => {
 announcementsRouter.put("/:id", (req, res, next) => {
   try {
     const { title, content, priority, expiresAt, active } = req.body || {};
-    if (expiresAt && !DATE_RE.test(String(expiresAt))) {
+    // 判定与写入必须同一个条件：原先这里看的是「truthy」，写入看的是「!== undefined」，
+    // 于是 {expiresAt:false} 或 {expiresAt:0} 会跳过格式检查、再把 String(false)="false" 写进日期列。
+    // 空串是合法值（= 清除有效期，与 POST 的 ?? "" 同口径）。
+    if (expiresAt !== undefined && expiresAt !== "" && !DATE_RE.test(String(expiresAt))) {
       return res.status(400).json({ error: "有效期格式应为 YYYY-MM-DD" });
     }
     const row = updateAnnouncement(req.params.id, {

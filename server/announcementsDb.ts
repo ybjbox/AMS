@@ -9,7 +9,7 @@
 import { db } from "./db.ts";
 import { type DbRow, asString, asNumber } from "./sqliteUtil.ts";
 import { randomUUID } from "node:crypto";
-import { localToday } from "./localDate.ts";
+import { localToday, formatLocalDateTime } from "./localDate.ts";
 
 export interface AnnouncementRow {
   id: string;
@@ -105,7 +105,7 @@ export function createAnnouncement(input: {
     input.content ?? "",
     input.priority === "important" ? "important" : "normal",
     input.publisher,
-    new Date().toISOString(),
+    formatLocalDateTime(),
     input.expiresAt ?? ""
   );
   const row = db.prepare("SELECT * FROM announcements WHERE id = ?").get(id);
