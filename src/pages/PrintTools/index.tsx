@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Armchair, IdCard, UtensilsCrossed } from 'lucide-react';
 import PageContainer from '@/components/PageContainer';
+import { cn } from '@/lib/utils';
 import Seating from '@/pages/Seating';
 import NameCards from '@/pages/NameCards';
 import MealVouchers from '@/pages/MealVouchers';
@@ -33,6 +34,14 @@ export default function PrintTools() {
   const active =
     PRINT_TOOL_TABS.find((t) => t.id === searchParams.get('tab')) ?? PRINT_TOOL_TABS[0];
 
+  /**
+   * 打开过的标签保持挂载（只隐藏），否则切一下标签就等于把用户刚排好的位置清空：
+   * 排座画布、台卡的人员选择都是内存态，在用户主动「保存方案」之前没有任何落盘点。
+   * 没访问过的标签仍然按需挂载，避免一进页面就发三份 saved-items 请求。
+   */
+  const [visited, setVisited] = useState<string[]>(() => [active.id]);
+  if (!visited.includes(active.id)) setVisited((prev) => [...prev, active.id]);
+
   return (
     <PageContainer
       width="none"
@@ -49,7 +58,7 @@ export default function PrintTools() {
               type="button"
               role="tab"
               aria-selected={isActive}
-              aria-controls={isActive ? `print-tool-panel-${tab.id}` : undefined}
+              aria-controls={visited.includes(tab.id) ? `print-tool-panel-${tab.id}` : undefined}
               onClick={() => setSearchParams({ tab: tab.id })}
               className={isActive ? 'tab-item-active' : 'tab-item'}
             >
@@ -60,16 +69,26 @@ export default function PrintTools() {
         })}
       </div>
 
-      <div
-        key={active.id}
-        id={`print-tool-panel-${active.id}`}
-        role="tabpanel"
-        aria-labelledby={`print-tool-tab-${active.id}`}
-        tabIndex={-1}
-        className="flex flex-1 flex-col min-h-0 focus-visible:outline-none"
-      >
-        <active.component />
-      </div>
+      {PRINT_TOOL_TABS.filter((tab) => visited.includes(tab.id)).map((tab) => {
+        const Panel = tab.component;
+        const isActive = tab.id === active.id;
+        return (
+          <div
+            key={tab.id}
+            id={`print-tool-panel-${tab.id}`}
+            role="tabpanel"
+            aria-labelledby={`print-tool-tab-${tab.id}`}
+            hidden={!isActive}
+            tabIndex={-1}
+            className={cn(
+              'flex-1 flex-col min-h-0 focus-visible:outline-none',
+              isActive ? 'flex' : 'hidden'
+            )}
+          >
+            <Panel />
+          </div>
+        );
+      })}
     </PageContainer>
   );
 }

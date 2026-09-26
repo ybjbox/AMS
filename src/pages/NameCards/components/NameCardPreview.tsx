@@ -186,12 +186,18 @@ export default function NameCardPreview({
   return (
     <>
       <div
-        className="w-full md:flex-1 bg-zinc-100 dark:bg-zinc-900 p-8 flex flex-col items-center space-y-8 md:min-h-0 md:overflow-auto relative print:hidden"
+        className="w-full md:flex-1 bg-zinc-100 dark:bg-zinc-900 px-8 pb-8 flex flex-col items-center space-y-8 md:min-h-0 md:overflow-auto relative print:hidden"
         tabIndex={0}
         role="region"
         aria-label="台卡预览区"
       >
-        <div className="sticky top-0 z-10 -mt-8 -ml-8 mb-4 flex w-[calc(100%+4rem)] items-center justify-between gap-3 bg-white/90 py-1.5 pl-3 pr-2 text-xs font-medium uppercase tracking-wider text-zinc-500 shadow-sm backdrop-blur dark:bg-zinc-800/90 dark:text-zinc-400">
+        {/*
+          顶栏用 self-stretch + -mx-8 出血到面板两边，容器因此不给上内边距（px-8 pb-8）。
+          不用 -mt + calc 宽度那套：sticky 的钳位线在滚动容器内容盒上沿，负 top margin 会被
+          压回原处，而流内只按负 margin 预留了空间 —— 结果条子盖住正文首行，且 items-center
+          下 calc 宽度还会让它左右各偏 16px。
+        */}
+        <div className="sticky top-0 z-10 -mx-8 mb-4 flex self-stretch items-center justify-between gap-3 bg-white/90 py-1.5 pl-3 pr-2 text-xs font-medium uppercase tracking-wider text-zinc-500 shadow-sm backdrop-blur dark:bg-zinc-800/90 dark:text-zinc-400">
           <span>打印预览 ({pages.length}页)</span>
           <PreviewZoomControl zoom={zoom} onChange={change} onReset={reset} />
         </div>

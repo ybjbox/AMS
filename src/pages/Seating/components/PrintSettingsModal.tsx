@@ -406,8 +406,8 @@ export function PrintSettingsModal({
         </div>
 
         {/* Preview Panel */}
-        <div className="flex-1 flex flex-col items-center bg-zinc-100 dark:bg-zinc-900 rounded-lg p-6 overflow-y-auto relative min-h-[300px] md:min-h-0">
-          <div className="sticky top-0 z-10 -mt-6 -ml-6 mb-4 flex w-[calc(100%+1.5rem)] items-center justify-between gap-3 bg-white/90 py-1.5 pl-3 pr-2 text-xs font-medium uppercase tracking-wider text-zinc-500 shadow-sm backdrop-blur dark:bg-zinc-800/90 dark:text-zinc-400">
+        <div className="flex-1 flex flex-col items-center bg-zinc-100 dark:bg-zinc-900 rounded-lg px-6 pb-6 overflow-y-auto relative min-h-[300px] md:min-h-0">
+          <div className="sticky top-0 z-10 -mx-6 mb-4 flex self-stretch items-center justify-between gap-3 bg-white/90 py-1.5 pl-3 pr-2 text-xs font-medium uppercase tracking-wider text-zinc-500 shadow-sm backdrop-blur dark:bg-zinc-800/90 dark:text-zinc-400">
             <span>打印预览 ({tables.length}桌)</span>
             <PreviewZoomControl zoom={zoom} onChange={change} onReset={reset} />
           </div>
