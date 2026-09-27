@@ -12,11 +12,13 @@ import {
   TableLayoutType,
   TableRow,
   TextRun,
+  VerticalAlignSection,
   VerticalAlignTable,
   WidthType,
   type IRunOptions,
+  type ISectionOptions,
 } from 'docx';
-import { LAYOUT, FORM_ROWS, cellWidth, dateLine } from './layout';
+import { DATE_RIGHT_INDENT, LAYOUT, FORM_ROWS, cellWidth } from './layout';
 import { PAYEE_LINE, formatDateCN, splitParagraphs, segments, type BusinessForm } from './templates';
 
 /**
@@ -67,7 +69,8 @@ const cell = (opts: {
 
 const BORDER = { style: BorderStyle.SINGLE, size: LAYOUT.borders.sz, color: 'auto' };
 
-export function buildFormDocument(form: BusinessForm): Document {
+/** 一条单据 = 一个 Word 分节（分节默认另起一页），所以 N 条就是 N 页、一页一条 */
+function buildFormSection(form: BusinessForm): ISectionOptions {
   const rows = FORM_ROWS.map((row, ri) => {
     let blankSlot = -1;
     const children = row.cells.map((c, ci) =>
@@ -109,6 +112,49 @@ export function buildFormDocument(form: BusinessForm): Document {
     },
   });
 
+  return {
+    properties: {
+      page: {
+        size: { width: LAYOUT.pageW, height: LAYOUT.pageH },
+        margin: {
+          top: LAYOUT.marginTop,
+          bottom: LAYOUT.marginBottom,
+          left: LAYOUT.marginLeft,
+          right: LAYOUT.marginRight,
+          header: 454,
+          footer: 454,
+          gutter: 0,
+        },
+      },
+      grid: { type: DocumentGridType.LINES, linePitch: LAYOUT.docGridPitch, charSpace: 0 },
+      // 与页面预览/打印窗口同一口径：整块内容竖向居中到纸张中间（sectPr 的 w:vAlign）
+      verticalAlign: VerticalAlignSection.CENTER,
+    },
+    children: [
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [run('业务单', { bold: true, size: LAYOUT.titleSz, sizeComplexScript: 32 })],
+      }),
+      new Paragraph({
+        // 与打印 HTML 同一基线：右对齐到「表格右边往里缩 575 twips」。
+        // 负 right 缩进是把段落右边界推到页边距之外（原件就是这么写的 w:ind right="-874"）。
+        alignment: AlignmentType.RIGHT,
+        indent: { right: DATE_RIGHT_INDENT },
+        children: [run(formatDateCN(form.date), { size: LAYOUT.dateSz })],
+      }),
+      table,
+      new Paragraph({ children: [] }),
+    ],
+  };
+}
+
+/**
+ * 多条单据导成一个 Word 文件：一页一条。
+ *
+ * 与打印链路的口径不同是刻意的 —— 打印按「一张纸两条」省纸，Word 里是给人接着编辑的，
+ * 一页一条改起来不会串到隔壁那张（2026-09-27 用户口径：docx 保持一页一份）。
+ */
+export function buildFormDocument(forms: BusinessForm[]): Document {
   return new Document({
     creator: 'AMS 行政管理系统',
     title: '业务单',
@@ -118,44 +164,13 @@ export function buildFormDocument(form: BusinessForm): Document {
         document: { run: { font: BASE_FONT, size: LAYOUT.bodySz } },
       },
     },
-    sections: [
-      {
-        properties: {
-          page: {
-            size: { width: LAYOUT.pageW, height: LAYOUT.pageH },
-            margin: {
-              top: LAYOUT.marginTop,
-              bottom: LAYOUT.marginBottom,
-              left: LAYOUT.marginLeft,
-              right: LAYOUT.marginRight,
-              header: 454,
-              footer: 454,
-              gutter: 0,
-            },
-          },
-          grid: { type: DocumentGridType.LINES, linePitch: LAYOUT.docGridPitch, charSpace: 0 },
-        },
-        children: [
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [run('业务单', { bold: true, size: LAYOUT.titleSz, sizeComplexScript: 32 })],
-          }),
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            indent: { right: LAYOUT.dateIndentRight },
-            children: [run(dateLine(formatDateCN(form.date)), { size: LAYOUT.dateSz })],
-          }),
-          table,
-          new Paragraph({ children: [] }),
-        ],
-      },
-    ],
+    sections: forms.map(buildFormSection),
   });
 }
 
 /** 生成并下载 .docx（浏览器端 Packer.toBlob） */
-export async function downloadFormDocx(form: BusinessForm, filename: string): Promise<void> {
-  const blob = await Packer.toBlob(buildFormDocument(form));
+export async function downloadFormDocx(forms: BusinessForm[], filename: string): Promise<void> {
+  const blob = await Packer.toBlob(buildFormDocument(forms));
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

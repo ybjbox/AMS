@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Packer } from 'docx';
+import { DATE_RIGHT_INDENT, LAYOUT } from './layout';
 import { buildFormDocument } from './docxFile';
 import type { BusinessForm } from './templates';
 
@@ -15,16 +16,36 @@ const form: BusinessForm = {
 
 describe('.docx 导出', () => {
   it('打包出合法 OOXML 包（zip 头），几何与字号写入 document.xml', async () => {
-    const b64 = await Packer.toBase64String(buildFormDocument(form));
+    const b64 = await Packer.toBase64String(buildFormDocument([form]));
     expect(b64.startsWith('UEs')).toBe(true); // PK\x03\x04
     const xml = await extractDocumentXml(b64);
     expect(xml).toContain('<w:pgSz w:w="11906" w:h="16838"');
     expect(xml).toContain('w:w="10080"'); // 表格总宽
-    expect(xml).toContain('w:w="-612"'); // 表格左偏移
+    expect(xml).toContain(`w:w="${LAYOUT.tableIndent}"`); // 表格左偏移（整块水平居中）
     expect(xml).toContain('<w:gridCol w:w="2160"');
     expect(xml).toContain('w:line="360"');
     expect(xml).toContain('呈上级领导批示。');
     expect(xml).toContain('<w:b/>'); // 姓名加粗
+  });
+
+  it('日期与打印 HTML 同一条基线：右对齐 + w:ind right 推到表格右边往里 575 twips', async () => {
+    const xml = await extractDocumentXml(await Packer.toBase64String(buildFormDocument([form])));
+    expect(xml).toMatch(/<w:jc w:val="right"\s*\/>/u);
+    expect(xml).toMatch(new RegExp(`<w:ind [^>]*w:right="${DATE_RIGHT_INDENT}"`, 'u'));
+    // 不能再有前导空格：位置由对齐决定，与字宽估算无关
+    expect(xml).not.toMatch(/ {5,}2026年/u);
+  });
+
+  it('Word 一页一条：几条单据就是几节几页，不跟着打空白单', async () => {
+    const xml = await extractDocumentXml(
+      await Packer.toBase64String(buildFormDocument([form, { ...form, name: '林思婷' }]))
+    );
+    // 一节一页：两条 = 两个 sectPr、两张表格、两个标题，且没有第三条空白
+    expect((xml.match(/<w:sectPr/gu) ?? []).length).toBe(2);
+    expect((xml.match(/<w:tbl>/gu) ?? []).length).toBe(2);
+    expect((xml.match(/业务单</gu) ?? []).length).toBe(2);
+    const one = await extractDocumentXml(await Packer.toBase64String(buildFormDocument([form])));
+    expect((one.match(/<w:tbl>/gu) ?? []).length).toBe(1);
   });
 });
 

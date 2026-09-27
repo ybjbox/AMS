@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { LAYOUT, FORM_ROWS, cellWidth, dateLine } from './layout';
+import {
+  DATE_RIGHT,
+  DATE_RIGHT_INDENT,
+  LAYOUT,
+  FORM_ROWS,
+  TABLE_LEFT,
+  TABLE_RIGHT,
+  cellWidth,
+  textWidthTwips,
+} from './layout';
 import {
   PAYEE_LINE,
   TEMPLATES,
@@ -42,10 +51,18 @@ describe('版面几何（取自原件 OOXML）', () => {
     ]);
   });
 
-  it('日期行用前导空格推到表格右上角（原件实测 55 格）', () => {
-    expect(dateLine('2026年 8 月 24 日').match(/^ +/u)?.[0]).toHaveLength(55);
-    // 更长的日期自动少补空格，右边界保持同一基线
-    expect(dateLine('2026年 12 月 31 日').match(/^ +/u)?.[0]).toHaveLength(54);
+  it('整块水平居中：表格左右留白相等，日期基线跟着表格右边往里缩 575 twips', () => {
+    // 原件的表格偏右 4.8mm（左边 20.9mm / 右边 11.3mm），2026-09-27 按要求居中，两条链路共用这一个几何量
+    expect(TABLE_LEFT).toBe(Math.round((LAYOUT.pageW - LAYOUT.tableW) / 2));
+    expect(LAYOUT.pageW - TABLE_RIGHT).toBe(TABLE_LEFT);
+    expect(DATE_RIGHT).toBe(TABLE_RIGHT - LAYOUT.dateRightInset);
+    // .docx 侧靠 w:ind right 还原同一条基线：右边界 = (页宽 - 右边距) - right
+    expect(LAYOUT.pageW - LAYOUT.marginRight - DATE_RIGHT_INDENT).toBe(DATE_RIGHT);
+  });
+
+  it('字宽估算：全角按字号、半角减半（正文行数据此决定一张纸放几份）', () => {
+    expect(textWidthTwips('呈上级领导批示。')).toBe(8 * 240);
+    expect(textWidthTwips('人民币501元')).toBe(4 * 240 + 3 * 120);
   });
 });
 
