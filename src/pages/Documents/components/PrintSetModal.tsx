@@ -62,7 +62,7 @@ export function PrintSetModal({
       </div>
       <div className="text-center">
         <div className="mt-2">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-muted-foreground">
             将逐份取出文件的真实内容（文本、表格、图片、PDF 逐页转图）合成打印页：
           </p>
           <div className="mt-4 text-left bg-zinc-50 dark:bg-zinc-900/50 rounded-lg p-3 max-h-60 overflow-y-auto border border-zinc-100 dark:border-zinc-700">

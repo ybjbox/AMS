@@ -156,11 +156,22 @@ export default async function applyTemplate(worksheet, data, config) {
                   <div className="p-2 bg-brand-50 dark:bg-brand-900/20 rounded-lg">
                     <FileCode className="w-6 h-6 text-brand-600 dark:text-brand-400" />
                   </div>
-                  <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="icon-sm" onClick={() => setEditingScript(script)}>
+                  {/* 键盘走焦也要看得见：只靠 group-hover 会让 Tab 到的按钮仍是透明（WCAG 2.4.7 / 规则「不得只在悬停后给出唯一操作」） */}
+                  <div className="flex items-center space-x-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={`编辑脚本：${script.name}`}
+                      onClick={() => setEditingScript(script)}
+                    >
                       <Palette className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(script.name)}>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={`删除脚本：${script.name}`}
+                      onClick={() => handleDelete(script.name)}
+                    >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>

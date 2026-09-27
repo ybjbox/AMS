@@ -49,6 +49,10 @@ const CAPABILITIES: Record<string, Capability> = {
   // 下载备份 = 取走含口令哈希与各类凭据的整库副本，策略表已收到 SUPER_ADMIN，
   // 界面按同一个码隐藏按钮（BackupPanel）。
   "backup:export": { method: "GET", path: "/backup/export" },
+  // 导出脚本模板/主题的管理入口（/export-templates 派生为 ADMIN）。
+  // 导出弹窗此前对 HR 说"请前往系统设置创建"，而那两个面板对 HR 根本不可见 —— 空态不能
+  // 承诺做不到的事（2026-09-26 审查 M8），界面按这个码切换文案。
+  "export-templates:manage": { method: "POST", path: "/export-templates" },
 };
 
 /** 该能力要求的最低角色：策略表派生值与显式下限里更严的那个。 */

@@ -15,18 +15,22 @@ import { Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Users, Phone, Briefcase,
 import { maskPhone } from '@/utils/dateUtils';
 import { TableSkeleton } from '../ui/Skeleton';
 import { EmptyState } from '../ui/EmptyState';
+import { FailedState } from '../ui/FailedState';
 import { Button } from '../ui/button';
 import Badge from '../ui/Badge';
 
 interface UserTableProps {
   data: User[];
   isLoading: boolean;
+  /** 上一次拉取失败的原因；有值且没有数据时显示「加载失败 + 重试」，而不是"未找到员工"（审查 M1） */
+  loadError?: string | null;
+  onRetry?: () => void;
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
   onRowClick?: (user: User) => void;
 }
 
-export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDelete, onRowClick }: UserTableProps) {
+export const UserTable = memo(function UserTable({ data, isLoading, loadError, onRetry, onEdit, onDelete, onRowClick }: UserTableProps) {
   const hasPermission = useUserStore((state) => state.hasPermission);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnResizeMode] = useState<ColumnResizeMode>('onChange');
@@ -37,7 +41,11 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
         accessorKey: 'name',
         header: ({ column }) => {
           return (
-            <div className="flex items-center cursor-pointer select-none" onClick={column.getToggleSortingHandler()}>
+            <button
+              type="button"
+              className="flex w-full items-center cursor-pointer select-none rounded text-left"
+              onClick={column.getToggleSortingHandler()}
+            >
               姓名/工号
               {{
                 asc: <ArrowUp className="ml-2 h-4 w-4" />,
@@ -45,13 +53,13 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
               }[column.getIsSorted() as string] ?? (
                 <ArrowUpDown className="ml-2 h-4 w-4 text-zinc-400 opacity-0 group-hover:opacity-100" />
               )}
-            </div>
+            </button>
           );
         },
         cell: ({ row }) => (
           <div>
             <div className="font-medium text-zinc-900 dark:text-white">{row.original.name}</div>
-            <div className="text-zinc-500 dark:text-zinc-400 text-xs mt-0.5">{row.original.id}</div>
+            <div className="text-muted-foreground text-xs mt-0.5">{row.original.id}</div>
           </div>
         ),
         size: 130,
@@ -61,7 +69,11 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
         accessorKey: 'department',
         header: ({ column }) => {
           return (
-            <div className="flex items-center cursor-pointer select-none" onClick={column.getToggleSortingHandler()}>
+            <button
+              type="button"
+              className="flex w-full items-center cursor-pointer select-none rounded text-left"
+              onClick={column.getToggleSortingHandler()}
+            >
               部门/职位
               {{
                 asc: <ArrowUp className="ml-2 h-4 w-4" />,
@@ -69,13 +81,13 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
               }[column.getIsSorted() as string] ?? (
                 <ArrowUpDown className="ml-2 h-4 w-4 text-zinc-400 opacity-0 group-hover:opacity-100" />
               )}
-            </div>
+            </button>
           );
         },
         cell: ({ row }) => (
           <div>
             <div className="text-zinc-900 dark:text-zinc-200">{row.original.department || '-'}</div>
-            <div className="text-zinc-500 dark:text-zinc-400 text-xs mt-0.5">{row.original.role || '-'}</div>
+            <div className="text-muted-foreground text-xs mt-0.5">{row.original.role || '-'}</div>
           </div>
         ),
         size: 150,
@@ -85,7 +97,11 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
         accessorKey: 'status',
         header: ({ column }) => {
           return (
-            <div className="flex items-center cursor-pointer select-none" onClick={column.getToggleSortingHandler()}>
+            <button
+              type="button"
+              className="flex w-full items-center cursor-pointer select-none rounded text-left"
+              onClick={column.getToggleSortingHandler()}
+            >
               状态
               {{
                 asc: <ArrowUp className="ml-2 h-4 w-4" />,
@@ -93,7 +109,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
               }[column.getIsSorted() as string] ?? (
                 <ArrowUpDown className="ml-2 h-4 w-4 text-zinc-400 opacity-0 group-hover:opacity-100" />
               )}
-            </div>
+            </button>
           );
         },
         cell: ({ row }) => {
@@ -147,7 +163,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
           return (
             <div>
               <div className="text-zinc-900 dark:text-zinc-200 tabular-nums">{joinDate || '-'}</div>
-              <div className="text-zinc-500 dark:text-zinc-400 text-xs mt-0.5 tabular-nums">{yearsOfService}</div>
+              <div className="text-muted-foreground text-xs mt-0.5 tabular-nums">{yearsOfService}</div>
             </div>
           );
         },
@@ -167,7 +183,11 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
         accessorKey: 'contractExpiry',
         header: ({ column }) => {
           return (
-            <div className="flex items-center cursor-pointer select-none" onClick={column.getToggleSortingHandler()}>
+            <button
+              type="button"
+              className="flex w-full items-center cursor-pointer select-none rounded text-left"
+              onClick={column.getToggleSortingHandler()}
+            >
               合同到期
               {{
                 asc: <ArrowUp className="ml-2 h-4 w-4" />,
@@ -175,7 +195,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
               }[column.getIsSorted() as string] ?? (
                 <ArrowUpDown className="ml-2 h-4 w-4 text-zinc-400 opacity-0 group-hover:opacity-100" />
               )}
-            </div>
+            </button>
           );
         },
         cell: ({ row }) => {
@@ -272,9 +292,13 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
       {isLoading ? (
         <TableSkeleton columns={8} />
       ) : data.length === 0 ? (
-        <div className="text-center py-12">
-          <EmptyState title="未找到员工" description="请尝试调整搜索条件或添加新员工" icon={Users} />
-        </div>
+        loadError ? (
+          <FailedState subject="员工名单" reason={loadError} onRetry={onRetry} />
+        ) : (
+          <div className="text-center py-12">
+            <EmptyState title="未找到员工" description="请尝试调整搜索条件或添加新员工" icon={Users} />
+          </div>
+        )
       ) : (
         <>
           {/* 移动端卡片视图（< md） */}
@@ -288,13 +312,13 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                 <div className="flex items-center justify-between mb-2">
                   <div>
                     <p className="font-medium text-zinc-900 dark:text-white text-sm">{user.name}</p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{user.id}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{user.id}</p>
                   </div>
                   <Badge variant={user.status === '在职' ? 'success' : user.status === '试用期' ? 'warning' : 'neutral'}>
                     {user.status}
                   </Badge>
                 </div>
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400 mb-3">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mb-3">
                   {user.department && (
                     <span className="flex items-center gap-1">
                       <Building2 className="w-3 h-3" />{user.department}
@@ -404,6 +428,15 @@ export const UserTable = memo(function UserTable({ data, isLoading, onEdit, onDe
                         data-index={virtualRow.index}
                         className={`hover:bg-zinc-50/80 dark:hover:bg-zinc-700/30 transition-colors group/row w-full ${onRowClick ? 'cursor-pointer' : ''}`}
                         onClick={() => onRowClick && onRowClick(row.original)}
+                        /* 整行打开档案此前只有鼠标一条路（审查 B2 同类）：可聚焦 + Enter/Space 等价于点击 */
+                        tabIndex={onRowClick ? 0 : undefined}
+                        onKeyDown={(e) => {
+                          if (!onRowClick) return;
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            onRowClick(row.original);
+                          }
+                        }}
                       >
                         {row.getVisibleCells().map((cell, index) => {
                           const isFirst = index === 0;

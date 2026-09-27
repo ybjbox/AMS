@@ -2,6 +2,7 @@ import React from 'react';
 import { Folder, Edit2, Trash2, FileText, Printer, Plus } from 'lucide-react';
 import { DocumentSet, Document } from '@/store/useDocumentStore';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { FailedState } from '@/components/ui/FailedState';
 import { Button } from '@/components/ui/button';
 import { hasPermission } from '@/utils/permission';
 
@@ -9,6 +10,9 @@ interface DocumentSetGridProps {
   documentSets: DocumentSet[];
   documents: Document[];
   isLoading: boolean;
+  /** 拉取失败的原因：空列表时必须与「真的没有套件」区分开（审查 M1） */
+  loadError?: string | null;
+  onRetry?: () => void;
   onEditSetClick: (set: DocumentSet) => void;
   onDeleteSetClick: (id: string) => void;
   onPrintSetClick: (set: DocumentSet) => void;
@@ -19,6 +23,8 @@ export function DocumentSetGrid({
   documentSets,
   documents,
   isLoading,
+  loadError,
+  onRetry,
   onEditSetClick,
   onDeleteSetClick,
   onPrintSetClick,
@@ -31,8 +37,12 @@ export function DocumentSetGrid({
         <div className="col-span-full text-center py-16 bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl">
           <div className="flex flex-col items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600 mb-4"></div>
-            <p className="text-zinc-500 dark:text-zinc-400">加载中…</p>
+            <p className="text-muted-foreground">加载中…</p>
           </div>
+        </div>
+      ) : loadError && documentSets.length === 0 ? (
+        <div className="col-span-full">
+          <FailedState subject="文件套件" reason={loadError} onRetry={onRetry} />
         </div>
       ) : documentSets.length === 0 ? (
         <div className="col-span-full">
@@ -79,10 +89,10 @@ export function DocumentSetGrid({
                 </div>
                 )}
               </div>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2 min-h-[40px]">{set.description}</p>
+              <p className="text-sm text-muted-foreground line-clamp-2 min-h-[40px]">{set.description}</p>
             </div>
             <div className="p-5 flex-1 bg-zinc-50/50 dark:bg-zinc-800/50">
-              <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-3">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                 包含文件 ({set.documentIds.length})
               </div>
               <ul className="space-y-2">
@@ -97,12 +107,12 @@ export function DocumentSetGrid({
                   );
                 })}
                 {set.documentIds.length > 3 && (
-                  <li className="text-xs text-zinc-500 dark:text-zinc-400 pt-1">
+                  <li className="text-xs text-muted-foreground pt-1">
                     … 等共 {set.documentIds.length} 份文件
                   </li>
                 )}
                 {set.documentIds.length === 0 && (
-                  <li className="text-sm text-zinc-500 dark:text-zinc-400 italic">未选择任何文件</li>
+                  <li className="text-sm text-muted-foreground italic">未选择任何文件</li>
                 )}
               </ul>
             </div>

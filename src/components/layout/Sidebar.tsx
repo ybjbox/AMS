@@ -78,7 +78,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
         className={`relative flex items-center justify-center py-2.5 px-3 rounded-xl transition duration-250 ease-smooth-out group ${
           isActive
             ? 'bg-brand-50 dark:bg-brand-900/25 text-brand-700 dark:text-brand-300 font-semibold shadow-sm ring-1 ring-brand-500/20'
-            : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white hover:shadow-sm'
+            : 'text-muted-foreground hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white hover:shadow-sm'
         }`}
       >
         {/* 图标 + 角标：角标是挂在图标右上角的独立标记，不占内容流、不参与行宽计算 */}
@@ -104,6 +104,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
 
   return (
     <aside
+      aria-label="侧边导航"
       className={`relative z-30 bg-white/80 dark:bg-zinc-800/70 backdrop-blur-xl border border-zinc-200/60 dark:border-white/10 shadow-sm dark:shadow-inset-glow rounded-2xl flex flex-col print:hidden shrink-0 transition duration-300 ease-in-out ${
         isCollapsed ? 'w-20' : 'w-48'
       } ${className}`}

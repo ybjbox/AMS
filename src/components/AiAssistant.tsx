@@ -334,7 +334,7 @@ export default function AiAssistant() {
                               type="button"
                               onClick={() => removeConversation(c.id)}
                               aria-label="删除对话"
-                              className="shrink-0 rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                              className="shrink-0 rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 group-focus-within:opacity-100"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>

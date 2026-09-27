@@ -3,6 +3,7 @@ import { Database, Download, History, RotateCcw, Trash2, Plus } from 'lucide-rea
 import { toast } from 'sonner';
 import { useConfirm } from '@/hooks/useConfirm';
 import { notifySaveFailure } from '@/store/saveFailure';
+import { scheduleAppReload } from '@/utils/reloadApp';
 import { Button } from '@/components/ui/button';
 import {
   fetchBackups,
@@ -86,7 +87,7 @@ export default function BackupPanel() {
       try {
         const res = await restoreBackup(b.name);
         toast.success(
-          `已从 ${res.restoredFrom} 恢复${res.safetyBackup ? `（安全备份：${res.safetyBackup}）` : ''}`
+          `已从 ${res.restoredFrom} 恢复${res.safetyBackup ? `（安全备份：${res.safetyBackup}）` : ''}，界面即将重新载入`
         );
         if (res.uploadsRestored === false) {
           toast.warning('该备份不含上传文件快照，uploads 目录保持现状未回滚');
@@ -99,6 +100,8 @@ export default function BackupPanel() {
           toast.warning(res.schemaNote || '恢复后补跑迁移失败，请重启服务', { duration: 12000 });
         }
         await load();
+        // 换库之后必须重载：其它 store 仍持有恢复前的内存态（见 utils/reloadApp 的说明）
+        scheduleAppReload();
       } catch (err) {
         notifySaveFailure({ title: '恢复失败', error: err, retry: () => void handleRestore(b) });
       } finally {
@@ -239,10 +242,10 @@ export default function BackupPanel() {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-2.5 text-secondary">
+                  <td className="px-4 py-2.5 text-muted-foreground">
                     {formatDate(b.createdAt)}
                   </td>
-                  <td className="px-4 py-2.5 text-right text-secondary">
+                  <td className="px-4 py-2.5 text-right text-muted-foreground">
                     {formatSize(b.size)}
                   </td>
                   <td className="px-4 py-2.5">

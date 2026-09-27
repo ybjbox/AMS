@@ -27,6 +27,8 @@ export default function Users() {
   const confirm = useConfirm();
   const users = useEmployeeStore((state) => state.users);
   const isLoading = useEmployeeStore((state) => state.isLoading);
+  /** 上一次拉名单的失败原因：空表时用来区分「真的没人」与「没拉到」（审查 M1） */
+  const usersLoadError = useEmployeeStore((state) => state.error);
   const deleteUser = useEmployeeStore((state) => state.deleteUser);
   const fetchUsers = useEmployeeStore((state) => state.fetchUsers);
   const fetchDepartments = useDepartments((state) => state.fetchDepartments);
@@ -191,6 +193,8 @@ export default function Users() {
               <UserTable
                 data={currentUsers}
                 isLoading={isLoading}
+                loadError={usersLoadError}
+                onRetry={() => void fetchUsers({ force: true })}
                 onEdit={handleEdit}
                 onDelete={async (user) => {
                   if (

@@ -10,6 +10,11 @@ interface DepartmentState {
   departments: DepartmentNode[];
   roles: RoleNode[];
   initialized: boolean;
+  /**
+   * 最近一次组织架构拉取失败的原因（成功即清空）。
+   * 空树必须区分「公司真的还没建部门」与「没拉到」——后者显示"立即创建"会诱导重复录入（审查 M1）。
+   */
+  loadError: string | null;
   /** 整树替换请求在途（两棵树各自独立，保存期间禁用对应提交） */
   savingDepartments: boolean;
   savingRoles: boolean;
@@ -49,6 +54,7 @@ export const useDepartmentStore = create<DepartmentState>((set, get) => ({
   departments: initialDepartments,
   roles: initialRoles,
   initialized: false,
+  loadError: null,
   savingDepartments: false,
   savingRoles: false,
 
@@ -67,10 +73,12 @@ export const useDepartmentStore = create<DepartmentState>((set, get) => ({
           departments: sortDepartments(res.departments ?? []),
           roles: sortRoles(res.roles ?? []),
           initialized: true,
+          loadError: null,
         });
       } catch (e) {
         // 拉不到就是拉不到：保持空树并明说，绝不能让用户在"看起来有数据"的空档上做整树替换
         console.error('[departments] 组织架构加载失败：', e);
+        set({ loadError: errText(e, '组织架构加载失败，请先刷新或检查后端是否在线') });
         toast.error(errText(e, '组织架构加载失败，请先刷新或检查后端是否在线'));
       } finally {
         departmentsInflight = null;

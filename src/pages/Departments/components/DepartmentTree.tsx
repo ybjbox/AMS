@@ -72,7 +72,7 @@ const DepartmentTreeNode = React.memo(function DepartmentTreeNode({
           )}
         </div>
 
-        <div className="flex items-center space-x-1 shrink-0 ml-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center space-x-1 shrink-0 ml-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity">
           {canManage && (
             <>
               <button

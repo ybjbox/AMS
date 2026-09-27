@@ -125,7 +125,7 @@ export default function NotifyPanel() {
           <Webhook className="size-4 text-muted-foreground" />
           Webhook 群机器人
         </h2>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 text-sm text-muted-foreground">
           新站内通知将同步推送到群机器人。回调地址含机器人令牌，保存后仅显示掩码；重新填写完整地址才会覆盖，点「清除」可删除已存地址。
         </p>
         <div className="mt-4 space-y-4">
@@ -199,7 +199,7 @@ export default function NotifyPanel() {
           <Mail className="size-4 text-muted-foreground" />
           邮件（SMTP）
         </h2>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-1 text-sm text-muted-foreground">
           按接收人账号资料中的邮箱投递；接收人未登记邮箱时自动跳过。
         </p>
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">

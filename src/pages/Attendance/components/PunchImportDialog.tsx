@@ -197,7 +197,7 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
 
           <div className="max-h-[45vh] overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
             <table className="w-full text-left text-sm" aria-label="导入预览">
-              <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs text-zinc-500 dark:text-zinc-400">
+              <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs text-muted-foreground">
                 <tr>
                   <th className="px-3 py-2 font-medium">行</th>
                   <th className="px-3 py-2 font-medium">工号</th>
@@ -269,7 +269,7 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
           <p className="text-sm text-zinc-700 dark:text-zinc-200">
             正在后台写入… {progress ? `${progress.processed} / ${progress.total}` : ''}
           </p>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="text-xs text-muted-foreground">
             同一分钟已存在的记录会被跳过，不会重复计入月报。
           </p>
         </div>

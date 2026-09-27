@@ -54,7 +54,7 @@ export default function SystemNotices({ notices, isLoading }: SystemNoticesProps
                 <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
                   {notice.title}
                 </p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1.5">
+                <p className="text-xs text-muted-foreground mt-1.5">
                   {notice.dept} 发布于 {notice.date}
                 </p>
               </div>

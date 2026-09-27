@@ -78,7 +78,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             </div>
           )}
           <div className="flex-1">
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">{options?.description}</p>
+            <p className="text-sm text-muted-foreground">{options?.description}</p>
           </div>
         </div>
       </BaseModal>

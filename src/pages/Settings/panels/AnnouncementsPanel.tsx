@@ -111,7 +111,7 @@ export default function AnnouncementsPanel() {
             <Megaphone className="w-4 h-4 mr-2 text-brand-600 dark:text-brand-400" />
             公告管理
           </h2>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             发布的公告将展示在全员控制台「系统公告」区（重要公告置顶）
           </p>
         </div>
@@ -193,7 +193,7 @@ export default function AnnouncementsPanel() {
           {isLoading ? (
             <div className="p-8 text-sm text-muted-foreground">加载中…</div>
           ) : items.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-sm text-zinc-500 dark:text-zinc-400 py-12">
+            <div className="h-full flex flex-col items-center justify-center text-sm text-muted-foreground py-12">
               <Megaphone className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-3" aria-hidden="true" />
               暂无公告，发布第一条吧
             </div>
@@ -212,7 +212,7 @@ export default function AnnouncementsPanel() {
                       )}
                     </div>
                     {item.content && (
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2">{item.content}</p>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.content}</p>
                     )}
                     <p className="text-xs text-muted-foreground mt-1 tabular-nums">
                       {item.publisher} 发布于 {formatTime(item.createdAt)}

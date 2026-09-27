@@ -88,7 +88,7 @@ export function Pagination({
             <button
               onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
               disabled={currentPage === 1}
-              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-sm font-medium text-muted-foreground hover:bg-zinc-50 dark:hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <span className="sr-only">上一页</span>
               <ChevronLeft className="h-4 w-4" />
@@ -99,7 +99,7 @@ export function Pagination({
             <button
               onClick={() => onPageChange(Math.min(currentPage + 1, totalPages))}
               disabled={currentPage === totalPages || totalPages === 0}
-              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-zinc-200/80 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-sm font-medium text-muted-foreground hover:bg-zinc-50 dark:hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <span className="sr-only">下一页</span>
               <ChevronRight className="h-4 w-4" />
@@ -108,7 +108,7 @@ export function Pagination({
           {/* 页码直跳（仅在总页数 > 5 时显示） */}
           {totalPages > 5 && (
             <div className="flex items-center gap-1.5">
-              <span className="text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+              <span className="text-sm text-muted-foreground whitespace-nowrap">
                 跳至
               </span>
               <input
@@ -122,14 +122,14 @@ export function Pagination({
                 className="w-16 text-center input-base py-1.5 text-sm"
                 aria-label="跳转到指定页"
               />
-              <span className="text-sm text-zinc-500 dark:text-zinc-400">页</span>
+              <span className="text-sm text-muted-foreground">页</span>
             </div>
           )}
         </div>
       </div>
       {/* 移动端 */}
       <div className="flex items-center justify-between w-full sm:hidden">
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">共 {totalItems} 条</span>
+        <span className="text-xs text-muted-foreground">共 {totalItems} 条</span>
         <div className="flex items-center gap-2">
           <button
             onClick={() => onPageChange(Math.max(currentPage - 1, 1))}

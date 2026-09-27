@@ -118,7 +118,7 @@ export const ContractTemplateEditor = ({ isOpen, onClose }: ContractTemplateEdit
         </div>
         <div className="w-full md:w-1/3 p-4 bg-zinc-50 dark:bg-zinc-800/50 overflow-y-auto">
           <h4 className="text-sm font-medium text-zinc-900 dark:text-white mb-4">可用变量</h4>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">
+          <p className="text-xs text-muted-foreground mb-4">
             在左侧模板中使用以下变量，生成合同时会自动替换为员工的实际信息。
           </p>
           <div className="space-y-2">

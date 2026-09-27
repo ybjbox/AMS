@@ -195,7 +195,7 @@ export default function Login() {
                       toast.info('忘记密码功能暂未开放，请联系管理员重置');
                     });
                   }}
-                  className="font-medium text-sm text-brand-600 hover:text-brand-500 dark:text-brand-400 dark:hover:text-brand-300 transition-colors"
+                  className="inline-flex min-h-6 items-center font-medium text-sm text-brand-600 hover:text-brand-500 dark:text-brand-400 dark:hover:text-brand-300 transition-colors"
                 >
                   忘记密码？
                 </button>
@@ -227,7 +227,7 @@ export default function Login() {
                   <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 text-xs">
+                  <span className="px-2 bg-white dark:bg-zinc-800 text-muted-foreground text-xs">
                     开发模式 · 初始凭据见服务端启动日志
                   </span>
                 </div>

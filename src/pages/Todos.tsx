@@ -187,7 +187,7 @@ export default function Todos() {
                     className={`mt-1 transition-colors ${
                       todo.completed
                         ? 'text-brand-500'
-                        : 'text-zinc-500 dark:text-zinc-400 hover:text-brand-600 dark:hover:text-brand-400'
+                        : 'text-muted-foreground hover:text-brand-600 dark:hover:text-brand-400'
                     }`}
                   >
                     {todo.completed ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
@@ -197,7 +197,7 @@ export default function Todos() {
                       <div
                         className={`text-sm font-medium truncate ${
                           todo.completed
-                            ? 'line-through text-zinc-500 dark:text-zinc-400'
+                            ? 'line-through text-muted-foreground'
                             : 'text-zinc-900 dark:text-white'
                         }`}
                       >
@@ -233,7 +233,7 @@ export default function Todos() {
                     data-todoid={todo.id}
                     data-todotitle={todo.title}
                     onClick={onDeleteTodoClick}
-                    className="p-2 text-muted-foreground hover:text-red-500 dark:hover:text-red-400 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition shrink-0"
+                    className="p-2 text-muted-foreground hover:text-red-500 dark:hover:text-red-400 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition shrink-0"
                     aria-label={`删除待办：${todo.title}`}
                     title="删除"
                   >

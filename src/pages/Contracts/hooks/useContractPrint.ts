@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
 import { User } from '@/types';
 
 export function useContractPrint(setSelectedUser: (user: User) => void) {
@@ -6,7 +7,12 @@ export function useContractPrint(setSelectedUser: (user: User) => void) {
 
   const handlePrint = useCallback(() => {
     const printArea = document.getElementById('contract-print-area');
-    if (!printArea) return;
+    if (!printArea) {
+      // 此前是裸 return：点「打印」可以什么都不发生（2026-09-26 审查 M2）。
+      // 口径与排座一致：说清缺什么、下一步做什么。
+      toast.error('还没有生成合同正文，请先选择员工并生成预览');
+      return;
+    }
 
     const iframe = document.createElement('iframe');
     iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none';
@@ -15,6 +21,7 @@ export function useContractPrint(setSelectedUser: (user: User) => void) {
     const doc = iframe.contentDocument || iframe.contentWindow?.document;
     if (!doc) {
       document.body.removeChild(iframe);
+      toast.error('浏览器未能创建打印文档，请重试；若持续失败，可改用浏览器的「打印 → 另存为 PDF」');
       return;
     }
 

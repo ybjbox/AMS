@@ -43,7 +43,7 @@ export function UnseatedStrip({ users, pickedUserId, onPick, onMove }: UnseatedS
       <div className="flex items-center gap-2 mb-2">
         <Armchair className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
         <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">未入座 {users.length} 人</span>
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">拖拽至桌次即可落座；或先点选一人，再点击目标桌的「移入」</span>
+        <span className="text-xs text-muted-foreground">拖拽至桌次即可落座；或先点选一人，再点击目标桌的「移入」</span>
       </div>
       {/* 限高 + 内部滚动：整桌未排时这里会铺开几十个人，不能把画布的空态与主操作挤出首屏 */}
       <div className="relative">

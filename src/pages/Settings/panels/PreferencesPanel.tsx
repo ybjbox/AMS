@@ -28,7 +28,7 @@ export default function PreferencesPanel() {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">当前账号权限</h3>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               {role ? ROLE_LABEL[String(role)] ?? String(role) : '未登录'} · {userInfo?.username ?? '-'} · 可用功能 {scope}
               （由服务端按鉴权策略表下发，界面不再本地配置权限）。角色在「账号管理」里修改，改完需重新登录生效。
             </p>

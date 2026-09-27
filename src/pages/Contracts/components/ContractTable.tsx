@@ -2,16 +2,20 @@ import React, { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { User } from '@/types';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { FailedState } from '@/components/ui/FailedState';
 import Badge from '@/components/ui/Badge';
 import { Eye, Printer, FileText } from 'lucide-react';
 
 interface ContractTableProps {
   filteredUsers: User[];
+  /** 员工名单没拉到时不能显示成"没有符合条件的记录"（审查 M1） */
+  loadError?: string | null;
+  onRetry?: () => void;
   onPreview: (user: User) => void;
   onDirectPrint: (user: User) => void;
 }
 
-export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: ContractTableProps) => {
+export const ContractTable = ({ filteredUsers, loadError, onRetry, onPreview, onDirectPrint }: ContractTableProps) => {
   const parentRef = useRef<HTMLDivElement>(null);
   const rowVirtualizer = useVirtualizer({
     count: filteredUsers.length,
@@ -28,43 +32,43 @@ export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: Contr
             <tr>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider relative z-30 shadow-sticky-left bg-zinc-50 dark:bg-zinc-900/50"
+                className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider relative z-30 shadow-sticky-left bg-zinc-50 dark:bg-zinc-900/50"
               >
                 工号
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider bg-zinc-50 dark:bg-zinc-900/50"
+                className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-zinc-50 dark:bg-zinc-900/50"
               >
                 姓名
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider bg-zinc-50 dark:bg-zinc-900/50"
+                className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-zinc-50 dark:bg-zinc-900/50"
               >
                 部门
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider bg-zinc-50 dark:bg-zinc-900/50"
+                className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-zinc-50 dark:bg-zinc-900/50"
               >
                 合同状态
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider bg-zinc-50 dark:bg-zinc-900/50"
+                className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-zinc-50 dark:bg-zinc-900/50"
               >
                 签订日期
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider bg-zinc-50 dark:bg-zinc-900/50"
+                className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-zinc-50 dark:bg-zinc-900/50"
               >
                 到期日期
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-right text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider relative z-30 shadow-sticky-right bg-zinc-50 dark:bg-zinc-900/50"
+                className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider relative z-30 shadow-sticky-right bg-zinc-50 dark:bg-zinc-900/50"
               >
                 操作
               </th>
@@ -95,10 +99,10 @@ export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: Contr
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-900 dark:text-white sticky left-0 z-10 bg-white dark:bg-zinc-800 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-700/50 shadow-sticky-left">
                         {user.id}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {user.name}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {user.department}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -106,10 +110,10 @@ export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: Contr
                           {hasExpiry ? (isExpired ? '已过期' : isExpiringSoon ? '即将到期' : '正常') : '未登记'}
                         </Badge>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {user.contractSignDate || '-'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {user.contractExpiry || '-'}
                         {isExpiringSoon && (
                           <span className="ml-2 text-xs text-amber-700 dark:text-amber-400">({daysToExpiry}天后)</span>
@@ -147,11 +151,15 @@ export const ContractTable = ({ filteredUsers, onPreview, onDirectPrint }: Contr
             ) : (
               <tr>
                 <td colSpan={7} className="p-0">
-                  <EmptyState
-                    title="没有找到符合条件的员工记录"
-                    description="请尝试调整搜索条件或筛选器"
-                    icon={FileText}
-                  />
+                  {loadError ? (
+                    <FailedState subject="员工名单" reason={loadError} onRetry={onRetry} />
+                  ) : (
+                    <EmptyState
+                      title="没有找到符合条件的员工记录"
+                      description="请尝试调整搜索条件或筛选器"
+                      icon={FileText}
+                    />
+                  )}
                 </td>
               </tr>
             )}

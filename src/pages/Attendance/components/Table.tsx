@@ -10,16 +10,9 @@ import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/ui/Pagination';
 import CoverageBanner from './CoverageBanner';
 import { UseAttendanceReturn } from '../hooks/useAttendance';
-import { toast } from 'sonner';
-
-/**
- * store 的写动作不抛异常（失败原因作为返回值），4xx/5xx 也没有全局提示 ——
- * 不接住它就会点了删除却毫无反应。统一在这里给出反馈。
- */
-function reportWrite(failure: string | null, okMessage: string) {
-  if (failure) toast.error(failure);
-  else toast.success(okMessage);
-}
+// store 的写动作不抛异常（失败原因作为返回值），4xx/5xx 也没有全局提示 ——
+// 不接住它就会点了删除却毫无反应。统一出口见 saveFailure 的 reportWrite。
+import { reportWrite } from '@/store/saveFailure';
 
 export type TableProps = Pick<
   UseAttendanceReturn,
@@ -91,7 +84,7 @@ export default function Table({
         shiftId &&
         (await confirm({ title: '确定要删除这个班次吗？', description: '此操作不可恢复。', variant: 'danger' }))
       ) {
-        deleteShift(shiftId);
+        await reportWrite(deleteShift(shiftId), '班次已删除');
       }
     },
     [deleteShift, confirm]
@@ -187,10 +180,10 @@ export default function Table({
                     <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-200">
                       {record.employeeName}
                     </td>
-                    <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
+                    <td className="px-6 py-2 whitespace-nowrap text-sm text-muted-foreground">
                       {record.date}
                     </td>
-                    <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
+                    <td className="px-6 py-2 whitespace-nowrap text-sm text-muted-foreground">
                       {record.time}
                     </td>
                     <td className="px-6 py-2 whitespace-nowrap text-sm">
@@ -286,7 +279,7 @@ export default function Table({
                     <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-200">
                       {schedule.employeeName}
                     </td>
-                    <td className="px-6 py-2 text-sm text-zinc-500 dark:text-zinc-400">
+                    <td className="px-6 py-2 text-sm text-muted-foreground">
                       {schedule.shiftIds
                         ? schedule.shiftIds.map((id) => {
                             const shift = shifts.find((s) => s.id === id);
@@ -378,7 +371,7 @@ export default function Table({
                       <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-200">
                         {anomaly.date}
                       </td>
-                      <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
+                      <td className="px-6 py-2 whitespace-nowrap text-sm text-muted-foreground">
                         {anomaly.employeeId}
                       </td>
                       <td className="px-6 py-2 whitespace-nowrap text-sm font-medium text-zinc-900 dark:text-zinc-200">
@@ -401,7 +394,7 @@ export default function Table({
                           {anomaly.type === 'EARLY_LEAVE' && '早退'}
                         </span>
                       </td>
-                      <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
+                      <td className="px-6 py-2 whitespace-nowrap text-sm text-muted-foreground">
                         {anomaly.description}
                       </td>
                     </tr>
@@ -447,10 +440,10 @@ export default function Table({
                     <td className="px-6 py-2 whitespace-nowrap text-sm font-medium text-zinc-900 dark:text-zinc-200">
                       {shift.name}
                     </td>
-                    <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
+                    <td className="px-6 py-2 whitespace-nowrap text-sm text-muted-foreground">
                       {shift.startTime}
                     </td>
-                    <td className="px-6 py-2 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
+                    <td className="px-6 py-2 whitespace-nowrap text-sm text-muted-foreground">
                       {shift.endTime}
                     </td>
                     {hasPermission('attendance:manage') && (

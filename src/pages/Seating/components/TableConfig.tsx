@@ -41,7 +41,7 @@ export function TableConfig({
                 key={tc.id}
                 className="flex items-center bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-1.5 shadow-sm"
               >
-                <span className="text-xs text-zinc-500 dark:text-zinc-400 px-2 font-medium whitespace-nowrap">
+                <span className="text-xs text-muted-foreground px-2 font-medium whitespace-nowrap">
                   {tc.tableNumber}号桌
                 </span>
                 <Input
@@ -76,18 +76,18 @@ export function TableConfig({
               aria-label="跳过桌号（用逗号分隔）"
               className="flex-1 max-w-xs"
             />
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">（用逗号分隔，如：4, 14）</span>
+            <span className="text-xs text-muted-foreground">（用逗号分隔，如：4, 14）</span>
           </div>
         </div>
         <div className="flex items-center space-x-8 md:px-6 md:border-l border-zinc-100 dark:border-zinc-700 mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0">
           <div className="text-center">
-            <div className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-bold mb-1">
+            <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">
               参与人数
             </div>
             <div className="text-xl font-bold text-zinc-900 dark:text-white">{selectedCount}</div>
           </div>
           <div className="text-center">
-            <div className="text-xs text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-bold mb-1">
+            <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">
               总座位数
             </div>
             <div className="text-xl font-bold text-zinc-900 dark:text-white">

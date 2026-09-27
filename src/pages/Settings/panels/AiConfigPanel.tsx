@@ -309,10 +309,14 @@ export default function AiConfigPanel() {
           <h3 className="text-sm font-medium text-foreground">系统模型额度</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">
+              <label
+                htmlFor="ai-quota-employee"
+                className="mb-1.5 block text-sm font-medium text-foreground"
+              >
                 普通员工每日上限
               </label>
               <Input
+                id="ai-quota-employee"
                 type="number"
                 min={0}
                 max={100000}
@@ -321,10 +325,14 @@ export default function AiConfigPanel() {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">
+              <label
+                htmlFor="ai-quota-admin"
+                className="mb-1.5 block text-sm font-medium text-foreground"
+              >
                 管理员 / 人事主管每日上限
               </label>
               <Input
+                id="ai-quota-admin"
                 type="number"
                 min={0}
                 max={100000}
@@ -664,6 +672,7 @@ export default function AiConfigPanel() {
         <div className="flex items-center gap-3">
           <Input
             type="number"
+            aria-label="对话历史保留天数"
             min={0}
             max={3650}
             value={form.conversationRetentionDays}

@@ -133,7 +133,7 @@ export default function UserMenu({
               <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate">
                 {preferredName || '用户'}
               </p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+              <p className="text-xs text-muted-foreground truncate">
                 {getRoleDisplayName(userInfo?.role)}
               </p>
             </div>

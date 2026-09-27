@@ -10,6 +10,10 @@
  *  3. 浅色表面（bg-zinc-50 / bg-slate-50）没有 dark: 变体 —— 部门树一级行实测 1.21:1。
  *     纸张预览（打印件/导出预览）刻意保持"永远白纸"，走白名单。
  *  4. 微字号必须用 text-2xs/text-3xs 令牌，不再写 text-[10px]/text-[11px] 任意值。
+ *  5. 卡片抬升统一 card-base + card-lift。
+ *  6. （2026-09-26 审查 B1）不得把"表面令牌"当文字色用：`text-secondary` 实测把备份列表的
+ *     时间与体积压到 **1.1:1**（--secondary 亮=oklch .96 近白、暗=.28 深灰，本就是背景色），
+ *     两个主题同时不可读。`text-muted-foreground` 这类 *-foreground 才是文字档。
  */
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
@@ -93,5 +97,24 @@ describe('设计契约：辅助文字与暗色表面', () => {
       linesWith(f, /hover:-translate-y-[0-9.]+/, (line) => !/card-base|shadow/.test(line) || /card-lift/.test(line))
     );
     expect(bad, `应改用 card-base + card-lift：\n${bad.join('\n')}`).toEqual([]);
+  });
+
+  it('不得把表面令牌当文字色（text-secondary 一类）', () => {
+    // *-foreground 是文字档，必须放行；这里挡的是"裸表面名"：text-secondary / text-muted /
+    // text-card / text-background / text-popover / text-accent / text-input / text-border
+    const SURFACE_AS_TEXT = /\btext-(secondary|muted|card|background|popover|accent|input|border|ring)(?!-foreground)\b/;
+    const bad = files.flatMap((f) => linesWith(f, SURFACE_AS_TEXT));
+    expect(bad, `表面令牌不能当文字色（实测 text-secondary = 1.1:1），改 text-muted-foreground 或语义色档：\n${bad.join('\n')}`).toEqual([]);
+  });
+
+  it('辅助文字走唯一档，不再用 zinc-500/400 配对（纸张预览除外）', () => {
+    // 亮色 zinc-500 实测 4.46–4.83：在最浅的表面上已经掉到 4.5 以下，且会随表面漂移；
+    // muted-foreground 实测亮 5.28–5.72 / 暗 5.59–6.70，是双主题全达标的唯一档。
+    // 图标不受正文对比度口径约束（1.4.11 走 3:1 图形口径），故沿用 isIconLine 豁免。
+    const PAIR = /text-zinc-500 dark:text-zinc-400|dark:text-zinc-400 text-zinc-500/;
+    const bad = files
+      .filter((f) => !PAPER_FILES.test(f))
+      .flatMap((f) => linesWith(f, PAIR, isIconLine));
+    expect(bad, `应改用 text-muted-foreground：\n${bad.join('\n')}`).toEqual([]);
   });
 });

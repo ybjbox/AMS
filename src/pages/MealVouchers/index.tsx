@@ -124,12 +124,15 @@ export default function MealVouchers() {
       </div>
 
       <div className="flex flex-1 min-h-0 gap-4 overflow-hidden">
-        <aside className="w-80 flex-shrink-0 overflow-y-auto rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
-          <h3 className="mb-3 text-sm font-semibold text-zinc-900 dark:text-white">券面信息</h3>
+        <aside
+          aria-label="餐券参数"
+          className="w-80 flex-shrink-0 overflow-y-auto rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800"
+        >
+          <h2 className="mb-3 text-sm font-semibold text-zinc-900 dark:text-white">券面信息</h2>
           <div className="space-y-3">
             {TEXT_FIELDS.map((f) => (
               <label key={f.key} className="block">
-                <span className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">{f.label}</span>
+                <span className="mb-1 block text-xs text-muted-foreground">{f.label}</span>
                 <Input
                   value={String(spec[f.key])}
                   onChange={(e) => patch({ [f.key]: e.target.value } as Partial<VoucherSpec>)}
@@ -138,12 +141,12 @@ export default function MealVouchers() {
             ))}
 
             <div>
-              <span className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">
+              <span className="mb-1 block text-xs text-muted-foreground">
                 使用时间（留空的段落印成手写占位）
               </span>
               {(['periodFrom', 'periodTo'] as const).map((which, i) => (
                 <div key={which} className="mb-2 flex items-center gap-2 last:mb-0">
-                  <span className="w-4 shrink-0 text-xs text-zinc-500 dark:text-zinc-400">
+                  <span className="w-4 shrink-0 text-xs text-muted-foreground">
                     {i === 0 ? '起' : '止'}
                   </span>
                   {DATE_PARTS.map((p) => (
@@ -162,11 +165,11 @@ export default function MealVouchers() {
             </div>
           </div>
 
-          <h3 className="mb-3 mt-5 text-sm font-semibold text-zinc-900 dark:text-white">编号与版式</h3>
+          <h2 className="mb-3 mt-5 text-sm font-semibold text-zinc-900 dark:text-white">编号与版式</h2>
           <div className="grid grid-cols-2 gap-3">
             {NUM_FIELDS.map((f) => (
               <label key={f.key} className="block">
-                <span className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">{f.label}</span>
+                <span className="mb-1 block text-xs text-muted-foreground">{f.label}</span>
                 <Input
                   type="number"
                   min={f.min}
@@ -189,7 +192,7 @@ export default function MealVouchers() {
             </Button>
           )}
           <div className="mt-3">
-            <span className="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">纸张</span>
+            <span className="mb-1 block text-xs text-muted-foreground">纸张</span>
             <Select value={spec.paperSize} onValueChange={(v) => patch({ paperSize: String(v) })}>
               <SelectTrigger aria-label="纸张">
                 <SelectValue />
@@ -242,12 +245,12 @@ export default function MealVouchers() {
             </p>
           )}
 
-          <h3 className="mb-2 mt-5 text-sm font-semibold text-zinc-900 dark:text-white">
+          <h2 className="mb-2 mt-5 text-sm font-semibold text-zinc-900 dark:text-white">
             打印记录
             <span className="ml-2 text-xs font-normal text-muted-foreground">
               {history.records.length} 批
             </span>
-          </h3>
+          </h2>
           {history.loading ? (
             <p className="text-xs text-muted-foreground">读取中…</p>
           ) : history.records.length === 0 ? (
@@ -295,7 +298,7 @@ export default function MealVouchers() {
           className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900"
         >
           <div className="flex shrink-0 items-center justify-between border-b border-zinc-200/70 bg-white/70 px-3 py-1.5 dark:border-zinc-700/60 dark:bg-zinc-800/60">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               打印预览 ({facts.pages}页)
             </span>
             <PreviewZoomControl zoom={zoom} onChange={changeZoom} onReset={resetZoom} />

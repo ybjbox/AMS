@@ -249,7 +249,7 @@ export default function AccountManager() {
       <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <h2 className="text-lg font-medium text-zinc-900 dark:text-white">账号管理</h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             共 {stats.total} 个账号 · 未绑定 {stats.unbound} · 绑定失效 {stats.dangling} · 停用 {stats.disabled} ·
             待改密 {stats.mustChange} · 锁定 {stats.locked}
           </p>
@@ -319,7 +319,7 @@ export default function AccountManager() {
 
         <div className="flex-1 overflow-auto">
           <table className="w-full min-w-[860px] text-left border-collapse">
-            <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 font-medium">账号</th>
                 <th className="px-4 py-3 font-medium">系统角色</th>
@@ -342,7 +342,7 @@ export default function AccountManager() {
                         {a.username}
                         {isSelf && <span className="text-2xs text-brand-600 dark:text-brand-400">当前登录</span>}
                       </div>
-                      <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                      <div className="text-xs text-muted-foreground">
                         {a.displayName || '—'}
                         {a.email ? ` · ${a.email}` : ''}
                       </div>
@@ -377,7 +377,7 @@ export default function AccountManager() {
                         <span className="text-muted-foreground">未绑定</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-xs text-zinc-500 dark:text-zinc-400">{a.lastLoginAt || '从未登录'}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">{a.lastLoginAt || '从未登录'}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
                         {busy === `enable:${a.username}` && <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />}

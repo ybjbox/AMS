@@ -259,8 +259,11 @@ main,
   }
   
   .btn-primary {
-    /* 品牌 CTA：实色 Logo 蓝 #005BA8（brand-600），白字对比 6.9:1（MASTER v3 扁平契约） */
+    /* 品牌 CTA：实色 Logo 蓝 #005BA8（brand-600），白字对比 6.9:1（MASTER v3 扁平契约）
+       border-transparent：与 .btn-secondary/.btn-danger 同高 —— 那两条各带 1px 实边框，
+       实测同一工具条里 36 vs 38 差 2px（border-box 下边框计入高度）。 */
     @apply inline-flex items-center justify-center px-4 py-2 text-sm
+    border border-transparent
     bg-brand-600 dark:bg-brand-500
     text-white font-medium rounded-lg
     hover:bg-brand-700 dark:hover:bg-brand-400
@@ -285,6 +288,7 @@ main,
 
   .btn-primary-danger {
     @apply inline-flex items-center justify-center px-4 py-2 text-sm
+    border border-transparent
     bg-red-600 text-white font-medium rounded-lg
     hover:bg-red-700
     active:scale-95 transition-transform shadow-sm;
@@ -348,6 +352,13 @@ main,
   }
   .tab-group::-webkit-scrollbar {
     display: none;
+  }
+  /* 窄档放不下就换行：这里刻意隐藏了滚动条，768 档考勤 6 个标签曾有 225px 停在视口外
+     且界面上没有任何"还能滚"的暗示（2026-09-26 审查 M9） */
+  @media (max-width: 1023px) {
+    .tab-group {
+      @apply flex-wrap;
+    }
   }
 
   /* 隐藏滚动条但保留滚动能力（侧边栏导航等窄容器，用渐隐+箭头示意可滚动） */

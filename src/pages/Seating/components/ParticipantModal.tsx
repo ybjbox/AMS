@@ -93,7 +93,7 @@ export function ParticipantModal({
                     <Square className="w-5 h-5 text-zinc-400 dark:text-zinc-500 mr-3" />
                   )}
                   <span className="font-medium text-zinc-800 dark:text-zinc-200">{dept}</span>
-                  <span className="ml-2 text-xs text-zinc-500 dark:text-zinc-400">
+                  <span className="ml-2 text-xs text-muted-foreground">
                     ({deptUsers.filter((u) => selectedUserIds.has(u.id)).length}/{deptUsers.length})
                   </span>
                 </div>

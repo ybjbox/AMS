@@ -73,7 +73,7 @@ export default function NameCardEditor({
           {printSettings.paperSize === 'custom' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
                   纸张宽 (cm)
                 </label>
                 <Input
@@ -90,7 +90,7 @@ export default function NameCardEditor({
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
                   纸张高 (cm)
                 </label>
                 <Input
@@ -110,7 +110,7 @@ export default function NameCardEditor({
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
                 台卡宽 (cm)
               </label>
               <Input
@@ -127,7 +127,7 @@ export default function NameCardEditor({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
                 台卡高 (cm)
               </label>
               <Input
@@ -245,7 +245,7 @@ export default function NameCardEditor({
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">排版方向</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">排版方向</label>
               <Select
                 value={printSettings.layout}
                 onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, layout: val as 'horizontal' | 'vertical' }))}
@@ -264,7 +264,7 @@ export default function NameCardEditor({
               </Select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">对齐方式</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">对齐方式</label>
               <Select
                 value={printSettings.textAlign}
                 onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, textAlign: val as 'left' | 'center' | 'right' }))}
@@ -287,7 +287,7 @@ export default function NameCardEditor({
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
                 姓名大小 (px)
               </label>
               <Input
@@ -300,7 +300,7 @@ export default function NameCardEditor({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">字体颜色</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">字体颜色</label>
               <div className="flex items-center space-x-2">
                 <input
                   type="color"
@@ -315,7 +315,7 @@ export default function NameCardEditor({
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">背景颜色</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">背景颜色</label>
               <div className="flex items-center space-x-2">
                 <input
                   type="color"
@@ -324,7 +324,7 @@ export default function NameCardEditor({
                   onChange={(e) => setPrintSettings((prev) => ({ ...prev, backgroundColor: e.target.value }))}
                   className="h-8 w-12 rounded border border-zinc-200/80 dark:border-zinc-600 cursor-pointer p-0.5 bg-white dark:bg-zinc-700"
                 />
-                <span className="text-xs text-zinc-500 dark:text-zinc-400 uppercase">
+                <span className="text-xs text-muted-foreground uppercase">
                   {printSettings.backgroundColor}
                 </span>
               </div>
@@ -345,7 +345,7 @@ export default function NameCardEditor({
             </div>
             {printSettings.showDepartment && (
               <div className="pl-6">
-                <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
                   部门字号 (px)
                 </label>
                 <Input
@@ -372,7 +372,7 @@ export default function NameCardEditor({
             </div>
             {printSettings.showRole && (
               <div className="pl-6">
-                <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
                   职位字号 (px)
                 </label>
                 <Input
@@ -403,7 +403,7 @@ export default function NameCardEditor({
             {printSettings.showCompanyName && (
               <div className="pl-6 space-y-2">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">
                     公司名称
                   </label>
                   <Input
@@ -414,7 +414,7 @@ export default function NameCardEditor({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">
                     公司名称字号 (px)
                   </label>
                   <Input

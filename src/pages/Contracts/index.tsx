@@ -24,6 +24,9 @@ const STATUS_OPTIONS = [
 
 export default function ContractsPage() {
   const users = useEmployeeStore((state) => state.users);
+  /** 名单没拉到时，合同表不能显示成"没有符合条件的记录"（审查 M1） */
+  const usersLoadError = useEmployeeStore((state) => state.error);
+  const fetchUsers = useEmployeeStore((state) => state.fetchUsers);
 
   // 搜索/筛选/分页状态与 URL 同步（刷新保持、可深链）
   const urlState = useUrlState();
@@ -137,6 +140,8 @@ export default function ContractsPage() {
 
           <ContractTable
             filteredUsers={paginatedUsers}
+            loadError={usersLoadError}
+            onRetry={() => void fetchUsers({ force: true })}
             onPreview={handlePreview}
             onDirectPrint={handleDirectPrint}
           />

@@ -3,6 +3,7 @@ import React from 'react';
 import { Printer, Edit, FileSignature } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/Badge';
 import { User, SystemRole } from '@/types';
 import { formatPhone } from '@/utils/dateUtils';
 import { toast } from 'sonner';
@@ -91,64 +92,56 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit, onR
         <div id="printable-contact-card">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h4 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1">基本信息</h4>
+              <h4 className="text-sm font-medium text-muted-foreground mb-1">基本信息</h4>
               <div className="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-4 space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">姓名</span>
+                  <span className="text-sm text-muted-foreground">姓名</span>
                   <span className="text-sm font-medium text-zinc-900 dark:text-white">{selectedUser.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">工号</span>
+                  <span className="text-sm text-muted-foreground">工号</span>
                   <span className="text-sm font-medium text-zinc-900 dark:text-white">{selectedUser.id}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">性别</span>
+                  <span className="text-sm text-muted-foreground">性别</span>
                   <span className="text-sm font-medium text-zinc-900 dark:text-white">{selectedUser.gender}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">年龄</span>
+                  <span className="text-sm text-muted-foreground">年龄</span>
                   <span className="text-sm font-medium text-zinc-900 dark:text-white">{selectedUser.age}岁</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">联系电话</span>
+                  <span className="text-sm text-muted-foreground">联系电话</span>
                   <span className="text-sm font-medium text-zinc-900 dark:text-white tabular-nums">{formatPhone(selectedUser.phone)}</span>
                 </div>
               </div>
             </div>
 
             <div>
-              <h4 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1">工作信息</h4>
+              <h4 className="text-sm font-medium text-muted-foreground mb-1">工作信息</h4>
               <div className="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-4 space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">部门</span>
+                  <span className="text-sm text-muted-foreground">部门</span>
                   <span className="text-sm font-medium text-zinc-900 dark:text-white">{selectedUser.department}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">职位</span>
+                  <span className="text-sm text-muted-foreground">职位</span>
                   <span className="text-sm font-medium text-zinc-900 dark:text-white">{selectedUser.role}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">状态</span>
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                      selectedUser.status === '在职'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : selectedUser.status === '试用期'
-                          ? 'bg-amber-100 text-amber-800'
-                          : selectedUser.status === '离职'
-                            ? 'bg-zinc-200 text-zinc-800 dark:text-zinc-200'
-                            : 'bg-zinc-100 text-zinc-800'
-                    }`}
-                  >
+                  <span className="text-sm text-muted-foreground">状态</span>
+                  {/* 与员工列表同一套映射走同一原语：此前这里手写 emerald pill、列表用 Badge，
+                      同一个「在职」两种颜色（2026-09-26 审查 D3） */}
+                  <Badge variant={selectedUser.status === '在职' ? 'success' : selectedUser.status === '试用期' ? 'warning' : 'neutral'}>
                     {selectedUser.status}
-                  </span>
+                  </Badge>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">入职时间</span>
+                  <span className="text-sm text-muted-foreground">入职时间</span>
                   <span className="text-sm font-medium text-zinc-900 dark:text-white">{selectedUser.joinDate}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">工龄</span>
+                  <span className="text-sm text-muted-foreground">工龄</span>
                   <span className="text-sm font-medium text-zinc-900 dark:text-white">
                     {selectedUser.yearsOfService}
                   </span>
@@ -157,22 +150,22 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit, onR
             </div>
 
             <div className="md:col-span-2">
-              <h4 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1">合同与权限</h4>
+              <h4 className="text-sm font-medium text-muted-foreground mb-1">合同与权限</h4>
               <div className="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-4 space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">用工形式</span>
+                  <span className="text-sm text-muted-foreground">用工形式</span>
                   <span className="text-sm font-medium text-zinc-900 dark:text-white">
                     {selectedUser.employmentType}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">合同到期</span>
+                  <span className="text-sm text-muted-foreground">合同到期</span>
                   <span className="text-sm font-medium text-zinc-900 dark:text-white">
                     {selectedUser.contractExpiry}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">系统角色</span>
+                  <span className="text-sm text-muted-foreground">系统角色</span>
                   <span className="text-sm font-medium text-zinc-900 dark:text-white">
                     {selectedUser.systemRole === SystemRole.SUPER_ADMIN
                       ? '超级管理员'

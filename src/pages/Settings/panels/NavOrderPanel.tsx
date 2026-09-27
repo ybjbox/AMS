@@ -62,7 +62,7 @@ export default function NavOrderPanel() {
             </div>
             <div>
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">侧边栏模块顺序</h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 使用上下按钮调整模块顺序，调整后即时生效（仅影响当前浏览器的侧边栏）。
               </p>
             </div>

@@ -23,7 +23,7 @@ export default function DepartmentDistribution({ stats, isLoading }: Props) {
           部门人数分布
         </h2>
         {stats && (
-          <span className="text-xs text-zinc-500 dark:text-zinc-400 tabular-nums">
+          <span className="text-xs text-muted-foreground tabular-nums">
             在职 {stats.statuses['在职'] ?? 0} · 试用期 {stats.statuses['试用期'] ?? 0}
             {(stats.statuses['离职'] ?? 0) > 0 ? ` · 离职 ${stats.statuses['离职']}` : ''}
           </span>

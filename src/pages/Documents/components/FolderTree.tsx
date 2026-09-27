@@ -67,16 +67,31 @@ export function FolderTree({
                       )}
                     </button>
                     <Folder className={`w-4 h-4 shrink-0 ${isSelected ? 'text-brand-600' : 'text-zinc-400'}`} />
-                    <span className="text-sm truncate">{folder.name}</span>
+                    {/* 行本身是 div，此前"进入文件夹"只有鼠标一条路；名称做成真按钮，
+                        Tab 到位后 Enter/Space 就能选中（2026-09-26 审查 B2） */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSetCurrentFolderClick(folder.id);
+                      }}
+                      className="min-w-0 flex-1 truncate rounded px-1 py-0.5 text-left text-sm focus-visible:outline-2 focus-visible:outline-offset-1"
+                      aria-current={isSelected ? 'true' : undefined}
+                    >
+                      {folder.name}
+                    </button>
                   </div>
                   {canManageDocs && (
-                  <div className="hidden group-hover:flex items-center space-x-1 shrink-0">
+                  /* 不能用 hidden group-hover:flex：display:none 的元素压根进不了 Tab 序，
+                     键盘用户永远触发不了 group-focus-within。改成占位但透明（与部门树同一口径，
+                     顺带消掉 hover 时才出现导致的行内布局跳动） */
+                  <div className="flex items-center space-x-1 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onAddSubFolderClick(folder.id);
                       }}
-                      aria-label="新建子文件夹"
+                      aria-label={`新建子文件夹：${folder.name}`}
                       className="p-1 text-zinc-400 hover:text-brand-600"
                     >
                       <Plus className="w-3 h-3" />
@@ -86,7 +101,7 @@ export function FolderTree({
                         e.stopPropagation();
                         onEditFolderClick(folder.id);
                       }}
-                      aria-label="重命名该文件夹"
+                      aria-label={`重命名文件夹：${folder.name}`}
                       className="p-1 text-zinc-400 hover:text-brand-600"
                     >
                       <Edit2 className="w-3 h-3" />

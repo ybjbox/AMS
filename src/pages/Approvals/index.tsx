@@ -277,7 +277,7 @@ export default function Approvals() {
                 </span>
                 <StatusBadge status={item.status} />
               </div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {approvalSummary(item)}
                 · 事由：{item.reason}
               </p>
@@ -443,7 +443,7 @@ export default function Approvals() {
                   </SelectContent>
                 </Select>
               </label>
-              <p className="col-span-2 text-2xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              <p className="col-span-2 text-2xs text-muted-foreground leading-relaxed">
                 补卡审批通过后，将自动补写对应打卡记录并更新考勤异常分析。
               </p>
             </div>
@@ -451,7 +451,7 @@ export default function Approvals() {
 
           {formType === 'conversion' && (
             <div className="space-y-2">
-              <p className="text-2xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              <p className="text-2xs text-muted-foreground leading-relaxed">
                 转正申请需满足：账号已关联员工档案，且当前状态为「试用期」。
                 审批通过后，员工状态将自动变更为「在职」。
               </p>
@@ -470,7 +470,7 @@ export default function Approvals() {
                   className="input-base"
                 />
               </label>
-              <p className="col-span-2 text-2xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              <p className="col-span-2 text-2xs text-muted-foreground leading-relaxed">
                 离职审批通过后：员工状态变更为「离职」，登录账号将被停用（此操作不可逆，请谨慎提交）。
               </p>
             </div>
@@ -501,7 +501,7 @@ export default function Approvals() {
                   className="input-base"
                 />
               </label>
-              <p className="col-span-2 text-2xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              <p className="col-span-2 text-2xs text-muted-foreground leading-relaxed">
                 加班审批通过后，时长将自动计入你的调休额度（8 小时 = 1 天）；申请「调休」假时将校验余额。
               </p>
             </div>
@@ -629,7 +629,7 @@ export default function Approvals() {
           {/* 我的调休余额：原来只在提交超额时以报错形式出现 */}
           {tab === 'mine' && balance && (
             <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-zinc-100 dark:border-zinc-700/60 text-xs">
-              <span className="text-zinc-500 dark:text-zinc-400">调休余额</span>
+              <span className="text-muted-foreground">调休余额</span>
               <span className="font-medium text-zinc-900 dark:text-white tabular-nums">
                 {balance.linked
                   ? `${balance.hours.toFixed(1)} 小时${balance.pendingHours > 0 ? `（待审占用 ${balance.pendingHours.toFixed(1)}）` : ''}`
@@ -672,7 +672,7 @@ export default function Approvals() {
             {(decideTarget ?? []).map((i) => (
               <li key={i.id} className="text-zinc-700 dark:text-zinc-200">
                 {i.applicant} · {approvalTitle(i)} · {approvalSummary(i)}
-                <span className="block text-xs text-zinc-500 dark:text-zinc-400">事由：{i.reason}</span>
+                <span className="block text-xs text-muted-foreground">事由：{i.reason}</span>
               </li>
             ))}
           </ul>

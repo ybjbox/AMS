@@ -22,6 +22,8 @@ export default function Documents() {
   const documentSets = useDocumentStore((state) => state.documentSets);
   const fetchData = useDocumentStore((state) => state.fetchData);
   const isLoading = useDocumentStore((state) => state.isLoading);
+  /** 空列表时要区分「真的没有」与「没拉到」（审查 M1） */
+  const docsLoadError = useDocumentStore((state) => state.error);
   // 订阅权限矩阵，使设置页的矩阵修改即时反映到按钮可见性
   const canManageDocs = hasPermission('documents:manage');
 
@@ -191,6 +193,8 @@ export default function Documents() {
           documentSets={documentSets}
           documents={documents}
           isLoading={isLoading}
+          loadError={docsLoadError}
+          onRetry={() => void fetchData()}
           onEditSetClick={handleEditSetClick}
           onDeleteSetClick={handleDeleteSetClick}
           onPrintSetClick={handlePrintSetClick}

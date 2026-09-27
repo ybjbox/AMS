@@ -122,7 +122,7 @@ export function TableCard({ table, viewMode, capacity, pickedUserId, onPick, onM
               'text-xs font-medium px-2 py-1 rounded-full border whitespace-nowrap',
               full
                 ? 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/60'
-                : 'text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-700 border-zinc-200 dark:border-zinc-600',
+                : 'text-muted-foreground bg-white dark:bg-zinc-700 border-zinc-200 dark:border-zinc-600',
             ].join(' ')}
           >
             {table.members.length}
@@ -245,7 +245,7 @@ function MemberChip({
         <span className="text-xs text-muted-foreground w-4 shrink-0 tabular-nums">{seat}.</span>
         <div className="min-w-0">
           <div className="text-sm font-bold text-zinc-900 dark:text-white truncate">{member.name}</div>
-          <div className="text-3xs text-zinc-500 dark:text-zinc-400 truncate">
+          <div className="text-3xs text-muted-foreground truncate">
             {member.department} · {member.role}
           </div>
         </div>

@@ -147,7 +147,7 @@ export default function SystemLogs() {
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-lg font-medium text-zinc-900 dark:text-white">审计日志</h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             记录所有写操作与登录事件，只增不删{data ? `，保留期 ${data.retentionDays} 天` : ''}
           </p>
         </div>
@@ -278,7 +278,7 @@ export default function SystemLogs() {
               </button>
             </div>
           ) : loading ? (
-            <div className="flex flex-col items-center justify-center h-64 text-zinc-500 dark:text-zinc-400">
+            <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600 mb-4"></div>
               <p>加载中…</p>
             </div>
@@ -294,7 +294,7 @@ export default function SystemLogs() {
                     <th
                       key={h}
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider"
+                      className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
                     >
                       {h}
                     </th>
@@ -304,7 +304,7 @@ export default function SystemLogs() {
               <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
                 {items.map((log) => (
                   <tr key={log.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors align-top">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400 font-mono tabular-nums">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground font-mono tabular-nums">
                       {formatDateTime(log.at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -316,15 +316,15 @@ export default function SystemLogs() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="text-zinc-500 dark:text-zinc-400 text-xs">{log.category}</div>
+                      <div className="text-muted-foreground text-xs">{log.category}</div>
                       <div className="text-zinc-900 dark:text-zinc-200 font-medium">{log.action}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="text-zinc-900 dark:text-zinc-200">{log.actor || '-'}</div>
-                      <div className="text-zinc-500 dark:text-zinc-400 text-xs">{log.actorRole}</div>
+                      <div className="text-muted-foreground text-xs">{log.actorRole}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm max-w-[220px]">
-                      <div className="text-zinc-500 dark:text-zinc-400 text-xs">{log.targetType || '-'}</div>
+                      <div className="text-muted-foreground text-xs">{log.targetType || '-'}</div>
                       <div className="text-zinc-900 dark:text-zinc-200 truncate" title={log.targetName || log.targetId}>
                         {log.targetName || log.targetId || '-'}
                       </div>
@@ -343,7 +343,7 @@ export default function SystemLogs() {
                     </td>
                     <td className="px-6 py-4 text-sm text-zinc-900 dark:text-zinc-200 min-w-[200px]">
                       <div className="flex items-start justify-between gap-4">
-                        <div className="text-zinc-500 dark:text-zinc-400 text-xs break-all">{log.detail || `${log.method} ${log.path}`}</div>
+                        <div className="text-muted-foreground text-xs break-all">{log.detail || `${log.method} ${log.path}`}</div>
                         <button
                           onClick={() => toggleExpand(log.id)}
                           className="flex items-center text-xs text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 whitespace-nowrap transition-colors"
@@ -362,7 +362,7 @@ export default function SystemLogs() {
                         </button>
                       </div>
                       {expandedIds.has(log.id) && (
-                        <div className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 font-mono bg-zinc-50 dark:bg-zinc-900 p-3 rounded border border-zinc-100 dark:border-zinc-700 overflow-x-auto whitespace-pre-wrap break-all space-y-1">
+                        <div className="mt-2 text-xs text-muted-foreground font-mono bg-zinc-50 dark:bg-zinc-900 p-3 rounded border border-zinc-100 dark:border-zinc-700 overflow-x-auto whitespace-pre-wrap break-all space-y-1">
                           <div>{`${log.method} ${log.path}`}</div>
                           {log.ip && <div>IP：{log.ip}</div>}
                           {log.changes && log.changes.length > 0 && <div>变更字段：{log.changes.join('、')}</div>}

@@ -31,8 +31,10 @@ export interface UseAttendanceReturn {
 
   // Store Actions（写动作把失败原因作为返回值：null=成功，见 src/store/utils.ts）
   fetchData: () => Promise<string | null>;
-  setRecords: (records: PunchRecord[]) => void;
-  setSchedules: (schedules: EmployeeSchedule[]) => void;
+  // 这两个此前被写成 `=> void`：接口把 store 真实的 Promise<string|null> 抹掉了，
+  // 于是调用点连"忘了看返回值"都不会被类型系统提示（2026-09-26 审查 B3）
+  setRecords: (records: PunchRecord[]) => Promise<string | null>;
+  setSchedules: (schedules: EmployeeSchedule[]) => Promise<string | null>;
   removeSchedule: (employeeId: string) => Promise<string | null>;
   clearSchedules: () => Promise<string | null>;
   removeRecord: (id: string) => Promise<string | null>;

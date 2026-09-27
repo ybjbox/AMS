@@ -10,16 +10,17 @@ const Forbidden403 = React.memo(function Forbidden403() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-900 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 text-center">
         <div className="flex justify-center">
           <div className="h-24 w-24 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-            <ShieldAlert className="h-12 w-12 text-red-600 dark:text-red-500" />
+            <ShieldAlert className="h-12 w-12 text-red-600 dark:text-red-500" aria-hidden="true" />
           </div>
         </div>
 
         <div>
-          <h2 className="mt-6 text-3xl font-extrabold text-zinc-900 dark:text-white">403 - 无权限访问</h2>
+          {/* 落地页要能被读屏一眼认出：h1 + 包在 <main> 里（axe: page-has-heading-one / landmark-one-main） */}
+          <h1 className="mt-6 text-3xl font-extrabold text-zinc-900 dark:text-white">403 - 无权限访问</h1>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
             抱歉，您没有权限访问此页面。如果您认为这是一个错误，请联系系统管理员。
           </p>
@@ -30,12 +31,12 @@ const Forbidden403 = React.memo(function Forbidden403() {
             onClick={handleGoBack}
             className="btn-primary"
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
             返回首页
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 });
 

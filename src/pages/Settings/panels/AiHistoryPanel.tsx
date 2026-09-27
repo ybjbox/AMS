@@ -132,6 +132,7 @@ export default function AiHistoryPanel() {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <input
+            aria-label="按用户名或对话标题筛选"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="按用户名或对话标题筛选…"

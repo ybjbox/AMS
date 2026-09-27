@@ -97,7 +97,7 @@ const NotificationContent = React.memo(function NotificationContent({ onClose }:
                   {formatNotificationTime(notification.time)}
                 </span>
               </div>
-              <p className={`mt-0.5 pl-3 text-2xs leading-snug truncate ${notification.read ? 'text-muted-foreground' : 'text-zinc-500 dark:text-zinc-400'}`}>
+              <p className={`mt-0.5 pl-3 text-2xs leading-snug truncate ${notification.read ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
                 {notification.message}
               </p>
             </button>

@@ -130,7 +130,7 @@ export default function NameCardModals({
                       <Square className="w-5 h-5 text-zinc-400 dark:text-zinc-500 mr-3" />
                     )}
                     <span className="font-medium text-zinc-800 dark:text-zinc-200">{dept}</span>
-                    <span className="ml-2 text-xs text-zinc-500 dark:text-zinc-400">
+                    <span className="ml-2 text-xs text-muted-foreground">
                       ({deptUsers.filter((u) => selectedUserIds.has(u.id)).length}/{deptUsers.length})
                     </span>
                   </div>
@@ -203,7 +203,7 @@ export default function NameCardModals({
           </div>
           <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
             <div className="mt-2">
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 请输入人员名单，每行一个。支持使用空格或逗号分隔姓名、部门和职务。例如：
                 <br />
                 <span className="font-mono bg-zinc-100 dark:bg-zinc-700 px-1 rounded">张三 技术部 工程师</span>

@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { PreviewZoomControl } from '@/components/PreviewZoomControl';
 import { usePreviewZoom, zoomStyle } from '@/hooks/usePreviewZoom';
+import { useUserStore } from '@/store/useUserStore';
 import { User } from '@/types';
 import { ExportColumn, ExportTheme, ExportScript } from '../constants';
 import {
@@ -119,6 +120,9 @@ export function ExportModal({
   filteredUsersLength,
 }: ExportModalProps) {
   const { zoom, change, reset } = usePreviewZoom('roster-export');
+  const hasPermission = useUserStore((state) => state.hasPermission);
+  /** 导出脚本/主题模板的管理入口是否对当前角色开放（能力码由服务端策略表派生） */
+  const canManageTemplates = hasPermission('export-templates:manage');
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -369,7 +373,13 @@ export function ExportModal({
                 ))}
                 {scripts.length === 0 && (
                   <div className="py-6 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl bg-zinc-50 dark:bg-zinc-800/50">
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">暂无脚本，请前往系统设置创建</p>
+                    {/* 「前往系统设置创建」对 HR 是死指令：导出脚本模板面板要 ADMIN
+                        （/export-templates 派生），所以按能力码切换文案（审查 M8） */}
+                    <p className="text-xs text-muted-foreground">
+                      {canManageTemplates
+                        ? '暂无脚本，请前往系统设置创建'
+                        : '暂无可用的导出脚本，需要由管理员在「导出脚本模板」中创建'}
+                    </p>
                   </div>
                 )}
               </div>

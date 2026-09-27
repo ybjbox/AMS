@@ -37,17 +37,17 @@ export function BusinessFormRecords({ employee }: { employee: User }) {
   return (
     <Permission code="forms:view">
       <div className="mt-6">
-        <h4 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1">业务单据</h4>
+        <h4 className="text-sm font-medium text-muted-foreground mb-1">业务单据</h4>
         <div className="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-4 space-y-3">
           {records === null ? (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
               <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
               加载中…
             </p>
           ) : failed ? (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">业务单据读取失败，请稍后重试</p>
+            <p className="text-sm text-muted-foreground">业务单据读取失败，请稍后重试</p>
           ) : records.length === 0 ? (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">尚无归档的业务单据</p>
+            <p className="text-sm text-muted-foreground">尚无归档的业务单据</p>
           ) : (
             <ul className="space-y-2 max-h-44 overflow-auto pr-1">
               {records.map((r) => (
@@ -55,9 +55,9 @@ export function BusinessFormRecords({ employee }: { employee: User }) {
                   <div className="min-w-0">
                     <div className="text-sm font-medium text-zinc-900 dark:text-white">
                       {r.kindLabel}
-                      <span className="ml-2 text-zinc-500 dark:text-zinc-400">{r.date}</span>
+                      <span className="ml-2 text-muted-foreground">{r.date}</span>
                     </div>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 line-clamp-2">
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
                       {r.body}
                     </p>
                   </div>

@@ -236,7 +236,7 @@ export function TreeSelect({
               <div className="overflow-auto py-1">{renderTree(nodes)}</div>
             </>
           ) : (
-            <div className="py-2 px-3 text-sm text-zinc-500 dark:text-zinc-400">暂无数据</div>
+            <div className="py-2 px-3 text-sm text-muted-foreground">暂无数据</div>
           )}
         </div>
       )}

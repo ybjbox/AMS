@@ -331,6 +331,7 @@ export default function WeChatNotice() {
           </div>
         )}
         <Textarea
+          aria-label="待整理的原始内容"
           value={source}
           onChange={(e) => setSource(e.target.value)}
           placeholder="在此粘贴会议安排、放假通知、催办事项等原始内容…"

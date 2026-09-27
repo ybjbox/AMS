@@ -164,7 +164,7 @@ export default function AppearancePanel() {
     <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-400 space-y-6">
       <div>
         <h2 className="text-lg font-medium text-zinc-900 dark:text-white">外观设置</h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">自定义系统主题、图标和登录页背景</p>
+        <p className="text-sm text-muted-foreground mt-1">自定义系统主题、图标和登录页背景</p>
       </div>
 
       <div className="bg-white dark:bg-zinc-800 p-6 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl space-y-8">
@@ -218,7 +218,7 @@ export default function AppearancePanel() {
               />
             </div>
             <div className="flex-1">
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 自定义系统图标将显示在左上角与浏览器标签页。支持 PNG / JPEG / WebP / GIF，1MB 以内，建议使用正方形图片；不上传时使用内置默认图标。
               </p>
               <div className="flex items-center space-x-3">
@@ -244,7 +244,7 @@ export default function AppearancePanel() {
               )}
             </div>
             <div className="flex-1">
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 登录页整屏背景图。支持 PNG / JPEG / WebP / GIF，5MB 以内，建议使用 1920x1080 横图；不上传时使用默认渐变底。
               </p>
               <div className="flex items-center space-x-3">

@@ -101,7 +101,7 @@ export default function MonthlyReport() {
         <div className="flex-1" />
         {rows.length > 0 && (
           <>
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+            <span className="text-xs text-muted-foreground">
               {rows.length} 名员工 · {abnormalCount} 人有考勤异常
             </span>
             <button onClick={() => exportCsv(month, rows)} className="btn-secondary">
@@ -115,13 +115,13 @@ export default function MonthlyReport() {
       {/* 报表 */}
       <div className="flex-1 overflow-auto">
         {rows.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-sm text-zinc-500 dark:text-zinc-400 py-12">
+          <div className="h-full flex flex-col items-center justify-center text-sm text-muted-foreground py-12">
             <CalendarDays className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-3" aria-hidden="true" />
             {isLoading ? '加载中…' : `${month} 暂无打卡数据`}
           </div>
         ) : (
           <table className="w-full text-left text-sm" aria-label="月度考勤汇总">
-            <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs text-zinc-500 dark:text-zinc-400">
+            <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs text-muted-foreground">
               <tr>
                 <th className="px-4 py-2.5 font-medium">工号</th>
                 <th className="px-4 py-2.5 font-medium">姓名</th>
@@ -137,7 +137,7 @@ export default function MonthlyReport() {
               {rows.map((r) => {
                 return (
                   <tr key={r.employeeId} className="border-t border-zinc-100 dark:border-zinc-800">
-                    <td className="px-4 py-2.5 text-zinc-500 dark:text-zinc-400 font-mono text-xs tabular-nums">{r.employeeId}</td>
+                    <td className="px-4 py-2.5 text-muted-foreground font-mono text-xs tabular-nums">{r.employeeId}</td>
                     <td className="px-4 py-2.5 text-zinc-900 dark:text-white font-medium">{r.employeeName}</td>
                     <td className="px-4 py-2.5 text-zinc-600 dark:text-zinc-300">{r.department || '-'}</td>
                     <td className="px-4 py-2.5 text-right text-zinc-900 dark:text-white tabular-nums font-medium">{r.workDays}</td>

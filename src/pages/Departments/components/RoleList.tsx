@@ -72,7 +72,7 @@ const RoleTreeNode = React.memo(function RoleTreeNode({
                   >
                     <span className="text-sm text-zinc-600 dark:text-zinc-300">{role.name}</span>
                     {canManage && (
-                      <div className="flex items-center space-x-1 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center space-x-1 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity">
                         <button
                           data-id={role.id}
                           onClick={onEditRole}

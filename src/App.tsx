@@ -27,7 +27,7 @@ function GlobalLoadingFallback() {
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-900">
       <div className="animate-spin rounded-full h-12 w-12 border-4 border-zinc-200 border-t-brand-600 dark:border-zinc-700 dark:border-t-brand-500"></div>
-      <p className="mt-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">系统加载中…</p>
+      <p className="mt-4 text-sm font-medium text-muted-foreground">系统加载中…</p>
     </div>
   );
 }

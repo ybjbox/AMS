@@ -38,14 +38,16 @@ export default function QuickActions({ quickActions, isLoading }: QuickActionsPr
               key={action.name}
               to={action.href}
               aria-label={`快捷操作：${action.name}`}
-              className="flex flex-col items-center justify-center p-5 rounded-2xl border border-zinc-100 dark:border-zinc-700/50 shadow-sm card-lift group bg-white dark:bg-zinc-800"
+              /* px-2 py-4 + nowrap：768 档这一列只有 ~211px 宽，原来的 p-5 让四字词
+                 压成一字一行（2026-09-26 审查 M10） */
+              className="flex flex-col items-center justify-center rounded-2xl border border-zinc-100 px-2 py-4 dark:border-zinc-700/50 shadow-sm card-lift group bg-white dark:bg-zinc-800"
             >
               <div
                 className={`p-3.5 rounded-xl ${action.bg} mb-3 transition-transform duration-250 group-hover:scale-110`}
               >
                 <action.icon className={`h-6 w-6 ${action.color}`} />
               </div>
-              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <span className="whitespace-nowrap text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 {action.name}
               </span>
             </Link>

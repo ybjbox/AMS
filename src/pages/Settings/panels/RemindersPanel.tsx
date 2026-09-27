@@ -100,7 +100,7 @@ export default function RemindersPanel() {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">提前多少天开始提醒</h3>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               全站一份，由服务端定时任务每 6 小时扫描一次（无人打开系统也会提醒）；提醒只发给启用中的
               HR 及以上账号，不会发给普通员工。
             </p>
@@ -108,7 +108,7 @@ export default function RemindersPanel() {
         </div>
 
         {!config ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
+          <p className="text-sm text-muted-foreground flex items-center gap-2">
             <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
             加载中…
           </p>
@@ -164,7 +164,7 @@ export default function RemindersPanel() {
 
       <div className="bg-white dark:bg-zinc-800 p-6 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm">
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-1">上次扫描</h3>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">
+        <p className="text-xs text-muted-foreground mb-4">
           {status?.lastScanAt
             ? `${new Date(status.lastScanAt).toLocaleString('zh-CN', { hour12: false })} · 收件人 ${
                 status.lastReport?.recipients.length ?? 0
@@ -177,9 +177,9 @@ export default function RemindersPanel() {
               <li key={`${item.kind}-${item.employeeId}`} className="flex justify-between gap-4">
                 <span className="text-zinc-900 dark:text-zinc-100">
                   {item.employeeName}
-                  <span className="text-zinc-500 dark:text-zinc-400">（{item.employeeId}）</span>
+                  <span className="text-muted-foreground">（{item.employeeId}）</span>
                 </span>
-                <span className="text-zinc-500 dark:text-zinc-400 tabular-nums whitespace-nowrap">
+                <span className="text-muted-foreground tabular-nums whitespace-nowrap">
                   {KIND_LABEL[item.kind]} {item.dueDate} · 剩 {item.daysLeft} 天
                 </span>
               </li>
@@ -187,7 +187,7 @@ export default function RemindersPanel() {
           </ul>
         )}
         {report && report.items.length === 0 && (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">当前窗口内没有到期的合同或试用期。</p>
+          <p className="text-sm text-muted-foreground">当前窗口内没有到期的合同或试用期。</p>
         )}
       </div>
     </div>

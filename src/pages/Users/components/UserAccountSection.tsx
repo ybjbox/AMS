@@ -143,15 +143,15 @@ export function UserAccountSection({ employee }: { employee: User }) {
 
   return (
     <div className="mt-6">
-      <h4 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1">系统账号</h4>
+      <h4 className="text-sm font-medium text-muted-foreground mb-1">系统账号</h4>
       <div className="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-4 space-y-3">
         {accounts === null ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
+          <p className="text-sm text-muted-foreground flex items-center gap-2">
             <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
             加载中…
           </p>
         ) : loadError ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">{loadError}</p>
+          <p className="text-sm text-muted-foreground">{loadError}</p>
         ) : bound ? (
           <>
             <div className="flex items-center justify-between gap-3">
@@ -168,7 +168,7 @@ export function UserAccountSection({ employee }: { employee: User }) {
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-zinc-500 dark:text-zinc-400">最近登录</span>
+              <span className="text-sm text-muted-foreground">最近登录</span>
               <span className="text-sm font-medium text-zinc-900 dark:text-white">
                 {bound.lastLoginAt ? formatDateTime(bound.lastLoginAt) : '从未登录'}
               </span>
@@ -230,7 +230,7 @@ export function UserAccountSection({ employee }: { employee: User }) {
           </>
         ) : (
           <>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="text-sm text-muted-foreground">
               该员工尚未绑定登录账号：无法自助提交转正 / 补卡 / 离职，考勤异常与到期提醒也发不到本人。
             </p>
             <div className="flex flex-wrap gap-2">
@@ -253,7 +253,7 @@ export function UserAccountSection({ employee }: { employee: User }) {
             {mode === 'create' && (
               <div className="space-y-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-3">
                 <div className="flex items-center gap-2">
-                  <label className="text-xs text-zinc-500 dark:text-zinc-400 w-16" htmlFor="account-username">
+                  <label className="text-xs text-muted-foreground w-16" htmlFor="account-username">
                     用户名
                   </label>
                   <Input
@@ -265,7 +265,7 @@ export function UserAccountSection({ employee }: { employee: User }) {
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 w-16">系统角色</span>
+                  <span className="text-xs text-muted-foreground w-16">系统角色</span>
                   <Select value={draftRole} onValueChange={(v) => setDraftRole(String(v) as AccountSystemRole)}>
                     <SelectTrigger aria-label="系统角色" className="flex-1 justify-between">
                       <SelectValue>{(v: unknown) => ROLE_LABELS[String(v) as AccountSystemRole] ?? ''}</SelectValue>
@@ -284,7 +284,7 @@ export function UserAccountSection({ employee }: { employee: User }) {
                   </Select>
                 </div>
                 <div className="flex items-center gap-2">
-                  <label className="text-xs text-zinc-500 dark:text-zinc-400 w-16" htmlFor="account-password">
+                  <label className="text-xs text-muted-foreground w-16" htmlFor="account-password">
                     初始密码
                   </label>
                   <Input
@@ -297,7 +297,7 @@ export function UserAccountSection({ employee }: { employee: User }) {
                     复制
                   </Button>
                 </div>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="text-xs text-muted-foreground">
                   首次登录会被要求改密；至少 10 位且含字母与数字。
                 </p>
                 <div className="flex gap-2">
@@ -315,7 +315,7 @@ export function UserAccountSection({ employee }: { employee: User }) {
             {mode === 'link' && (
               <div className="space-y-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 w-16">选择账号</span>
+                  <span className="text-xs text-muted-foreground w-16">选择账号</span>
                   <Select
                     value={linkTarget || freeAccounts[0]?.username || ''}
                     onValueChange={(v) => setLinkTarget(String(v))}

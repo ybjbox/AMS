@@ -1,6 +1,8 @@
 import { Permission } from "@/components/Permission";
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+// store 写动作不抛异常、失败作为返回值：统一在这里接住（审查 B3）
+import { reportWrite } from '@/store/saveFailure';
 import { FileSpreadsheet, ChevronDown, Search, Plus, AlertTriangle, Download } from 'lucide-react';
 import { EmployeeSchedule, Shift } from '@/store/useAttendanceStore';
 import { punchImportTemplateUrl } from '@/services/attendanceApi';
@@ -83,7 +85,7 @@ export default function Filter({
     []
   );
 
-  const handleAddManualSchedule = useCallback(() => {
+  const handleAddManualSchedule = useCallback(async () => {
     if (!selectedEmployeeId || selectedShiftIds.length === 0) return;
 
     const employee = users.find((u) => u.id === selectedEmployeeId);
@@ -96,13 +98,15 @@ export default function Filter({
     };
 
     const existingIndex = schedules.findIndex((s) => s.employeeId === employee.id);
-    if (existingIndex >= 0) {
-      const updatedSchedules = [...schedules];
-      updatedSchedules[existingIndex] = newSchedule;
-      setSchedules(updatedSchedules);
-    } else {
-      setSchedules([...schedules, newSchedule]);
-    }
+    const next =
+      existingIndex >= 0
+        ? schedules.map((s, i) => (i === existingIndex ? newSchedule : s))
+        : [...schedules, newSchedule];
+
+    // 失败时**保留**已选的人与班次：setSchedules 不抛异常而是返回原因，之前既不 await 也不看返回值，
+    // 于是后端 403/500 时选择被清空、看起来像"排好了"（2026-09-26 审查 B3）
+    const ok = await reportWrite(setSchedules(next), `${employee.name} 的排班已更新`);
+    if (!ok) return;
 
     setSelectedEmployeeId('');
     setSelectedShiftIds([]);
@@ -176,15 +180,15 @@ export default function Filter({
     [setEditingShift]
   );
 
-  const onSaveShiftClick = useCallback(() => {
+  const onSaveShiftClick = useCallback(async () => {
     if (!editingShift || !editingShift.name) return;
     const existing = shifts.find((s) => s.id === editingShift.id);
-    if (existing) {
-      updateShift(editingShift.id!, editingShift);
-    } else {
-      addShift(editingShift as Shift);
-    }
-    setEditingShift(null);
+    const failure = existing
+      ? await updateShift(editingShift.id!, editingShift)
+      : await addShift(editingShift as Shift);
+    // 只在真的写进去之后才关编辑器；否则用户输入会连同失败一起消失
+    const ok = await reportWrite(failure, existing ? '班次已更新' : '班次已创建');
+    if (ok) setEditingShift(null);
   }, [editingShift, shifts, updateShift, addShift, setEditingShift]);
 
   const onCancelEditShiftClick = useCallback(() => {
@@ -197,7 +201,7 @@ export default function Filter({
         <div className="mb-6 bg-white dark:bg-zinc-800 p-6 rounded-2xl shadow-sm">
           <div className="w-full max-w-2xl">
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">导入打卡记录</h2>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               服务端解析 .xlsx，表头需含「日期」「时间」，工号或姓名至少一项；先预览校验结果再确认导入。
               同一员工同一分钟的重复行会自动跳过。
             </p>
@@ -379,7 +383,7 @@ export default function Filter({
               )}
             </div>
           </div>
-          <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-3 text-xs text-muted-foreground">
             提示：如果下班时间早于上班时间，系统会自动识别为跨天夜班。
           </p>
         </div>

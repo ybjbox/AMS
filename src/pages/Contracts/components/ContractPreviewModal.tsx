@@ -42,13 +42,13 @@ export const ContractPreviewModal = ({
             <div className="flex items-center bg-zinc-100 dark:bg-zinc-700 p-1 rounded-lg">
             <button
               onClick={() => setIsDoubleSided(false)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${!isDoubleSided ? 'bg-white dark:bg-zinc-600 shadow-sm text-zinc-900 dark:text-white' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}`}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${!isDoubleSided ? 'bg-white dark:bg-zinc-600 shadow-sm text-zinc-900 dark:text-white' : 'text-muted-foreground hover:text-zinc-700 dark:hover:text-zinc-200'}`}
             >
               单面
             </button>
             <button
               onClick={() => setIsDoubleSided(true)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${isDoubleSided ? 'bg-white dark:bg-zinc-600 shadow-sm text-zinc-900 dark:text-white' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}`}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${isDoubleSided ? 'bg-white dark:bg-zinc-600 shadow-sm text-zinc-900 dark:text-white' : 'text-muted-foreground hover:text-zinc-700 dark:hover:text-zinc-200'}`}
             >
               双面
             </button>

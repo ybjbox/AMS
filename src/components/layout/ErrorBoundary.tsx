@@ -40,7 +40,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
             <AlertTriangle className="h-12 w-12 text-red-500 dark:text-red-400" />
           </div>
           <h2 className="text-2xl font-semibold text-zinc-800 dark:text-white mb-2">页面加载出错</h2>
-          <p className="text-zinc-500 dark:text-zinc-400 mb-8 max-w-md">
+          <p className="text-muted-foreground mb-8 max-w-md">
             {this.state.error?.message || '抱歉，我们在加载此页面时遇到了一些问题。请尝试刷新页面或返回控制台。'}
           </p>
           <div className="flex space-x-4">

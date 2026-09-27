@@ -72,7 +72,7 @@ export function DepartmentModal({ modal, onClose, onSubmit, flatDepts }: Departm
             placeholder="数字越大越靠前"
             className="block w-full"
           />
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">数字越大，在列表中的排序越靠前</p>
+          <p className="mt-1 text-xs text-muted-foreground">数字越大，在列表中的排序越靠前</p>
         </div>
       </form>
     </BaseModal>

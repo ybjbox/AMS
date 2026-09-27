@@ -155,7 +155,7 @@ export default function RenewContractModal({ isOpen, onClose, user, onRenewed }:
         {/* 续签历史 */}
         {history.length > 0 && (
           <div>
-            <h4 className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2 flex items-center gap-1.5">
+            <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
               <History className="w-3.5 h-3.5" aria-hidden="true" /> 续签记录（{history.length}）
             </h4>
             <ul className="space-y-1.5 max-h-[140px] overflow-auto">

@@ -109,7 +109,7 @@ export function SetFormModal({
           </div>
           <div className="max-h-60 overflow-y-auto border border-zinc-200 dark:border-zinc-700 rounded-md bg-zinc-50 dark:bg-zinc-800/50 p-2 space-y-1">
             {documents.length === 0 ? (
-              <div className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">
+              <div className="text-sm text-muted-foreground text-center py-4">
                 暂无文件，请先在文件库上传
               </div>
             ) : (
@@ -142,7 +142,7 @@ export function SetFormModal({
                   return (
                     <div key={folder.id} className="pt-2">
                       <div
-                        className="flex items-center px-2 py-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+                        className="flex items-center px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
                         onClick={() => toggleModalFolder(folder.id)}
                       >
                         {isExpanded ? (
@@ -205,14 +205,14 @@ export function SetFormModal({
                         <button
                           type="button"
                           onClick={() => onSetColorClick(id, false)}
-                          className={`px-2 py-1 text-xs rounded ${!settings.color ? 'bg-zinc-200 dark:bg-zinc-600 text-zinc-800 dark:text-white' : 'text-zinc-500 dark:text-zinc-400'}`}
+                          className={`px-2 py-1 text-xs rounded ${!settings.color ? 'bg-zinc-200 dark:bg-zinc-600 text-zinc-800 dark:text-white' : 'text-muted-foreground'}`}
                         >
                           黑白
                         </button>
                         <button
                           type="button"
                           onClick={() => onSetColorClick(id, true)}
-                          className={`px-2 py-1 text-xs rounded ${settings.color ? 'bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-300' : 'text-zinc-500 dark:text-zinc-400'}`}
+                          className={`px-2 py-1 text-xs rounded ${settings.color ? 'bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-300' : 'text-muted-foreground'}`}
                         >
                           彩色
                         </button>
@@ -221,14 +221,14 @@ export function SetFormModal({
                         <button
                           type="button"
                           onClick={() => onSetDuplexClick(id, false)}
-                          className={`px-2 py-1 text-xs rounded ${!settings.duplex ? 'bg-zinc-200 dark:bg-zinc-600 text-zinc-800 dark:text-white' : 'text-zinc-500 dark:text-zinc-400'}`}
+                          className={`px-2 py-1 text-xs rounded ${!settings.duplex ? 'bg-zinc-200 dark:bg-zinc-600 text-zinc-800 dark:text-white' : 'text-muted-foreground'}`}
                         >
                           单面
                         </button>
                         <button
                           type="button"
                           onClick={() => onSetDuplexClick(id, true)}
-                          className={`px-2 py-1 text-xs rounded ${settings.duplex ? 'bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-300' : 'text-zinc-500 dark:text-zinc-400'}`}
+                          className={`px-2 py-1 text-xs rounded ${settings.duplex ? 'bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-300' : 'text-muted-foreground'}`}
                         >
                           双面
                         </button>

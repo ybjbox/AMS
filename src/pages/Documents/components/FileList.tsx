@@ -56,13 +56,13 @@ export function FileList({
   return (
     <div className="flex-1 bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl flex flex-col overflow-hidden">
       <div className="p-4 border-b border-zinc-100 dark:border-zinc-700 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-zinc-50/50 dark:bg-zinc-800/50 gap-4">
-        <div className="flex items-center text-sm text-zinc-500 dark:text-zinc-400">
+        <div className="flex items-center text-sm text-muted-foreground">
           {/* text-sm/font-normal/继承色为覆盖类：对齐 link 变体自带的 text-primary、基类 font-medium 与原继承样式，视觉零变化 */}
           <Button
             variant="link"
             size="xs"
             onClick={() => onBreadcrumbClick(null)}
-            className="h-auto px-0 text-sm font-normal text-zinc-500 dark:text-zinc-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
+            className="h-auto px-0 text-sm font-normal text-muted-foreground hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
           >
             根目录
           </Button>
@@ -73,7 +73,7 @@ export function FileList({
                 variant="link"
                 size="xs"
                 onClick={() => onBreadcrumbClick(crumb.id)}
-                className="h-auto px-0 text-sm font-normal text-zinc-500 dark:text-zinc-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors truncate max-w-[100px] sm:max-w-[200px]"
+                className="h-auto px-0 text-sm font-normal text-muted-foreground hover:text-brand-600 dark:hover:text-brand-400 transition-colors truncate max-w-[100px] sm:max-w-[200px]"
               >
                 <span className="min-w-0 truncate">{crumb.name}</span>
               </Button>
@@ -107,25 +107,25 @@ export function FileList({
                 <tr>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
                   >
                     文件名称
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
                   >
                     大小
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
                   >
                     上传时间
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-right text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider"
+                    className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider"
                   >
                     操作
                   </th>
@@ -134,7 +134,7 @@ export function FileList({
               <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-zinc-500 dark:text-zinc-400">
+                    <td colSpan={4} className="px-6 py-12 text-center text-muted-foreground">
                       <div className="flex flex-col items-center justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600 mb-4"></div>
                         <p>加载中…</p>
@@ -151,14 +151,14 @@ export function FileList({
                           </div>
                           <div className="ml-4 min-w-0">
                             <div className="text-sm font-medium text-zinc-900 dark:text-zinc-200 truncate max-w-[180px] sm:max-w-[420px]">{doc.name}</div>
-                            <div className="text-xs text-zinc-500 dark:text-zinc-400">{doc.type.toUpperCase()}</div>
+                            <div className="text-xs text-muted-foreground">{doc.type.toUpperCase()}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {formatFileSize(doc.size)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {doc.uploadedAt}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -167,7 +167,7 @@ export function FileList({
                           variant="link"
                           size="xs"
                           onClick={() => onMoveDocClick(doc.id, doc.folderId || null)}
-                          className="h-auto px-0 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 mr-4"
+                          className="h-auto px-0 text-sm text-muted-foreground hover:text-zinc-700 dark:hover:text-zinc-200 mr-4"
                         >
                           移动
                         </Button>
