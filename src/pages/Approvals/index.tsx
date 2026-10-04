@@ -361,7 +361,7 @@ export default function Approvals() {
                     {formType === 'leave' && (
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
-                <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">类型 <span className="text-red-500" aria-hidden="true">*</span></span>
+                <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">类型 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
                 <Select
                   value={form.leaveType}
                   onValueChange={(val) => setForm({ ...form, leaveType: String(val) })}
@@ -380,7 +380,7 @@ export default function Approvals() {
                 </Select>
               </label>
               <label className="block">
-                <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">开始日期 <span className="text-red-500" aria-hidden="true">*</span></span>
+                <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">开始日期 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
                 <input
                   type="date"
                   required
@@ -405,7 +405,7 @@ export default function Approvals() {
           {formType === 'makeup' && (
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
-                <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">补卡日期 <span className="text-red-500" aria-hidden="true">*</span></span>
+                <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">补卡日期 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
                 <input
                   type="date"
                   required
@@ -415,7 +415,7 @@ export default function Approvals() {
                 />
               </label>
               <label className="block">
-                <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">补卡时间 <span className="text-red-500" aria-hidden="true">*</span></span>
+                <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">补卡时间 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
                 <input
                   type="time"
                   required
@@ -425,7 +425,7 @@ export default function Approvals() {
                 />
               </label>
               <label className="block col-span-2">
-                <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">卡类型 <span className="text-red-500" aria-hidden="true">*</span></span>
+                <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">卡类型 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
                 <Select
                   value={form.punchKind}
                   onValueChange={(val) => setForm({ ...form, punchKind: val as (typeof PUNCH_KINDS)[number] })}
@@ -461,7 +461,7 @@ export default function Approvals() {
           {formType === 'resign' && (
             <div className="grid grid-cols-2 gap-3">
               <label className="block col-span-2">
-                <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">最后工作日 <span className="text-red-500" aria-hidden="true">*</span></span>
+                <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">最后工作日 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
                 <input
                   type="date"
                   required
@@ -479,7 +479,7 @@ export default function Approvals() {
           {formType === 'overtime' && (
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
-                <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">加班日期 <span className="text-red-500" aria-hidden="true">*</span></span>
+                <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">加班日期 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
                 <input
                   type="date"
                   required
@@ -489,7 +489,7 @@ export default function Approvals() {
                 />
               </label>
               <label className="block">
-                <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">时长（小时） <span className="text-red-500" aria-hidden="true">*</span></span>
+                <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">时长（小时） <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
                 <input
                   type="number"
                   required
@@ -510,7 +510,7 @@ export default function Approvals() {
 
           <label className="block">
             <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
-              {formType === 'resign' ? '离职原因' : '事由'} <span className="text-red-500" aria-hidden="true">*</span>
+              {formType === 'resign' ? '离职原因' : '事由'} <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span>
             </span>
             <Textarea
               required
@@ -678,7 +678,7 @@ export default function Approvals() {
           </ul>
           <label className="block">
             <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
-              审批意见 <span className="text-red-500" aria-hidden="true">*</span>
+              审批意见 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span>
               <span className="text-muted-foreground">（驳回时必填）</span>
             </span>
             <Textarea

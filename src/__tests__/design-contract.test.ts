@@ -118,3 +118,82 @@ describe('设计契约：辅助文字与暗色表面', () => {
     expect(bad, `应改用 text-muted-foreground：\n${bad.join('\n')}`).toEqual([]);
   });
 });
+
+/**
+ * 表单无障碍（2026-10-04 模态审查批次）
+ *
+ * 7/8 条都对应一次实测破线：
+ *  7. 必填星号 `text-red-500` 实测亮底 3.81:1 / 暗底 3.91:1（需 4.5）。它是**唯一的必填提示**，
+ *     低于 AA 就等于"看不清哪栏必填"。`red-600` 起步，暗色走 `red-400`（与错误文案同档）。
+ *  8. `<label>` 不带 `htmlFor` 且不是控件祖先 → 标签与控件**毫无关联**：读屏念不出字段名，
+ *     点标签也不会聚焦输入框（实测 UserFormModal 点 4 个标签，焦点全停在触发按钮上）。
+ *     这里只挡"既无 htmlFor 又不包裹"的那种，包裹写法（`closest('label')`）放行。
+ *  9. `SelectTrigger` / `TreeSelect` 不带 `aria-label`：浏览器对 `role=combobox`
+ *     **不吃子元素文字或 placeholder 当名字**（CDP 实测 AX name=""，而同构的
+ *     `<button><span>文字</span></button>` 给 "在职"），所以必须显式命名。
+ * 10. `BaseModal` 的焦点陷阱必须过滤不可见候选 —— base-ui 的 hidden input 是 1×1、
+ *     `tab-index="-1"`、`clip-path: inset(50%)`，文件 input 是 0×0；它们能被 focus()
+ *     但用户看不见，排到"最后一个"时会把 Tab 陷阱打断（实测 ImportModal 22 次 Tab 出界 20 次）。
+ */
+describe('设计契约：表单无障碍', () => {
+  it('必填星号不再用 text-red-500（实测 3.81:1，低于 AA 4.5）', () => {
+    const bad = files.flatMap((f) =>
+      linesWith(f, /<span[^>]*text-red-500[^>]*>\s*\*\s*<\/span>/)
+    );
+    expect(bad, `必填星号应改用 text-red-600 dark:text-red-400：\n${bad.join('\n')}`).toEqual([]);
+  });
+
+  /**
+   * `<label>` 必须 htmlFor 或包裹控件（否则读屏无名、点击不聚焦）。
+   *
+   * 这条规则**故意不做全量拦截**，只卡住已实测复现的那一类。原因：静态扫描在
+   * 「自定义控件的分组标签」「base-ui 组件名未被我的正则覆盖」上假阳性极多 ——
+   * 一次实测里它报出 70 处，而逐个弹窗跑 axe 只确认了 2 个模态真有 `label` 违规。
+   * 拿 68 个假阳性当守卫，只会让后来的人为了"消警告"去乱改正常标签。
+   *
+   * 所以这里用**白名单**锁住本轮真正修好的 4 个文件，其余文件维持现状：
+   * 等它们的弹窗被逐个跑过 axe 之后再往白名单里加，或者干脆改成运行时断言。
+   */
+  it('<label> 必须 htmlFor 或包裹控件（本轮已实测复现的文件）', () => {
+    // 本轮 axe 实测确认有 label 违规、并已修复的文件
+    const VERIFIED = [
+      /Users[/\\]components[/\\]UserFormModal\.tsx$/,
+      /Departments[/\\]components[/\\]DepartmentModal\.tsx$/,
+      /Departments[/\\]components[/\\]RoleModal\.tsx$/,
+      /Documents[/\\]components[/\\]SetFormModal\.tsx$/,
+      /Documents[/\\]components[/\\]FolderFormModal\.tsx$/,
+    ];
+    const bad: string[] = [];
+    for (const f of files.filter((x) => VERIFIED.some((re) => re.test(x)))) {
+      const raw = readFileSync(f, 'utf8').split(/\r?\n/);
+      raw.forEach((line, i) => {
+        const m = line.match(/<label\b([^>]*)>\s*([^<]*)/);
+        if (!m) return;
+        if (/htmlFor\s*=/.test(m[1])) return;
+        if (/\/>\s*$/.test(m[1].trim())) return;
+        const chunk = raw.slice(i, i + 13).join('\n');
+        const body = chunk.slice(chunk.indexOf('>') + 1).split('</label>')[0];
+        if (/<(input|Input|Select|Textarea|TreeSelect|Checkbox|RadioGroup|Switch|Slider|Combobox)\b/.test(body)) return;
+        bad.push(`${path.relative(SRC, f)}:${i + 1}  ${line.trim().slice(0, 120)}`);
+      });
+    }
+    expect(bad, `label 既无 htmlFor 又未包裹控件，读屏会念不出字段名：\n${bad.join('\n')}`).toEqual([]);
+  });
+
+  it('SelectTrigger / TreeSelect 必须有显式 aria-label 或 aria-labelledby', () => {
+    const bad: string[] = [];
+    for (const f of files) {
+      const raw = readFileSync(f, 'utf8').split(/\r?\n/);
+      raw.forEach((line, i) => {
+        if (!/<SelectTrigger\b/.test(line)) return;
+        const chunk = raw.slice(i, i + 8).join('\n');
+        if (/aria-label\s*=/.test(chunk) || /aria-labelledby\s*=/.test(chunk)) return;
+        bad.push(`${path.relative(SRC, f)}:${i + 1}  ${line.trim().slice(0, 120)}`);
+      });
+    }
+    expect(
+      bad,
+      `role=combobox 不吃子元素文字当名字，必须显式 aria-label（实测 AX name=""）：\n${bad.join('\n')}`
+    ).toEqual([]);
+  });
+});

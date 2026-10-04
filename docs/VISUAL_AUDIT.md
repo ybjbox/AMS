@@ -7,6 +7,28 @@
 
 ---
 
+## ⚠️ 本文已被取代（2026-10-04 标注）
+
+**这是一份 2026-08-01 的时点快照，不是当前状态的事实源。** 下文的行号、文件路径与部分结论已随两个月的重构漂移，**照着改会改错地方**。当前状态以这两份为准：
+
+- **`docs/UIUX-REVIEW-2026-09-26.md`** —— 最近两轮完整审查（31 视图 × 亮暗双主题 + axe + WCAG 2.2 AA 实测），批次 1–5 已按其顺序修完，文末有更正后的实测数字（axe 违规 14→0、真对比度失败→0）。
+- **`design-system/ams/MASTER.md`** —— 设计契约本身。
+
+已被后续改动取代、**不要再按本文去动**的几处（2026-10-04 逐条对着代码核过）：
+
+| 本文写的 | 现在的实际情况 |
+|---|---|
+| `src/styles/print-tokens.css` | **不存在**。打印令牌是 TS 模块 `src/styles/printTokens.ts`（导出 `printTokensCss`）。**注意**：它不由 `src/main.tsx` 注入主文档，而是由两个打印文档构造器各自内联进自己的 `<style>` —— `src/pages/Users/utils/printHtml.ts`（标签/联系卡/花名册/通讯录四个 builder）与 `src/pages/Documents/lib/printHtml.ts`。因为打印文档是独立 document，拿不到主应用的 Tailwind |
+| `DocumentsPrintTemplate.tsx` | **已删除**。文档打印改成真内容链路：`server/documentPrint.ts`（按扩展名转结构化片段）+ `src/pages/Documents/lib/printHtml.ts`（版面），旧的占位纸组件连同 `index.css` 的 `#documents-print-template` 规则一起删了 |
+| D2「83 处 `bg-card`/`bg-muted`/`border-border`」、D4「18 个裸 `<table>`」、D1「229 处 `text-zinc-500`」 | **数字已变**：D1 经 codemod 降到 20 处（图标行与纸张预览），并新增两条 `design-contract.test.ts` 静态规则锁住"表面令牌不得当文字色""辅助文字唯一档"；D2/D4 仍是刻意留着的债，见 UIUX 审查文末「刻意留下、没有顺手改的」 |
+| 「C1 设计令牌形同虚设」 | 已基本收口：品牌蓝已迁到 `primary` 令牌 |
+
+仍然成立的部分：C2/C3 的**结论方向**（灰阶应收成一套、硬编码 hex 应走令牌）没错，只是文中给的证据位置需要按上表换掉。
+
+> 另：本文末尾引用的构建产物哈希（如 `index-*.css`）是当次构建的临时文件名，任何时候都对不上，属正常。
+
+---
+
 ## 一、执行摘要
 
 整套系统**视觉基底已经不错**（完整 oklch 设计令牌、shadcn 风格、合理的栅格与暗色支持），但存在一个**根本性的断裂**：
@@ -42,8 +64,8 @@
 | # | 问题 | 位置 / 证据 | 优化方案 | 优先级 |
 |---|------|------------|----------|--------|
 | C1 | **设计令牌形同虚设**（最核心） | 业务代码 2600+ 处 `zinc-*`/`blue-*`；`.btn-*` 等复用类原用 `blue-600/zinc-800` | 本轮已修 14 个复用类；下一步用脚本把 `text-blue-600`→`text-primary`、`border-zinc-200`→`border-border`、`bg-zinc-800`→`bg-card` 等批量替换 + 人工核对图表（DashboardChart 已用 `useCssVars` 读令牌，可作范本） | P1 |
-| C2 | **四套灰阶并存** | zinc（主）/ slate（滚动条·已修）/ gray（`DocumentsPrintTemplate.tsx` 11 处 `#111827` 等）/ neutral（`components.json:9 baseColor:"neutral"`，与实际 zinc 冲突） | 滚动条已统一 zinc；打印模板改用打印专用 CSS 变量；`components.json` 改 `zinc` 或停止混用 shadcn add | P2 |
-| C3 | **硬编码 hex（非打印场景）** | `Users/constants.ts:26` `#64748b`、`PrintTemplates.tsx:93`、`printHtml.ts:40,43,45,74,93`（`#f8fafc` 等） | 抽成 `src/styles/print-tokens.css` 或令牌引用，避免与界面灰阶漂移 | P3 |
+| C2 | **四套灰阶并存** | zinc（主）/ slate（滚动条·已修）/ gray（旧 `DocumentsPrintTemplate.tsx` 的 11 处 `#111827` 等 —— **该组件已于 2026-09-21 删除**，打印链路改走 `server/documentPrint.ts` + `src/pages/Documents/lib/printHtml.ts`）/ neutral（`components.json:9 baseColor:"neutral"`，与实际 zinc 冲突） | 滚动条已统一 zinc；打印模板改用打印专用 CSS 变量（`src/styles/printTokens.ts`）；`components.json` 改 `zinc` 或停止混用 shadcn add | P2 |
+| C3 | **硬编码 hex（非打印场景）** | `Users/constants.ts:26` `#64748b`、`src/pages/Users/components/PrintTemplates.tsx:93`、`src/pages/Documents/lib/printHtml.ts` 内若干（`#f8fafc` 等） | 抽成 `src/styles/printTokens.ts` 的打印令牌或语义令牌引用，避免与界面灰阶漂移 | P3 |
 | C4 | **`--primary` 暗色未补偿** | `:root` 与 `.dark` 均为 `oklch(0.62 0.19 250)` | 暗色略提亮（如 `oklch(0.65 0.19 250)`）增强对比；或保持品牌一致亦可，作为可选项 | P3 |
 | C5 | **图表色与令牌重复维护** | `DashboardChart` 用 `useCssVars` 读 `--chart-1..5`；但 `--chart-*` 与界面 primary 各自定义 | 保持现状（做法正确），仅在调整主色时同步 `--chart-1` | — |
 
@@ -240,7 +262,7 @@
    - `SystemLogs`（`levelBadge` 改为返回 Badge variant：ERROR→destructive / WARN→warning / 其他→primary，去掉非令牌化的 `border-red-200` 等边框色）
    暗色由 Badge 令牌自动切换，不再手写 `dark:` 前缀。
 2. **X4 Settings 桌面端导航令牌收口**（`src/pages/Settings/index.tsx`）：侧边导航非激活态 `text-zinc-600 dark:text-muted-foreground hover:text-zinc-900 dark:hover:text-white` → `text-muted-foreground hover:bg-muted hover:text-foreground`；激活态 `bg-primary/10 text-primary` 已是令牌，保留。移动端 `.tab-group` 体系不变。
-3. **B2 图标尺寸三写法统一**（脚本 `scripts/_tmp_b2.mjs`，212 处 / 56 文件）：`w-4 h-4`/`h-4 w-4`→`size-4`、`w-5 h-5`/`h-5 w-5`→`size-5`（词边界安全，不误伤 `w-40`/`h-48`）。排除将删的 shadcn 死代码文件（button/input/textarea/checkbox/dialog/popover/dropdown-menu/command/input-group）。
+3. **B2 图标尺寸三写法统一**（一次性 codemod 脚本 `scripts/_tmp_b2.mjs`，**已随用随删**，212 处 / 56 文件）：`w-4 h-4`/`h-4 w-4`→`size-4`、`w-5 h-5`/`h-5 w-5`→`size-5`（词边界安全，不误伤 `w-40`/`h-48`）。排除将删的 shadcn 死代码文件（button/input/textarea/checkbox/dialog/popover/dropdown-menu/command/input-group）。
 4. **X2 表格 thead 收口到 `.th` 语义类**：`Attendance/Table`（4 张表）与 `SystemLogs`（第二张表）重复的 `px-6 py-2 … uppercase tracking-wider` / `px-3 py-1.5 …` 内联表头类统一改为 `.th`；保留 `text-right` 对齐覆盖（Tailwind 中 `text-right` 在 `text-left` 之后生成，覆盖生效）。`UserTable`/`ContractTable` 的 `<th>` 已令牌化且带 sticky/shadow 逻辑，强制套 `.th` 有破坏风险，保留原样。单元格因表格已用 `divide-y` 分隔，未套 `.td` 以免双线。
 
 ### 效果
@@ -339,9 +361,9 @@ T2 是「标题写法发散」（审计指 h2 有 11 种、h3/h4 有 16 种裸�
 
 ### C3 打印硬编码 hex 令牌化
 - 新增 `src/styles/printTokens.ts`：单一事实来源的 `--print-*` 灰阶变量（从界面 zinc/gray 派生：`--print-strong`/#111827、`--print-doc-title`/#1f2937、`--print-body`/#6b7280、`--print-soft`/#9ca3af、`--print-muted-fg`/#64748b、`--print-muted-bg`/#f8fafc、`--print-heading`/#475569、`--print-border`/#d1d5db、`--print-border-soft`/#e5e7eb）。
-- `src/main.tsx` 启动时把 `printTokensCss` 注入主文档 `:root`（供 `DocumentsPrintTemplate`/`PrintTemplates`/`constants.ts` 内联 `var(--print-*)` 使用）。
+- ~~`src/main.tsx` 启动时把 `printTokensCss` 注入主文档 `:root`~~ → **更正（2026-10-04）**：主文档并没有注入；`printTokensCss` 是由打印文档构造器（`src/pages/Users/utils/printHtml.ts`、`src/pages/Documents/lib/printHtml.ts`）各自内联进打印文档自己的 `<style>`，因为打印是独立 document、拿不到主应用的 Tailwind。
 - `src/pages/Users/utils/printHtml.ts`：联系卡打印写入**独立打印窗口**（新 document），故在生成 `<style>` 内联同一份 `:root` 变量，并把 `.bg-muted`/`text-muted-foreground`/`h4` 硬编码 hex 改为 `var(--print-*)`。
-- `DocumentsPrintTemplate.tsx`(9 处)、`PrintTemplates.tsx:93`、`Users/constants.ts:26` 硬编码 slate/gray hex 全部改 `var(--print-*)`。
+- ~~`DocumentsPrintTemplate.tsx`(9 处)~~（**该组件已删除**）、`PrintTemplates.tsx:93`、`Users/constants.ts:26` 硬编码 slate/gray hex 全部改 `var(--print-*)`。
 - 打印测试（printHtml.test.ts）仅校验转义与结构，不受影响，38/38 通过。
 
 ### shadcn 死代码删除（✅ 已完成）
@@ -378,7 +400,7 @@ P0–P3 已治理 className 层的 `text-zinc`/`bg-white`/`ring-zinc`/品牌蓝�
 
 ### C3 补完：打印模板残留 hex 令牌化
 - `src/styles/printTokens.ts` 新增 `--print-border-strong:#000`（纯黑打印边框/表格线，单一来源）。
-- `DocumentsPrintTemplate.tsx` 4 处未扫净的硬编码改 `var(--print-*)`：`#1f2937`→`--print-doc-title`（h2 文档标题）、`#e5e7eb`×3→`--print-border-soft`（标签边框）。
+- ~~`DocumentsPrintTemplate.tsx`~~ 4 处未扫净的硬编码（**该组件已删除，这条已随它作废**；`--print-doc-title` / `--print-border-soft` 两个令牌仍在 `src/styles/printTokens.ts`）。
 - `PrintTemplates.tsx` 3 处表格线 `border:'1px solid #000'`→`var(--print-border-strong)`。
 - `printHtml.ts` 的 `buildLabel/Roster/AddressBookPrintHtml` 三函数（独立打印窗口）：`<style>` 内联注入 `printTokensCss`；`#f0f0f0`→`--print-muted-bg`（表头底）、`#000`→`--print-border-strong`/`--print-strong`（边框/正文）。联系卡函数此前已注入，本次补齐其余三函数。
 

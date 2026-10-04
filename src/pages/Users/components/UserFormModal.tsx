@@ -189,58 +189,63 @@ export function UserFormModal({
     >
       <form id="employee-form" className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
         <div>
-          <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-brand-600 pl-2">基本信息</h4>
+          <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-brand-600 pl-2">基本信息</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                姓名 <span className="text-red-500">*</span>
+              <label htmlFor="uf-name" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                姓名 <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <Input
                 {...register('name')}
+                id="uf-name"
                 type="text"
                 className={`mt-1 ${errors.name ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
               {errors.name && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.name.message}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                身份证号码 <span className="text-red-500">*</span>
+              <label htmlFor="uf-id-card" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                身份证号码 <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <Input
                 {...register('idCard')}
+                id="uf-id-card"
                 type="text"
                 className={`mt-1 ${errors.idCard ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
               {errors.idCard && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.idCard.message}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                联系电话 <span className="text-red-500">*</span>
+              <label htmlFor="uf-phone" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                联系电话 <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <Input
                 {...register('phone')}
+                id="uf-phone"
                 type="text"
                 className={`mt-1 ${errors.phone ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
               {errors.phone && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.phone.message}</p>}
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                户口地址 <span className="text-red-500">*</span>
+              <label htmlFor="uf-registered-address" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                户口地址 <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <Input
                 {...register('registeredAddress')}
+                id="uf-registered-address"
                 type="text"
                 className={`mt-1 ${errors.registeredAddress ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
               {errors.registeredAddress && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.registeredAddress.message}</p>}
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                现住址 <span className="text-red-500">*</span>
+              <label htmlFor="uf-current-address" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                现住址 <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <Input
                 {...register('currentAddress')}
+                id="uf-current-address"
                 type="text"
                 className={`mt-1 ${errors.currentAddress ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
@@ -250,13 +255,24 @@ export function UserFormModal({
         </div>
 
         <div>
-          <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-brand-600 pl-2">工作信息</h4>
+          <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-brand-600 pl-2">工作信息</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                部门 <span className="text-red-500">*</span>
+              {/**
+               * TreeSelect 的可聚焦元素是 readOnly input + aria-haspopup="tree"。
+               * axe 的 aria-allowed-attr 规则不接受 input 上的 aria-haspopup
+               * （该属性只允许在 combobox 等角色上），但这里不能改 TreeSelect 的角色 ——
+               * 它依赖 aria-haspopup 告诉读屏"这是可展开的选择器"。
+               * 所以显式声明 role="combobox" 让这个属性名正言顺，
+               * 顺带补上 axe 要求的 aria-expanded（TreeSelect 已有，这里对齐语义）。
+               */}
+              <label htmlFor="uf-department" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                部门 <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <TreeSelect
+                id="uf-department"
+                role="combobox"
+                ariaLabel="部门"
                 value={selectedDeptName}
                 onChange={setSelectedDeptName}
                 nodes={departments}
@@ -265,10 +281,13 @@ export function UserFormModal({
               {errors.department && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.department.message}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                职位 <span className="text-red-500">*</span>
+              <label htmlFor="uf-position" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                职位 <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <TreeSelect
+                id="uf-position"
+                role="combobox"
+                ariaLabel="职位"
                 value={selectedRoleName}
                 onChange={setSelectedRoleName}
                 nodes={departments}
@@ -305,14 +324,14 @@ export function UserFormModal({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                状态 <span className="text-red-500">*</span>
+              <label htmlFor="uf-status" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                状态 <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <Select
                 value={watch('status')}
                 onValueChange={(v) => setValue('status', String(v), { shouldValidate: true })}
               >
-                <SelectTrigger className="w-full mt-1">
+                <SelectTrigger id="uf-status" aria-label="状态" className="w-full mt-1">
                   <SelectValue placeholder="选择状态" />
                 </SelectTrigger>
                 <SelectContent>
@@ -323,25 +342,26 @@ export function UserFormModal({
               </Select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                入职时间 <span className="text-red-500">*</span>
+              <label htmlFor="uf-join-date" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                入职时间 <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <Input
                 {...register('joinDate')}
+                id="uf-join-date"
                 type="date"
                 className={`mt-1 ${errors.joinDate ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
               {errors.joinDate && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.joinDate.message}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                用工形式 <span className="text-red-500">*</span>
+              <label htmlFor="uf-employment-type" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                用工形式 <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <Select
                 value={watch('employmentType')}
                 onValueChange={(v) => setValue('employmentType', String(v), { shouldValidate: true })}
               >
-                <SelectTrigger className="w-full mt-1">
+                <SelectTrigger id="uf-employment-type" aria-label="用工形式" className="w-full mt-1">
                   <SelectValue placeholder="选择用工形式" />
                 </SelectTrigger>
                 <SelectContent>
@@ -354,11 +374,12 @@ export function UserFormModal({
               </Select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                变动情况 <span className="text-red-500">*</span>
+              <label htmlFor="uf-change-status" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                变动情况 <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <Input
                 {...register('changeStatus')}
+                id="uf-change-status"
                 type="text"
                 className={`mt-1 ${errors.changeStatus ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
@@ -369,15 +390,15 @@ export function UserFormModal({
         </div>
 
         <div>
-          <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-brand-600 pl-2">合同与社保</h4>
+          <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-brand-600 pl-2">合同与社保</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">是否购买社保</label>
+              <label htmlFor="uf-social-security" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">是否购买社保</label>
               <Select
                 value={watch('hasSocialSecurity')}
                 onValueChange={(v) => setValue('hasSocialSecurity', String(v))}
               >
-                <SelectTrigger className="w-full mt-1">
+                <SelectTrigger id="uf-social-security" aria-label="是否购买社保" className="w-full mt-1">
                   <SelectValue placeholder="选择是否购买社保" />
                 </SelectTrigger>
                 <SelectContent>
@@ -387,17 +408,19 @@ export function UserFormModal({
               </Select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">合同年限(年)</label>
+              <label htmlFor="uf-contract-years" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">合同年限(年)</label>
               <Input
                 {...register('contractYears')}
+                id="uf-contract-years"
                 type="number"
                 className="mt-1"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">最新签订时间</label>
+              <label htmlFor="uf-contract-sign-date" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">最新签订时间</label>
               <Input
                 {...register('contractSignDate')}
+                id="uf-contract-sign-date"
                 type="date"
                 className="mt-1"
               />
@@ -406,15 +429,15 @@ export function UserFormModal({
         </div>
 
         <div>
-          <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-brand-600 pl-2">退役军人信息</h4>
+          <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-brand-600 pl-2">退役军人信息</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">是否退役军人</label>
+              <label htmlFor="uf-veteran" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">是否退役军人</label>
               <Select
                 value={watch('isVeteran')}
                 onValueChange={(v) => setValue('isVeteran', String(v))}
               >
-                <SelectTrigger className="w-full mt-1">
+                <SelectTrigger id="uf-veteran" aria-label="是否退役军人" className="w-full mt-1">
                   <SelectValue placeholder="选择是否退役军人" />
                 </SelectTrigger>
                 <SelectContent>
@@ -424,17 +447,19 @@ export function UserFormModal({
               </Select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">原服役单位</label>
+              <label htmlFor="uf-former-unit" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">原服役单位</label>
               <Input
                 {...register('formerUnit')}
+                id="uf-former-unit"
                 type="text"
                 className="mt-1"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">入伍及退役时间</label>
+              <label htmlFor="uf-military-dates" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">入伍及退役时间</label>
               <Input
                 {...register('militaryDates')}
+                id="uf-military-dates"
                 type="text"
                 placeholder="如: 2015-09 至 2017-09"
                 className="mt-1"
@@ -444,9 +469,10 @@ export function UserFormModal({
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">备注</label>
+          <label htmlFor="uf-remarks" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">备注</label>
           <Textarea
             {...register('remarks')}
+            id="uf-remarks"
             rows={2}
             className="mt-1 field-sizing-fixed resize-y"
           />

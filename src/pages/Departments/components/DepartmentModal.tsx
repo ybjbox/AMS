@@ -40,8 +40,9 @@ export function DepartmentModal({ modal, onClose, onSubmit, flatDepts }: Departm
       <form id="dept-form" onSubmit={onSubmit} className="space-y-4">
         {modal.mode === 'add' && modal.parentId && (
           <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">上级部门</label>
+            <label htmlFor="dept-parent" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">上级部门</label>
             <Input
+              id="dept-parent"
               type="text"
               disabled
               value={flatDepts.find((d) => d.id === modal.parentId)?.name || ''}
@@ -50,10 +51,11 @@ export function DepartmentModal({ modal, onClose, onSubmit, flatDepts }: Departm
           </div>
         )}
         <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-            部门名称 <span className="text-red-500">*</span>
+          <label htmlFor="dept-name" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+            部门名称 <span className="text-red-600 dark:text-red-400">*</span>
           </label>
           <Input
+            id="dept-name"
             required
             autoFocus
             name="name"
@@ -64,8 +66,9 @@ export function DepartmentModal({ modal, onClose, onSubmit, flatDepts }: Departm
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">优先级</label>
+          <label htmlFor="dept-priority" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">优先级</label>
           <Input
+            id="dept-priority"
             name="priority"
             type="number"
             defaultValue={modal.defaultPriority}

@@ -1,19 +1,31 @@
 # 行业对标与功能改进路线图
 
-首次调研：2026-07-31　|　本次收口更新：2026-09-22
+首次调研：2026-07-31　|　本次收口更新：2026-09-22　|　**最近校准：2026-10-04（代码基线 `06bde8b`）**
 对标对象：钉钉、飞书、企业微信、Moka、薪人薪事、北森、用友、Workday、SAP SuccessFactors
 
 > 这份文件在 7 月版里把 AMS 判成"档案柜"，当时那个判断是对的。近两个月系统补上了审批、通知、审计、备份、
 > 业务单据、排座台卡与一整套合规能力，7 月版的能力表与优先级已经大面积失真。本版按**代码现状**逐项核对重写，
 > 每条都给出可验证的位置；安全类问题的逐条修复记录仍以 `docs/AUDIT.md` 为准（27 项已修 26 项，剩 1 项 P3）。
+>
+> **2026-10-04 校准说明**：正文的能力盘点与工程数字此前停在 2026-09-22，其后四个提交的内容**完全没有进这份文件**
+> （`20a9ff8` 只改了末尾 Phase 0 那一行数字）。本次逐条对着代码核过并补齐，见下面标「① ② ③ ④」的四行。
+> 已过期但作为**时点记录**仍保留的两份审查报告是 `docs/VISUAL_AUDIT.md` 与 `docs/DESIGN-REVIEW.md` ——
+> 它们已在文首标注「已被取代」，不要照着改代码。
 
 ---
 
-## 一、当前系统能力盘点（2026-09-22 实测）
+## 一、当前系统能力盘点（2026-10-04 按 `06bde8b` 实测）
 
-前端 13 个页面（`src/config/routes.ts`）：控制台、员工管理、部门管理、考勤管理、合同管理、宴会排座、
-会议台卡、常用文件、待办事项、审批中心、微信通知、业务单据、系统设置。
-服务端 22 个路由（`server.ts:137-158`），数据落在单文件 SQLite（`node:sqlite`，WAL），schema 版本 v13。
+前端 **12 条路由**（`src/config/routes.ts` 的 `routeConfig`）：控制台、员工管理、部门管理、考勤管理、合同管理、
+**打印工具**、常用文件、待办事项、审批中心、微信通知、业务单据、系统设置。
+> 2026-09-25 起「宴会排座 / 会议台卡 / 工作餐券」三条**合并为一个 `/print-tools` 入口**（`?tab=seating|name-cards|meal-vouchers`），
+> 旧路径 `/seating`、`/name-cards`、`/meal-vouchers` 保留 `Navigate replace` 重定向。所以 7 月版的「13 个页面」里
+> 那两个独立入口已不存在，三者的实现仍在 `src/pages/Seating`、`src/pages/NameCards`、`src/pages/MealVouchers`。
+> 「系统设置」已从侧栏移除（入口在账户弹窗里），路由本身保留。
+
+服务端 **24 个路由**（`server.ts:159-182`，另有两道网关 `authGate`/`auditGate`），数据落在单文件 SQLite
+（`node:sqlite`，WAL），**schema 版本 v14**（`server/migrate.ts:46`；v14 的四步收口挂在**常驻维护**里、按库的实际形状判定，
+所以漏跑一次会在下次启动自动补上）。
 
 ### 1.1 与 7 月版对照，已经补上的能力
 
@@ -28,23 +40,54 @@
 | 服务端权限 | ❌ 无 | 策略表统一鉴权（默认读 EMPLOYEE+/写 HR+，敏感面单独升级）+ 前后端权限码对齐 + 账号管理与安全事件 | `server/authMiddleware.ts`、`src/components/AccountManager.tsx` |
 | 数据看板 | ⚠️ 基础统计 | 人员结构 / 流动趋势 / 考勤健康度两组聚合端点 + 控制台图表 | `server/statsRouter.ts`、`src/pages/Dashboard` |
 | AI 能力 | ❌ 无 | 对话与会话持久化、系统模型 + 个人模型（自带 key 不占配额）、每日配额、管理端用量看板；导出模板脚本跑在 Worker+vm 沙箱里（原 RCE 面已封） | `server/aiRouter.ts`、`server/scriptSandbox.ts` |
-| 工位/空间 | ✅ 有座位管理 | 升级为**宴会排座**（自动按部门/职位优先级 + 手动拖拽换桌与桌内换序 + 方案按账号持久化 + 满桌保护）与**会议台卡**打印 | `src/pages/Seating`、`src/pages/NameCards` |
+| 工位/空间 | ✅ 有座位管理 | 升级为**宴会排座**（自动按部门/职位优先级 + 手动拖拽换桌与桌内换序 + 方案按账号持久化 + 满桌保护）与**会议台卡**打印，2026-09-25 起与**工作餐券**合并进 `/print-tools` 三标签 | `src/pages/PrintTools/index.tsx`、`src/pages/Seating`、`src/pages/NameCards`、`src/pages/MealVouchers` |
 | 文档 | ⚠️ 附件 | 文件夹树 + 文档套件 + **一键打包打印真内容**（份数 / 彩色 / 双面，PDF 与图片按真内容排版） | `server/documentPrint.ts`、`src/pages/Documents` |
-| 业务单据 | 原稿未列 | 按原件格式 1:1 生成、打印与 docx 导出，并归档到员工档案 —— 这是这套系统当前**真实的主战场** | `server/businessFormsDb.ts`、`/api/form`、`src/pages/BusinessForms` |
+| 业务单据 | 原稿未列 | 按原件格式 1:1 生成、打印与 docx 导出，并归档到员工档案 —— 这是这套系统当前**真实的主战场**。**一次可开多条**，每条字段独立；一张纸固定上下两格、格底锁在 148.50mm = A4 对折线（对折一刀裁得开），尾格补空白单供手写 | `server/businessFormsDb.ts`、`/api/form`、`src/pages/BusinessForms` |
+
+**① `20a9ff8`（2026-09-26，113 文件）六路审计收口为五个批次** —— 这是 09-22 之后最大的一次改动，能力表里原有条目**一个字都没提**：
+
+| 批次 | 做了什么 | 位置 |
+|------|---|---|
+| 权限天花板 | 对别人的账号调用者秩必须严格高于目标（SUPER_ADMIN 例外），接到 PUT / reset-password / revoke-sessions / DELETE / create 五处；备份下载收 SUPER_ADMIN、**不再接受 `?access_token=`** 并补审计；`/auth/profile`、`/approvals/:id/withdraw` 补进 POLICIES（员工自助不再必 403） | `server/authRouter.ts`、`src/utils/accountCeiling.ts` |
+| 前端真值与静默失败 | `fetchUsers({force})` 修掉导入后表格停在旧数据；六处 fire-and-forget 改 await + 报错；401 同时清内存 store；`loadSingle` 三态 + `degraded` 提示 | `src/store/useEmployeeStore.ts`、`src/services/api.ts` |
+| 运维可靠性 | `/api/health` **库不可用返 503**（原来恒 200，磁盘满/库坏的容器一直 healthy 地写着失败）；`/api/system/diagnostics` 暴露 schema 版本/磁盘余量/备份/其它实例/渲染队列；备份空间预检不足返 **507**、加份数与总量上限；多实例心跳 + **恢复备份时 409**；`clientIp()` 默认不采信 XFF（需显式 `TRUST_PROXY`） | `server/health.ts`、`server/instanceLock.ts`、`server/backupDb.ts` |
+| 数据一致性 | 时间戳口径统一（铃铛/待办原来用 UTC，显示早 8 小时）；`employees.daysToExpiry` 改派生值（原为存下来的陈旧倒数且客户端可写）；`deleteShift` 不再把手工清理做掉；**删账号不再留继承面**（同名重建会继承上一个人的待办/审批/API Key）→ 用户名进 `account_tombstones` 不可复用 | `server/localDate.ts`、`server/authDb.ts`（墓碑表）、回归 `server/tests/data-consistency-batch4.test.ts` |
+| 输入边界与资源上限 | `?keyword=%` 不再等于「把所有行给我」（4 处 LIKE 未转义）；入口 zod 补齐（缺字段原来变 500、给数字静默写成 `"42.0"`）；批量上限 `MAX_BULK_ROWS=5000`、xlsx 解压后行/格上限（zip 炸弹）；出网 SSRF 判定统一到 `server/outbound.ts`（先解析再判 IP）；生产 CSP 换成每响应 nonce | `server/sqliteUtil.ts`、`server/validation.ts`、`server/outbound.ts`、`server.ts` |
+| 守门脚本进 CI（3b） | 6 个 verify 脚本自包含化（`scripts/lib/liveServer.mjs` 起私有实例），`test:server` 由 12 → **19** 个并进 CI | `scripts/run-server-tests.mjs`、`.github/workflows/ci.yml` |
+
+**② `2bde3ad`（2026-09-26，8 文件）**：预览顶栏改为不压住正文首行（台卡 / 排座）；**打印工具标签切走再回来不清空排座画布**（访问过就隐藏不卸载）。跨路由与刷新仍会丢，这是刻意边界。
+
+**③ `417a9f3`（2026-09-27，86 文件）五路 UI/UX 审查收口** —— 详见 `docs/UIUX-REVIEW-2026-09-26.md` 文末「修复结果」。可写进路线图的结论：**axe 违规节点 14 → 0**、**真对比度失败 → 0**、无名表单控件 6 → 0、标题层级跳档 2 → 0、768 档考勤标签条与快捷操作溢出 → 0；新增「失败 ≠ 空态」的统一出口（`src/store/saveFailure.ts` + `ui/FailedState`）、恢复备份后强制重载（`src/utils/reloadApp.ts`）、文件夹行内操作改 `group-focus-within`、契约静态守卫从 6 条加到 8 条。**M1 的失败态还剩考勤/待办/审批三个视图没做。**
+
+**④ `06bde8b`（2026-09-27，14 文件）业务单多条**：见上表「业务单据」行。要点是一次开多条、每条独立、一张纸两格定高且格底= A4 对折线；「一张纸几条」开关与跟账号存的 `business-forms-print` 参数**已删除**（多条之后语义重复）。**原尺寸不缩放是硬要求**，正文超过半页（>6 行）的那条独占一张且不补空白单。
 
 ### 1.2 仍然没有的东西（别自欺）
+
+> 2026-10-04 复核：以下四条逐条对着代码核过，**全部仍然成立**（`/portal` 与 `approval_templates` 在全仓搜不到，
+> `assets`/`meeting_rooms`/`tickets` 三张表也没有）。
 
 - **通用审批引擎**：四类流程写死在 `approvalsDb`，新增一种单据要改代码。没有 `approval_templates`、条件分支、加签/转交、抄送。
 - **员工自助门户**：没有 `/portal` 与按角色分流的精简导航。EMPLOYEE 现在能自助提交补卡/请假、看待办与通知、改自己的资料与头像，但看不到"我的考勤/我的假期余额/我的合同"。
 - **资产、会议室、报修服务台、访客、车辆**：一个都没有（代码里搜不到 `assets` / `meeting_rooms` / `tickets`）。
-- **考勤实时性**：数据靠 Excel 导入，没有打卡机/企微同步，异常分析永远是"事后补算"。
+- **考勤实时性**：**企微同步链路已实现**（凭据掩码配置 / token 缓存 / 29 天分段 + 100 人分批 / 幂等增量落库 / 干跑预览 / 定时调度默认关，见 N1），但**没有真实凭据、从未真机跑通**，所以实际数据仍然只靠 Excel 导入 —— 异常分析依旧是"事后补算"。这是"代码有、事实没有"的典型，别当成已交付。
 - **深度分析**：个人异常画像、部门健康度打分、离职风险信号都没有，只有聚合计数。
 
 ### 1.3 工程健康度（支撑"敢用"的那部分）
 
-`npx vitest run` 48 文件 / 256 测试；Playwright e2e 42 例（含权限矩阵、四类审批闭环、导入异步链路、手动排座）；
-GitHub Actions 两个 job（verify：typecheck / lint / 单测 / 11 个服务端回归脚本 / 生产构建；e2e）全绿；
-`eslint .` 0 error；仓库内不再保存任何明文凭据（e2e 走 `.env.local`，CI 每次现生成）。
+> **2026-10-04 在 `06bde8b` 上实测**（此前此处停在 09-22 的 48 文件 / 256 测试、42 e2e、11 个脚本，已全部过期）：
+
+`npm run test:run` **82 文件 / 606 测试**；`npm run test:server` **19/19** 个自包含服务端回归脚本（不依赖 vitest）；
+Playwright e2e **71 例**（生产构建跑在 :3001，含权限矩阵、四类审批闭环、导入异步链路、手动排座、失败态、键盘可达、768 档）；
+GitHub Actions 两个 job（verify：typecheck / lint(0 error 门槛) / 单测 / 19 个服务端脚本 / 生产构建；e2e：装 Chromium 后跑全量）**全绿** ——
+`06bde8b` 那次实测两个 job 都 success（run 36314385583）；
+`npx eslint .` **0 error / 78 warning**（warning 是既有噪音，别新增 error）；`npm run typecheck` 两个 tsc 项目干净；
+仓库内不再保存任何明文凭据（e2e 走 `.env.local`，CI 每次现生成）。
+
+**已知的一处不稳定已收口**：`server/tests/ops-reliability.test.ts` 曾在全量并行里偶发红（605/606），真因是探针起真子进程
+耗时 ≈4s 撞上 vitest 默认 `testTimeout=5000ms`（**不是断言失败**），现已改为 `beforeAll` 只跑一次探针 + 超时给足，判据是连跑三次全绿。
+
+**仍未验证的三项**（别当成已交付）：**真机打印**（纸数/分页/对折线都是渲染几何量出来的，打印机驱动行为没测）、
+**`docker build`**（本机无 docker CLI，从没真跑过）、**企业微信同步链路**（无真实凭据，只到"可验证形态"）。
 
 ---
 
@@ -122,7 +165,7 @@ GitHub Actions 两个 job（verify：typecheck / lint / 单测 / 11 个服务端
 ## 四、推荐路线图
 
 ```
-Phase 0 · 安全与底座 ✅ 已完成（AUDIT 27 项修 26 项；CI 双 job；schema v14；568 单测 + 56 e2e + 19 个自包含服务端回归）
+Phase 0 · 安全与底座 ✅ 已完成（AUDIT 27 项修 26 项；CI 双 job；schema v14；606 单测 + 71 e2e + 19 个自包含服务端回归）
 
 Phase 1 · 数据源与流程（下一批就做）
    ├─ N1 企微打卡同步      ← 链路 + 自动对班判定已落地；只剩「真实凭据 + 可信 IP」

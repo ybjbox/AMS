@@ -69,10 +69,11 @@ export function SetFormModal({
     >
       <form id="set-form" onSubmit={handleSaveSet} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-            套件名称 <span className="text-red-500">*</span>
+          <label htmlFor="set-name" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+            套件名称 <span className="text-red-600 dark:text-red-400">*</span>
           </label>
           <Input
+            id="set-name"
             required
             autoFocus
             name="name"
@@ -82,8 +83,9 @@ export function SetFormModal({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">描述说明</label>
+          <label htmlFor="set-description" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">描述说明</label>
           <Textarea
+            id="set-description"
             name="description"
             rows={2}
             defaultValue={editingSet?.description}
@@ -93,13 +95,24 @@ export function SetFormModal({
         </div>
         <div>
           <div className="flex justify-between items-center mb-2">
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">选择包含的文件</label>
+            {/* 分组标签：它管的是下面整组复选框，不是某一个控件，所以不绑 htmlFor。
+                用 role="group" + aria-labelledby 让读屏把这组复选框当成一个整体来念。 */}
+            <div
+              role="group"
+              aria-labelledby="set-files-label"
+              className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+            >
+              <span id="set-files-label">选择包含的文件</span>
+            </div>
+            {/* min-h-6：实测 58×22 低于 WCAG 2.2 AA 的 24px 命中区（2.5.8）。
+                size="xs" 的 22px 高度只差 2px，加 min-h-6 补到 24px，
+                字号与配色不变（variant="link" 不带边框，加边框会改变版面）。 */}
             <Button
               type="button"
               variant="link"
               size="xs"
               onClick={toggleAllModalFolders}
-              className="h-auto px-0 text-sm text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 font-medium"
+              className="h-auto min-h-6 px-0 text-sm text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 font-medium"
             >
               {expandedModalFolders.size === folders.filter((f) => documents.some((d) => d.folderId === f.id)).length &&
               expandedModalFolders.size > 0
@@ -183,9 +196,14 @@ export function SetFormModal({
 
         {selectedDocIds.length > 0 && (
           <div className="mt-4 border-t border-zinc-200 dark:border-zinc-700 pt-4">
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-              已选文件打印设置
-            </label>
+            {/* 同上：分组标签，管的是下面每个文件的打印设置，不绑单个控件 */}
+            <div
+              role="group"
+              aria-labelledby="set-print-label"
+              className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2"
+            >
+              <span id="set-print-label">已选文件打印设置</span>
+            </div>
             <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
               {selectedDocIds.map((id) => {
                 const doc = documents.find((d) => d.id === id);

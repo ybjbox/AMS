@@ -255,7 +255,7 @@ export function AddressBookModal({
                   value={addressBookConfig.paperSize}
                   onValueChange={(val) => setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, paperSize: val || 'A4' }))}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger aria-label="纸张大小" className="w-full">
                     <SelectValue placeholder="选择纸张大小" />
                   </SelectTrigger>
                   <SelectContent>
@@ -272,7 +272,7 @@ export function AddressBookModal({
                   onValueChange={(val) => setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, orientation: val || 'portrait' }))}
                   items={[{ value: 'portrait', label: '纵向' }, { value: 'landscape', label: '横向' }]}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger aria-label="纸张方向" className="w-full">
                     <SelectValue placeholder="选择纸张方向" />
                   </SelectTrigger>
                   <SelectContent>

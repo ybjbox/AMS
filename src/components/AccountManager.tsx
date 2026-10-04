@@ -611,10 +611,12 @@ function CreateAccountDialog({
           <div>
             <div className="flex items-center justify-between">
               <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">初始密码</label>
+              {/* -my-1 + py-1：实测 54×16 低于 WCAG 2.2 AA 的 24px 命中区（2.5.8）。
+                负外边距抵掉 padding，视觉位置不变，只把命中区撑到 24px。 */}
               <button
                 type="button"
                 onClick={() => setPassword(randomInitialPassword())}
-                className="text-xs text-brand-600 dark:text-brand-400 flex items-center"
+                className="-my-1 py-1 text-xs text-brand-600 dark:text-brand-400 flex items-center"
               >
                 <RefreshCw className="w-3.5 h-3.5 mr-1" />
                 换一批

@@ -247,7 +247,7 @@ export function ExportModal({
                   value={exportConfig.paperSize}
                   onValueChange={(val) => setExportConfig((prev: ExportConfig) => ({ ...prev, paperSize: val || 'A4' }))}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger aria-label="纸张大小" className="w-full">
                     <SelectValue placeholder="选择纸张大小" />
                   </SelectTrigger>
                   <SelectContent>
@@ -264,7 +264,7 @@ export function ExportModal({
                   onValueChange={(val) => setExportConfig((prev: ExportConfig) => ({ ...prev, orientation: val || 'portrait' }))}
                   items={[{ value: 'portrait', label: '纵向' }, { value: 'landscape', label: '横向' }]}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger aria-label="纸张方向" className="w-full">
                     <SelectValue placeholder="选择纸张方向" />
                   </SelectTrigger>
                   <SelectContent>

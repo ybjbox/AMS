@@ -111,7 +111,7 @@ export default function RenewContractModal({ isOpen, onClose, user, onRenewed }:
 
         <div className="grid grid-cols-2 gap-3">
           <label className="block col-span-2 sm:col-span-1">
-            <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">续签年限 <span className="text-red-500" aria-hidden="true">*</span></span>
+            <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">续签年限 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
             <Select
               value={form.contractYears}
               onValueChange={(val) => {
@@ -119,7 +119,7 @@ export default function RenewContractModal({ isOpen, onClose, user, onRenewed }:
               }}
               items={[1, 2, 3, 4, 5].map((y) => ({ value: y, label: `${y} 年` }))}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger aria-label="续签年限" className="w-full">
                 <SelectValue placeholder="选择年限" />
               </SelectTrigger>
               <SelectContent>
@@ -132,7 +132,7 @@ export default function RenewContractModal({ isOpen, onClose, user, onRenewed }:
             </Select>
           </label>
           <label className="block col-span-2 sm:col-span-1">
-            <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">签订日期 <span className="text-red-500" aria-hidden="true">*</span></span>
+            <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">签订日期 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
             <Input
               type="date"
               required
@@ -141,7 +141,7 @@ export default function RenewContractModal({ isOpen, onClose, user, onRenewed }:
             />
           </label>
           <label className="block col-span-2">
-            <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">到期日期 <span className="text-red-500" aria-hidden="true">*</span>（按年限自动推算，可微调）</span>
+            <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">到期日期 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span>（按年限自动推算，可微调）</span>
             <Input
               type="date"
               required

@@ -272,4 +272,121 @@
 
 守卫：`sheetLayout.test.ts` 新增"格底 = 页高一半"的几何断言（`marginTop + SLOT_H === pageH / 2`）与"单条也用上半格"；`printHtml.test.ts` 钉住 `data-slots` 与定高 140.49mm 的规则；e2e 在真实渲染里量 `slotBottom_mm ≈ 148.5` 并断言单据上下边都不跨过折线（`blockBottom < 148.5 < 下一格 blockTop`），另加"只有一条时下半格是空白单"。全梯：typecheck 干净、eslint 0/78、单测 82 文件 606 例、build 通过、e2e 71/71。
 
-**过程中的一次抖动要记着**：`server/tests/ops-reliability.test.ts` 的"库可用 200 / 不可用 503"在全量并行里红过一次（605/606），单独跑 6/6 绿、再全量跑 606/606 绿。这条用例要起真进程 + 真库，和 :3000 的 dev server 撞在一起时最容易超时 —— 与本轮改动无关（服务端只回退了一个 kind 名），但它值得单独收一收（串行跑或放宽超时），别让它把"全梯绿"变成看运气。
+**过程中的一次抖动要记着**：`server/tests/ops-reliability.test.ts` 的"库可用 200 / 不可用 503"在全量并行里红过一次（605/606），单独跑 6/6 绿、再全量跑 606/606 绿。它曾被记为"要起真进程 + 真库，和 :3000 的 dev server 撞"，**2026-10-04 接手时复核发现这个归因是错的**，见文末追加五。
+
+
+### 2026-10-04 追加五：`ops-reliability` 偶发红的真因是超时，不是 dev server 撞
+
+上一条把根因写成"和 :3000 的 dev server 撞在一起时最容易超时"。接手复核时**在 `:3000` 与 `:3001` 都空着（curl 000）的情况下，全量跑仍然红过一次**，所以那个归因不成立。真因是 vitest 的默认 `testTimeout`：
+
+- `runProbe()` 用 `execFileSync` 起一个真 `node --import tsx` 子进程，在**全新** `DATA_DIR` 上跑迁移 + 模板播种 + 备份滚动清理 + 实例心跳，实测单次约 4s；
+- 全仓没有配 `testTimeout`，vitest 默认 **5000ms**。`server` project 自己 `maxWorkers: 1` 是串行的，但**挡不住 `client` project 同期并行抢 CPU**（38 个文件同时在跑）；
+- 于是单次调用摸到 5s 就报 `Error: Test timed out in 5000ms`。**是超时，不是断言失败** —— 报错文本与断言失败完全不同，肉眼扫日志容易只看到"某条用例 ×"就以为是回归。
+
+复现（不靠碰运气，同时跑 client 全量给压力）：
+
+| | 结果 |
+|---|---|
+| 改前：单文件 ‖ client 全量 | **1 failed | 5 passed**，那条 5549ms，`Test timed out in 5000ms` |
+| 改后：同样条件 | **6 passed**，整个文件 3.14s |
+
+修法两处一起（`server/tests/ops-reliability.test.ts`）：**探针收敛成 `beforeAll` 跑一次、六个用例共用结果**（原本每个用例各起一个进程 = 6 个进程 ≈ 24s，且临时目录漏 6 份；六个用例读的本来就是同一份探针输出），**超时显式给到 30s**。断言一条未动，探针脚本 `fixtures/ops-probe.ts` 本身也未改。
+
+没有靠"串行化整个 server project"来掩盖 —— 那会拖慢全梯；也没有放宽任何断言。反向验证：把 `expect(r.healthDown).toBe(503)` 临时改成 `599`，单跑得到 `AssertionError: expected 503 to be 599` 且**只有 1 条红**（证明共用结果不会让用例之间互相掩盖），改回后 `git diff` 里不含该行。全梯复跑：typecheck 干净、eslint **0 error / 78 warning**（基线不变）、单测 **82 文件 / 606 例**、服务端脚本 **19/19**。
+
+**仍未重跑 e2e**：改的是一个服务端测试文件，不进产品构建也不进任何页面，e2e 71/71 的证据仍来自 `06bde8b`（那一轮是实测跑出来的，CI 上同一 commit 两个 job 也都 success）。不为一个测试文件的改动去撞 5 分钟登录限流重跑 71 条 e2e。
+
+
+### 2026-10-04 追加六：模态内部审查 —— 上一轮明确留空的那一面
+
+本文文首「修复结果」里的 **axe 违规 14 → 0、真对比度失败 → 0、无名表单控件 6 → 0**，覆盖的是 **31 个"视图"**，而本文「未覆盖的取证面」里写着一条：**「弹窗/抽屉内部没有逐个跑 axe 与对比度（本轮是 31 个视图，不含 ~25 个模态）」**。本节补的就是这一面。
+
+**方法**：沿用 `probe-uiux-2026-09-26.mjs` 的三条已验证做法 —— 颜色经 canvas 像素读回 sRGB（`getComputedStyle` 对 oklch 会原样返回，按 rgb 解析必漏判）、axe 走同源 URL 注入（生产 CSP 是 `script-src 'self' 'nonce-…'`，`addScriptTag({content})` 会被挡）、主题按 zustand persist **整个信封**播种。触发器清单不是猜的，先用 `.design-qa/probe-modal-recon.mjs` 把 22 条路由上的按钮真实枚举一遍再取。
+
+**规模**：成功打开并检查 **10 个模态 × 亮暗双主题 = 20 次**；另有 12 个目标跳过（`新增职位`等 4 个触发器在该时刻 disabled 或文案不匹配、3 个打印入口其实不是模态而是直接开打印窗口）。
+
+#### 已确认的问题
+
+**M-a. `UserFormModal` 的 11 个表单控件没有可访问名（axe `label` critical，亮暗各 11）** —— 最严重的一条，且是全站用得最多的表单（新增/编辑员工）。
+
+根因是`<label>` **既没有 `htmlFor`、也不是控件的祖先**，而 `ui/Input` 不生成 `id`（`src/components/ui/input.tsx` 把 props 原样透传，`register()` 也只给 `name`/`onChange`/`onBlur`/`ref`）。三条独立证据一致：
+
+| 手段 | 结果 |
+|---|---|
+| axe（限定 dialog 子树） | `label` critical × 11 |
+| 静态扫描 `.design-qa/scan-label-binding.mjs` | `UserFormModal.tsx` 18 处 `<label>` 无关联 |
+| 行为判定 `.design-qa/probe-label-binding.mjs` | 点「姓名」「身份证号码」「联系电话」「户口地址」标签，`htmlFor=无`、`包住控件=false`、**焦点停在触发按钮上，从未落到输入框** |
+
+影响不止读屏：**点标签不会聚焦输入框**，键盘与鼠标用户都少一个入口。修法是契约里已有的写法（`htmlFor` + `id`），照 `AiConfigPanel` 批次 1 的改法即可。
+
+**M-b. 模态内的必填星号对比度 3.81:1（需 4.5）** —— `UserFormModal` 11 处 + `RenewContractModal` 3 处，`text-red-500` 实测 3.81:1。注意 `RenewContractModal` 的星号带 `aria-hidden="true"`，`UserFormModal` 的**不带**（`:196/:207/:218/:229/:240/:257/:269/:309/:327/:338/:358`）。这条与文首 **M6** 是同一件事的两面：星号既是唯一的必填提示，又低于 AA 对比度，而 zod 里这四栏还是 `.optional()` —— 星号既看不清、又不准。
+
+**M-c. `ContractTemplateEditor` 暗色主题下占位符芯片 4.26:1（需 4.5，axe `color-contrast` serious × 10）** —— `{name}` `{idCard}` `{phone}` 等，`text-brand-600 dark:text-brand-400` 配 `bg-brand-50 dark:bg-brand-900/30`。**亮色下 0 失败、暗色下 12 失败**：这类"亮色达标、暗色掉档"只有双主题都跑才看得见，而上一轮没进模态所以漏了。
+
+**M-d. `ImportModal`（批量导入）焦点不困在弹窗内** —— 焦点起始在弹窗内（`startInside=true`），但连按 22 次 Tab 有 **20 次落到弹窗外**；同一套探针在另外 9 个模态全是 `tabEsc=0`。这意味着键盘用户 Tab 出去就回不来了（WCAG 2.4.3）。亮暗两轮一致。
+
+**M-e. `ContractTemplateEditor` 可滚动区没有键盘可达**（axe `scrollable-region-focusable` × 1，serious）—— 代码块区域能滚，但 Tab 到不了。
+
+#### axe 报了但我没能独立复现的（不作为结论）
+
+- `user-create` 的 `button-name` critical × 4、`aria-allowed-attr` × 2：随后用独立 DOM 查询去找无名 button 与非常规 aria 属性，**各得 0**。目标 id 形如 `#base-ui-_r_s_`（base-ui 运行时生成），怀疑与 axe 取节点的时刻/子树范围有关。**记为待查，不当已确认缺陷。**
+- `heading-order`：axe 指向 `#modal-title`，但 dialog 内实际层级是 `H3(新增员工) → H4(基本信息) → H4(工作信息) → H4(合同与社保) → H4(退役军人信息)`，**逐级递增、没有跳档**。疑似 axe 按整篇文档的 heading 序列判定。**同样记为待查。**
+
+#### 静态扫描的规模只能当上界
+
+`scan-label-binding.mjs` 报「96 处 `<label>` 彻底没关联、分布 17 个文件」，但运行时 axe 在打开的 10 个模态里只确认了 2 个模态（`UserFormModal` 11 + `DepartmentModal` 1）。差额来自扫描器把「自定义控件的分组标签」「base-ui 组件名没被我的正则覆盖」也算进去了。**所以 96 是上界不是事实** —— 那 15 个尚未打开的模态（`NameCardEditor` 17、`PrintSettingsModal` 15、`ExportModal` 7、`AddressBookModal` 5 等）需要运行时复核，不能直接照单改。
+
+#### 没做到的
+
+- 12 个目标没打开：4 个触发器在该时刻 disabled 或文案不匹配（`seating-print-dialog` 的「打印台卡」disabled、`user-edit`/`user-delete-confirm`/`approval-*` 的文案随数据变），3 个打印入口不是模态而是直接开打印窗口。
+- **打印产物仍未量**：`emulateMedia('print')` 下的版面这一轮也没做，仍是未验证项。
+- 只跑了亮/暗两主题，**没跑 1440/1024/768/390 四档视口下的模态**（上一轮的视口扫描只覆盖视图）。
+- 没有真机打印验证。
+
+
+### 2026-10-04 追加七：模态无障碍缺陷已修（axe 全部归零）
+
+上一节列出 8 条确认缺陷，逐条修复并**用行为验证**（不是"源码里有 htmlFor"就算数）。
+
+| # | 问题 | 修法 | 验证（真实渲染） |
+|---|------|------|------------------|
+| M-a | `UserFormModal` 11 个控件无可访问名 | 18 个字段补 `htmlFor`+`id`；`TreeSelect` 加可选 `ariaLabel`/`id` prop（**向后兼容**，不传即无 aria-label） | axe `label` critical **11→0**；点 label 送达控件 **0/4→18/18** |
+| M-b | 全站 `role=combobox` 读屏无名 | 17 处 `SelectTrigger` 补 `aria-label`（用上方 label 文案命名，不按位置猜）；`TreeSelect` 两处补 `role="combobox"` | CDP `getPartialAXTree`：9 个空名 → **0 个真实空名**；axe `button-name` **4→0** |
+| M-c | 必填星号 3.81:1 | 全站 14 处星号 `text-red-500` → `text-red-600 dark:text-red-400`（含 3 个文件的批量替换） | 探针实测 `contrastFailCount` **2→0** |
+| M-d | `ContractTemplateEditor` 暗色 4.26:1 | `dark:text-brand-400` → `dark:text-brand-300` | canvas 像素读回：暗色 **4.26 FAIL → 5.91 PASS**（亮色 7.85 不变） |
+| M-e | `ImportModal` 焦点不困在弹窗内 | `BaseModal` 的 Tab 陷阱与初始聚焦**过滤不可见/disabled 候选** | Tab 22 次出界 **20→0** |
+| M-f | 可滚动区 Tab 不到 | `ContractTemplateEditor` 右栏加 `tabIndex={0}` + `role="group"` + `aria-label` + 焦点环 | axe `scrollable-region-focusable` **4→0** |
+| M-g | `DepartmentModal` 1 个 label | 补 `htmlFor`+`id`（含 `RoleModal`/`SetFormModal`/`FolderFormModal` 同类） | axe `label` 归零 |
+| M-h | 弹窗标题层级跳档 | `BaseModal` 标题 `h3`→`h2`；`UserFormModal` 4 个分区标题与 `ContractTemplateEditor` 1 个 `h4`→`h3` | axe `heading-order` **56→0** |
+
+**最终态**：10 个模态 × 亮暗双主题 = 20 次检查，`axe` 违规 **全部为 0**，`contrastFailCount` **全部为 0**，`tabEsc` **全部为 0**，`smallTargetCount` **全部为 0**。
+
+### 2026-10-04 追加八：3 处点击目标补到 24px（WCAG 2.2 AA 2.5.8）
+
+上一节列为"取舍不是缺陷"的 4 个次要文字按钮，本轮按 AA 收了。**目标尺寸取 24px 而非 44px** —— 44 是移动端建议值，WCAG 2.2 AA 的 2.5.8 硬门槛是 24×24 CSS px，桌面次要动作按前者做会平白撑大版面。
+
+| 控件 | 位置 | 改前 | 改后 | 手法 |
+|------|------|------|------|------|
+| 恢复默认模板 | `ContractTemplateEditor` | 72×16 | **72×24** | `-my-1 py-1` |
+| 全部展开 / 全部收起 | `SetFormModal` | 58×22 | **58×24** | `min-h-6`（`size="xs"` 的 22px 只差 2px） |
+| 换一批（初始密码） | `AccountManager` | 54×16 | **54×24** | `-my-1 py-1` |
+
+**关键点：视觉位置必须零位移。** 加了 padding 而不抵掉，按钮会整体下移 —— 那是拿无障碍换版面，属回归。所以三处都做了双向验证：
+
+1. **computed style 对账**：`-my-1 py-1` 的两处，`margin -4px·-4px` 与 `padding 4px·4px` 精确相消。
+2. **Range 量文字真实位置**（不靠读 CSS 自证）：按钮盒子从 16px 长到 24px，但**文字 `top` 一个像素没动**（`contract-template` 改前改后都是 `top=133.5`，`account-create` 都是 `287`），文字中心与按钮中心差恒为 `0.00px`。
+3. **stash 回退对照**：把 `src/` 全部暂存回退到修复前重新构建再量一遍，拿到基准值与修复后逐项比对 —— 上面的"改前"列就是这个实测值，不是估算。
+
+`SetFormModal` 那处用 `min-h-6` 而非 `py-1`，是因为它走 `ui/Button` 的 `size="xs"`（22px），加 padding 会与原语的高度定义打架；且 `variant="link"` 不带边框，加边框同样会改变版面。
+
+**仍未验证**：四档视口下的模态（这次改的 `min-h-6` / `py-1` 在 768 与 390 档是否引起换行，未量）、打印产物 `emulateMedia('print')`、真机打印。
+
+**M-e 的根因值得单独记**：`BaseModal` 一直有 Tab 陷阱代码，选器 `button, [href], input, select, textarea` 会把 base-ui `Select` 藏在控件里的 hidden input（实测 **1×1**、`clip-path: inset(50%)`、`tabindex="-1"`）和文件选择 input（**0×0**）也算成"可聚焦元素"。这些元素 `focus()` 得动但用户看不见，一旦它正好排在"最后一个"，浏览器把焦点送上去后下一次 Tab 就从文档头开始走 —— `ImportModal` 上传步只有 4 个候选、末尾正是那个 0×0 的 file input，于是 22 次 Tab 有 20 次落到侧栏导航上。**修法是过滤 `getClientRects().length > 0`，不是加长超时也不是放宽断言。**
+
+**过程中被我自己推翻的三条**（留作教训）：
+
+1. 上一节把 `button-name`×4 与 `aria-allowed-attr`×2 记为"axe 报了但我复现不出来，不作为结论"。**错在我方法错**：我用 `textContent` 判断无访问名，而无障碍名不等于 `textContent`。改用 CDP `Accessibility.getPartialAXTree` 问浏览器要真实答案后，**两者一致 —— 是真缺陷**。
+2. `axe.commons.text.accessibleText()` 报 `Cannot read properties of null (reading 'props')`（它需要先 `axe.setup()` 拿 flat tree）。我没有把这个报错当"查不到"，改走 CDP 独立路径。
+3. 第一版定位 `role=combobox` 根因的实验**变量没控住**（把 span 换成纯文本节点后仍报 `button-name`）。当时应该意识到"变量没起作用"，而不是继续解读。改成最小对照实验才看清：`<button><span>文字</span></button>` 浏览器给名字，**`<div role=combobox><span>文字</span></div>` 不给** —— `role=combobox` 不吃子元素文字当名字。
+
+**仍未验证**：四档视口下的模态、打印产物 `emulateMedia('print')`、真机打印、以及那 15 个未打开的模态（`NameCardEditor`/`PrintSettingsModal`/`ExportModal`/`AddressBookModal` 的静态扫描上限是 96，运行时只确认了 2 个模态，**差额是假阳性，不作为事实**）。

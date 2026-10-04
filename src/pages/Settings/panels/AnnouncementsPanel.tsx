@@ -128,7 +128,7 @@ export default function AnnouncementsPanel() {
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <label className="block sm:col-span-2">
-            <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">标题 <span className="text-red-500" aria-hidden="true">*</span></span>
+            <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">标题 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
             <Input
               type="text"
               required

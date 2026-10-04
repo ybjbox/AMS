@@ -11,6 +11,19 @@ interface TreeSelectProps {
   onChange: (value: string) => void;
   placeholder?: string;
   required?: boolean;
+  /**
+   * 显式可访问名。这个控件是 readOnly input + aria-haspopup="tree"，
+   * 而浏览器对这类控件**不吃内部文字或 placeholder 当名字**（CDP 实测 AX name=""），
+   * 所以调用方必须给一个 aria-label —— placeholder 只是视觉提示，读屏不会念。
+   */
+  ariaLabel?: string;
+  id?: string;
+  /**
+   * 透传给内部 input 的 role。默认不给（保持 input 的隐式角色 textbox）。
+   * axe 的 aria-allowed-attr 规则不接受 input 上的 aria-haspopup="tree"
+   * —— 该属性只允许在 combobox 等角色上，所以需要它时显式传 role="combobox" 把语义对齐。
+   */
+  role?: React.AriaRole;
   renderLeaf?: (node: TreeNode, depth: number, closeDropdown: () => void) => React.ReactNode;
   getDisplayName?: (node: TreeNode) => string;
   isNodeSelectable?: (node: TreeNode) => boolean;
@@ -22,6 +35,9 @@ export function TreeSelect({
   onChange,
   placeholder,
   required,
+  ariaLabel,
+  id,
+  role,
   renderLeaf,
   getDisplayName = (node) => node.name,
   isNodeSelectable = () => true,
@@ -202,12 +218,15 @@ export function TreeSelect({
     <div className="relative mt-1" ref={wrapperRef} onKeyDown={handleKeyDown}>
       <div className="relative cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
         <Input
+          id={id}
+          role={role}
           type="text"
           value={value}
           readOnly
           className="cursor-pointer pr-8"
           placeholder={placeholder}
           required={required}
+          aria-label={ariaLabel}
           aria-haspopup="tree"
           aria-expanded={isOpen}
         />

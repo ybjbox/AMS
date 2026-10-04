@@ -37,10 +37,11 @@ export function RoleModal({ modal, onClose, onSubmit }: RoleModalProps) {
     >
       <form id="role-form" onSubmit={onSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-            职位名称 <span className="text-red-500">*</span>
+          <label htmlFor="role-name" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+            职位名称 <span className="text-red-600 dark:text-red-400">*</span>
           </label>
           <Input
+            id="role-name"
             required
             autoFocus
             name="name"
@@ -51,8 +52,9 @@ export function RoleModal({ modal, onClose, onSubmit }: RoleModalProps) {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">优先级</label>
+          <label htmlFor="role-priority" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">优先级</label>
           <Input
+            id="role-priority"
             name="priority"
             type="number"
             defaultValue={modal.defaultPriority}

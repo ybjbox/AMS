@@ -89,7 +89,7 @@ export function PrintSettingsModal({
                   }));
                 }}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger aria-label="台卡样式" className="w-full">
                   <SelectValue placeholder="选择样式">
                     {printSettings.cardStyle === 'style1'
                       ? '样式1 (经典双列)'
@@ -201,7 +201,7 @@ export function PrintSettingsModal({
                 value={printSettings.titleFontFamily}
                 onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, titleFontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif' }))}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger aria-label="标题字体" className="w-full">
                   <SelectValue placeholder="选择字体">
                     {printSettings.titleFontFamily === '"Noto Serif SC", "SimSun", serif'
                       ? '思源宋体 / 宋体'
@@ -228,7 +228,7 @@ export function PrintSettingsModal({
                 value={printSettings.numberFontFamily}
                 onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, numberFontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif' }))}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger aria-label="桌号字体" className="w-full">
                   <SelectValue placeholder="选择字体">
                     {printSettings.numberFontFamily === '"Noto Serif SC", "SimSun", serif'
                       ? '思源宋体 / 宋体'
@@ -255,7 +255,7 @@ export function PrintSettingsModal({
                 value={printSettings.contentFontFamily}
                 onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, contentFontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif' }))}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger aria-label="内容字体" className="w-full">
                   <SelectValue placeholder="选择字体">
                     {printSettings.contentFontFamily === '"Noto Serif SC", "SimSun", serif'
                       ? '思源宋体 / 宋体'
@@ -283,7 +283,7 @@ export function PrintSettingsModal({
                   value={printSettings.footerFontFamily}
                   onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, footerFontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif' }))}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger aria-label="底部字体" className="w-full">
                     <SelectValue placeholder="选择字体">
                       {printSettings.footerFontFamily === '"Noto Serif SC", "SimSun", serif'
                         ? '思源宋体 / 宋体'
@@ -364,7 +364,7 @@ export function PrintSettingsModal({
                           value={printSettings.textAlign}
                           onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, textAlign: (val || 'left') as 'left' | 'center' | 'right' }))}
                         >
-                          <SelectTrigger className="w-full">
+                          <SelectTrigger aria-label="内容对齐" className="w-full">
                             <SelectValue placeholder="选择对齐方式">
                               {printSettings.textAlign === 'left'
                                 ? '居左'

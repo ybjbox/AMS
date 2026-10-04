@@ -101,9 +101,11 @@ export const ContractTemplateEditor = ({ isOpen, onClose }: ContractTemplateEdit
         <div className="w-full md:w-2/3 p-4 flex flex-col border-r border-zinc-200 dark:border-zinc-700">
           <div className="mb-2 flex justify-between items-center">
             <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">HTML 模板源码</span>
+            {/* -my-1 + py-1：实测 72×16 低于 WCAG 2.2 AA 的 24px 命中区（2.5.8）。
+                用负外边距抵掉 padding，视觉位置与原来完全一致，只把命中区撑到 24px。 */}
             <button
               onClick={() => setEditingTemplate(defaultTemplate)}
-              className="text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400"
+              className="-my-1 py-1 text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400"
             >
               恢复默认模板
             </button>
@@ -116,8 +118,15 @@ export const ContractTemplateEditor = ({ isOpen, onClose }: ContractTemplateEdit
             className="field-sizing-fixed flex-1 w-full p-4 font-mono resize-none"
           />
         </div>
-        <div className="w-full md:w-1/3 p-4 bg-zinc-50 dark:bg-zinc-800/50 overflow-y-auto">
-          <h4 className="text-sm font-medium text-zinc-900 dark:text-white mb-4">可用变量</h4>
+        {/* tabIndex=0：这一栏内容长时会自己滚动，键盘用户必须能聚焦它并用方向键滚（WCAG 2.1.1）。
+            没有 tabIndex 时它是纯鼠标可达区域，axe 报 scrollable-region-focusable。 */}
+        <div
+          tabIndex={0}
+          role="group"
+          aria-label="可用变量"
+          className="w-full md:w-1/3 p-4 bg-zinc-50 dark:bg-zinc-800/50 overflow-y-auto focus-visible:border-brand-600 focus-visible:ring-4 focus-visible:ring-brand-600/20 rounded"
+        >
+          <h3 className="text-sm font-medium text-zinc-900 dark:text-white mb-4">可用变量</h3>
           <p className="text-xs text-muted-foreground mb-4">
             在左侧模板中使用以下变量，生成合同时会自动替换为员工的实际信息。
           </p>
@@ -140,7 +149,7 @@ export const ContractTemplateEditor = ({ isOpen, onClose }: ContractTemplateEdit
                 key={v.key}
                 className="flex items-center justify-between bg-white dark:bg-zinc-700 p-2 rounded border border-zinc-200 dark:border-zinc-600"
               >
-                <code className="text-xs text-brand-600 dark:text-brand-400 font-mono bg-brand-50 dark:bg-brand-900/30 px-1.5 py-0.5 rounded">
+                <code className="text-xs text-brand-700 dark:text-brand-300 font-mono bg-brand-50 dark:bg-brand-900/30 px-1.5 py-0.5 rounded">
                   {v.key}
                 </code>
                 <span className="text-xs text-zinc-600 dark:text-zinc-300">{v.desc}</span>

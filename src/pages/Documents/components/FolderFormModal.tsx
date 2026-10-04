@@ -38,10 +38,11 @@ export function FolderFormModal({ isOpen, onClose, editingFolder, handleSaveFold
     >
       <form id="folder-form" onSubmit={handleSaveFolder} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-            文件夹名称 <span className="text-red-500">*</span>
+          <label htmlFor="folder-name" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+            文件夹名称 <span className="text-red-600 dark:text-red-400">*</span>
           </label>
           <Input
+            id="folder-name"
             required
             autoFocus
             name="name"

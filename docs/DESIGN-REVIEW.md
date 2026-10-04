@@ -6,6 +6,28 @@
 
 ---
 
+## ⚠️ 本文已被取代（2026-10-04 标注）
+
+**这是一份 2026-09-13 的时点快照，不是当前状态的事实源。** 它记录的是"当时 server/ 里有一批模块没人引用"的那个阶段，那个阶段**已经过去了** —— 当时的接线批、审计批、UI/UX 批都已落地。**照着本文的"死代码/未接线"清单去删东西会删错。**
+
+当前状态以这两份为准：
+
+- **`docs/UIUX-REVIEW-2026-09-26.md`** —— 最近两轮完整审查与批次 1–5 的修复结果（axe 14→0、真对比度失败→0）。
+- **`docs/ROADMAP.md`** —— 能力盘点与优先级（已刷新到当前代码）。
+
+已被后续改动取代、**不要再按本文去动**的几处（2026-10-04 逐条对着代码核过）：
+
+| 本文写的 | 现在的实际情况 |
+|---|---|
+| `store/permissions.ts`、`config/permission.ts`（第 6 条证据） | **两个都不存在**。权限判定现在只有一个真相：`src/utils/permission.ts` 的 `hasPermission()` 读的是**登录时由服务端按鉴权策略表算好、随会话下发的能力码列表**（`server/capabilities.ts` → `userInfo.permissions`），下发列表缺失一律判无权限。原来那个默认关闭的 `enableStrictPermission` 短路开关与本地可编辑矩阵 store **都已删除**（全仓仅剩 `src/utils/__tests__/permission.test.ts` 里一条描述旧行为的注释）。角色分配改由账号面板 `src/pages/Settings/panels/AccountsPanel.tsx` 承担 |
+| `PermissionMatrixPanel`（第 6 条说它"未挂载"） | **组件已删除**，`src/pages/Settings/panels/` 下现在没有权限矩阵面板（现存 16 个面板：账号/公告/AI 会话/AI 配置/备份/外观/运行诊断/日志/通知/导航排序/偏好/资料/提醒/脚本/主题/企微）。矩阵不再是前端可编辑对象 |
+| `src/utils/excelParser.ts`（第 17 条） | **已删除**（浏览器端 Excel 解析整体迁到服务端 exceljs，见 `server/attendanceImportDb.ts`） |
+| 「verify 脚本 19 个三轨制、无统一 runner、无 CI」（第 16 条） | **已收口**：`scripts/verify-*` 现在 **19 个全部自包含**，由 `npm run test:server` 统一跑（本地 19/19），并已进 CI 的 verify job |
+| 「lint 只扫 `src/`；`tsconfig.check.json` 是孤儿文件；AUDIT.md 引用的 test:* 脚本不存在」（第 15 条） | **已修**：`npm run lint` 扫全仓（基线 0 error / 78 warning）、`typecheck` 两个 tsc 项目、`npm run test:server` 存在 |
+| 「工作区改动未提交」（第 18 条） | 已提交，`main` 与 `origin/main` 一致 |
+
+---
+
 ## 一、总体评价：系统处于"三张皮"状态
 
 | 层 | 现状 |

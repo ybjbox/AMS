@@ -323,7 +323,7 @@ export default function ShiftRules() {
             <label className="block space-y-1.5">
               <span className="text-xs font-medium text-muted-foreground">部门</span>
               <Select value={draft.departmentId} onValueChange={(v) => setDraft({ ...draft, departmentId: String(v) })}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger aria-label="部门" className="w-full">
                   <SelectValue placeholder="选择部门" />
                 </SelectTrigger>
                 <SelectContent>
@@ -337,7 +337,7 @@ export default function ShiftRules() {
             </label>
             <label className="block space-y-1.5">
               <span className="text-xs font-medium text-muted-foreground">
-                时段名称<span className="text-red-500 ml-0.5" aria-hidden="true">*</span>
+                时段名称<span className="text-red-600 dark:text-red-400 ml-0.5" aria-hidden="true">*</span>
               </span>
               <Input
                 value={draft.name}

@@ -530,7 +530,7 @@ export default function AiConfigPanel() {
                   }
                 }}
               >
-                <SelectTrigger className="w-full justify-between">
+                <SelectTrigger aria-label="模型" className="w-full justify-between">
                   <SelectValue placeholder="从列表中选择模型" />
                 </SelectTrigger>
                 <SelectContent>

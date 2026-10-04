@@ -39,19 +39,46 @@ export const BaseModal: React.FC<BaseModalProps> = React.memo(
           }
 
           if (e.key === 'Tab' && modalRef.current) {
-            const focusableElements = modalRef.current.querySelectorAll(
-              'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            );
-            const firstElement = focusableElements[0] as HTMLElement;
-            const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+            /**
+             * 焦点陷阱：首尾回环。
+             *
+             * 必须**过滤掉不可见与 disabled 的候选**，否则回环会失效：
+             * 选择器 `input` 会选中 base-ui Select 藏在控件里的 hidden input（实测 0×0 或 1×1）
+             * 和文件选择 input（0×0）。这些元素 focus() 得动但用户看不见，
+             * 一旦它正好是"最后一个"，浏览器把焦点送上去后下一次 Tab 就从文档头开始走 ——
+             * 实测 ImportModal（上传步只有 4 个候选，末尾是 0×0 的 file input）
+             * 连按 22 次 Tab 有 20 次落到弹窗外的侧栏导航上。
+             */
+            const focusableElements = Array.from(
+              modalRef.current.querySelectorAll<HTMLElement>(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+              )
+            ).filter((el) => {
+              if (el.hasAttribute('disabled')) return false;
+              if (el.getAttribute('aria-hidden') === 'true') return false;
+              if (el.closest('[aria-hidden="true"]')) return false;
+              if (el.tabIndex < 0) return false;
+              // getClientRects().length === 0 表示 display:none 或零尺寸，聚焦它等于把焦点丢进虚空
+              return el.getClientRects().length > 0;
+            });
+            if (focusableElements.length === 0) return;
+            const firstElement = focusableElements[0];
+            const lastElement = focusableElements[focusableElements.length - 1];
+            const active = document.activeElement;
+            // 焦点已经在弹窗外（点背景、或浏览器自己跑出去）时，先收回来
+            if (!active || !modalRef.current.contains(active)) {
+              firstElement.focus();
+              e.preventDefault();
+              return;
+            }
 
             if (e.shiftKey) {
-              if (document.activeElement === firstElement) {
+              if (active === firstElement || !focusableElements.includes(active as HTMLElement)) {
                 lastElement.focus();
                 e.preventDefault();
               }
             } else {
-              if (document.activeElement === lastElement) {
+              if (active === lastElement || !focusableElements.includes(active as HTMLElement)) {
                 firstElement.focus();
                 e.preventDefault();
               }
@@ -64,9 +91,19 @@ export const BaseModal: React.FC<BaseModalProps> = React.memo(
         // Focus the first element or the modal itself
         setTimeout(() => {
           if (modalRef.current) {
-            const firstFocusable = modalRef.current.querySelector(
-              'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            ) as HTMLElement;
+            // 同样要过滤：否则第一个"可聚焦元素"可能是 0×0 的隐藏 input，焦点会落进虚空
+            const firstFocusable = Array.from(
+              modalRef.current.querySelectorAll<HTMLElement>(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+              )
+            ).find(
+              (el) =>
+                !el.hasAttribute('disabled') &&
+                el.getAttribute('aria-hidden') !== 'true' &&
+                !el.closest('[aria-hidden="true"]') &&
+                el.tabIndex >= 0 &&
+                el.getClientRects().length > 0
+            );
             if (firstFocusable) {
               firstFocusable.focus();
             } else {
@@ -113,9 +150,13 @@ export const BaseModal: React.FC<BaseModalProps> = React.memo(
               <div
                 className="px-4 py-4 sm:px-6 border-b border-zinc-100 dark:border-zinc-700 flex items-center justify-between shrink-0 bg-white dark:bg-zinc-800 rounded-t-2xl"
               >
-                <h3 className="text-lg font-semibold text-zinc-900 dark:text-white" id="modal-title">
+                {/* h2 而非 h3：弹窗经 portal 挂到 body，脱离了页面里「h1 → h2」的原有上下文。
+                用 h3 时整篇 heading 序列变成 h1→h3，axe 判 heading-order 跳档（WCAG 1.3.1）。
+                改成 h2 后「页面 h1 → 弹窗 h2 → 弹窗内 h3/h4」成为合法序列，
+                语义也更准：弹窗标题是二级标题。视觉尺寸不变（text-lg 保持）。 */}
+                <h2 className="text-lg font-semibold text-zinc-900 dark:text-white" id="modal-title">
                   {title}
-                </h3>
+                </h2>
                 <button
                   onClick={onClose}
                   aria-label="关闭弹窗"
