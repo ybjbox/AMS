@@ -76,6 +76,12 @@ export default defineConfig({
       ...process.env,
       // CI 用生产模式（静态服务 + 无 Vite middleware）
       ...(isCI ? { NODE_ENV: 'production' } : {}),
+      // AMS_SEED_DEMO=1：E2E 的夹具就是演示数据（flows.spec 搜「员工 1」、
+      // 分页控件要 45 人、p0/p1/p2 建员工时部门写「研发部」、排座要选部门），
+      // 而演示数据默认不再播种（见 server/db.ts demoSeedEnabled）。
+      // 漏了这个会让整条 e2e 在空库上跑：搜索/分页/部门相关用例全灭，且因 retries=2
+      // 把 12 分钟的 job 拖到超时附近（2026-10-11 CI run #40 就是这么红的）。
+      AMS_SEED_DEMO: '1',
       // AMS_ADMIN_PASSWORD 随上面的 ...process.env 带进来（本地来自 .env.local，
       // CI 由 workflow 每次运行现生成）。仓库里不再保留兜底口令；两处都没有时
       // 服务端会随机生成并写 data/ADMIN_CREDENTIALS.txt。

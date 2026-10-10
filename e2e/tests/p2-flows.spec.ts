@@ -238,9 +238,15 @@ test.describe.serial('P2 功能闭环', () => {
     expect(Array.isArray(data.days)).toBe(true);
     expect(data.days.length).toBe(30);
     const d = data.days[0];
-    for (const k of ['date', 'present', 'late', 'early', 'missing', 'scheduled']) {
+    // 分母是「判定班次数」而不是已撤的排班人数（scheduled）：
+    // 看板改用部门时段自动对班后，热力分母只认真的判上了的班次。
+    for (const k of ['date', 'judged', 'present', 'late', 'early', 'missing', 'unmatched', 'punchDays']) {
       expect(d, `字段 ${k} 存在`).toHaveProperty(k);
     }
+    expect(d, '不再有已撤的 scheduled 字段').not.toHaveProperty('scheduled');
+    // 灰色格 = 没有打卡数据，必须能说清楚，不能和「全员正常」长得一样
+    expect(typeof data.noDataDays).toBe('number');
+    expect(data.lastPunchDate === null || typeof data.lastPunchDate === 'string').toBe(true);
     expect(Array.isArray(data.departmentRates)).toBe(true);
     if (data.departmentRates.length > 0) {
       const r = data.departmentRates[0];
@@ -248,6 +254,9 @@ test.describe.serial('P2 功能闭环', () => {
       expect(typeof r.rate).toBe('number');
       expect(r.rate).toBeGreaterThanOrEqual(0);
       expect(r.rate).toBeLessThanOrEqual(100);
+      // 出勤率 = 出勤人日 / 应出勤人日，分母截到最近一次打卡为止
+      expect(typeof r.attended).toBe('number');
+      expect(typeof r.expected).toBe('number');
     }
   });
 });
