@@ -24,7 +24,9 @@ import {
   deleteSchedule,
   deleteShift,
   insertSourcedRecords,
+  latestPunchMonth,
   monthlySummary,
+  punchMonthStats,
   upsertSchedule,
 } from '../attendanceDb.ts';
 import {
@@ -32,8 +34,10 @@ import {
   deleteDeptShiftRule,
   listDeptShiftRules,
   resolveRulesForDepartment,
+  toCandidates,
   updateDeptShiftRule,
 } from '../shiftRulesDb.ts';
+import { OVERTIME_GRACE_MINUTES } from '../shiftMatch.ts';
 import type { DbRow } from '../sqliteUtil.ts';
 
 const PW = 'Shift#Test2026-aa';
@@ -167,6 +171,60 @@ describe('判定与覆盖率', () => {
     clearPunches();
   });
 
+  /**
+   * 两列判定口径开关（assumeMissingIn / overtimeGraceMinutes，2026-10-10）。
+   * 缺省必须与 shiftMatch 的常量一致，否则界面默认值会与服务端判定对不上。
+   */
+  it('口径开关：缺省值与 shiftMatch 常量一致，显式传入后能读回并透传给判定候选', () => {
+    clearRules();
+    addRule(PARENT, '缺省班', '08:00', '18:00');
+    const def = listDeptShiftRules().find((r) => r.name === '缺省班')!;
+    expect(def.assumeMissingIn).toBe(false);
+    expect(def.overtimeGraceMinutes).toBe(OVERTIME_GRACE_MINUTES);
+
+    addRule(PARENT, '自定义班', '08:00', '18:00');
+    const custom = listDeptShiftRules().find((r) => r.name === '自定义班')!;
+    updateDeptShiftRule(custom.id, {
+      name: '自定义班',
+      startTime: '08:00',
+      endTime: '18:00',
+      workdays: [1, 2, 3, 4, 5],
+      assumeMissingIn: true,
+      overtimeGraceMinutes: 300,
+    });
+    const after = listDeptShiftRules().find((r) => r.id === custom.id)!;
+    expect(after.assumeMissingIn).toBe(true);
+    expect(after.overtimeGraceMinutes).toBe(300);
+
+    // 透传到判定候选：否则这两列配了也不生效
+    const cands = toCandidates(resolveRulesForDepartment(PARENT));
+    const c = cands.find((x) => x.name === '自定义班')!;
+    expect(c.assumeMissingIn).toBe(true);
+    expect(c.overtimeGraceMinutes).toBe(300);
+    expect(cands.find((x) => x.name === '缺省班')!.assumeMissingIn).toBe(false);
+
+    clearRules();
+  });
+
+  it('口径开关：不传 overtimeGraceMinutes 时更新不覆盖已有值', () => {
+    clearRules();
+    addRule(PARENT, '保留余量', '08:00', '18:00');
+    const r = listDeptShiftRules().find((x) => x.name === '保留余量')!;
+    updateDeptShiftRule(r.id, {
+      name: '保留余量', startTime: '09:00', endTime: '19:00', workdays: [1, 2, 3, 4, 5],
+      assumeMissingIn: true, overtimeGraceMinutes: 300,
+    });
+    // 第二次更新只改时间，不带余量
+    updateDeptShiftRule(r.id, {
+      name: '保留余量', startTime: '10:00', endTime: '20:00', workdays: [1, 2, 3, 4, 5],
+    });
+    const after = listDeptShiftRules().find((x) => x.id === r.id)!;
+    expect(after.startTime).toBe('10:00');
+    expect(after.overtimeGraceMinutes).toBe(300);   // 没被 COALESCE 冲掉
+    expect(after.assumeMissingIn).toBe(true);
+    clearRules();
+  });
+
   it('对不上班与无判定依据都进 coverage，并给出可读原因', () => {
     clearRules();
     clearPunches();
@@ -179,7 +237,7 @@ describe('判定与覆盖率', () => {
     expect(coverage.noPlan).toBe(1);
     expect(anomalies.filter((a) => a.employeeId === empParent.id || a.employeeId === empNoDept.id)).toEqual([]);
     const reasons = coverage.unmatchedSample.map((s) => s.reason).join('；');
-    expect(reasons).toMatch(/未对上任何班/u);
+    expect(reasons).toMatch(/没能对上班次/u);
     expect(reasons).toMatch(/无判定依据/u);
     clearRules();
     clearPunches();
@@ -213,6 +271,22 @@ describe('判定与覆盖率', () => {
     expect(row).toMatchObject({ workDays: 1, punchCount: 2, lateCount: 1, earlyLeaveCount: 1, missingCount: 0 });
     expect(row?.department).toBe('QA对班总部');
     clearRules();
+    clearPunches();
+  });
+
+  it('月报默认月份取「最近有打卡的月份」，不是当月', () => {
+    // 2026-10-10 实测：月报默认当月，打开只有 10/1 一天的半截报表，完整 9 月反而要手动切。
+    // 这里插 2098-12 / 2099-01 两个月，断言取到的是最大的那个（固定未来月，不随跑测日期漂移）。
+    clearPunches();
+    punch(empParent, '2098-12-15', '09:00:00', '18:00:00');
+    punch(empParent, '2099-01-15', '09:00:00', '18:00:00');
+    expect(latestPunchMonth()).toBe('2099-01');
+    // 月份清单按月份倒序，带「有打卡的日期数」和「打卡条数」——月份选择器靠它列快捷入口
+    const stats = punchMonthStats();
+    expect(stats.find((s) => s.month === '2099-01')).toEqual({ month: '2099-01', days: 1, punches: 2 });
+    expect(stats.find((s) => s.month === '2098-12')).toEqual({ month: '2098-12', days: 1, punches: 2 });
+    expect(stats[0].month).toBe('2099-01'); // 倒序，最大月在最前
+    expect(punchMonthStats(1)).toEqual([stats[0]]);
     clearPunches();
   });
 });
@@ -349,6 +423,26 @@ describe('/api/attendance/shift-rules HTTP 层（真 authGate）', () => {
     expect(status.at).toBeTruthy();
     expect(status.coverage?.byRule).toBe(coverage.byRule);
     clearRules();
+    clearPunches();
+  });
+
+  it('GET /summary 不带月份时按「最近有打卡的月份」兜底，带月份时按指定月份', async () => {
+    clearPunches();
+    punch(empParent, '2098-12-15', '09:00:00', '18:00:00');
+    punch(empParent, '2099-01-15', '09:00:00', '18:00:00');
+
+    const latest = await call('GET', '/summary', adminToken);
+    expect(latest.status).toBe(200);
+    expect((latest.json as { month: string }).month).toBe('2099-01');
+    // 前端月份快捷切换依赖 stats，别悄悄退化成空数组
+    const stats = (latest.json as { stats: { month: string; days: number; punches: number }[] }).stats;
+    expect(stats[0]).toEqual({ month: '2099-01', days: 1, punches: 2 });
+    expect(stats.some((s) => s.month === '2098-12')).toBe(true);
+
+    const asked = await call('GET', '/summary?month=2026-08', adminToken);
+    expect(asked.status).toBe(200);
+    expect((asked.json as { month: string }).month).toBe('2026-08');
+
     clearPunches();
   });
 });

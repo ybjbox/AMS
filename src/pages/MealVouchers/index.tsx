@@ -95,7 +95,7 @@ export default function MealVouchers() {
   const removeRecord = async (rec: VoucherPrintRecord) => {
     const ok = await confirm({
       title: '删除这条打印记录？',
-      description: `号段 ${formatRecordRange(rec, spec.pad)}（${formatAt(rec.at)}）会从台账里移除，之后印到同号段不再提示重叠。`,
+      description: `号段 ${formatRecordRange(rec, spec.pad)}（${formatAt(rec.at)}）会被删除，之后再印同号段就不会提示重叠了。`,
       confirmText: '删除',
       variant: 'danger',
     });

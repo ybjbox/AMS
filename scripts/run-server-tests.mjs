@@ -35,9 +35,13 @@ const CASES = [
 const results = [];
 let failed = 0;
 
+// AMS_SEED_DEMO=1：若干验证脚本以「45 名种子员工 + 演示部门树」为夹具，
+// 而演示数据默认不再播种（见 server/db.ts demoSeedEnabled），这里显式开。
+const env = { ...process.env, AMS_SEED_DEMO: "1" };
+
 for (const file of CASES) {
   process.stdout.write(`\n===== 运行 ${file} =====\n`);
-  const res = spawnSync("npx", ["tsx", file], { stdio: "inherit", shell: process.platform === "win32" });
+  const res = spawnSync("npx", ["tsx", file], { stdio: "inherit", shell: process.platform === "win32", env });
   const ok = res.status === 0;
   if (!ok) failed++;
   results.push({ file, ok });

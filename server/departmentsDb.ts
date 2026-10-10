@@ -2,7 +2,7 @@
  * 组织架构数据层 — departments（树形，parentId 关联）+ roles 两张表。
  * 前端语义是整树替换（setDepartments / setRoles），因此写入时扁平化落库，读取时重建树。
  */
-import { db } from "./db.ts";
+import { db, demoSeedEnabled } from "./db.ts";
 import { type DbRow, asString, asNumber } from "./sqliteUtil.ts";
 
 /**
@@ -248,10 +248,11 @@ export function replaceRoles(roles: RoleNode[]): RoleNode[] {
 }
 
 // ---------- 首次播种（与原静态种子一致） ----------
+// 与 db.seedIfEmpty 同一个开关：默认不播演示部门树，理由见 db.demoSeedEnabled 的注释。
 (function seedIfEmpty() {
   const count = asNumber(db.prepare("SELECT COUNT(*) AS c FROM departments").get()?.c);
   if (count > 0) return;
-
+  if (!demoSeedEnabled()) return;
   replaceDepartmentsTree([
     {
       id: "1", name: "集团总部", priority: 100,

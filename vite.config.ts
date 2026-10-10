@@ -50,7 +50,9 @@ export default defineConfig(() => {
             // 每个文件跑一次：清掉上一轮留下的「已下架用户名」墓碑（详见该文件注释）
             setupFiles: './server/tests/setup.ts',
             // 独立数据目录，与开发库 data/ams.db 完全隔离
-            env: { DATA_DIR: 'data-test', AMS_ALLOW_LOCAL_OUTBOUND: '1' },
+            // AMS_SEED_DEMO=1：这些用例的历史夹具就是「45 名种子员工 + 演示部门树」，
+            // 而演示数据默认已不再播种（见 server/db.ts demoSeedEnabled），测试要显式开。
+            env: { DATA_DIR: 'data-test', AMS_ALLOW_LOCAL_OUTBOUND: '1', AMS_SEED_DEMO: '1' },
             // 全部用例共用 data-test 这一个 SQLite 文件：并行跑会互抢写锁（database is locked），
             // 全新库上还会两个进程同时 seed 撞 employees 主键。
             // Vitest 4 已删除 test.poolOptions —— 写了会被静默忽略（启动日志只提示一句

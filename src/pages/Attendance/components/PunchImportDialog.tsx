@@ -24,6 +24,8 @@ interface Props {
   initialFile?: File | null;
   /** 导入完成后刷新打卡记录列表 */
   onImported: () => void;
+  /** 跳去「异常分析」：导入只是第一步，判定要到那边点「一键分析异常」 */
+  onGoAnalyze?: () => void;
 }
 
 /**
@@ -32,7 +34,7 @@ interface Props {
  * 解析放服务端（exceljs），所以这里只发原始字节；落库走 (工号,日期,时间) 唯一索引，
  * 同一张表反复导入是幂等的，重复行计入"跳过"而不是造出双份打卡。
  */
-export default function PunchImportDialog({ isOpen, onClose, initialFile, onImported }: Props) {
+export default function PunchImportDialog({ isOpen, onClose, initialFile, onImported, onGoAnalyze }: Props) {
   const [step, setStep] = useState<Step>('upload');
   const [parsing, setParsing] = useState(false);
   const [committing, setCommitting] = useState(false);
@@ -119,8 +121,8 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
         <div className="space-y-5">
           <div className="rounded-xl border border-brand-100 dark:border-brand-900/40 bg-brand-50/50 dark:bg-brand-900/10 p-4">
             <p className="text-sm text-zinc-700 dark:text-zinc-300">
-              请按模板填写：<span className="font-medium">日期 YYYY-MM-DD、时间 HH:MM</span>
-              ，工号与姓名至少填一项（工号优先，姓名重名时必须填工号）。
+              两种表都能直接上传：企业微信导出的横排表（一行一人、一列一天），或标准模板（一行一条打卡）。
+              标准模板需含「日期」「时间」列，工号与姓名至少填一项（工号优先，姓名重名时必须填工号）。
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <a
@@ -172,6 +174,23 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
 
       {step === 'preview' && preview && (
         <div className="space-y-4">
+          {/* 说清这张表是怎么读的 —— 横排表会自动拆成一行一条，日期跨度一并显示 */}
+          {preview.layout && (
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 px-3 py-2 text-xs">
+              <span className="font-medium text-zinc-700 dark:text-zinc-200">
+                {preview.layout.layout === 'wide' ? '识别为企业微信横排表' : '识别为标准模板'}
+              </span>
+              <span className="text-muted-foreground ml-2">{preview.layout.reason}</span>
+              {preview.layout.detected && (
+                <span className="text-muted-foreground ml-2">
+                  （{preview.layout.detected.dateColumns} 天：
+                  {preview.layout.detected.firstDate} ~ {preview.layout.detected.lastDate}
+                  ，共 {preview.layout.detected.people} 人；已自动拆成一行一条打卡）
+                </span>
+              )}
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 font-medium">
               共 {preview.total} 行
@@ -281,9 +300,26 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
           <p className="text-sm text-zinc-900 dark:text-white">
             导入完成：新增 {result.created} 条，跳过 {result.skipped} 条。
           </p>
-          <Button type="button" variant="outline" onClick={() => { reset(); onClose(); }}>
-            关闭
-          </Button>
+          <p className="text-xs text-muted-foreground">
+            导入只是第一步：判定要去「异常分析」点「一键分析异常」才会出来。
+          </p>
+          <div className="flex justify-center gap-2 pt-1">
+            <Button type="button" variant="outline" onClick={() => { reset(); onClose(); }}>
+              关闭
+            </Button>
+            {onGoAnalyze && (
+              <Button
+                type="button"
+                onClick={() => {
+                  reset();
+                  onClose();
+                  onGoAnalyze();
+                }}
+              >
+                去分析异常
+              </Button>
+            )}
+          </div>
         </div>
       )}
     </BaseModal>

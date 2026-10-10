@@ -44,7 +44,7 @@ export function useVoucherHistory() {
       setRecords((prev) => [toRecord(saved), ...prev]);
       return true;
     } catch (e) {
-      toast.error(savedItemError(e, '本批号段未能记入打印台账'));
+      toast.error(savedItemError(e, '本批号段未能记入打印记录'));
       return false;
     }
   }, []);

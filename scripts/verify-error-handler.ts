@@ -33,12 +33,13 @@ function ok(name: string, cond: boolean, extra = "") {
 }
 
 async function waitForHealth() {
-  for (let i = 0; i < 60; i++) {
+  // 与 verify-todos.ts 同因：tsx 冷启动约 21 秒，旧 18 秒预算会 flake（2026-10-10）。
+  for (let i = 0; i < 120; i++) {
     try {
       const r = await fetch(`${BASE}/api/health`);
       if (r.ok) return true;
     } catch {}
-    await new Promise((r) => setTimeout(r, 300));
+    await new Promise((r) => setTimeout(r, 500));
   }
   return false;
 }

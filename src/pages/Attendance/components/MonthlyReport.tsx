@@ -1,17 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, Download, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import {
   attendanceApi,
   type MonthlySummaryRow,
+  type PunchMonthStat,
 } from '@/services/attendanceApi';
-
-/** 月份选择器的默认值：当月 */
-function currentMonth(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
 
 /** CSV 导出（Excel 可直接打开；BOM 头保证中文不乱码） */
 function exportCsv(month: string, rows: MonthlySummaryRow[]): void {
@@ -38,15 +33,27 @@ function exportCsv(month: string, rows: MonthlySummaryRow[]): void {
 
 /** 月度考勤汇总报表（HR 月报）：按人聚合出勤/打卡/迟到/早退/缺卡 */
 export default function MonthlyReport() {
-  const [month, setMonth] = useState(currentMonth());
+  const [month, setMonth] = useState('');
   const [rows, setRows] = useState<MonthlySummaryRow[]>([]);
+  const [stats, setStats] = useState<PunchMonthStat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  /**
+   * 用户是否手动选过月份：没选过才跟随服务端推荐（最近有数据的月份）。
+   * 用 ref 而不是 state —— 初始请求还在飞时用户就点了月份，
+   * state 版本会在初始响应回来时用过期的 touched=false 把用户选的月份盖掉。
+   */
+  const touchedRef = useRef(false);
 
   const load = useCallback(async (m: string) => {
     setIsLoading(true);
     try {
-      const res = await attendanceApi.fetchMonthlySummary(m);
+      // 空串 = 让服务端定：最近有数据的月份（新库回退当月）
+      const res = m
+        ? await attendanceApi.fetchMonthlySummary(m)
+        : await attendanceApi.fetchLatestMonthlySummary();
       setRows(res.rows ?? []);
+      if (Array.isArray(res.stats)) setStats(res.stats);
+      if (!touchedRef.current) setMonth(res.month);
     } catch (err) {
       toast.error((err as { error?: string })?.error || '月报加载失败');
     } finally {
@@ -55,8 +62,8 @@ export default function MonthlyReport() {
   }, []);
 
   useEffect(() => {
-    void load(month);
-  }, [month, load]);
+    void load('');
+  }, [load]);
 
   // 汇总行（全表合计）
   const totals = useMemo(
@@ -80,6 +87,23 @@ export default function MonthlyReport() {
     [rows]
   );
 
+  // 哪些月份有打卡、各有几天（服务端只回有数据的月份）：月份选择器旁边的快捷入口
+  const currentStat = stats.find((s) => s.month === month) ?? null;
+  /** 别的月份打卡日明显更多（当前月是半截报表时提醒一句） */
+  const fullerMonth = useMemo(
+    () => stats.find((s) => s.month !== month && s.days > (currentStat?.days ?? 0)) ?? null,
+    [stats, month, currentStat]
+  );
+
+  const switchMonth = useCallback(
+    (m: string) => {
+      touchedRef.current = true;
+      setMonth(m);
+      void load(m);
+    },
+    [load]
+  );
+
   return (
     <div className="h-full flex flex-col min-h-0">
       {/* 工具栏 */}
@@ -87,7 +111,12 @@ export default function MonthlyReport() {
         <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
           <CalendarDays className="w-4 h-4 text-zinc-400" aria-hidden="true" />
           月份
-          <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-auto" />
+          <Input
+            type="month"
+            value={month}
+            onChange={(e) => switchMonth(e.target.value)}
+            className="w-auto"
+          />
         </label>
         <button
           onClick={() => void load(month)}
@@ -112,12 +141,44 @@ export default function MonthlyReport() {
         )}
       </div>
 
+      {/* 月份快捷切换：默认落在「最近有打卡的月份」，但那个月可能只有几天，
+          所以把「哪几个月有数据、各几天」直接摆出来，不用靠猜 */}
+      {stats.length > 0 && (
+        <div className="px-4 py-2 border-b border-zinc-200/80 dark:border-zinc-700 flex flex-wrap items-center gap-2 shrink-0">
+          <span className="text-xs text-muted-foreground">有打卡的月份</span>
+          {stats.map((s) => (
+            <button
+              key={s.month}
+              type="button"
+              aria-pressed={s.month === month}
+              onClick={() => switchMonth(s.month)}
+              className={`rounded-full border px-2.5 py-1 text-xs tabular-nums transition-colors ${
+                s.month === month
+                  ? 'border-brand-500 bg-brand-50 text-brand-800 dark:bg-brand-500/15 dark:text-brand-200'
+                  : 'border-zinc-200 dark:border-zinc-600 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+              }`}
+            >
+              {s.month} · {s.days} 天
+            </button>
+          ))}
+          {fullerMonth && currentStat && (
+            <span className="text-xs text-muted-foreground">
+              {month} 只有 {currentStat.days} 个打卡日，{fullerMonth.month} 有 {fullerMonth.days} 天
+            </span>
+          )}
+        </div>
+      )}
+
       {/* 报表 */}
       <div className="flex-1 overflow-auto">
         {rows.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-sm text-muted-foreground py-12">
             <CalendarDays className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-3" aria-hidden="true" />
-            {isLoading ? '加载中…' : `${month} 暂无打卡数据`}
+            {isLoading
+              ? '加载中…'
+              : stats.length > 0
+                ? `${month} 没有打卡记录，可点上方有数据的月份查看`
+                : `${month} 暂无打卡数据`}
           </div>
         ) : (
           <table className="w-full text-left text-sm" aria-label="月度考勤汇总">

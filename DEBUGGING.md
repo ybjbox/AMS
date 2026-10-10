@@ -73,11 +73,12 @@ cp .env.example .env.local    # 可选项见 .env.local 内注释
 环境变量由 `server/env.ts`（server.ts 的第一个 import，dotenv 实现）加载：优先级为 真实进程环境变量 > `.env.local` > `.env`，对 dev/dev:watch/start/VS Code 调试所有入口一致生效。
 
 **首次启动**（数据库不存在时）：
-1. 自动执行数据库迁移建表（种子 45 名员工、部门树、班次、文件夹；迁移版本 v5）；
+1. 自动执行数据库迁移建表（迁移版本 v14）。**不再播种演示数据**：45 名「员工 N」、演示部门树、默认班次/文件夹都要显式设 `AMS_SEED_DEMO=1` 才会播（见 `server/db.ts` 的 `demoSeedEnabled`）—— 否则真实数据导入后会与假员工混在一张表里。空库启动时控制台会打一行提示告诉你这一点；
 2. 自动创建管理员账号 `admin`。若 `.env.local` 未设置 `AMS_ADMIN_PASSWORD`，会在**服务端控制台打印随机密码**并写入 `data/ADMIN_CREDENTIALS.txt`（首次改密后请删除该文件）；
 3. 系统强制**首次登录改密**：改密前所有业务接口返回 `403 PASSWORD_CHANGE_REQUIRED`，属预期安全设计（`POST /api/auth/change-password`）。
-4. 本工作区已完成首次启动：用户名 `admin`，口令取 `.env.local` 里的 `AMS_ADMIN_PASSWORD`（不写进仓库，也不贴在这里；`requests.http` 与 e2e 都从同一个环境变量取）。若换机器且没设该变量，就走上面第 2 条的随机密码 + `ADMIN_CREDENTIALS.txt` 流程。
-5. 登录接口有防爆破锁定（连续失败会临时锁定），调试密码时别狂试。
+4. 真实数据导入顺序：部门管理建树 → 员工管理「导入」→ 考勤管理「导入打卡记录」→ 部门时段配上下班时间。
+5. 本工作区已完成首次启动：用户名 `admin`，口令取 `.env.local` 里的 `AMS_ADMIN_PASSWORD`（不写进仓库，也不贴在这里；`requests.http` 与 e2e 都从同一个环境变量取）。若换机器且没设该变量，就走上面第 2 条的随机密码 + `ADMIN_CREDENTIALS.txt` 流程。
+6. 登录接口有防爆破锁定（连续失败会临时锁定），调试密码时别狂试。
 
 启动成功标志：控制台输出 `Server running on http://localhost:3000`，浏览器访问 <http://localhost:3000> 出现登录页。
 
@@ -168,7 +169,7 @@ cp .env.example .env.local    # 可选项见 .env.local 内注释
 | 审计日志看不到某次写操作 | auditGate 对所有写方法兜底留痕；确认请求带了有效 Token（未过 authGate 的请求由 logSecurityEvent 留痕） |
 | 3000 端口被占用 | `netstat -ano | findstr :3000` 找到 PID 结束进程；或临时改 `server.ts` 的 `PORT`（改造时可提取为环境变量） |
 | 浏览器页面空白/连接拒绝 | 后端还没起完，等控制台出现 `Server running on http://localhost:3000` 再刷新 |
-| 忘记 admin 密码 | 关闭服务，删除 `data/ams.db`（或 `data/` 整目录）后重启，重新种子化；仓库还提供 `scripts/reset-admin-password.mjs` |
+| 忘记 admin 密码 | 关闭服务，删除 `data/ams.db`（或 `data/` 整目录）后重启，重新走首启流程；仓库还提供 `scripts/reset-admin-password.mjs` |
 | 改了后端代码没重启 | 确认用的是 `dev:watch` 而不是 `dev`；watch 不监听 `vite.config.ts` / `.env.local`，这类文件需手动重启 |
 | 断点不命中（前端） | 确认走的是 launch.json 的浏览器配置而非手动开浏览器；Vite sourcemap 需要开发模式（`npm run build` 后的产物无 sourcemap） |
 | 登录提示锁定 | 登录接口有防爆破机制，稍等再试或重置数据库 |

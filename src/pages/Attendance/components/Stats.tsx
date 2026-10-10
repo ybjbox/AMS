@@ -1,14 +1,25 @@
 import React from 'react';
-import { Users, AlertTriangle, Calendar, Clock } from 'lucide-react';
+import { AlertTriangle, Clock, Users, CalendarDays } from 'lucide-react';
 import { UseAttendanceReturn } from '../hooks/useAttendance';
 
-export type StatsProps = Pick<UseAttendanceReturn, 'records' | 'schedules' | 'anomalies' | 'shifts'>;
+/**
+ * 四张卡：打卡 / 覆盖人数 / 部门时段 / 异常考勤。
+ *
+ * 原先第二、三张是「排班记录」「班次数量」，而这两页已撤（2026-10-10）——
+ * 统计里留着它们会一直显示 0 和 1，比没有更让人以为哪里没配好。
+ */
+export type StatsProps = Pick<UseAttendanceReturn, 'records' | 'anomalies'> & {
+  /** 部门时段条数：不再是「班次数量」，而是真正生效的口径条数 */
+  shiftRuleCount: number;
+  /** 有打卡的人次（人·日），比「打卡条数」更贴近出勤口径 */
+  punchDays: number;
+};
 
-export default function Stats({ records, schedules, anomalies, shifts }: StatsProps) {
+export default function Stats({ records, anomalies, shiftRuleCount, punchDays }: StatsProps) {
   const items = [
     { label: '打卡记录', value: records.length, icon: Clock, bg: 'bg-brand-50 dark:bg-brand-900/30', color: 'text-brand-600 dark:text-brand-400' },
-    { label: '排班记录', value: schedules.length, icon: Calendar, bg: 'bg-brand-50 dark:bg-brand-900/30', color: 'text-brand-600 dark:text-brand-400' },
-    { label: '班次数量', value: shifts.length, icon: Users, bg: 'bg-amber-50 dark:bg-amber-900/30', color: 'text-amber-600 dark:text-amber-400' },
+    { label: '出勤人次', value: punchDays, icon: Users, bg: 'bg-brand-50 dark:bg-brand-900/30', color: 'text-brand-600 dark:text-brand-400' },
+    { label: '部门时段', value: shiftRuleCount, icon: CalendarDays, bg: 'bg-amber-50 dark:bg-amber-900/30', color: 'text-amber-600 dark:text-amber-400' },
     { label: '异常考勤', value: anomalies.length, icon: AlertTriangle, bg: 'bg-red-50 dark:bg-red-900/30', color: 'text-red-600 dark:text-red-400' },
   ];
 

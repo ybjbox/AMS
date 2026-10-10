@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 部门工作时段（N1 判定层的配置面）。
  *
  * 一个部门可以配多条时段（例：正常班 09:00-18:00、早班 08:00-17:00），
@@ -12,7 +12,7 @@ import { db } from "./db.ts";
 import crypto from "crypto";
 import { type DbRow, asString } from "./sqliteUtil.ts";
 import type { ShiftCandidate } from "./shiftMatch.ts";
-import { formatWorkdays } from "./shiftMatch.ts";
+import { formatWorkdays, OVERTIME_GRACE_MINUTES } from "./shiftMatch.ts";
 
 /**
  * 列定义唯一在此（外键由 migrate 补，理由同 EMPLOYEE_COLUMNS：兜底建表发生在模块加载期，
@@ -28,7 +28,9 @@ export const DEPT_SHIFT_RULE_COLUMNS = `
     name         TEXT NOT NULL,
     startTime    TEXT NOT NULL,
     endTime      TEXT NOT NULL,
-    workdays     TEXT NOT NULL DEFAULT '1,2,3,4,5'
+    workdays     TEXT NOT NULL DEFAULT '1,2,3,4,5',
+    assumeMissingIn    INTEGER NOT NULL DEFAULT 0,
+    overtimeGraceMinutes INTEGER NOT NULL DEFAULT 120
 `;
 
 /** 幂等建表；migrate 的 v14 重建会先 rename 再调它把表与索引建回来。 */
@@ -40,6 +42,33 @@ export function ensureShiftRulesTable(): void {
 }
 ensureShiftRulesTable();
 
+/**
+ * 幂等补两列判定口径开关。老库（以及从旧备份恢复的库）没有这两列。
+ *
+ * 不抬 SCHEMA_VERSION，走与 ensurePunchSourceColumns 同一套常驻补列：
+ * 模块加载即补，任何进程（含只 import 本模块的脚本）在读写规则前都拿得到。
+ *
+ *  - assumeMissingIn        首卡与上班时间差过容忍时记「缺上班卡」而非「未对班」。
+ *                           默认 0 = 维持既有口径（宁可不判，也不硬套一个班）。
+ *  - overtimeGraceMinutes  下班点之后多少分钟内的卡还算这个班的（加班余量）。
+ *                           默认 120 与 shiftMatch.OVERTIME_GRACE_MINUTES 一致。
+ */
+export function ensureShiftRuleOptionColumns(): void {
+  try {
+    const cols = db.prepare("PRAGMA table_info(dept_shift_rules)").all() as unknown as DbRow[];
+    const names = new Set(cols.map((c) => asString(c.name)));
+    if (!names.has("assumeMissingIn")) {
+      db.exec("ALTER TABLE dept_shift_rules ADD COLUMN assumeMissingIn INTEGER NOT NULL DEFAULT 0");
+    }
+    if (!names.has("overtimeGraceMinutes")) {
+      db.exec("ALTER TABLE dept_shift_rules ADD COLUMN overtimeGraceMinutes INTEGER NOT NULL DEFAULT 120");
+    }
+  } catch (e) {
+    console.warn("[shiftRules] 补口径开关列失败：", e instanceof Error ? e.message : e);
+  }
+}
+ensureShiftRuleOptionColumns();
+
 export interface DeptShiftRule {
   id: string;
   departmentId: string;
@@ -48,6 +77,10 @@ export interface DeptShiftRule {
   startTime: string;
   endTime: string;
   workdays: number[];
+  /** 首卡超容忍记「缺上班卡」而非「未对班」。默认 false 保持既有口径。 */
+  assumeMissingIn: boolean;
+  /** 下班点之后的加班余量（分钟）。缺省与 shiftMatch.OVERTIME_GRACE_MINUTES 一致。 */
+  overtimeGraceMinutes: number;
 }
 
 /** 沿部门树向上找到第一个配了时段的部门 */
@@ -77,6 +110,8 @@ function rowToRule(row: DbRow): DeptShiftRule {
     startTime: asString(row.startTime),
     endTime: asString(row.endTime),
     workdays: parseWorkdays(asString(row.workdays)),
+    assumeMissingIn: Number(row.assumeMissingIn ?? 0) === 1,
+    overtimeGraceMinutes: Number(row.overtimeGraceMinutes ?? OVERTIME_GRACE_MINUTES),
   };
 }
 
@@ -129,20 +164,28 @@ export function createDeptShiftRule(input: {
   startTime: string;
   endTime: string;
   workdays: number[];
+  assumeMissingIn?: boolean;
+  overtimeGraceMinutes?: number;
 }): DeptShiftRule {
   assertShape(input);
   if (!departmentExists(input.departmentId)) throw new ShiftRuleError(`部门不存在：${input.departmentId}`);
   const id = crypto.randomUUID();
   db.prepare(
-    `INSERT INTO dept_shift_rules (id, departmentId, name, startTime, endTime, workdays)
-     VALUES (?, ?, ?, ?, ?, ?)`
-  ).run(id, input.departmentId, input.name.trim(), input.startTime, input.endTime, input.workdays.join(","));
+    `INSERT INTO dept_shift_rules (id, departmentId, name, startTime, endTime, workdays, assumeMissingIn, overtimeGraceMinutes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(
+    id, input.departmentId, input.name.trim(), input.startTime, input.endTime,
+    input.workdays.join(","), input.assumeMissingIn ? 1 : 0, input.overtimeGraceMinutes ?? OVERTIME_GRACE_MINUTES
+  );
   return listDeptShiftRules().find((r) => r.id === id)!;
 }
 
 export function updateDeptShiftRule(
   id: string,
-  input: { name: string; startTime: string; endTime: string; workdays: number[]; departmentId?: string }
+  input: {
+    name: string; startTime: string; endTime: string; workdays: number[];
+    departmentId?: string; assumeMissingIn?: boolean; overtimeGraceMinutes?: number;
+  }
 ): DeptShiftRule | null {
   const existing = db.prepare("SELECT id, departmentId FROM dept_shift_rules WHERE id = ?").get(id) as DbRow | undefined;
   if (!existing) return null;
@@ -150,8 +193,15 @@ export function updateDeptShiftRule(
   if (input.departmentId && !departmentExists(input.departmentId)) throw new ShiftRuleError(`部门不存在：${input.departmentId}`);
   const departmentId = input.departmentId ?? asString(existing.departmentId);
   db.prepare(
-    `UPDATE dept_shift_rules SET departmentId = ?, name = ?, startTime = ?, endTime = ?, workdays = ? WHERE id = ?`
-  ).run(departmentId, input.name.trim(), input.startTime, input.endTime, input.workdays.join(","), id);
+    `UPDATE dept_shift_rules SET departmentId = ?, name = ?, startTime = ?, endTime = ?, workdays = ?,
+        assumeMissingIn = COALESCE(?, assumeMissingIn), overtimeGraceMinutes = COALESCE(?, overtimeGraceMinutes)
+      WHERE id = ?`
+  ).run(
+    departmentId, input.name.trim(), input.startTime, input.endTime, input.workdays.join(","),
+    input.assumeMissingIn === undefined ? null : input.assumeMissingIn ? 1 : 0,
+    input.overtimeGraceMinutes ?? null,
+    id
+  );
   return listDeptShiftRules().find((r) => r.id === id) ?? null;
 }
 
@@ -221,9 +271,17 @@ export function toCandidates(resolved: ResolvedRules): ShiftCandidate[] {
     startTime: rule.startTime,
     endTime: rule.endTime,
     workdays: rule.workdays,
+    assumeMissingIn: rule.assumeMissingIn,
+    overtimeGraceMinutes: rule.overtimeGraceMinutes,
   }));
 }
 
 export function ruleSummary(rule: DeptShiftRule): string {
-  return `${rule.name} ${rule.startTime}-${rule.endTime}（${formatWorkdays(rule.workdays)}）`;
+  const flags = [
+    rule.assumeMissingIn ? "上班卡没打按缺卡记" : "",
+    rule.overtimeGraceMinutes !== OVERTIME_GRACE_MINUTES ? `下班后${rule.overtimeGraceMinutes}分钟算本班` : "",
+  ].filter(Boolean);
+  const base = `${rule.name} ${rule.startTime}-${rule.endTime}（${formatWorkdays(rule.workdays)}）`;
+  return flags.length ? `${base}〔${flags.join("、")}〕` : base;
 }
+

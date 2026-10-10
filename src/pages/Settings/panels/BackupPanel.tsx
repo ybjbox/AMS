@@ -90,14 +90,14 @@ export default function BackupPanel() {
           `已从 ${res.restoredFrom} 恢复${res.safetyBackup ? `（安全备份：${res.safetyBackup}）` : ''}，界面即将重新载入`
         );
         if (res.uploadsRestored === false) {
-          toast.warning('该备份不含上传文件快照，uploads 目录保持现状未回滚');
+          toast.warning('这份备份里没有上传的文件，现有文件保持不变');
         }
         if (res.templatesRestored === false) {
-          toast.warning('该备份不含导出脚本模板快照，模板保持现状未回滚');
+          toast.warning('这份备份里没有导出模板，现有模板保持不变');
         }
         if (res.schemaOk === false) {
-          // 恢复的是老 schema 且补跑迁移失败：不提醒的话用户只会看到后续写入莫名 500
-          toast.warning(res.schemaNote || '恢复后补跑迁移失败，请重启服务', { duration: 12000 });
+          // 恢复的是老库且补跑升级失败：不提醒的话用户只会看到后续写入莫名 500
+          toast.warning(res.schemaNote || '数据表升级没成功，请重启服务后再试', { duration: 12000 });
         }
         await load();
         // 换库之后必须重载：其它 store 仍持有恢复前的内存态（见 utils/reloadApp 的说明）
@@ -231,12 +231,12 @@ export default function BackupPanel() {
                     {b.name}
                     {b.withUploads ? (
                       <span className="ml-2 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-3xs font-sans">
-                        含文件快照
+                        含上传文件
                       </span>
                     ) : (
                       <span
                         className="ml-2 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-3xs font-sans"
-                        title="旧格式备份，仅含数据库；恢复时不会回滚上传文件"
+                        title="旧格式的备份，只包含数据库；恢复时上传的文件不会被替换"
                       >
                         仅数据库
                       </span>

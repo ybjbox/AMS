@@ -630,6 +630,22 @@ export function deleteEmployee(id: string) {
 }
 
 // ---------- 首次启动播种（与原 mock 逻辑一致的随机数据） ----------
+/**
+ * 是否播演示数据 —— **默认否**。
+ *
+ * 空库启动曾经无条件播 45 个「员工 N」+ 演示部门树 + 默认班次/文件夹，
+ * 于是真实数据导入后库里永远是「45 假 + N 真」混着：月报人数对不上、
+ * 假员工混进出勤与统计，2026-10-10 还为此专门写过一次一次性迁移脚本。
+ *
+ * 现在默认不播：新部署得到一个干净空库，真实数据一律走产品通道灌进来
+ * （员工管理 → 导入，考勤管理 → 导入打卡记录，部门管理建树，部门时段配上下班时间）。
+ * 要演示/联调数据时显式设 `AMS_SEED_DEMO=1`。
+ */
+export function demoSeedEnabled(): boolean {
+  const raw = String(process.env.AMS_SEED_DEMO ?? "").trim().toLowerCase();
+  return raw === "1" || raw === "true" || raw === "yes" || raw === "on";
+}
+
 function generateIdCard(): string {
   const year = 1970 + Math.floor(Math.random() * 30);
   const month = String(Math.floor(Math.random() * 12) + 1).padStart(2, "0");
@@ -640,7 +656,13 @@ function generateIdCard(): string {
 function seedIfEmpty() {
   const count = asCount(db.prepare("SELECT COUNT(*) AS c FROM employees").get()?.c);
   if (count > 0) return;
-
+  if (!demoSeedEnabled()) {
+    console.log(
+      "[db] 演示数据未播种（设 AMS_SEED_DEMO=1 可开启）：员工/部门/角色/默认班次/默认文件夹均为空；" +
+        "真实数据请走「员工管理 → 导入」与「考勤管理 → 导入打卡记录」"
+    );
+    return;
+  }
   const insert = db.prepare(`INSERT INTO employees (
     id, name, idCard, gender, age, phone, department, role, status, joinDate,
     yearsOfService, employmentType, hasSocialSecurity, contractYears,

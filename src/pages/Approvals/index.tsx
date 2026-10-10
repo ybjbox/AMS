@@ -543,7 +543,7 @@ export default function Approvals() {
               [
                 { id: 'mine', label: '我的申请' },
                 ...(canApprove ? [{ id: 'pending', label: '待我审批' }] : []),
-                ...(canApprove ? [{ id: 'ledger', label: '审批台账' }] : []),
+                ...(canApprove ? [{ id: 'ledger', label: '审批记录' }] : []),
               ] as Array<{ id: 'mine' | 'pending' | 'ledger'; label: string }>
             ).map((t) => (
               <button

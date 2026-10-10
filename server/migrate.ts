@@ -40,6 +40,7 @@ import { ensureNotificationsTable } from "./notificationsDb.ts";
 import { ensureImportJobsTable } from "./importJobsDb.ts";
 import { ensureOrgTables } from "./departmentsDb.ts";
 import { ensurePunchSourceColumns } from "./attendanceDb.ts";
+import { ensureShiftRuleOptionColumns } from "./shiftRulesDb.ts";
 import { DEPT_SHIFT_RULE_COLUMNS, ensureShiftRulesTable } from "./shiftRulesDb.ts";
 
 /** 当前 schema 版本。导出供回归脚本断言（不要再硬编码数字）。 */
@@ -66,6 +67,8 @@ export function runMigrations(): void {
     // 老备份恢复回来可能缺 source 列（企微同步才引入），常驻补列比抬版本更稳：
     // 恢复路径不经过版本号变化，靠版本步骤会漏
     ensurePunchSourceColumns();
+    // 部门时段的两列判定口径开关（assumeMissingIn / overtimeGraceMinutes）同理常驻补
+    ensureShiftRuleOptionColumns();
     // v14 的四项收口同样常驻。它们**每一项都按库里的实际形状判定**（列在不在、DDL 里有没有
     // localtime / FOREIGN KEY、值是不是 Z 结尾），所以重复执行是安全的，而且能治这一种情况：
     // user_version 已经被某次启动抬到 14、但当时步骤还没写全 —— 真发生过，靠版本号兜不住。

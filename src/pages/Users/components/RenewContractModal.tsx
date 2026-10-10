@@ -87,7 +87,7 @@ export default function RenewContractModal({ isOpen, onClose, user, onRenewed }:
           contractSignDate: form.contractSignDate,
           contractExpiry: form.contractExpiry,
         });
-        toast.success('合同续签成功，台账已更新');
+        toast.success('合同续签成功，员工档案已更新');
         onRenewed();
         onClose();
       } catch (err) {

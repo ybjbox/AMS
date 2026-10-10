@@ -47,7 +47,7 @@ export function BusinessFormRecords({ employee }: { employee: User }) {
           ) : failed ? (
             <p className="text-sm text-muted-foreground">业务单据读取失败，请稍后重试</p>
           ) : records.length === 0 ? (
-            <p className="text-sm text-muted-foreground">尚无归档的业务单据</p>
+            <p className="text-sm text-muted-foreground">还没有归入档案的业务单据</p>
           ) : (
             <ul className="space-y-2 max-h-44 overflow-auto pr-1">
               {records.map((r) => (
@@ -71,7 +71,7 @@ export function BusinessFormRecords({ employee }: { employee: User }) {
                       {formatDateTime(r.createdAt)}
                     </div>
                     {r.operator && (
-                      <div className="text-xs text-muted-foreground">{r.operator} 归档</div>
+                      <div className="text-xs text-muted-foreground">{r.operator} 归入档案</div>
                     )}
                   </div>
                 </li>

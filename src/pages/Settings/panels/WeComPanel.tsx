@@ -216,7 +216,7 @@ export default function WeComPanel() {
       <div>
         <h2 className="text-lg font-medium text-zinc-900 dark:text-white mb-1">企业微信打卡同步</h2>
         <p className={HINT_CLASS}>
-          从企业微信取上下班打卡写入考勤。只取打卡时间，位置、WiFi、设备号等字段在服务端边界即丢弃，不进入本系统。
+          从企业微信取上下班打卡写入考勤。只取打卡时间；位置、WiFi、设备号等信息收到就丢，不会存进本系统。
         </p>
       </div>
 
@@ -230,7 +230,7 @@ export default function WeComPanel() {
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">应用凭据</h3>
             <p className={HINT_CLASS}>
               企业微信后台「自建应用」里的 CorpID 与 Secret；应用必须配到「打卡 → 可调用接口的应用」，并把本机出口
-              IP 加进可信 IP。Secret 与 access_token 只留在服务端。
+              IP 加进可信 IP。Secret 与 access_token 只留在本系统里，不会下发到浏览器。
             </p>
           </div>
         </div>
@@ -295,7 +295,7 @@ export default function WeComPanel() {
                 />
                 <span className={HINT_CLASS}>
                   本机出口 IP 会变（家宽）时，填一台固定公网 IP 的 http/https 代理，企业微信的「可信 IP」配那台机器。
-                  目标是官方 https 接口时走 CONNECT 隧道，代理只看得到主机名，看不到 Secret 与 access_token；清空即直连。
+                  目标仍是官方 https 地址时，代理只能看到域名，看不到 Secret 与 access_token；留空即直连。
                 </span>
               </label>
               <label className="space-y-1.5">
@@ -329,7 +329,7 @@ export default function WeComPanel() {
                 className="border-zinc-300 dark:border-zinc-600"
                 id="wecom-enabled"
               />
-              <span className="text-sm text-zinc-700 dark:text-zinc-300">开启定时增量同步</span>
+              <span className="text-sm text-zinc-700 dark:text-zinc-300">按间隔自动同步</span>
               <span className={HINT_CLASS}>关掉时仍可手动预览与同步</span>
             </label>
 
@@ -367,8 +367,8 @@ export default function WeComPanel() {
       <div className={CARD_CLASS}>
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-1">成员映射</h3>
         <p className={`${HINT_CLASS} mb-4`}>
-          打卡接口只认企业微信账号（userid），必须逐条认领到员工档案；认领错的代价是把别人的打卡灌进这个人的考勤，
-          所以系统不按姓名自动匹配。在企业管理后台「通讯录 → 成员」可看到每个人的账号。
+          打卡数据只认企业微信账号（userid），必须一条条认领到员工档案；认领错的代价是把别人的打卡算到这个人的考勤里，
+          所以系统不按姓名自动认领。在企业管理后台「通讯录 → 成员」可以查到每个人的账号。
         </p>
 
         <div className="flex flex-wrap items-end gap-2 mb-4">
@@ -428,8 +428,8 @@ export default function WeComPanel() {
       <div className={CARD_CLASS}>
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-1">拉取与同步</h3>
         <p className={HINT_CLASS}>
-          留空时间窗即按游标增量同步（每轮回看 {config?.overlapMinutes ?? 120} 分钟补企业微信侧的迟到数据）。
-          一次补拉最多 180 天，内部按 29 天分段、每 100 人分批。先预览确认归属正确再同步。
+          日期都留空 = 只同步上次同步之后新增的打卡，并往前回看 {config?.overlapMinutes ?? 120} 分钟，补上在企业微信那边迟到补打的卡。
+          一次补拉最多 180 天；数据量大时会自动分段分批处理。先预览确认归属正确再同步。
         </p>
 
         <div className="flex flex-wrap items-end gap-2 mt-4 mb-4">
@@ -466,8 +466,8 @@ export default function WeComPanel() {
             {job
               ? `任务 ${job.status === 'running' ? '进行中' : job.status === 'done' ? '已完成' : '失败'}：已处理 ${job.processed} 条，新增 ${job.created} 条，跳过 ${job.skipped} 条`
               : status?.state.cursorAt
-                ? `上次同步游标：${new Date(status.state.cursorAt * 1000).toLocaleString('zh-CN', { hour12: false })}`
-                : '还没有同步过（首轮增量只回看最近 7 天，历史数据请填日期区间补拉）'}
+                ? `上次同步到：${new Date(status.state.cursorAt * 1000).toLocaleString('zh-CN', { hour12: false })}`
+                : '还没有同步过（第一次只拉最近 7 天，更早的数据请填日期区间补拉）'}
           </span>
         </div>
 

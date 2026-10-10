@@ -2,7 +2,7 @@
  * 文档管理数据层 — folders / documents / document_sets 三张表。
  * 上传的文件真实落盘到 <DATA_DIR>/uploads/，通过 /api/files/:id 提供下载。
  */
-import { db } from "./db.ts";
+import { db, demoSeedEnabled } from "./db.ts";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
@@ -379,9 +379,11 @@ function removeDocIdsFromSets(docIds: string[]) {
 }
 
 // ---------- 首次播种（仅目录结构，不播种假文件） ----------
+// 与 db.seedIfEmpty 同一个开关：默认不播，理由见 db.demoSeedEnabled 的注释。
 (function seedFoldersIfEmpty() {
   const count = asCount(db.prepare("SELECT COUNT(*) AS c FROM folders").get()?.c);
   if (count > 0) return;
+  if (!demoSeedEnabled()) return;
   const insert = db.prepare("INSERT INTO folders (id, name, parentId) VALUES (?, ?, ?)");
   insert.run("f1", "人事文件", null);
   insert.run("f2", "入职办理", "f1");

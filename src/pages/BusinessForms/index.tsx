@@ -236,7 +236,7 @@ export default function BusinessForms() {
   /** 归档：按条记进各自申领人的员工档案，成功 / 跳过 / 失败各报各的数 */
   const onArchive = async () => {
     if (!archivableNos.length) {
-      toast.error('没有可归档的条目：申领人要与员工档案同名，且正文不为空');
+      toast.error('没有可归入档案的条目：申领人要与员工档案同名，且正文不为空');
       return;
     }
     setArchiving(true);
@@ -269,10 +269,10 @@ export default function BusinessForms() {
     if (saved) {
       setArchivedCount((n) => n + saved);
       toast.success(
-        `已记入 ${saved} 条员工档案${skipped ? `，另有 ${skipped} 条未匹配到同名员工、未归档` : ''}`
+        `已记入 ${saved} 条员工档案${skipped ? `，另有 ${skipped} 条未匹配到同名员工、未归入档案` : ''}`
       );
     }
-    if (failed.length) toast.error(`归档失败：${failed.join('；')}`);
+    if (failed.length) toast.error(`归入档案失败：${failed.join('；')}`);
   };
 
   return (

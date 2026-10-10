@@ -50,7 +50,8 @@ async function main() {
   runMigrations();
 
   // ---------- 播种测试数据 ----------
-  // 员工：db.ts 的 seedIfEmpty 会播种 45 条（模块加载时）。
+  // 员工：演示数据默认不再播种（见 server/db.ts demoSeedEnabled），
+  // 本脚本经 npm run test:server 启动时带着 AMS_SEED_DEMO=1，模块加载时播 45 条。
   const empTotal = (db.prepare("SELECT COUNT(*) AS c FROM employees").get() as any).c;
   check("员工种子数据存在", empTotal >= 1, `count=${empTotal}`);
 

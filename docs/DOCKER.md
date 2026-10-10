@@ -103,6 +103,7 @@ docker inspect --format='{{.State.Health.Status}}' ams
 | `PORT` | `3000` | 监听端口（已 EXPOSE 3000） |
 | `TZ` | `Asia/Shanghai`（Dockerfile 内） | **不要留成 UTC**：考勤归属日、合同剩余天数、提醒扫描的"今天"都按本地日历日判定，偏移 8 小时会整体算错，而 CI 把 e2e 钉在 Asia/Shanghai，测试全绿也发现不了 |
 | `AMS_ADMIN_PASSWORD` | 空（随机生成） | 首启管理员口令覆盖值 |
+| `AMS_SEED_DEMO` | 不设（**不播**） | 空库启动时是否播 45 名「员工 N」+ 演示部门树/默认班次/默认文件夹。生产部署别设；演示或联调才设 `1` |
 | `DATA_DIR` | `/app/data` | SQLite 数据目录（库/上传/备份/模板，见「数据持久化」） |
 | `TRUST_PROXY` | 不设（不读 XFF） | 只有放在可信反向代理后面才设，值 = 跳数；乱设等于允许客户端伪造来源 IP |
 | `BACKUP_ENABLED` | `true` | `false` 关闭定时备份 |

@@ -26,9 +26,21 @@ export interface MonthlySummaryRow {
   missingCount: number;
 }
 
+/** 某个月的打卡概况（月份快捷切换用） */
+export interface PunchMonthStat {
+  /** YYYY-MM */
+  month: string;
+  /** 该月有打卡的日期数（不是打卡条数） */
+  days: number;
+  /** 该月打卡总条数 */
+  punches: number;
+}
+
 export interface MonthlySummaryResponse {
   month: string;
   rows: MonthlySummaryRow[];
+  /** 有打卡的月份清单（近 12 个月，倒序）；新库为空数组 */
+  stats?: PunchMonthStat[];
 }
 
 /** 部门工作时段（自动对班的配置） */
@@ -41,6 +53,10 @@ export interface DeptShiftRule {
   endTime: string;
   /** 1=周一 … 7=周日 */
   workdays: number[];
+  /** 首卡超容忍时记「缺上班卡」而非「未对班」。默认 false 保持保守口径。 */
+  assumeMissingIn: boolean;
+  /** 下班点之后的加班余量（分钟），缺省 120。 */
+  overtimeGraceMinutes: number;
 }
 
 export interface EffectiveRulesView {
@@ -109,6 +125,10 @@ export const attendanceApi = {
   fetchMonthlySummary: (month: string): Promise<MonthlySummaryResponse> =>
     http.get<MonthlySummaryResponse>(`/attendance/summary?month=${encodeURIComponent(month)}`),
 
+  /** 不指定月份：服务端返回最近有数据的月份（新库则回退当月） */
+  fetchLatestMonthlySummary: (): Promise<MonthlySummaryResponse> =>
+    http.get<MonthlySummaryResponse>('/attendance/summary'),
+
   // ---- 异常 ----
   fetchAnomalies: (): Promise<Anomaly[]> => http.get<Anomaly[]>('/attendance/anomalies'),
   /** 上一次分析的覆盖率（服务端留档） */
@@ -147,12 +167,27 @@ export interface PunchImportRow {
   duplicate: boolean;
 }
 
+/** 表形状识别结果：让界面说清「这张表是怎么读的」 */
+export interface PunchImportLayout {
+  /** wide = 企业微信横排表（一行一人、一列一天）；tall = 标准竖排模板 */
+  layout: 'wide' | 'tall';
+  reason: string;
+  detected?: {
+    headerRow: number;
+    dateColumns: number;
+    firstDate: string;
+    lastDate: string;
+    people: number;
+  };
+}
+
 export interface PunchImportPreview {
   total: number;
   valid: number;
   invalid: number;
   duplicates: number;
   rows: PunchImportRow[];
+  layout: PunchImportLayout;
 }
 
 export interface PunchImportJob {

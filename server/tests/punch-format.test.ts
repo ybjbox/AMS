@@ -138,9 +138,37 @@ describe("写路径实际行为", () => {
 });
 
 describe("月报默认月份", () => {
-  it("不带 month 时取本地当月（UTC 口径下每月 1 日凌晨会查成上月）", async () => {
-    const res = await fetch(`${base}/summary`);
-    const json = (await res.json()) as { month: string };
+  // 2026-10-10 起改了默认口径：不带 month 时取「最近有打卡的月份」，
+  // 而不是当月（当月常只有 1~2 天，打开就是半截报表）。一条打卡都没有时才回退本地当月，
+  // 该分支由 scripts/verify-fresh-migrate.ts 在全新库上钉住（latestPunchMonth() === null）。
+  const FAR_MONTH = "2099-01";
+  const FAR_DATE = "2099-01-06";
+
+  afterAll(() => {
+    db.prepare("DELETE FROM punch_records WHERE employeeId=?").run(emp.id);
+  });
+
+  it("不带 month 时取最近有打卡的月份，并把月份清单回给前端", async () => {
+    insertSourcedRecords([
+      { employeeId: emp.id, employeeName: emp.name, date: FAR_DATE, time: "08:00:00", source: "test" },
+    ]);
+    const json = (await (await fetch(`${base}/summary`)).json()) as {
+      month: string;
+      stats: { month: string }[];
+    };
+    expect(json.month).toBe(FAR_MONTH);
+    expect(json.stats[0].month).toBe(FAR_MONTH);
+    // 不带月份也不能退化成"按 UTC 口径的当月"——本地当月与 UTC 当月在每月 1 日凌晨会差一个月
+    expect(json.month).not.toBe(new Date(Date.now() + 8 * 3600_000).toISOString().slice(0, 7));
+  });
+
+  it("显式带 month 时按指定月份，不被最近月份顶掉", async () => {
+    insertSourcedRecords([
+      { employeeId: emp.id, employeeName: emp.name, date: FAR_DATE, time: "08:00:00", source: "test" },
+    ]);
+    const json = (await (await fetch(`${base}/summary?month=${localToday().slice(0, 7)}`)).json()) as {
+      month: string;
+    };
     expect(json.month).toBe(localToday().slice(0, 7));
   });
 });

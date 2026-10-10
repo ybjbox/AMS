@@ -90,7 +90,7 @@ export default function DiagnosticsPanel() {
             <Server className="w-3.5 h-3.5 mr-1.5" /> 服务状态
           </div>
           <div className={`text-lg font-bold ${statusColor}`} data-testid="diag-status">
-            {data ? (data.health.status === 'ok' ? '正常' : '降级') : '—'}
+            {data ? (data.health.status === 'ok' ? '正常' : '有异常') : '—'}
           </div>
           <div className="text-xs text-muted-foreground mt-0.5 tabular-nums">
             运行 {data ? formatUptime(data.health.uptimeSec) : '—'}

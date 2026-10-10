@@ -50,7 +50,21 @@ function flattenDepartments(
   return out;
 }
 
-type DraftRule = { id?: string; departmentId: string; name: string; startTime: string; endTime: string; workdays: number[] };
+type DraftRule = {
+  id?: string;
+  departmentId: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+  workdays: number[];
+  assumeMissingIn: boolean;
+  overtimeGraceMinutes: number;
+};
+
+/** 默认加班余量，与服务端 shiftMatch.OVERTIME_GRACE_MINUTES 一致 */
+const DEFAULT_GRACE = 120;
+/** 首卡容忍上限，与服务端 shiftMatch.MATCH_TOLERANCE_MINUTES 一致（仅用于文案说明） */
+const MATCH_TOLERANCE_MINUTES = 180;
 
 /**
  * 部门工作时段：按打卡时间自动对班的配置面（N1 判定层）。
@@ -134,6 +148,8 @@ export default function ShiftRules() {
           startTime: draft.startTime,
           endTime: draft.endTime,
           workdays: draft.workdays,
+          assumeMissingIn: draft.assumeMissingIn,
+          overtimeGraceMinutes: draft.overtimeGraceMinutes,
         });
       } else {
         await attendanceApi.createShiftRule({
@@ -142,6 +158,8 @@ export default function ShiftRules() {
           startTime: draft.startTime,
           endTime: draft.endTime,
           workdays: draft.workdays,
+          assumeMissingIn: draft.assumeMissingIn,
+          overtimeGraceMinutes: draft.overtimeGraceMinutes,
         });
       }
       await load();
@@ -157,7 +175,7 @@ export default function ShiftRules() {
   const onDelete = async (rule: DeptShiftRule) => {
     const ok = await confirm({
       title: `删除「${rule.departmentName || '部门'} · ${rule.name}」？`,
-      description: '该部门若无其它时段，员工会退回上一级部门的时段或逐日排班口径。',
+      description: '该部门若无其它时段，员工会沿用上一级部门的时段；再没有就不参与异常判定。',
       confirmText: '删除',
       variant: 'danger',
     });
@@ -177,8 +195,8 @@ export default function ShiftRules() {
         <div>
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">部门工作时段</h2>
           <p className="text-xs text-muted-foreground mt-1">
-            不用逐日排班：按当天首卡时间在该部门的时段里自动对班，对不上就不判定（异常分析页会列出原因）。
-            未配置的部门自动沿用组织树上级部门的时段。支持三班倒与跨午夜交接（见下方时段说明）。
+            系统按当天第一次打卡的时间，自动对上该部门的工作时段；对不上就不判定（原因会在「异常分析」页列出）。
+            没配时段的部门，自动沿用其上级部门的时段。支持三班倒与跨午夜交接（见下方说明）。
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -199,7 +217,7 @@ export default function ShiftRules() {
           </Select>
           <Button
             onClick={() =>
-              setDraft({ departmentId: optionList[0]?.id ?? '', name: '', startTime: '09:00', endTime: '18:00', workdays: [1, 2, 3, 4, 5] })
+              setDraft({ departmentId: optionList[0]?.id ?? '', name: '', startTime: '09:00', endTime: '18:00', workdays: [1, 2, 3, 4, 5], assumeMissingIn: false, overtimeGraceMinutes: DEFAULT_GRACE })
             }
             disabled={!canManage || optionList.length === 0}
             title={optionList.length === 0 ? '部门树还没加载好' : undefined}
@@ -215,7 +233,7 @@ export default function ShiftRules() {
           <Info className="w-4 h-4 shrink-0 mt-0.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
           <span>
             {effective.rules.length === 0
-              ? '该部门及其上级都没有配置时段，员工会退回逐日排班口径（没有排班则不参与异常判定）。'
+              ? '该部门及其上级都没有配置时段，该部门的员工不参与异常判定。'
               : `生效时段 ${effective.rules.length} 条${effective.inherited ? `，继承自「${effective.sourceDepartmentName}」（向上 ${effective.depth} 级）` : `，来自本部门`}：${effective.rules
                   .map((r) => `${r.name} ${r.startTime}-${r.endTime}`)
                   .join('；')}`}
@@ -232,7 +250,7 @@ export default function ShiftRules() {
         <EmptyState
           title="还没有配置部门工作时段"
           icon={CalendarClock}
-          description="配好时段后，异常分析就不再依赖逐日排班：员工几点上班按打卡时间对班决定。"
+          description="配好时段后，系统按打卡时间自动对班并判定异常；再去「异常分析」点「一键分析异常」就能看到结果。"
         />
       ) : (
         <div className="overflow-x-auto">
@@ -267,6 +285,18 @@ export default function ShiftRules() {
                   </td>
                   <td className="px-4 py-2 text-sm">
                     <Badge variant="neutral">{workdayText(rule.workdays)}</Badge>
+                    {(rule.assumeMissingIn || rule.overtimeGraceMinutes !== DEFAULT_GRACE) && (
+                      <span className="ml-1 block space-y-0.5 text-2xs leading-tight">
+                        {rule.assumeMissingIn && (
+                          <Badge variant="warning" className="font-normal">上班卡没打按缺卡记</Badge>
+                        )}
+                        {rule.overtimeGraceMinutes !== DEFAULT_GRACE && (
+                          <Badge variant="primary" className="font-normal">
+                            下班后 {rule.overtimeGraceMinutes} 分钟内算本班
+                          </Badge>
+                        )}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-2 text-right whitespace-nowrap">
                     {canManage ? (
@@ -274,7 +304,16 @@ export default function ShiftRules() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          onClick={() => setDraft({ ...rule })}
+                          onClick={() => setDraft({
+                            id: rule.id,
+                            departmentId: rule.departmentId,
+                            name: rule.name,
+                            startTime: rule.startTime,
+                            endTime: rule.endTime,
+                            workdays: rule.workdays,
+                            assumeMissingIn: rule.assumeMissingIn,
+                            overtimeGraceMinutes: rule.overtimeGraceMinutes,
+                          })}
                           aria-label={`编辑 ${rule.departmentName} ${rule.name}`}
                           title="编辑"
                         >
@@ -392,8 +431,64 @@ export default function ShiftRules() {
                 })}
               </div>
             </div>
+            <div className="space-y-1.5">
+              <span className="text-xs font-medium text-muted-foreground">特殊情况处理（可选，默认关）</span>
+              <div className="space-y-2 pt-1">
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    id="sr-assume-missing-in"
+                    checked={draft.assumeMissingIn}
+                    onCheckedChange={(next) => setDraft({ ...draft, assumeMissingIn: next === true })}
+                    className="border-zinc-300 dark:border-zinc-600 mt-0.5"
+                  />
+                  <span className="text-sm leading-snug">
+                    上班卡没打时，记「缺上班卡」
+                    <span className="block text-2xs text-muted-foreground">
+                      不勾：上班时间过去 {MATCH_TOLERANCE_MINUTES} 分钟（3 小时）才开始打卡，这一天就不算班次了。
+                      勾上：算「缺上班卡」。适用于当天确实来上班了、只是忘了打上班卡的部门。
+                    </span>
+                  </span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    id="sr-grace-enabled"
+                    checked={draft.overtimeGraceMinutes !== DEFAULT_GRACE}
+                    onCheckedChange={(next) =>
+                      setDraft({ ...draft, overtimeGraceMinutes: next === false ? DEFAULT_GRACE : 300 })
+                    }
+                    className="border-zinc-300 dark:border-zinc-600 mt-0.5"
+                  />
+                  <span className="text-sm leading-snug">
+                    下班卡允许晚点打
+                    <span className="block text-2xs text-muted-foreground">
+                      不勾：下班后 {DEFAULT_GRACE} 分钟内打的卡还算这个班，超时就作废。
+                      勾上：按下面填的分钟数放宽 —— 只有确实经常加班到很晚的部门才需要（例如填 300 分钟，可以覆盖干到晚上 10 点多才走）。
+                    </span>
+                  </span>
+                </div>
+                {draft.overtimeGraceMinutes !== DEFAULT_GRACE && (
+                  <div className="ml-6 flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">下班后仍算本班（分钟）</span>
+                    <Input
+                      id="sr-grace-minutes"
+                      type="number"
+                      min={0}
+                      max={720}
+                      value={draft.overtimeGraceMinutes}
+                      onChange={(e) =>
+                        setDraft({
+                          ...draft,
+                          overtimeGraceMinutes: Math.max(0, Math.min(720, Number(e.target.value) || 0)),
+                        })
+                      }
+                      className="w-28"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
             <p className="text-xs text-muted-foreground">
-              同一部门可以配多条时段（例如 8:00-17:00 与 9:00-18:00 并存），判定时取与首卡最接近的那条。
+              同一部门可以配多条时段（例如 8:00-17:00 和 9:00-18:00 都行），系统会选跟当天第一次打卡最接近的那条。
               <span className="block mt-1">
                 三班倒直接填跨日时段：24 点下班填 00:00（会标「次日」），夜班 20:00–04:00 就填 20:00 与 04:00。
                 凌晨交接时，已有上班卡的人其 00:0x 的卡算上一班的下班卡，没有的人算本班上班卡。

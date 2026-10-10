@@ -171,11 +171,34 @@ function validateRow(
 
   // 部门存在性校验
   if (typeof data.department === "string") {
-    const exists = db
-      .prepare("SELECT 1 FROM departments WHERE name = ?")
-      .get(data.department);
-    if (!exists) {
-      errors.push(`部门「${data.department}」不存在（请先在部门管理中添加）`);
+    const name = data.department.trim();
+    // 打卡机导出的部门列可能是一串多级路径（如「市场部;市场部/夜班组」或顺序相反的
+    // 「市场部/夜班组;市场部」）。本系统一个员工只挂一个部门（employees.departmentId 单值），
+    // 校验是 `name = ?` 精确匹配，整串必然匹配不上 → 只报「部门不存在」看不出真正原因。
+    // 这里先给出可执行的提示：按业务口径应填最具体的那一段。
+    if (name.includes(";") || name.includes("/")) {
+      const segs = name.split(";").map((x) => x.trim()).filter(Boolean);
+      const leaves = segs.map((s) => {
+        const parts = s.split("/").map((x) => x.trim()).filter(Boolean);
+        return { s, depth: parts.length, leaf: parts[parts.length - 1] ?? s };
+      });
+      if (segs.length > 1) {
+        leaves.sort((a, b) => b.depth - a.depth || a.s.localeCompare(b.s));
+        const suggested = leaves[0].leaf;
+        const ok = !!db.prepare("SELECT 1 FROM departments WHERE name = ?").get(suggested);
+        errors.push(
+          ok
+            ? `部门填了多个值「${name}」，本系统一个员工只挂一个部门，请只填「${suggested}」`
+            : `部门「${name}」是多个值拼在一起的，请拆开填；最具体的一段是「${suggested}」，但它在部门管理里也不存在`
+        );
+      } else {
+        errors.push(`部门「${name}」填了层级路径，请只填部门管理里的部门名（如「夜班组」），不要带路径`);
+      }
+    } else {
+      const exists = db.prepare("SELECT 1 FROM departments WHERE name = ?").get(name);
+      if (!exists) {
+        errors.push(`部门「${name}」不存在（请先在部门管理中添加）`);
+      }
     }
   }
 

@@ -18,11 +18,59 @@ const SYSTEM_ROLES = ["SUPER_ADMIN", "ADMIN", "HR", "EMPLOYEE"] as const;
 
 // ---------------------------------------------------------------- 错误收敛
 
-/** 把 zod 校验错误收敛成前端可读的单条字符串（前端统一读 response.data.error）。 */
+/**
+ * 字段名 → 中文标签。
+ *
+ * zod 的 `issue.path` 是 schema 里的英文键（`employeeName` / `startTime`），
+ * 直接拼到报错前面会把 `employeeName: 排班缺少姓名` 这种半中半英的串甩到界面上 ——
+ * 看报错的人（HR、你自己）不认识这些键，路径前缀纯属噪音还有误导性。
+ *
+ * 这里把键翻成界面上真用的那个词。表里没有的键走下面的兜底：只显示报错本身，
+ * 不把生僻的英文键暴露出去（少一层上下文，好过让用户猜 employeeId 是什么）。
+ */
+const FIELD_LABELS: Record<string, string> = {
+  // 通用
+  name: "名称", title: "标题", body: "正文", date: "日期", kind: "类型",
+  type: "类型", id: "编号", mode: "模式", enabled: "是否启用", priority: "优先级",
+  records: "记录", children: "子项", parentId: "上级", relation: "关系",
+  // 人员
+  employeeId: "员工编号", employeeName: "姓名", departmentId: "部门", department: "部门",
+  displayName: "显示名称", username: "用户名", password: "密码",
+  currentPassword: "当前密码", newPassword: "新密码", role: "角色",
+  // 考勤
+  startTime: "上班时间", endTime: "下班时间", workdays: "工作日",
+  schedules: "排班", punches: "打卡",
+  // 审批 / 合同
+  amount: "数量", refKey: "关联单号", reason: "申请事由",
+  contractExpiryDays: "合同到期天数", probationConversionDays: "试用期天数",
+  includeResigned: "包含离职人员",
+  // 对话
+  messages: "消息", content: "内容", useData: "使用业务数据", agentId: "助手",
+  config: "配置",
+  // 企业微信 / 导入
+  corpId: "企业 ID", corpSecret: "应用密钥", baseUrl: "接口地址", proxyUrl: "代理地址",
+  overlapMinutes: "重叠分钟数", syncIntervalMinutes: "同步间隔",
+  kindLabel: "类型名称", key: "列名",
+};
+
+/** 取路径末段的字段名（`a.b.c` 取 `c`）；数组成员（数字段）返回空串。 */
+function leafField(path: ReadonlyArray<PropertyKey>): string {
+  const last = path[path.length - 1];
+  return typeof last === "string" ? last : "";
+}
+
+/**
+ * 把 zod 校验错误收敛成前端可读的单条字符串（前端统一读 response.data.error）。
+ *
+ * 只在报错本身没点名道姓时才补字段名 —— 像 `employeeName: 排班缺少姓名`
+ * 拼起来是「姓名: 排班缺少姓名」，重复且啰嗦。
+ */
 export function formatZodError(error: z.ZodError): string {
   const msgs = error.issues.map((issue) => {
-    const path = issue.path.join(".");
-    return path ? `${path}: ${issue.message}` : issue.message;
+    const field = leafField(issue.path);
+    const label = field ? FIELD_LABELS[field] : undefined;
+    if (!label || issue.message.includes(label)) return issue.message;
+    return `${label}：${issue.message}`;
   });
   return msgs.slice(0, 5).join("；") || "请求参数不合法";
 }
@@ -196,7 +244,7 @@ export const wecomBindingsSchema = z.object({
 
 export const folderCreateSchema = z
   .object({
-    name: z.string({ error: "name is required" }).min(1, "name is required"),
+    name: z.string({ error: "文件夹名称不能为空" }).min(1, "文件夹名称不能为空"),
     parentId: z.union([z.string(), z.null()]).optional(),
   })
   .loose();
@@ -205,7 +253,7 @@ export const folderUpdateSchema = folderCreateSchema.partial();
 
 export const documentSetCreateSchema = z
   .object({
-    name: z.string({ error: "name is required" }).min(1, "name is required"),
+    name: z.string({ error: "文档套件名称不能为空" }).min(1, "文档套件名称不能为空"),
   })
   .loose();
 
@@ -251,9 +299,17 @@ export const shiftUpdateSchema = shiftUpsertSchema.partial();
  * 否则一个不带 workdays 的 PUT 会把夜班的工作日悄悄改回周一到周五。
  */
 const workdaysField = z
-  .array(z.coerce.number().int().min(1, "工作日需为 1-7").max(7, "工作日需为 1-7"))
+  .array(z.coerce.number().int().min(1, "工作日请填 1 到 7 的数字（1=周一，7=周日）").max(7, "工作日请填 1 到 7 的数字（1=周一，7=周日）"))
   .max(7, "一周最多 7 天")
   .refine((v) => new Set(v).size === v.length, "工作日不能重复");
+
+/** 加班余量上限：一天 1440 分钟，取 0~720 已覆盖「干到次日凌晨前下班」的实际需要 */
+const overtimeGraceField = z.coerce
+  .number()
+  .int("加班余量请填整数分钟")
+  .min(0, "加班余量不能为负")
+  .max(720, "加班余量最多 720 分钟（12 小时）")
+  .optional();
 
 export const deptShiftRuleSchema = z.object({
   departmentId: z.string({ error: "缺少部门" }).trim().min(1, "缺少部门").max(32, "部门 ID 过长"),
@@ -261,6 +317,8 @@ export const deptShiftRuleSchema = z.object({
   startTime: timeStr("上班时间"),
   endTime: timeStr("下班时间"),
   workdays: workdaysField.default([1, 2, 3, 4, 5]),
+  assumeMissingIn: z.boolean().optional(),
+  overtimeGraceMinutes: overtimeGraceField,
 });
 
 /** 时段更新：姓名/两个时间/工作日都要带上（数据层的 assertShape 无条件读它们） */
@@ -270,6 +328,8 @@ export const deptShiftRuleUpdateSchema = z.object({
   startTime: timeStr("上班时间"),
   endTime: timeStr("下班时间"),
   workdays: workdaysField,
+  assumeMissingIn: z.boolean().optional(),
+  overtimeGraceMinutes: overtimeGraceField,
 });
 
 /**
@@ -384,7 +444,7 @@ const chatRole = z.enum(["user", "assistant"], { error: "消息角色只允许 u
 const chatContent = z.string().max(20_000, "单条消息过长（上限 2 万字）");
 
 export const chatMessagesSchema = z.object({
-  messages: z.array(z.object({ role: chatRole, content: chatContent })).min(1, "messages 不能为空").max(50, "一次最多携带 50 条上下文"),
+  messages: z.array(z.object({ role: chatRole, content: chatContent })).min(1, "请至少发一条消息").max(50, "一次最多携带 50 条上下文"),
   useData: z.boolean().optional(),
 });
 

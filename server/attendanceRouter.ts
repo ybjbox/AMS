@@ -20,7 +20,7 @@ import {
   listRecords, upsertRecords,
   upsertRecord, deleteRecord, clearRecords,
   listAnomalies, analyzeAnomalies, analyzeAttendance, getAttendanceAnalysisStatus,
-  PunchFormatError, VersionConflictError, monthlySummary } from "./attendanceDb.ts";
+  PunchFormatError, VersionConflictError, monthlySummary, punchMonthStats } from "./attendanceDb.ts";
 import {
   createDeptShiftRule,
   deleteDeptShiftRule,
@@ -378,12 +378,19 @@ attendanceRouter.get("/records/import/jobs/:id", (req, res) => {
 // ---- Anomalies ----
 /** 月度考勤汇总（月报）：GET /api/attendance/summary?month=YYYY-MM */
 attendanceRouter.get("/summary", (req, res) => {
+  const asked = typeof req.query.month === "string" ? req.query.month : "";
+  // 有打卡的月份清单（近 12 个月）：既定默认月份，也回给前端做快捷切换
+  const stats = punchMonthStats();
   const month =
-    typeof req.query.month === "string" && /^\d{4}-\d{2}$/.test(req.query.month)
-      ? req.query.month
-      // 本地当月：UTC 口径下每月 1 日 00:00–07:59 会查成上个月
-      : localToday().slice(0, 7);
-  res.json({ month, rows: monthlySummary(month) });
+    /^\d{4}-\d{2}$/.test(asked)
+      ? asked
+      // 没指定月份时看最近有数据的月份，而不是当月 —— 当月往往只有几天，
+      // 打开就是半截报表（实测 10 月 10 日默认看到只有 10 月 1 日一天）。
+      // 新库没有打卡时回退本地当月（与原行为一致）。
+      : (stats[0]?.month ??
+        // 本地当月：UTC 口径下每月 1 日 00:00–07:59 会查成上个月
+        localToday().slice(0, 7));
+  res.json({ month, rows: monthlySummary(month), stats });
 });
 
 attendanceRouter.get("/anomalies", (_req, res) => {

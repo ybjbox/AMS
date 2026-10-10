@@ -335,7 +335,7 @@ function applyCompLeave(approval: ApprovalRow): void {
   if (Number(info.changes ?? 0) === 0) {
     createNotification({
       title: "调休余额扣减未成功",
-      message: `你的调休申请已通过，但调休台账余额不足以扣减 ${hours}h（可能被并发申请占用），请联系行政人工核销。`,
+      message: `你的调休申请已通过，但调休余额不够扣 ${hours} 小时（可能同时有别的申请在占用），请联系行政人工处理。`,
       type: "warning",
       recipient: approval.applicant,
     });

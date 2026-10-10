@@ -39,12 +39,15 @@ function ok(name: string, cond: boolean, extra = '') {
 }
 
 async function waitForHealth() {
-  for (let i = 0; i < 60; i++) {
+  // tsx 冷启动编译整个服务端，本机实测约 21 秒；60×300ms=18s 的旧预算会把
+  // 「启动慢」误判成「起不来」（2026-10-10 test:server 17/19 就是这么 flake 的）。
+  // 上限放到 60 秒，真起不来时 kill 照旧，失败只是晚报 40 秒。
+  for (let i = 0; i < 120; i++) {
     try {
       const r = await fetch(`${BASE}/api/health`);
       if (r.ok) return true;
     } catch {}
-    await new Promise((r) => setTimeout(r, 300));
+    await new Promise((r) => setTimeout(r, 500));
   }
   return false;
 }

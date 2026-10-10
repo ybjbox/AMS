@@ -7,13 +7,13 @@ interface Props {
   isLoading: boolean;
 }
 
-/** 热力等级：按当日异常人数（迟到+早退+缺卡）占比分 4 档 */
-function heatLevel(stat: { present: number; late: number; early: number; missing: number; scheduled: number }): { cls: string; label: string } {
+/** 热力等级：按当日异常人数（迟到+早退+缺卡）占判定班次的比例分 4 档 */
+function heatLevel(stat: { judged: number; present: number; late: number; early: number; missing: number }): { cls: string; label: string } {
   const issues = stat.late + stat.early + stat.missing;
-  if (stat.scheduled === 0 || (stat.present === 0 && issues === 0)) {
+  if (stat.judged === 0 || (stat.present === 0 && issues === 0)) {
     return { cls: 'bg-zinc-100 dark:bg-zinc-800', label: '无数据' };
   }
-  const ratio = issues / Math.max(1, stat.scheduled);
+  const ratio = issues / Math.max(1, stat.judged);
   if (ratio === 0) return { cls: 'bg-emerald-500/85 hover:bg-emerald-500', label: '全勤' };
   if (ratio <= 0.15) return { cls: 'bg-lime-400/85 hover:bg-lime-400', label: '轻微异常' };
   if (ratio <= 0.35) return { cls: 'bg-amber-400/85 hover:bg-amber-400', label: '异常较多' };
@@ -58,7 +58,9 @@ export default function AttendanceHeatmap({ stats, isLoading }: Props) {
                 <div
                   key={d.date}
                   className={`aspect-square rounded-sm min-w-0 ${lv.cls} transition-colors`}
-                  title={`${d.date}（${lv.label}）：出勤 ${d.present}，迟到 ${d.late}，早退 ${d.early}，缺卡 ${d.missing}`}
+                  title={`${d.date}（${lv.label}）：出勤 ${d.present}，迟到 ${d.late}，早退 ${d.early}，缺卡 ${d.missing}${
+                    d.unmatched > 0 ? `，未判定 ${d.unmatched}` : ''
+                  }`}
                 />
               );
             })}
@@ -68,6 +70,23 @@ export default function AttendanceHeatmap({ stats, isLoading }: Props) {
             <span>{dayLabel(stats.days[Math.floor(stats.days.length / 2)]?.date ?? '')}</span>
             <span>今天</span>
           </div>
+          {/* 灰色格子是"没打卡数据"，不是"全员正常"——不说出来会被读成一切正常 */}
+          {(stats.noDataDays > 0 || stats.noPlanEmployees > 0) && (
+            <p className="mt-2 text-2xs text-muted-foreground">
+              {stats.noDataDays > 0 && (
+                <>
+                  近 30 天有 {stats.noDataDays} 天没有打卡数据
+                  {stats.lastPunchDate ? `（最近一次打卡 ${stats.lastPunchDate}）` : ''}，这些天显示为灰色。
+                </>
+              )}
+              {stats.noPlanEmployees > 0 && (
+                <>
+                  {stats.noDataDays > 0 ? ' ' : ''}
+                  另有 {stats.noPlanEmployees} 人所在部门还没配工作时段，不参与判定。
+                </>
+              )}
+            </p>
+          )}
           {/* 汇总 */}
           <div className="grid grid-cols-4 gap-2 mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800 text-center">
             {(() => {

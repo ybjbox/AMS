@@ -5,13 +5,13 @@
  *   当日仅一次打卡 → 按时间判定缺上班卡/缺下班卡；
  *   早退 → EARLY_LEAVE。
  */
-import { db, transact } from "./db.ts";
+import { db, transact, demoSeedEnabled } from "./db.ts";
 import { getSetting, setSetting } from "./settingsDb.ts";
 import crypto from "crypto";
 import { resolvePaging, toListResult, ListResult } from "./listQuery.ts";
 import { type DbRow, asString, asNumber, asNullableNumber, likeClause, likeContains } from "./sqliteUtil.ts";
 import { resolveRulesForDepartment, toCandidates } from "./shiftRulesDb.ts";
-import { candidateFromShift, resolveInstances, type ShiftCandidate } from "./shiftMatch.ts";
+import { candidateFromShift, resolveInstances, weekdayOf, type ShiftCandidate } from "./shiftMatch.ts";
 
 // ---------- 行类型（typescript-best-practices：边界解析） ----------
 export interface ShiftRow {
@@ -631,6 +631,51 @@ export interface MonthlySummaryRow {
   missingCount: number;
 }
 
+/** 某个月的打卡概况（供月报做月份快捷切换） */
+export interface PunchMonthStat {
+  /** YYYY-MM */
+  month: string;
+  /** 该月有打卡的日期数（不是打卡条数） */
+  days: number;
+  /** 该月打卡总条数 */
+  punches: number;
+}
+
+/**
+ * 最近若干个「有打卡」的月份，按月份倒序（默认近 12 个月）。
+ *
+ * 用途：月报月份选择器旁边直接列出「哪几个月有数据、各有几天打卡」，
+ * 免得 HR 靠猜 —— 10 月只有 1 天、9 月有 32 天时，一眼就能看出该看哪个。
+ */
+export function punchMonthStats(limit = 12): PunchMonthStat[] {
+  const rows = db
+    .prepare(
+      `SELECT substr(date, 1, 7) AS month, COUNT(DISTINCT date) AS days, COUNT(*) AS punches
+         FROM punch_records
+        GROUP BY month
+        ORDER BY month DESC
+        LIMIT ?`
+    )
+    .all(Math.max(1, Math.min(limit, 60))) as { month?: unknown; days?: unknown; punches?: unknown }[];
+  const out: PunchMonthStat[] = [];
+  for (const r of rows) {
+    const month = r.month === null || r.month === undefined ? "" : String(r.month);
+    if (!/^\d{4}-\d{2}$/.test(month)) continue;
+    out.push({ month, days: Number(r.days ?? 0), punches: Number(r.punches ?? 0) });
+  }
+  return out;
+}
+
+/**
+ * 有打卡记录的最近月份（YYYY-MM），供月报默认选中。
+ *
+ * 月报原来默认当月 —— 10 月 10 日打开看到的是只有 10 月 1 日一天的半截报表，
+ * 完整的 9 月反而要手动切过去。新库（一条打卡都没有）返回 null，调用方回退当月。
+ */
+export function latestPunchMonth(): string | null {
+  return punchMonthStats(1)[0]?.month ?? null;
+}
+
 /**
  * 月度考勤汇总：按 员工 聚合当月打卡数据，套用与异常分析一致的规则。
  * 直接实时计算（不依赖 anomalies 表），保证报表始终是最新口径。
@@ -736,6 +781,222 @@ function approvedLeaveDayKeys(): Set<string> {
     /* approvals/accounts 表不存在时按无请假处理 */
   }
   return keys;
+}
+
+/** 窗口内某一天的聚合（看板热力图一行） */
+export interface AttendanceDayStatRow {
+  date: string;
+  /** 判定班次数：对上班并判定成功的班次实例数（热力分母；取代已废弃的"已排班人数"） */
+  judged: number;
+  /** 出勤人次 = 判定班次数（列出来是为了让界面不必自己算） */
+  present: number;
+  /** 迟到人次（>5 与 >15 都算迟到） */
+  late: number;
+  /** 早退人次 */
+  early: number;
+  /** 缺卡人次（缺上班卡 + 缺下班卡） */
+  missing: number;
+  /** 对不上任何时段的人日数（当天没判定，不是"没事"） */
+  unmatched: number;
+  /** 当天有打卡记录的「员工×日」数 */
+  punchDays: number;
+}
+
+/** 部门出勤率一行 */
+export interface DepartmentRateRow {
+  name: string;
+  /** 出勤率 %（一位小数）= 出勤人日 / 应出勤人日 */
+  rate: number;
+  attended: number;
+  expected: number;
+}
+
+export interface AttendanceWindowStats {
+  days: AttendanceDayStatRow[];
+  departmentRates: DepartmentRateRow[];
+  /** 窗口内最后一次打卡的日期（说明"这几天没数据"用） */
+  lastPunchDate: string | null;
+  /** 窗口内没有任何打卡的天数 */
+  noDataDays: number;
+  /** 窗口内既没时段也没排班、因而没参与判定的人数 */
+  noPlanEmployees: number;
+  /** 出勤率实际统计的起始日（窗口为空或全无数据时为 null） */
+  ratedFrom: string | null;
+  /** 出勤率实际统计的截止日（被"最近一次打卡"截断） */
+  ratedTo: string | null;
+}
+
+/**
+ * 按窗口（如近 30 天）聚合考勤概况，**与考勤模块同一套判定**：
+ * 走 buildShiftPlanner（部门时段优先、排班兜底）+ resolveInstances（班次实例，可跨零点），
+ * 请假日不判。原来这里自己抄了一份"排班 + 当天首末卡"的简化算法，
+ * 与异常分析/���报各说一套，排班界面撤掉后更是直接算成空 —— 现在只保留一份口径。
+ *
+ * 部门出勤率 = 出勤人日 / 应出勤人日：
+ *   应出勤 = 该员工当天有适用时段（时段的工作日命中）且不在已批准请假日；
+ *   出勤   = 当天至少有一个班次实例对上了班。
+ * 整天没打卡（缺勤/请假/调休）不计入出勤，请假也不计入应出勤 —— 两边口径一致。
+ */
+export function attendanceWindowStats(days: string[]): AttendanceWindowStats {
+  const windowDates = [...days].sort();
+  const from = windowDates[0] ?? "";
+  const to = windowDates[windowDates.length - 1] ?? "";
+  const inWindow = new Set(windowDates);
+  const dayRows = new Map<string, AttendanceDayStatRow>(
+    windowDates.map((date) => [
+      date,
+      { date, judged: 0, present: 0, late: 0, early: 0, missing: 0, unmatched: 0, punchDays: 0 },
+    ])
+  );
+  if (!from || !to) {
+    return {
+      days: [],
+      departmentRates: [],
+      lastPunchDate: null,
+      noDataDays: 0,
+      noPlanEmployees: 0,
+      ratedFrom: null,
+      ratedTo: null,
+    };
+  }
+
+  const planner = buildShiftPlanner();
+  const leaveDays = approvedLeaveDayKeys();
+
+  // 多取一天：班次实例可跨零点，窗口首日那班的下班卡可能打在次日（16:00–00:00 / 20:00–04:00）
+  const punchRows = db
+    .prepare(
+      `SELECT employeeId, employeeName, date, time FROM punch_records
+        WHERE date >= ? AND date <= ?`
+    )
+    .all(shiftDate(from, -1), to) as unknown as DbRow[];
+
+  const punchesOf = new Map<string, { date: string; time: string }[]>();
+  let lastPunchDate: string | null = null;
+  for (const r of punchRows) {
+    const employeeId = asString(r.employeeId);
+    const date = asString(r.date);
+    if (lastPunchDate === null || date > lastPunchDate) lastPunchDate = date;
+    const list = punchesOf.get(employeeId) ?? [];
+    list.push({ date, time: asString(r.time).slice(0, 5) });
+    punchesOf.set(employeeId, list);
+  }
+
+  // 员工 → 部门（部门名按 departmentId 联查，不读改名后不会自动更新的副本列）
+  const deptOf = new Map<string, string>();
+  const noPlanEmployees = new Set<string>();
+  const employeeRows = db
+    .prepare(
+      `SELECT e.id AS id, COALESCE(NULLIF(d.name, ''), NULLIF(e.department, ''), '未分配') AS dept
+         FROM employees e
+         LEFT JOIN departments d ON d.id = e.departmentId
+        WHERE e.status != '离职'`
+    )
+    .all() as unknown as DbRow[];
+  for (const r of employeeRows) deptOf.set(asString(r.id), asString(r.dept));
+
+  /** `${employeeId}__${date}` → 该天至少有一个班次实例对上了班 */
+  const judgedDays = new Set<string>();
+  const unmatchedDays = new Set<string>();
+  /** 已批准请假日：不判、不计入应出勤 */
+  const skippedLeave = (employeeId: string, date: string) => leaveDays.has(`${employeeId}__${date}`);
+
+  for (const [employeeId, punches] of punchesOf) {
+    // 当天有卡的「员工×日」先计入（热力图要区分"没打卡"与"没判定"）
+    for (const p of new Set(punches.map((p2) => p2.date))) {
+      if (!inWindow.has(p)) continue;
+      dayRows.get(p)!.punchDays += 1;
+    }
+
+    const plan = planner(employeeId);
+    if (plan.source === "none") {
+      noPlanEmployees.add(employeeId);
+      continue;
+    }
+    for (const outcome of resolveInstances(plan.candidates, punches)) {
+      const row = dayRows.get(outcome.date);
+      if (!row) continue; // 窗口外的班次实例（多取的那天带来的尾巴）
+      if (skippedLeave(employeeId, outcome.date)) continue;
+      if (outcome.kind === "unmatched") {
+        // unmatched 是"人日数"：同一员工同一天多个锚点对不上只算一天
+        unmatchedDays.add(`${employeeId}__${outcome.date}`);
+        continue;
+      }
+      row.judged += 1;
+      row.present += 1;
+      judgedDays.add(`${employeeId}__${outcome.date}`);
+      for (const finding of outcome.judgement.findings) {
+        if (finding.type === "LATE_5" || finding.type === "LATE_15") row.late += 1;
+        else if (finding.type === "EARLY_LEAVE") row.early += 1;
+        else row.missing += 1;
+      }
+    }
+  }
+  // unmatched 是"人日数"：同一员工同一天多个锚点对不上只算一天
+  const unmatchedPerDay = new Map<string, number>();
+  for (const key of unmatchedDays) {
+    const date = key.slice(key.indexOf("__") + 2);
+    unmatchedPerDay.set(date, (unmatchedPerDay.get(date) ?? 0) + 1);
+  }
+  for (const [date, count] of unmatchedPerDay) dayRows.get(date)!.unmatched = count;
+
+  // 部门出勤率：应出勤按"当天有适用时段"，出勤按"当天对上班"
+  //
+  // 分母只算到「最近一次打卡的那天」为止：打卡表还没导到今天时，
+  // 把 10/02–10/11 这些没数据的日子算成缺勤，出勤率会被凭空拉低三四成，
+  // 而那不是缺勤、只是还没数据。参与计算的首末日会一并返回给界面说明。
+  const ratedTo = lastPunchDate && lastPunchDate < to ? lastPunchDate : to;
+  const ratedFrom = from;
+  const deptAgg = new Map<string, { attended: number; expected: number }>();
+  if (ratedTo >= ratedFrom) {
+    for (const [employeeId, dept] of deptOf) {
+      const plan = planner(employeeId);
+      if (plan.source === "none") {
+        noPlanEmployees.add(employeeId);
+        continue;
+      }
+      const agg = deptAgg.get(dept) ?? { attended: 0, expected: 0 };
+      for (const day of windowDates) {
+        if (day > ratedTo) break;
+        if (skippedLeave(employeeId, day)) continue;
+        const weekday = weekdayOf(day);
+        if (!plan.candidates.some((c) => c.workdays.includes(weekday))) continue;
+        agg.expected += 1;
+        if (judgedDays.has(`${employeeId}__${day}`)) agg.attended += 1;
+      }
+      deptAgg.set(dept, agg);
+    }
+  }
+
+  const departmentRates: DepartmentRateRow[] = [...deptAgg.entries()]
+    .map(([name, v]) => ({
+      name,
+      rate: v.expected > 0 ? Math.round((v.attended / v.expected) * 1000) / 10 : 0,
+      attended: v.attended,
+      expected: v.expected,
+    }))
+    .sort((a, b) => b.rate - a.rate || b.expected - a.expected || a.name.localeCompare(b.name));
+
+  const ordered = windowDates.map((date) => dayRows.get(date)!);
+  const hasRated = ratedTo >= ratedFrom;
+  return {
+    days: ordered,
+    departmentRates,
+    lastPunchDate,
+    noDataDays: ordered.filter((d) => d.punchDays === 0).length,
+    noPlanEmployees: noPlanEmployees.size,
+    // 出勤率实际统计的区间（窗口被「最近一次打卡」截断时与窗口不同，界面要写出来）
+    ratedFrom: hasRated ? ratedFrom : null,
+    ratedTo: hasRated ? ratedTo : null,
+  };
+}
+
+/** YYYY-MM-DD 加减天数（纯字符串运算，避免本地时区把 00:00 挪走） */
+function shiftDate(date: string, deltaDays: number): string {
+  const [y, m, d] = date.split("-").map(Number);
+  if (!y || !m || !d) return date;
+  const t = Date.UTC(y, m - 1, d) + deltaDays * 86_400_000;
+  return new Date(t).toISOString().slice(0, 10);
 }
 
 /**
@@ -871,9 +1132,11 @@ export function analyzeAnomalies(): AnomalyRow[] {
 }
 
 // ---------- 首次播种（默认班次，与原 mock 一致） ----------
+// 与 db.seedIfEmpty 同一个开关：默认不播，理由见 db.demoSeedEnabled 的注释。
 (function seedShiftsIfEmpty() {
   const count = asNumber(db.prepare("SELECT COUNT(*) AS c FROM shifts").get()?.c);
   if (count > 0) return;
+  if (!demoSeedEnabled()) return;
   db.prepare("INSERT INTO shifts (id, name, startTime, endTime) VALUES (?, ?, ?, ?)").run(
     "1", "正常班", "09:00", "18:00"
   );

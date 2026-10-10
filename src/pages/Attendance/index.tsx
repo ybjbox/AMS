@@ -6,9 +6,38 @@ import Table from './components/Table';
 import MonthlyReport from './components/MonthlyReport';
 import ShiftRules from './components/ShiftRules';
 import { useAttendance } from './hooks/useAttendance';
+import { attendanceApi, type DeptShiftRule } from '@/services/attendanceApi';
+import { useEffect, useMemo, useState } from 'react';
+
+/** 「出勤人次」= 有打卡的「员工 × 日期」组合数（与判定口径一致，跨零点班次仍算一天）。 */
+function countPunchDays(records: { employeeId: string; date: string }[]): number {
+  const days = new Set<string>();
+  for (const r of records) days.add(`${r.employeeId}|${r.date}`);
+  return days.size;
+}
 
 export default function Attendance() {
   const attendanceData = useAttendance();
+  const [shiftRuleCount, setShiftRuleCount] = useState(0);
+
+  // 部门时段条数：Stats 需要的口径条数。改动发生在 ShiftRules 组件内部，
+  // 这里靠「切回本页时重取」保持同步（避免为此再引一层全局 store）。
+  useEffect(() => {
+    let alive = true;
+    attendanceApi
+      .fetchShiftRules()
+      .then((rules: DeptShiftRule[]) => {
+        if (alive) setShiftRuleCount(rules.length);
+      })
+      .catch(() => {
+        if (alive) setShiftRuleCount(0);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [attendanceData.activeTab]);
+
+  const punchDays = useMemo(() => countPunchDays(attendanceData.records), [attendanceData.records]);
 
   return (
     <PageContainer width="none">
@@ -23,8 +52,6 @@ export default function Attendance() {
             {(
               [
                 { tab: 'records', label: '打卡记录' },
-                { tab: 'schedules', label: '排班字典' },
-                { tab: 'shifts', label: '班次管理' },
                 { tab: 'shift-rules', label: '部门时段' },
                 { tab: 'anomalies', label: '异常分析' },
                 { tab: 'monthly', label: '月度报表' },
@@ -44,7 +71,12 @@ export default function Attendance() {
         </div>
         {attendanceData.activeTab !== 'monthly' && attendanceData.activeTab !== 'shift-rules' && (
           <div className="shrink-0 space-y-4 mb-4">
-            <Stats {...attendanceData} />
+            <Stats
+              records={attendanceData.records}
+              anomalies={attendanceData.anomalies}
+              shiftRuleCount={shiftRuleCount}
+              punchDays={punchDays}
+            />
             <Filter {...attendanceData} />
           </div>
         )}

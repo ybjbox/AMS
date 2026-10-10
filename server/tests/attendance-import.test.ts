@@ -110,7 +110,9 @@ describe("previewAttendanceImport", () => {
     expect(preview.total).toBe(7);
     const byRow = new Map(preview.rows.map((r) => [r.rowNumber, r]));
     expect(byRow.get(2)?.errors).toEqual([]); // 首行数据（表头占 1）
-    expect(byRow.get(3)?.errors.join("")).toContain("工号 EMPXXXX 在员工档案中不存在");
+    // 工号认不到时会再试姓名（企业微信表给的是 userid、不是系统工号），
+    // 两个都认不到才报错 —— 所以这句现在带上了姓名。
+    expect(byRow.get(3)?.errors.join("")).toContain("工号 EMPXXXX 与姓名「张三」都找不到对应员工");
     expect(byRow.get(4)?.errors.join("")).toContain("对应多名员工");
     expect(byRow.get(5)?.errors.join("")).toContain("时间格式");
     expect(byRow.get(6)?.errors.join("")).toContain("在员工档案中不存在");
