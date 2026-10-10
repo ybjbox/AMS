@@ -1,9 +1,11 @@
 # AMS CI：六道闸门（类型 → lint → 单元测试 → 服务端验证 → 构建 → E2E）
 # 说明：
-#  - lint 是**阻塞**门槛：上游既有债务已在 commit 4cdb471 前后清零（当前 0 error / 78 warning，
+#  - lint 是**阻塞**门槛：上游既有债务已在 commit 4cdb471 前后清零（当前 0 error；
 #    warning 主要是 @typescript-eslint/no-explicit-any 与 React Compiler 的 incompatible-library 提示）。
 #    历史这里挂过 continue-on-error（当时 193 error），债务清完却没摘标记 —— 2026-09-24 全系统检查发现并摘除。
 #  - E2E 使用 Playwright：CI 环境自动安装 chromium 并自动启动服务器（含种子管理员）。
+#    这条路的库是全新的，依赖演示数据（用例搜「员工 1」、要 45 人的分页、建员工时写「研发部」），
+#    所以 playwright.config.ts 的 webServer 带着 AMS_SEED_DEMO=1 —— 别当成多余的开销删掉。
 name: CI
 
 on:
@@ -15,9 +17,18 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # v4 目标运行时是 Node 20，GitHub 已弃用并在强制改跑 Node 24（每次 run 都带告警）。
+      # 三个 action 一起跳到当前主版本，理由（2026-10-11 核对过各版本发布说明）：
+      #  - checkout v5 的破坏性改动只针对 pull_request_target 的不安全默认，本 workflow 只在 push 触发；
+      #    v6/v7 只是把它回移到新分支，并加了转义/空白等修复。
+      #  - setup-node v5 起默认 Node 24；它「package.json 里有 packageManager 字段就自动开缓存」
+      #    那条对我们无影响（仓库没有该字段，且下面本来就显式 cache: npm）；v7 是 ESM 迁移 +
+      #    不再导出占位 NODE_AUTH_TOKEN，本 workflow 没用那个变量。
+      #  - upload-artifact v6 起默认 Node 24，v7 的直传功能要显式 archive: false 才启用，没启用。
+      # 三者都要求 runner ≥ 2.327.1，GitHub 托管的 ubuntu-latest 满足。
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -45,9 +56,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: verify   # 快速闸门通过后才跑较慢的 E2E
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -74,7 +85,7 @@ jobs:
 
       - name: 上传测试报告（失败时）
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: playwright-report/
