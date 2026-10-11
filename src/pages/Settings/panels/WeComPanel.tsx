@@ -83,7 +83,7 @@ export default function WeComPanel() {
         if (next.status !== 'running') {
           setJobId(null);
           if (next.status === 'error') toast.error(`同步失败：${next.error}`);
-          else toast.success(`同步完成：新增 ${next.created} 条，跳过 ${next.skipped} 条`);
+          else toast.success(syncDoneText(next));
           void load();
         }
       } catch (err) {
@@ -464,7 +464,7 @@ export default function WeComPanel() {
           </Button>
           <span className={HINT_CLASS + ' grow'}>
             {job
-              ? `任务 ${job.status === 'running' ? '进行中' : job.status === 'done' ? '已完成' : '失败'}：已处理 ${job.processed} 条，新增 ${job.created} 条，跳过 ${job.skipped} 条`
+              ? `任务 ${job.status === 'running' ? '进行中' : job.status === 'done' ? '已完成' : '失败'}：已处理 ${job.processed} 条，新增 ${job.created} 条${(job.upgraded ?? 0) > 0 ? `，补正来源 ${job.upgraded} 条` : ''}，跳过 ${job.skipped} 条`
               : status?.state.cursorAt
                 ? `上次同步到：${new Date(status.state.cursorAt * 1000).toLocaleString('zh-CN', { hour12: false })}`
                 : '还没有同步过（第一次只拉最近 7 天，更早的数据请填日期区间补拉）'}
@@ -480,6 +480,20 @@ export default function WeComPanel() {
   );
 }
 
+/**
+ * 同步完成的回显。
+ *
+ * 只报"新增/跳过"会漏掉第三次结果：先用 Excel 导了历史卡、后来才开通同步的用户，
+ * 第一次同步的新增和跳过都是 0，真实发生的是"补正了 N 条来源"。不单独说这一句，
+ * 面板上就是一片 0，看着像同步没干活。
+ */
+function syncDoneText(job: { created: number; skipped: number; upgraded?: number }): string {
+  const parts = [`新增 ${job.created} 条`];
+  if ((job.upgraded ?? 0) > 0) parts.push(`补正来源 ${job.upgraded} 条`);
+  parts.push(`跳过 ${job.skipped} 条`);
+  return `同步完成：${parts.join('，')}`;
+}
+
 function ReportTable({ title, report }: { title: string; report: WeComSyncReport | null }) {
   if (!report) return null;
   return (
@@ -488,8 +502,11 @@ function ReportTable({ title, report }: { title: string; report: WeComSyncReport
         {title} {report.from} ~ {report.to}
       </h4>
       <p className={HINT_CLASS}>
-        映射 {report.known} 个账号 · 拉取 {report.fetched} 条 · {report.dryRun ? '未写入' : `写入 ${report.written} 条`} · 跳过{' '}
-        {report.skipped} 条 · 待认领 {report.unbound.length} 人
+        映射 {report.known} 个账号 · 拉取 {report.fetched} 条 · {report.dryRun ? '未写入' : `写入 ${report.written} 条`}
+        {/* 补正来源单列：先用 Excel 导了历史卡、后开同步的用户，第一次跑会看到它。
+            不写在这里的话，用户会以为"库里明明有这条卡，为什么写入 0 条"。 */}
+        {report.upgraded > 0 && ` · 补正来源 ${report.upgraded} 条`} · 跳过 {report.skipped} 条 · 待认领{' '}
+        {report.unbound.length} 人
         {report.missingEmployees.length > 0 && ` · ${report.missingEmployees.length} 个映射指向已删除员工`}
       </p>
       {report.unbound.length > 0 && (

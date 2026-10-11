@@ -135,10 +135,11 @@ wecomRouter.post("/sync", async (req, res) => {
     dryRun: false,
     dateFrom: body.dateFrom,
     dateTo: body.dateTo,
-    onProgress: (processed, created, skipped) => markJobProgress(jobId, processed, created, skipped),
+    onProgress: (processed, created, skipped, upgraded) =>
+      markJobProgress(jobId, processed, created, skipped, upgraded),
   })
     .then((report) => {
-      markJobProgress(jobId, report.fetched, report.written, report.skipped);
+      markJobProgress(jobId, report.fetched, report.written, report.skipped, report.upgraded);
       markJobDone(jobId);
     })
     .catch((e) => {

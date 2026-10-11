@@ -482,19 +482,37 @@ export function clearRecords() {
  * 外部数据源增量写入（企业微信同步通道）。
  *
  * 与 upsertRecords 的区别：那条服务于 Excel 导入（同一分钟已有行则跳过），
- * 这里只加、不改、不删。
- * (employeeId,date,time) 唯一索引命中即跳过，所以同一区间重复同步是幂等的，
- * 而 HR 手工补的卡与 Excel 导入的行都不会被同步冲掉。
+ * 这里对**新建**的行一样只加不改删，但撞到已有行时会把 `source` 补正成企微。
+ *
+ * 为什么补正是对的：企微是打卡机的事实来源，Excel 导入只是把同一份事实抄了一遍。
+ * 先导入、后开同步时，两条路径落在同一分钟上是同一次打卡，不是两次 —— 不该出现
+ * "库里有这条卡，但它说来自补卡/导入"。这与员工改名要级联同步快照
+ * （syncEmployeeNameSnapshots）是同一条原则：权威来源更正派生副本，而不是反过来。
+ *
+ * **只补空、不覆盖**：条件是 `source = ''`（导入/手工写入的空串）。万一将来接了
+ * 第三个来源，也不该被这条通道悄悄改写归属。反向更绝不允许：Excel 导入永远不写
+ * source，不会把已确认的企微卡降级回去。
+ *
+ * 打卡时间不在更新列里 —— (employeeId,date,time) 就是唯一键，撞键时三者必然相同。
+ *
+ * 幂等性：首轮把空串补成 'wecom'，再同步时 WHERE 不成立 → 计入 skipped，与改动前一致。
  */
 export function insertSourcedRecords(
   rows: { employeeId: string; employeeName: string; date: string; time: string; source: string }[]
-): { created: number; skipped: number } {
+): { created: number; upgraded: number; skipped: number } {
   const insert = db.prepare(
     `INSERT INTO punch_records (id, employeeId, employeeName, date, time, version, source)
      VALUES (?, ?, ?, ?, ?, 1, ?)
-     ON CONFLICT(employeeId, date, time) DO NOTHING`
+     ON CONFLICT(employeeId, date, time) DO UPDATE SET source = excluded.source, version = version + 1
+     WHERE punch_records.source = ''`
   );
+  // 预先看一眼这行在不在、来源是什么：
+  // DO UPDATE 命中与 INSERT 成功都返回 changes=1，光看 changes 分不出"新建"和"补正"，
+  // 与其猜，不如先查（走 idx_punch_employee_date_time 唯一索引，逐行一次常数开销）。
+  // 顺带把"已是企微"的行直接跳过，不必再发一次注定不生效的 UPDATE。
+  const lookup = db.prepare("SELECT source FROM punch_records WHERE employeeId = ? AND date = ? AND time = ?");
   let created = 0;
+  let upgraded = 0;
   let skipped = 0;
   // 先整体归一再开事务：任何一行日期/时间格式不对就整体拒绝，不留"半批已写入"的状态
   const normalized = rows.map((r) => ({
@@ -505,16 +523,25 @@ export function insertSourcedRecords(
   db.exec("BEGIN");
   try {
     for (const r of normalized) {
-      const res = insert.run(crypto.randomUUID(), r.employeeId, r.employeeName, r.date, r.time, r.source);
-      if (Number(res.changes) > 0) created += 1;
-      else skipped += 1;
+      const hit = lookup.get(r.employeeId, r.date, r.time) as { source?: string } | undefined;
+      if (hit) {
+        // 只补空、不覆盖：已有非空来源（正常就是 'wecom'）一律不碰
+        if (hit.source !== "") {
+          skipped += 1;
+          continue;
+        }
+        upgraded += 1;
+      } else {
+        created += 1;
+      }
+      insert.run(crypto.randomUUID(), r.employeeId, r.employeeName, r.date, r.time, r.source);
     }
     db.exec("COMMIT");
   } catch (e) {
     db.exec("ROLLBACK");
     throw e;
   }
-  return { created, skipped };
+  return { created, upgraded, skipped };
 }
 
 /** 某来源已有的打卡行数（同步结果面板用来核对"库里到底有多少条企微卡"） */

@@ -359,28 +359,87 @@ describe('同步：映射、幂等与只读预览', () => {
     expect(punchCount()).toBe(2);
   });
 
-  it('同一分钟已有手工/导入卡时，同步不造第二条（跨来源共用唯一键）', async () => {
+  it('同一分钟已有手工/导入卡时，不造第二条，但把来源补正为 wecom（2026-10-11）', async () => {
     const at = Math.floor(Date.now() / 1000) - 5400;
     resetStub([punchRowOf(userIds[0], at)]);
     upsertWeComBinding({ wecomUserId: userIds[0], employeeId: empB.id, operator: 'tester' });
-    // 先由补卡/导入路径写一条同分钟的卡（HH:mm:ss）
+    // 先由补卡/导入路径写一条同分钟的卡（HH:mm:ss），source 为空串
     upsertRecord({
       employeeId: empB.id,
       employeeName: empB.name,
       date: formatPunchTime(at)!.date,
       time: `${formatPunchTime(at)!.time.slice(0, 5)}:00`,
     });
+    const before = db
+      .prepare('SELECT source FROM punch_records WHERE employeeId = ?')
+      .get(empB.id) as unknown as Record<string, string>;
+    expect(before.source).toBe('');
+
     const report = await runWeComSync({
       dryRun: false,
       dateFrom: formatPunchTime(at - 60)!.date,
       dateTo: formatPunchTime(at + 600)!.date,
     });
+    // 不新增（同一分钟本就是同一次打卡），但归属要说清楚
     expect(report.written).toBe(0);
-    expect(report.skipped).toBe(1);
+    expect(report.upgraded).toBe(1);
+    expect(report.skipped).toBe(0);
+    // 跨来源共用唯一键：仍然只有一条
     expect(
       Number(db.prepare('SELECT COUNT(*) AS c FROM punch_records WHERE employeeId = ?').get(empB.id)?.c ?? 0)
     ).toBe(1);
+    const after = db
+      .prepare('SELECT source, version FROM punch_records WHERE employeeId = ?')
+      .get(empB.id) as unknown as Record<string, string | number>;
+    expect(after.source).toBe('wecom');
+    // 补正是一次真实改动，version 应当递一
+    expect(Number(after.version)).toBeGreaterThan(1);
   });
+
+  it('补正只做一次：再同步同一区间计入 skipped，不重复改写（2026-10-11）', async () => {
+    const at = Math.floor(Date.now() / 1000) - 4800;
+    resetStub([punchRowOf(userIds[0], at)]);
+    upsertWeComBinding({ wecomUserId: userIds[0], employeeId: empA.id, operator: 'tester' });
+    upsertRecord({
+      employeeId: empA.id,
+      employeeName: empA.name,
+      date: formatPunchTime(at)!.date,
+      time: `${formatPunchTime(at)!.time.slice(0, 5)}:00`,
+    });
+    const range = { dateFrom: formatPunchTime(at - 60)!.date, dateTo: formatPunchTime(at + 600)!.date };
+
+    const first = await runWeComSync({ dryRun: false, ...range });
+    expect(first.upgraded).toBe(1);
+
+    const second = await runWeComSync({ dryRun: false, ...range });
+    expect(second.upgraded).toBe(0);
+    expect(second.skipped).toBe(1);
+  });
+
+  it('反向绝不发生：Excel 导入不会把已确认的企微卡降级回空串（2026-10-11）', async () => {
+    const at = Math.floor(Date.now() / 1000) - 4200;
+    resetStub([punchRowOf(userIds[0], at)]);
+    upsertWeComBinding({ wecomUserId: userIds[0], employeeId: empA.id, operator: 'tester' });
+    await runWeComSync({
+      dryRun: false,
+      dateFrom: formatPunchTime(at - 60)!.date,
+      dateTo: formatPunchTime(at + 600)!.date,
+    });
+    expect(punchCount()).toBeGreaterThan(0);
+
+    // 再走一遍导入通道（同一分钟），来源必须原样留着
+    upsertRecord({
+      employeeId: empA.id,
+      employeeName: empA.name,
+      date: formatPunchTime(at)!.date,
+      time: `${formatPunchTime(at)!.time.slice(0, 5)}:00`,
+    });
+    const row = db
+      .prepare('SELECT source FROM punch_records WHERE employeeId = ?')
+      .get(empA.id) as unknown as Record<string, string>;
+    expect(row.source).toBe('wecom');
+  });
+
   it('干跑预览零副作用：不写打卡、不登记映射、不抬游标', async () => {
     const at = Math.floor(Date.now() / 1000) - 3600;
     resetStub([rawPunch(userIds[0], at), rawPunch(userIds[1], at)]);

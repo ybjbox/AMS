@@ -22,6 +22,11 @@ export interface ImportJob {
   processed: number;
   created: number;
   skipped: number;
+  /**
+   * 只被企业微信同步用到：把已有行的来源从「补卡/导入」补正成「企业微信」的条数。
+   * 员工导入恒为 0（那条路径不写 source）。
+   */
+  upgraded: number;
   error: string;
 }
 
@@ -40,6 +45,13 @@ export function ensureImportJobsTable(): void {
       updatedAt TEXT DEFAULT (datetime('now','localtime'))
     );
   `);
+  // 企业微信同步存在"没新增、也没跳过、只是把来源补正了"的跑法
+  // （先把历史卡用 Excel 导进来、后来才开通同步的那批）。没有这一列，轮询面板只会
+  // 显示"新增 0 条 / 跳过 0 条"，用户完全看不出到底发生了什么。
+  const cols = db.prepare("PRAGMA table_info(import_jobs)").all() as { name: string }[];
+  if (!cols.some((c) => c.name === "upgraded")) {
+    db.exec("ALTER TABLE import_jobs ADD COLUMN upgraded INTEGER NOT NULL DEFAULT 0");
+  }
 }
 ensureImportJobsTable();
 
@@ -64,16 +76,30 @@ export function getImportJob(id: string): ImportJob | undefined {
     processed: asNumber(row.processed),
     created: asNumber(row.created),
     skipped: asNumber(row.skipped),
+    upgraded: asNumber(row.upgraded),
     error: asString(row.error),
   };
 }
 
 const CHUNK_SIZE = 100;
 
-export function markJobProgress(jobId: string, processed: number, created: number, skipped: number): void {
+/** upgraded 可选：员工导入恒为 0，不传就不动那一列 */
+export function markJobProgress(
+  jobId: string,
+  processed: number,
+  created: number,
+  skipped: number,
+  upgraded?: number
+): void {
+  if (upgraded === undefined) {
+    db.prepare(
+      `UPDATE import_jobs SET processed = ?, created = ?, skipped = ?, updatedAt = datetime('now','localtime') WHERE id = ?`
+    ).run(processed, created, skipped, jobId);
+    return;
+  }
   db.prepare(
-    `UPDATE import_jobs SET processed = ?, created = ?, skipped = ?, updatedAt = datetime('now','localtime') WHERE id = ?`
-  ).run(processed, created, skipped, jobId);
+    `UPDATE import_jobs SET processed = ?, created = ?, skipped = ?, upgraded = ?, updatedAt = datetime('now','localtime') WHERE id = ?`
+  ).run(processed, created, skipped, upgraded, jobId);
 }
 
 export function markJobDone(jobId: string): void {

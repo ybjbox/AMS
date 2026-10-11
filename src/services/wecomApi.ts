@@ -51,6 +51,8 @@ export interface WeComSyncReport {
   fetched: number;
   written: number;
   skipped: number;
+  /** 把已有行的来源从「补卡/导入」补正为「企业微信」的条数（开通同步后的第一次跑通常有值） */
+  upgraded: number;
   unbound: WeComUnboundEntry[];
   missingEmployees: string[];
   errors: string[];
@@ -78,6 +80,8 @@ export interface WeComJob {
   processed: number;
   created: number;
   skipped: number;
+  /** 已有行的来源被补正成「企业微信」的条数（见 WeComSyncReport.upgraded） */
+  upgraded: number;
   error: string;
 }
 

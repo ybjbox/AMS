@@ -56,6 +56,13 @@ export interface WeComSyncReport {
   fetched: number;
   written: number;
   skipped: number;
+  /**
+   * 本次把已有行的来源从「补卡/导入」补正成「企业微信」的条数。
+   *
+   * 先用 Excel 导入了历史打卡、后来才开通同步的用户，开第一次同步就会看到它：
+   * 那不是新增，只是把"这条卡其实来自打卡机"这件事说清楚。
+   */
+  upgraded: number;
   /** 有数据但还没认领到员工头上的 userid */
   unbound: WeComUnboundEntry[];
   /** 认领指向了档案里已不存在的员工（理论上删除流程会解绑，这里兜底报出来） */
@@ -118,7 +125,7 @@ export function resolveSyncWindow(
 
 export interface RunSyncOptions extends SyncWindowInput {
   dryRun: boolean;
-  onProgress?: (processed: number, created: number, skipped: number) => void;
+  onProgress?: (processed: number, created: number, skipped: number, upgraded: number) => void;
 }
 
 /**
@@ -146,8 +153,8 @@ export async function runWeComSync(opts: RunSyncOptions): Promise<WeComSyncRepor
     endSec,
     // 拉取阶段就回写进度：这段是整轮同步里最长的一段（分段 × 分批，几十次接口调用），
     // 只在写库时回写会让任务行长时间看起来"卡住"，进而被台账对账判成中断。
-    // 此刻还没有任何写入，所以 created/skipped 如实给 0（别把调用次数塞进去当跳过数）。
-    (pulled) => opts.onProgress?.(pulled, 0, 0)
+    // 此刻还没有任何写入，所以 created/skipped/upgraded 如实给 0（别把调用次数塞进去当跳过数）。
+    (pulled) => opts.onProgress?.(pulled, 0, 0, 0)
   );
 
   const unboundMap = new Map<string, number>();
@@ -176,12 +183,14 @@ export async function runWeComSync(opts: RunSyncOptions): Promise<WeComSyncRepor
 
   let written = 0;
   let skipped = 0;
+  let upgraded = 0;
   if (!opts.dryRun) {
     for (let i = 0; i < rows.length; i += WRITE_CHUNK) {
       const res = insertSourcedRecords(rows.slice(i, i + WRITE_CHUNK));
       written += res.created;
       skipped += res.skipped;
-      opts.onProgress?.(Math.min(i + WRITE_CHUNK, rows.length), written, skipped);
+      upgraded += res.upgraded;
+      opts.onProgress?.(Math.min(i + WRITE_CHUNK, rows.length), written, skipped, upgraded);
       await new Promise((resolve) => setImmediate(resolve));
     }
     // 见过的 userid 登记成待认领，下一轮才会进入 known 集合被拉到数据
@@ -198,6 +207,7 @@ export async function runWeComSync(opts: RunSyncOptions): Promise<WeComSyncRepor
     fetched,
     written,
     skipped,
+    upgraded,
     unbound: [...unboundMap.entries()]
       .map(([wecomUserId, count]) => ({ wecomUserId, count }))
       .sort((a, b) => b.count - a.count || a.wecomUserId.localeCompare(b.wecomUserId)),
@@ -208,13 +218,14 @@ export async function runWeComSync(opts: RunSyncOptions): Promise<WeComSyncRepor
   };
   // 调试用：calls 只在日志里出现，不进报告结构（面板不展示接口次数）
   console.log(
-    "[wecom] %s %s→%s：拉取 %d 条（%d 次调用），写入 %d，跳过 %d，未认领 %d 人",
+    "[wecom] %s %s→%s：拉取 %d 条（%d 次调用），写入 %d，补正来源 %d，跳过 %d，未认领 %d 人",
     report.dryRun ? "预览" : "同步",
     report.from,
     report.to,
     fetched,
     calls,
     written,
+    upgraded,
     skipped,
     report.unbound.length
   );
