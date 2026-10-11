@@ -1,4 +1,4 @@
-import { http, sendBinary, withAuthToken } from './api';
+import { http, sendBinary, withAuthToken, fetchBlob } from './api';
 import type { Anomaly, EmployeeSchedule, PunchRecord, Shift } from '../store/useAttendanceStore';
 
 /**
@@ -215,3 +215,13 @@ export const getPunchImportJob = (jobId: string): Promise<PunchImportJob> =>
 /** 导入模板下载链接（走 query token，与备份/审计导出同一取道） */
 export const punchImportTemplateUrl = (): string =>
   withAuthToken('/api/attendance/records/import/template');
+
+/**
+ * 考勤判定人工校对表（xlsx）。
+ *
+ * 走 fetchBlob 而不是 withAuthToken 的直链：凭据留在请求头里，不落进 URL
+ * （导出的是全量打卡，凭据进 URL 就等于进了浏览历史和服务器日志）。
+ * 顺带能拿到 400 的错误文案 —— 直链只会静默下载一个打不开的文件。
+ */
+export const fetchAttendanceProofSheet = (month: string): Promise<Blob> =>
+  fetchBlob(`/api/attendance/export/proof-sheet?month=${encodeURIComponent(month)}`);

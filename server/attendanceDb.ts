@@ -779,7 +779,7 @@ export function monthlySummary(month: string): MonthlySummaryRow[] {
  * 请假当天不再判定考勤异常——否则半天请假只有一次打卡会被误标「缺卡」并通知员工。
  * approvals 表由 approvalsDb 模块加载时建表；部分测试场景可能未加载，try/catch 视为无请假。
  */
-function approvedLeaveDayKeys(): Set<string> {
+export function approvedLeaveDayKeys(): Set<string> {
   const keys = new Set<string>();
   try {
     const rows = db

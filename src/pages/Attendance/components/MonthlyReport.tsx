@@ -1,9 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, Download, RefreshCw } from 'lucide-react';
+import { CalendarDays, ChevronDown, ClipboardCheck, Download, FileSpreadsheet, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   attendanceApi,
+  fetchAttendanceProofSheet,
   type MonthlySummaryRow,
   type PunchMonthStat,
 } from '@/services/attendanceApi';
@@ -29,6 +36,16 @@ function exportCsv(month: string, rows: MonthlySummaryRow[]): void {
   a.click();
   URL.revokeObjectURL(url);
   toast.success(`已导出 ${rows.length} 条月度汇总`);
+}
+
+/** 触发浏览器下载并回收 objectURL（revoke 漏掉的话标签页关不掉，内存一直涨） */
+function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 /** 月度考勤汇总报表（HR 月报）：按人聚合出勤/打卡/迟到/早退/缺卡 */
@@ -104,6 +121,24 @@ export default function MonthlyReport() {
     [load]
   );
 
+  /**
+   * 判定人工校对表：把这一月的逐人逐日判定连同判定依据导成 Excel。
+   *
+   * 和上面那个 CSV 不是一回事 —— CSV 每人一行、给人看总数；这个表每人每天一行，
+   * 写清当天对上了哪个班次、为什么这么判，并把需要人来看一眼的行标出来。
+   * 判定在服务端算（同一份 shiftMatch），前端只负责把文件存下来，不重算。
+   */
+  const downloadProofSheet = useCallback(async (m: string) => {
+    const t = toast.loading(`正在生成 ${m} 的判定明细…`);
+    try {
+      const blob = await fetchAttendanceProofSheet(m);
+      downloadBlob(blob, `考勤判定-人工校对-${m.replace('-', '')}.xlsx`);
+      toast.success(`已导出 ${m} 的判定明细`, { id: t });
+    } catch (err) {
+      toast.error((err as { error?: string })?.error || '导出失败', { id: t });
+    }
+  }, []);
+
   return (
     <div className="h-full flex flex-col min-h-0">
       {/* 工具栏 */}
@@ -133,10 +168,25 @@ export default function MonthlyReport() {
             <span className="text-xs text-muted-foreground">
               {rows.length} 名员工 · {abnormalCount} 人有考勤异常
             </span>
-            <button onClick={() => exportCsv(month, rows)} className="btn-secondary">
-              <Download className="h-4 w-4 sm:mr-2" aria-hidden="true" />
-              <span className="hidden sm:inline">导出 CSV</span>
-            </button>
+            {/* 两种导出收进一个下拉：一个是给领导看的总数，一个是给 HR 逐行核对的明细，
+                放两个并排按钮会让人以为它们是同一份数据的两种格式 */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="btn-secondary">
+                <Download className="h-4 w-4 sm:mr-2" aria-hidden="true" />
+                <span className="hidden sm:inline">导出</span>
+                <ChevronDown className="h-4 w-4 ml-1 hidden sm:block" aria-hidden="true" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuItem onClick={() => downloadProofSheet(month)}>
+                  <ClipboardCheck className="h-4 w-4 mr-2" aria-hidden="true" />
+                  判定明细（人工校对）
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportCsv(month, rows)}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" aria-hidden="true" />
+                  月度汇总（CSV）
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </>
         )}
       </div>

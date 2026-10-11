@@ -6,6 +6,7 @@
  *   GET/PUT  /records               — 批量写入（upsert-only，未出现的行不删；空数组被拒）
  *   POST/PUT/DELETE /records[/:id]  — 单条打卡记录增删改；DELETE /records 清空（仅 ADMIN）
  *   GET      /anomalies /summary    — 异常列表 / 月报
+ *   GET      /export/proof-sheet     — 判定人工校对表（xlsx，逐人逐日 + 判定依据）
  *   POST     /analyze               — 触发真实异常分析
  *
  * 删除永远走 DELETE，不要用 PUT 批量：PUT /schedules 删不掉行、PUT /records 会清库，
@@ -31,6 +32,7 @@ import {
 } from "./shiftRulesDb.ts";
 import { db } from "./db.ts";
 import { asString } from "./sqliteUtil.ts";
+import { buildAttendanceProofSheet, proofSheetFileName } from "./attendanceProofSheet.ts";
 import { requireRole } from "./authMiddleware.ts";
 import { ROLE_LEVEL } from "./authDb.ts";
 import { createNotification } from "./notificationsDb.ts";
@@ -391,6 +393,33 @@ attendanceRouter.get("/summary", (req, res) => {
         // 本地当月：UTC 口径下每月 1 日 00:00–07:59 会查成上个月
         localToday().slice(0, 7));
   res.json({ month, rows: monthlySummary(month), stats });
+});
+
+/**
+ * 考勤判定人工校对表（逐人逐日 + 逐班次实例 + 部门时段 + 判定规则）：
+ * GET /api/attendance/export/proof-sheet?month=YYYY-MM
+ *
+ * 月报只能告诉 HR「这个月有 70 条异常」，回答不了「凭哪张卡、哪条时段判的」。
+ * 这张表把判定中间那一步摊开，让人能逐行核对 —— 判定本身仍走 shiftMatch，
+ * 与异常分析、月报同一份实现，导出不会算出另一套结论。
+ */
+attendanceRouter.get("/export/proof-sheet", async (req, res) => {
+  const month = typeof req.query.month === "string" ? req.query.month : localToday().slice(0, 7);
+  if (!/^\d{4}-\d{2}$/.test(month)) {
+    res.status(400).json({ error: "月份格式应为 YYYY-MM" });
+    return;
+  }
+  try {
+    const buffer = await buildAttendanceProofSheet(month);
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename*=UTF-8''" + encodeURIComponent(proofSheetFileName(month))
+    );
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.send(buffer);
+  } catch (error) {
+    serverErrorResponse(res, error);
+  }
 });
 
 attendanceRouter.get("/anomalies", (_req, res) => {
