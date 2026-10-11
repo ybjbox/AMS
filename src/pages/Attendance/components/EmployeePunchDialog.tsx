@@ -18,15 +18,15 @@ export interface EmployeePunchDialogProps {
   onClose: () => void;
   /** 被点开的人；null 表示未选中 */
   employee: { employeeId: string; employeeName: string } | null;
-  /** 全量打卡（弹窗自己按工号筛，父组件不必预先过滤） */
-  records: PunchRecord[];
-  /** 全量异常，用来在某天标出"这天判过异常" */
-  anomalies: Anomaly[];
   /**
-   * 外层筛选是否正在生效。弹窗展示的是这个人的**全部**记录，
-   * 而不是当前筛选范围内的那几条 —— 所以必须写明，否则"表格只剩 12 行、
-   * 弹窗却有 114 条"看着像 bug。
+   * 列表当前**筛选后**的记录，弹窗与列表保持同一口径。
+   * 筛选生效时点开某人，弹窗就是"这个人在当前筛选范围内的全部记录"，
+   * 不会出现"表格 12 行、弹窗 114 条"这种看着像坏掉的落差。
    */
+  records: PunchRecord[];
+  /** 全量异常，用来在某天标出"这天判过异常"（不受筛选影响，异常是独立事实） */
+  anomalies: Anomaly[];
+  /** 外层筛选摘要，用于顶部写明"现在看的是哪一段" */
   outerFilterActive: boolean;
   outerFilterSummary: string;
 }
@@ -101,15 +101,23 @@ export default function EmployeePunchDialog({
       {(summary.firstDate || outerFilterActive) && (
         <p className="border-b border-zinc-100 px-4 py-2 text-2xs text-muted-foreground dark:border-zinc-700/60 tabular-nums">
           {summary.firstDate && <>区间 {summary.firstDate} ~ {summary.lastDate} · </>}
-          {outerFilterActive && <>列表当前按「{outerFilterSummary}」筛选，这里显示的是该员工的全部记录</>}
+          {outerFilterActive ? (
+            <>当前筛选「{outerFilterSummary}」，以下是{employee.employeeName}在该范围内的全部打卡</>
+          ) : (
+            <>共 {summary.days} 个出勤日</>
+          )}
         </p>
       )}
 
       {groups.length === 0 ? (
         <EmptyState
-          title="这个人还没有打卡记录"
+          title={outerFilterActive ? '当前筛选下没有这个人的打卡' : '这个人还没有打卡记录'}
           icon={CalendarDays}
-          description="他的打卡可能还没导入，或当前筛选条件把他排除了。"
+          description={
+            outerFilterActive
+              ? `他已经不在「${outerFilterSummary}」这个范围里了 —— 放宽日期区间或清除来源条件就能看到。`
+              : '他的打卡可能还没导入。'
+          }
         />
       ) : (
         <div className="max-h-[52vh] overflow-y-auto">

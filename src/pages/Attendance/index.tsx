@@ -14,6 +14,7 @@ import { ImportDialogHost } from './components/ImportPanel';
 import { Button } from '@/components/ui/button';
 import { Permission } from '@/components/Permission';
 import { useAttendance } from './hooks/useAttendance';
+import { describeRange } from './lib/datePresets';
 import { useAttendanceStore } from '@/store/useAttendanceStore';
 
 /**
@@ -67,17 +68,18 @@ export default function Attendance() {
   const anomalyFilterActive = a.anomalyQuery.trim() !== '' || a.anomalyGroup !== 'all';
   const showStatsAndFilter = a.activeTab !== 'monthly' && a.activeTab !== 'shift-rules';
 
-  /** 给弹窗用的一句话：说清外层筛选正在按什么收窄，免得"12 行 vs 114 条"看着像 bug */
+  /** 筛选摘要：说清当前在看哪一段，弹窗顶部与筛选栏共用同一份口径 */
   const filterSummary = useMemo(() => {
     const bits: string[] = [];
     if (a.recordFilter.query.trim()) bits.push(a.recordFilter.query.trim());
-    if (a.recordFilter.dateFrom || a.recordFilter.dateTo) {
-      bits.push(`${a.recordFilter.dateFrom || '最早'} ~ ${a.recordFilter.dateTo || '最新'}`);
-    }
+    bits.push(
+      describeRange(a.recordFilter.dateFrom, a.recordFilter.dateTo) +
+        (a.padDays ? '（含边界日）' : '')
+    );
     if (a.recordFilter.source === 'wecom') bits.push('企业微信');
     if (a.recordFilter.source === 'manual') bits.push('补卡/导入');
-    return bits.join(' · ') || '全部';
-  }, [a.recordFilter]);
+    return bits.join(' · ');
+  }, [a.recordFilter, a.padDays]);
 
   return (
     <PageContainer width="none">
@@ -135,6 +137,10 @@ export default function Attendance() {
                   active={recordFilterActive}
                   matched={a.filteredRecords.length}
                   total={a.records.length}
+                  activePreset={a.activeDatePreset}
+                  onPreset={a.applyDatePreset}
+                  padDays={a.padDays}
+                  onPadDaysChange={a.setPadDays}
                 />
               ) : (
                 <AnomalyFilterBar
@@ -158,7 +164,7 @@ export default function Attendance() {
             ) : a.activeTab === 'records' ? (
               <RecordsTable
                 records={a.filteredRecords}
-                allRecords={a.records}
+                allRecords={a.filteredRecords}
                 anomalies={a.anomalies}
                 totalCount={a.records.length}
                 filterActive={recordFilterActive}

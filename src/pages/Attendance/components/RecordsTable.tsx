@@ -14,7 +14,11 @@ import { reportWrite } from '@/store/saveFailure';
 
 export interface RecordsTableProps {
   records: PunchRecord[];
-  /** 全量打卡：弹窗要按工号自取本人全部记录，不能只给当前页这 20 条 */
+  /**
+   * 传给弹窗的记录集合 —— **当前筛选后的那一份**，不是全量。
+   * 弹窗跟列表保持同一口径：列表筛到什么，点开就是什么，
+   * 不会出现"表格 12 行、弹窗 114 条"这种看着像坏掉的落差。
+   */
   allRecords: PunchRecord[];
   /** 全量异常：弹窗用它标出"这天判过异常" */
   anomalies: Anomaly[];

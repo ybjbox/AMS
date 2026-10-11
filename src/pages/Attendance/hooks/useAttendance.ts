@@ -12,6 +12,8 @@ import {
   isRecordFilterActive,
 } from '../lib/filters';
 import type { AnomalyGroup, RecordFilter } from '../lib/filters';
+import { matchPreset, presetRange } from '../lib/datePresets';
+import type { DatePresetId } from '../lib/datePresets';
 
 /**
  * 考勤页的四个标签，**按实际作业顺序排**（这是本次重排的核心）。
@@ -55,6 +57,14 @@ export interface UseAttendanceReturn {
   /** 筛选后的出勤人次：与统计卡同源，只是把范围收窄到当前筛选条件 */
   punchDays: number;
   totalPunchDays: number;
+
+  // 日期快捷区间
+  /** 区间前后各多留一天（跨零点班次）。默认开，可在筛选栏关掉 */
+  padDays: boolean;
+  setPadDays: (v: boolean) => void;
+  /** 当前命中的预设；用户手改过日期则为 null */
+  activeDatePreset: DatePresetId | null;
+  applyDatePreset: (id: DatePresetId) => void;
 
   // 异常筛选
   anomalyQuery: string;
@@ -127,6 +137,34 @@ export function useAttendance(): UseAttendanceReturn {
   }, []);
   const resetRecordFilter = useCallback(() => setRecordFilterState(EMPTY_RECORD_FILTER), []);
 
+  // 日期快捷区间
+  const [padDays, setPadDaysState] = useState(true);
+  const applyDatePreset = useCallback(
+    (id: DatePresetId) => {
+      const r = presetRange(id, new Date(), padDays);
+      setRecordFilterState((prev) => ({ ...prev, dateFrom: r.from, dateTo: r.to }));
+    },
+    [padDays]
+  );
+  // 切换边界开关时重算当前预设：区间会从「多一天」缩回「严格自然月」，
+  // 或者反过来。没挂着预设（用户手填过日期）就保持原样，不擅自改写。
+  const setPadDays = useCallback(
+    (v: boolean) => {
+      const current = matchPreset(recordFilter.dateFrom, recordFilter.dateTo, new Date(), padDays);
+      setPadDaysState(v);
+      if (current) {
+        const r = presetRange(current, new Date(), v);
+        setRecordFilterState((prev) => ({ ...prev, dateFrom: r.from, dateTo: r.to }));
+      }
+    },
+    [recordFilter.dateFrom, recordFilter.dateTo, padDays]
+  );
+  // 手改日期后不再声称命中任何预设
+  const activeDatePreset = useMemo(
+    () => matchPreset(recordFilter.dateFrom, recordFilter.dateTo, new Date(), padDays),
+    [recordFilter.dateFrom, recordFilter.dateTo, padDays]
+  );
+
   // 依赖逐字段拆开而不是整个对象，是为了让"改了筛选但命中数没变"时不重算。
   const { query, dateFrom, dateTo, source } = recordFilter;
   const filteredRecords = useMemo(
@@ -171,6 +209,11 @@ export function useAttendance(): UseAttendanceReturn {
     filteredRecords,
     punchDays: countPunchDays(filteredRecords),
     totalPunchDays: countPunchDays(records),
+
+    padDays,
+    setPadDays,
+    activeDatePreset,
+    applyDatePreset,
 
     anomalyQuery: searchQuery,
     setAnomalyQuery,
