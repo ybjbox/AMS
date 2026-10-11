@@ -1,8 +1,11 @@
-import React, { useMemo } from 'react';
-import { CalendarDays, Clock, AlertTriangle } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { CalendarDays, Clock, AlertTriangle, Trash2 } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Input } from '@/components/ui/input';
+import { useConfirm } from '@/hooks/useConfirm';
+import { reportWrite } from '@/store/saveFailure';
 import type { PunchRecord, Anomaly } from '@/store/useAttendanceStore';
 import {
   anomalyDatesFor,
@@ -29,6 +32,9 @@ export interface EmployeePunchDialogProps {
   /** 外层筛选摘要，用于顶部写明"现在看的是哪一段" */
   outerFilterActive: boolean;
   outerFilterSummary: string;
+  /** 逐条删除的权限（原本挂在逐条表格的行尾，现在收进弹窗） */
+  canManage: boolean;
+  removeRecord: (id: string) => Promise<string | null>;
 }
 
 /**
@@ -46,12 +52,49 @@ export default function EmployeePunchDialog({
   anomalies,
   outerFilterActive,
   outerFilterSummary,
+  canManage,
+  removeRecord,
 }: EmployeePunchDialogProps) {
-  const groups = useMemo(
-    () => (employee ? groupPunchesByDate(recordsOfEmployee(records, employee.employeeId)) : []),
+  // 弹窗内的二次筛选：外层区间可能横跨几个月，而一个人最多有 114 条记录，
+  // 想精确定位某一周仍要再筛一层。初值取外层的区间，打开即与列表一致。
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const confirm = useConfirm();
+
+  const onDelete = async (r: PunchRecord) => {
+    const ok = await confirm({
+      title: '确定要删除这条打卡记录吗？',
+      description: '删除后需重新导入才能恢复。',
+      variant: 'danger',
+    });
+    if (ok) reportWrite(await removeRecord(r.id), '已删除该条打卡记录');
+  };
+
+  // 每次打开（换人或重新打开）都用当前外层条件重置：不该残留上一个人的区间。
+  // 在渲染期比较并就地修正，而不是塞进 useEffect —— effect 里 setState 会多跑一轮
+  // 渲染，也会�� react-hooks/set-state-in-effect 拦下。
+  const openKey = isOpen && employee ? employee.employeeId : null;
+  const [lastOpenKey, setLastOpenKey] = useState<string | null>(null);
+  if (openKey !== lastOpenKey) {
+    setLastOpenKey(openKey);
+    setFrom('');
+    setTo('');
+  }
+
+  const scoped = useMemo(() => {
+    if (!employee) return [];
+    const mine = recordsOfEmployee(records, employee.employeeId);
+    return groupPunchesByDate(
+      from || to ? mine.filter((r) => (!from || r.date >= from) && (!to || r.date <= to)) : mine
+    );
+  }, [records, employee, from, to]);
+
+  const summary = useMemo(() => summarizePunches(scoped), [scoped]);
+  /** 这个人在当前外层筛选下的全部天数，给空状态算"放宽后能看到多少" */
+  const totalDays = useMemo(
+    () => (employee ? groupPunchesByDate(recordsOfEmployee(records, employee.employeeId)).length : 0),
     [records, employee]
   );
-  const summary = useMemo(() => summarizePunches(groups), [groups]);
   const anomalyDates = useMemo(
     () => (employee ? anomalyDatesFor(anomalies, employee.employeeId) : new Set<string>()),
     [anomalies, employee]
@@ -98,25 +141,72 @@ export default function EmployeePunchDialog({
         ))}
       </div>
 
-      {(summary.firstDate || outerFilterActive) && (
-        <p className="border-b border-zinc-100 px-4 py-2 text-2xs text-muted-foreground dark:border-zinc-700/60 tabular-nums">
-          {summary.firstDate && <>区间 {summary.firstDate} ~ {summary.lastDate} · </>}
+      {/* 弹窗内二次筛选：一个人的记录可能横跨几个月，想定位某一周仍要再筛一层 */}
+      <div className="flex flex-wrap items-end gap-2 border-b border-zinc-100 px-4 py-2.5 dark:border-zinc-700/60">
+        <div>
+          <label htmlFor="emp-from" className="mb-1 block text-2xs text-muted-foreground">
+            本人区间起
+          </label>
+          <Input
+            id="emp-from"
+            type="date"
+            value={from}
+            max={to || undefined}
+            onChange={(e) => setFrom(e.target.value)}
+            className="h-8 w-[9rem] text-xs dark:[color-scheme:dark]"
+          />
+        </div>
+        <span className="pb-1.5 text-xs text-muted-foreground" aria-hidden="true">
+          —
+        </span>
+        <div>
+          <label htmlFor="emp-to" className="mb-1 block text-2xs text-muted-foreground">
+            止
+          </label>
+          <Input
+            id="emp-to"
+            type="date"
+            value={to}
+            min={from || undefined}
+            onChange={(e) => setTo(e.target.value)}
+            className="h-8 w-[9rem] text-xs dark:[color-scheme:dark]"
+          />
+        </div>
+        {(from || to) && (
+          <button
+            type="button"
+            onClick={() => {
+              setFrom('');
+              setTo('');
+            }}
+            className="pb-1.5 text-2xs text-brand-700 underline underline-offset-2 hover:text-brand-800 dark:text-brand-300"
+          >
+            清除
+          </button>
+        )}
+        <div className="flex-1" />
+        <span className="pb-1.5 text-2xs text-muted-foreground tabular-nums">
           {outerFilterActive ? (
-            <>当前筛选「{outerFilterSummary}」，以下是{employee.employeeName}在该范围内的全部打卡</>
+            <>
+              外层筛选「{outerFilterSummary}」
+              {summary.firstDate && <> · 本人当前 {summary.firstDate} ~ {summary.lastDate}</>}
+            </>
           ) : (
-            <>共 {summary.days} 个出勤日</>
+            '全部时间'
           )}
-        </p>
-      )}
+        </span>
+      </div>
 
-      {groups.length === 0 ? (
+      {scoped.length === 0 ? (
         <EmptyState
-          title={outerFilterActive ? '当前筛选下没有这个人的打卡' : '这个人还没有打卡记录'}
+          title={from || to ? '这个区间内没有打卡' : outerFilterActive ? '当前筛选下没有这个人的打卡' : '这个人还没有打卡记录'}
           icon={CalendarDays}
           description={
-            outerFilterActive
-              ? `他已经不在「${outerFilterSummary}」这个范围里了 —— 放宽日期区间或清除来源条件就能看到。`
-              : '他的打卡可能还没导入。'
+            from || to
+              ? `把本人区间放宽到 ${employee.employeeName} 在当前筛选下的全部 ${totalDays} 天就能看到。`
+              : outerFilterActive
+                ? `他已经不在「${outerFilterSummary}」这个范围里了 —— 放宽日期区间或清除来源条件就能看到。`
+                : '他的打卡可能还没导入。'
           }
         />
       ) : (
@@ -124,7 +214,7 @@ export default function EmployeePunchDialog({
           <table className="w-full text-left text-sm">
             <caption className="sr-only">{employee.employeeName}的每日打卡记录</caption>
             <tbody>
-              {groups.map((g) => {
+              {scoped.map((g) => {
                 const flagged = anomalyDates.has(g.date);
                 return (
                   <tr
@@ -154,11 +244,27 @@ export default function EmployeePunchDialog({
                     <td className="px-4 py-2.5">
                       <div className="flex flex-wrap gap-x-4 gap-y-1.5">
                         {g.punches.map((r) => (
-                          <span key={r.id} className="inline-flex items-center gap-1.5">
+                          <span
+                            key={r.id}
+                            className="group/p inline-flex items-center gap-1.5"
+                          >
                             <span className="text-sm text-zinc-900 tabular-nums dark:text-zinc-100">{r.time}</span>
                             <Badge variant={r.source === 'wecom' ? 'primary' : 'neutral'}>
                               {r.source === 'wecom' ? '企业微信' : '补卡/导入'}
                             </Badge>
+                            {/* 逐条删除从主表收进这里：主表现在是员工维度，
+                                "删掉某人的某一次打卡"只有一个自然的落点 */}
+                            {canManage && (
+                              <button
+                                type="button"
+                                onClick={() => void onDelete(r)}
+                                aria-label={`删除打卡记录：${r.employeeName} ${r.date} ${r.time}`}
+                                title="删除该条打卡记录"
+                                className="rounded text-zinc-400 opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover/p:opacity-100 dark:text-zinc-500"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                              </button>
+                            )}
                           </span>
                         ))}
                       </div>

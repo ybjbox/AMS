@@ -8,7 +8,7 @@ import Stats from './components/Stats';
 import WorkflowBar from './components/WorkflowBar';
 import { deriveWorkflowSteps, STEP_BLOCK_HINTS } from './lib/workflow';
 import { RecordsFilterBar, AnomalyFilterBar } from './components/FilterBar';
-import RecordsTable from './components/RecordsTable';
+import EmployeeRollupTable from './components/EmployeeRollupTable';
 import AnomaliesTable from './components/AnomaliesTable';
 import { ImportDialogHost } from './components/ImportPanel';
 import { Button } from '@/components/ui/button';
@@ -80,6 +80,14 @@ export default function Attendance() {
     if (a.recordFilter.source === 'manual') bits.push('补卡/导入');
     return bits.join(' · ');
   }, [a.recordFilter, a.padDays]);
+
+  /** 员工表与筛选后打卡自洽：异常也按同一区间收窄，否则"异常 N"会跨到区间外 */
+  const anomaliesInRange = useMemo(() => {
+    const { dateFrom, dateTo } = a.recordFilter;
+    if (!dateFrom && !dateTo) return a.anomalies;
+    return a.anomalies.filter((x) => (!dateFrom || x.date >= dateFrom) && (!dateTo || x.date <= dateTo));
+    // 依赖整个 recordFilter：解构出来的两个字段在 eslint 眼里仍算"用了 recordFilter"
+  }, [a.anomalies, a.recordFilter]);
 
   return (
     <PageContainer width="none">
@@ -162,11 +170,9 @@ export default function Attendance() {
             ) : a.activeTab === 'shift-rules' ? (
               <ShiftRules />
             ) : a.activeTab === 'records' ? (
-              <RecordsTable
+              <EmployeeRollupTable
                 records={a.filteredRecords}
-                allRecords={a.filteredRecords}
-                anomalies={a.anomalies}
-                totalCount={a.records.length}
+                anomalies={anomaliesInRange}
                 filterActive={recordFilterActive}
                 filterSummary={filterSummary}
                 onResetFilter={a.resetRecordFilter}
@@ -174,11 +180,8 @@ export default function Attendance() {
                 isLoading={a.isLoading}
                 canManage={canManage}
                 canPurge={a.hasPermission('attendance:purge')}
-                removeRecord={a.removeRecord}
                 clearRecords={a.clearRecords}
-                page={a.recordsPage}
-                onPageChange={a.setRecordsPage}
-                itemsPerPage={a.ITEMS_PER_PAGE}
+                removeRecord={a.removeRecord}
               />
             ) : (
               <AnomaliesTable
