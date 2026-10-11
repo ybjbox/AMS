@@ -1,9 +1,9 @@
 import PageContainer from "@/components/PageContainer";
 import React, { useMemo } from 'react';
 import { toast } from 'sonner';
-import { AlertTriangle, TriangleAlert, Upload } from 'lucide-react';
+import { AlertTriangle, TriangleAlert, Upload, CalendarClock } from 'lucide-react';
 import MonthlyReport from './components/MonthlyReport';
-import ShiftRules from './components/ShiftRules';
+import ShiftRulesDialog from './components/ShiftRulesDialog';
 import Stats from './components/Stats';
 import WorkflowBar from './components/WorkflowBar';
 import { deriveWorkflowSteps, STEP_BLOCK_HINTS } from './lib/workflow';
@@ -31,6 +31,7 @@ import { useAttendanceStore } from '@/store/useAttendanceStore';
 export default function Attendance() {
   const a = useAttendance();
   const [importOpen, setImportOpen] = React.useState(false);
+  const [shiftRulesOpen, setShiftRulesOpen] = React.useState(false);
 
   const analyzeCoverage = useAttendanceStore((s) => s.analyzeCoverage);
   const analyzeCoverageAt = useAttendanceStore((s) => s.analyzeCoverageAt);
@@ -54,7 +55,7 @@ export default function Attendance() {
     }
     if (a.shiftRuleCount === 0) {
       toast.warning('还没有配置部门时段，无法对班判定');
-      a.setActiveTab('shift-rules');
+      setShiftRulesOpen(true);
       return;
     }
     // store 动作把失败原因作为返回值（不抛异常），必须看返回值再报成功 ——
@@ -66,7 +67,7 @@ export default function Attendance() {
 
   const recordFilterActive = a.recordFilterActive;
   const anomalyFilterActive = a.anomalyQuery.trim() !== '' || a.anomalyGroup !== 'all';
-  const showStatsAndFilter = a.activeTab !== 'monthly' && a.activeTab !== 'shift-rules';
+  const showStatsAndFilter = a.activeTab !== 'monthly';
 
   /** 筛选摘要：说清当前在看哪一段，弹窗顶部与筛选栏共用同一份口径 */
   const filterSummary = useMemo(() => {
@@ -98,6 +99,12 @@ export default function Attendance() {
             <p className="page-subtitle">先配部门时段，再导入打卡，最后做异常判定与月报</p>
           </div>
           <div className="flex items-center gap-2">
+            {/* 时段是配置、不是日常视图，所以不放标签栏；但要有个看得见的入口，
+                否则只剩工作流条第①步一个入口，鼠标不点就发现不了 */}
+            <Button variant="ghost" size="sm" onClick={() => setShiftRulesOpen(true)}>
+              <CalendarClock className="h-4 w-4" aria-hidden="true" />
+              部门时段
+            </Button>
             {a.activeTab === 'records' && canManage && (
               <Button variant="secondary" onClick={() => setImportOpen(true)}>
                 <Upload className="h-4 w-4" aria-hidden="true" />
@@ -116,7 +123,12 @@ export default function Attendance() {
         </div>
 
         <div className="shrink-0 space-y-3">
-          <WorkflowBar steps={steps} activeTab={a.activeTab} onSelect={a.setActiveTab} />
+          <WorkflowBar
+            steps={steps}
+            activeTab={a.activeTab}
+            onSelect={a.setActiveTab}
+            onOpenDialog={() => setShiftRulesOpen(true)}
+          />
 
           {blockHint && (
             <div
@@ -167,8 +179,6 @@ export default function Attendance() {
           <div className="flex-1 overflow-auto" tabIndex={0} role="region" aria-label="考勤数据表">
             {a.activeTab === 'monthly' ? (
               <MonthlyReport />
-            ) : a.activeTab === 'shift-rules' ? (
-              <ShiftRules />
             ) : a.activeTab === 'records' ? (
               <EmployeeRollupTable
                 records={a.filteredRecords}
@@ -201,6 +211,8 @@ export default function Attendance() {
           </div>
         </div>
       </div>
+
+      <ShiftRulesDialog isOpen={shiftRulesOpen} onClose={() => setShiftRulesOpen(false)} />
 
       <ImportDialogHost
         isOpen={importOpen}

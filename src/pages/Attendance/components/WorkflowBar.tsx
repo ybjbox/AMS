@@ -19,7 +19,9 @@ import type { TabType } from '../hooks/useAttendance';
 export interface WorkflowBarProps {
   steps: WorkflowStep[];
   activeTab: TabType;
+  /** 某一步要求打开配置弹窗而不是切标签（第①步「配部门时段」） */
   onSelect: (tab: TabType) => void;
+  onOpenDialog: () => void;
 }
 
 /** 状态 → 语义色与文案。blocked 用 amber（该你处理了），done 用 emerald。 */
@@ -37,20 +39,21 @@ const ICON_TONE: Record<StepState, string> = {
   blocked: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
 };
 
-export default function WorkflowBar({ steps, activeTab, onSelect }: WorkflowBarProps) {
+export default function WorkflowBar({ steps, activeTab, onSelect, onOpenDialog }: WorkflowBarProps) {
   return (
     <nav aria-label="考勤作业流程" className="card-base p-3 sm:p-4">
       {/* 窄屏纵向堆叠：横向四步在 375px 下每步只剩 ~80px，"缺前置 · 尚未导入"根本放不下 */}
       <ol className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-0">
         {steps.map((step, i) => {
-          const isActive = step.tab === activeTab;
+          const isActive = !step.opensDialog && step.tab === activeTab;
           const meta = STATE_META[step.state];
           return (
             <li key={step.tab} className="flex min-w-0 flex-1 items-stretch">
               <button
                 type="button"
-                onClick={() => onSelect(step.tab)}
+                onClick={() => (step.opensDialog ? onOpenDialog() : onSelect(step.tab as TabType))}
                 aria-current={isActive ? 'step' : undefined}
+                title={step.opensDialog ? '打开部门工作时段配置' : undefined}
                 className={[
                   'group flex min-w-0 flex-1 items-center gap-3 rounded-xl px-3 py-2.5 text-left',
                   'transition-colors duration-200',
@@ -77,7 +80,11 @@ export default function WorkflowBar({ steps, activeTab, onSelect }: WorkflowBarP
                 <span className="min-w-0 flex-1">
                   <span
                     className={`block truncate text-sm font-medium ${
-                      isActive ? 'text-brand-800 dark:text-brand-200' : 'text-zinc-900 dark:text-white'
+                      isActive
+                        ? 'text-brand-800 dark:text-brand-200'
+                        : step.opensDialog
+                          ? 'text-zinc-700 hover:text-zinc-900 dark:text-zinc-200 dark:hover:text-zinc-50'
+                          : 'text-zinc-900 dark:text-white'
                     }`}
                   >
                     {step.title}

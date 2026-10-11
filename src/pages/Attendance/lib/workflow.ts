@@ -21,13 +21,25 @@ export type StepState =
   /** 前置没满足，强行做会得到误导性的空结果 */
   | 'blocked';
 
+/**
+ * 工作流涉及的目标。注意它比 TabType 多一个 'shift-rules' ——
+ * 第①步不在标签栏里，是弹窗，所以不能直接复用标签的类型。
+ */
+export type WorkflowTab = TabType | 'shift-rules';
+
 export interface WorkflowStep {
-  tab: TabType;
+  tab: WorkflowTab;
   index: number;
   title: string;
   /** 状态徽章里的那行字，例如「11 条已配置」 */
   detail: string;
   state: StepState;
+  /**
+   * 该步是配置而非日常视图：点它打开弹窗而不是切标签。
+   * 目前只有「配部门时段」是这样 —— 它配好后基本不动，不该和每天都要看的
+   * 打卡记录/异常分析/月报抢同一个标签栏。
+   */
+  opensDialog?: boolean;
 }
 
 export interface WorkflowInput {
@@ -40,6 +52,9 @@ export interface WorkflowInput {
 
 /**
  * ①配部门时段 → ②导打卡记录 → ③分析异常 → ④看月度报表
+ *
+ * 四步里只有 ① 是**配置**：时段配好后基本不动，而②③④每天都要看。所以①不放标签栏，
+ * 由顶部工作流条点开一个弹窗；其余三步才是标签。
  *
  * 状态判定规则（"缺前置"= 会让人得到错误结论的那些情况）：
  *  - 时段为 0 时，打卡与分析都标 blocked：导进来也只是躺着，判定会整批「未判定」
@@ -56,6 +71,8 @@ export function deriveWorkflowSteps(input: WorkflowInput): WorkflowStep[] {
       title: '配部门时段',
       detail: rulesReady ? `${input.shiftRuleCount} 条已配置` : '尚未配置',
       state: rulesReady ? 'done' : 'todo',
+      /** 该步不在标签栏里，点它开配置弹窗而不是切标签 */
+      opensDialog: true,
     },
     {
       tab: 'records',
@@ -63,6 +80,7 @@ export function deriveWorkflowSteps(input: WorkflowInput): WorkflowStep[] {
       title: '导打卡记录',
       detail: recordsReady ? `${input.recordCount} 条已导入` : '尚未导入',
       state: recordsReady ? 'done' : rulesReady ? 'ready' : 'blocked',
+      opensDialog: false,
     },
     {
       tab: 'anomalies',
@@ -70,6 +88,7 @@ export function deriveWorkflowSteps(input: WorkflowInput): WorkflowStep[] {
       title: '分析异常',
       detail: input.analyzedAt ? `上次 ${formatAnalyzedAt(input.analyzedAt)}` : '尚未分析',
       state: input.analyzedAt ? 'done' : recordsReady && rulesReady ? 'ready' : 'blocked',
+      opensDialog: false,
     },
     {
       tab: 'monthly',
@@ -77,6 +96,7 @@ export function deriveWorkflowSteps(input: WorkflowInput): WorkflowStep[] {
       title: '看月度报表',
       detail: recordsReady ? `${input.anomalyCount} 条异常待处理` : '需先有打卡数据',
       state: recordsReady ? 'ready' : 'blocked',
+      opensDialog: false,
     },
   ];
 }
@@ -94,7 +114,7 @@ export function formatAnalyzedAt(iso: string): string {
 }
 
 /** 当前步骤被卡住时显示的一句话，渲染在面板顶部的琥珀色横幅上。 */
-export const STEP_BLOCK_HINTS: Partial<Record<TabType, string>> = {
+export const STEP_BLOCK_HINTS: Partial<Record<WorkflowTab, string>> = {
   records: '需要先配置部门时段，否则导入的记录无法对班判定。',
   anomalies: '需要先配置部门时段并导入打卡记录，才能进行异常判定。',
   monthly: '需要先导入打卡记录，月度报表才有数据来源。',

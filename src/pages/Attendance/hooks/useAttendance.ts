@@ -16,21 +16,20 @@ import { matchPreset, presetRange } from '../lib/datePresets';
 import type { DatePresetId } from '../lib/datePresets';
 
 /**
- * 考勤页的四个标签，**按实际作业顺序排**（这是本次重排的核心）。
+ * 考勤页的三个标签。
  *
- * 依赖关系是单向的：部门时段是异常分析的前置（不配就整批「未判定」），
- * 打卡记录是分析的输入，月报是分析的产出。所以标签顺序从「打卡记录打头」
- * 改成「部门时段打头」—— 让最容易被忽略的前置条件排在最前面。
+ * 原本第 ① 步「部门时段」占着一个标签，2026-10-11 搬进了弹窗：时段配好后基本
+ * 不动，而主标签每天都要看。搬走之后标签只剩日常会看的东西；「时段还没配」
+ * 这个前置条件仍由顶部工作流条第 ① 步显示，点它直接开弹窗。
  *
  * 2026-10-10 撤掉的「逐日排班」与「班次管理」不在这里：判定链路是
  * 「部门时段优先、排班兜底」，而 5 个部门都配了时段（共 11 条），这两页配的
  * 东西永远读不到；界面留着只会让人以为"改了班次却没生效"。排班兜底本身仍在
  * 服务端，将来有部门不配时段时仍能走通，只是不再暴露入口。
  */
-export type TabType = 'shift-rules' | 'records' | 'anomalies' | 'monthly';
+export type TabType = 'records' | 'anomalies' | 'monthly';
 
 export const ATTENDANCE_TABS: { tab: TabType; label: string }[] = [
-  { tab: 'shift-rules', label: '部门时段' },
   { tab: 'records', label: '打卡记录' },
   { tab: 'anomalies', label: '异常分析' },
   { tab: 'monthly', label: '月度报表' },
@@ -94,10 +93,11 @@ export const ITEMS_PER_PAGE = 20;
 export function useAttendance(): UseAttendanceReturn {
   // 标签走 ?tab=，与打印工具、设置页同一套做法（PrintTools/index.tsx）。
   // 这解决了三件事：刷新不丢位置、异常分析可以直接发链接给别人、浏览器前进/后退可用。
-  // 非法值（含旧书签里的 ?tab=schedules）回落到第一个标签，不报错也不白屏。
+  // 非法值（含旧书签里的 ?tab=schedules、撤页前的 ?tab=shift-rules）回落到第一个
+  // 标签，不报错也不白屏。
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const activeTab: TabType = VALID_TABS.has(tabParam ?? '') ? (tabParam as TabType) : 'shift-rules';
+  const activeTab: TabType = VALID_TABS.has(tabParam ?? '') ? (tabParam as TabType) : 'records';
 
   const setActiveTab = useCallback(
     (tab: TabType) => {
