@@ -1,5 +1,5 @@
 import PageContainer from "@/components/PageContainer";
-import React from 'react';
+import React, { useMemo } from 'react';
 import { toast } from 'sonner';
 import { AlertTriangle, TriangleAlert, Upload } from 'lucide-react';
 import MonthlyReport from './components/MonthlyReport';
@@ -66,6 +66,18 @@ export default function Attendance() {
   const recordFilterActive = a.recordFilterActive;
   const anomalyFilterActive = a.anomalyQuery.trim() !== '' || a.anomalyGroup !== 'all';
   const showStatsAndFilter = a.activeTab !== 'monthly' && a.activeTab !== 'shift-rules';
+
+  /** 给弹窗用的一句话：说清外层筛选正在按什么收窄，免得"12 行 vs 114 条"看着像 bug */
+  const filterSummary = useMemo(() => {
+    const bits: string[] = [];
+    if (a.recordFilter.query.trim()) bits.push(a.recordFilter.query.trim());
+    if (a.recordFilter.dateFrom || a.recordFilter.dateTo) {
+      bits.push(`${a.recordFilter.dateFrom || '最早'} ~ ${a.recordFilter.dateTo || '最新'}`);
+    }
+    if (a.recordFilter.source === 'wecom') bits.push('企业微信');
+    if (a.recordFilter.source === 'manual') bits.push('补卡/导入');
+    return bits.join(' · ') || '全部';
+  }, [a.recordFilter]);
 
   return (
     <PageContainer width="none">
@@ -146,8 +158,11 @@ export default function Attendance() {
             ) : a.activeTab === 'records' ? (
               <RecordsTable
                 records={a.filteredRecords}
+                allRecords={a.records}
+                anomalies={a.anomalies}
                 totalCount={a.records.length}
                 filterActive={recordFilterActive}
+                filterSummary={filterSummary}
                 onResetFilter={a.resetRecordFilter}
                 onImportClick={() => setImportOpen(true)}
                 isLoading={a.isLoading}
