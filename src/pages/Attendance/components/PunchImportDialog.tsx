@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, CheckCircle2, Download, RotateCcw, UploadCloud } from 'lucide-react';
 import { toast } from 'sonner';
 import { BaseModal } from '@/components/ui/BaseModal';
@@ -10,6 +10,15 @@ import {
   previewPunchImport,
   type PunchImportPreview,
 } from '@/services/attendanceApi';
+import {
+  applyBulk,
+  computeCounts,
+  isRowSelectable,
+  matchesFilter,
+  rowsToImport,
+  PREVIEW_FILTERS,
+} from '../lib/importSelection';
+import type { PreviewFilter } from '../lib/importSelection';
 
 function errText(e: unknown, fallback: string): string {
   return (e as { error?: string })?.error || fallback;
@@ -41,6 +50,9 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
   const [preview, setPreview] = useState<PunchImportPreview | null>(null);
   const [progress, setProgress] = useState<{ processed: number; total: number } | null>(null);
   const [result, setResult] = useState<{ created: number; skipped: number } | null>(null);
+  /** 逐行勾选：存的是行号，集合里没有 = 未勾中。预览出来后默认全选所有可导入的行 */
+  const [selected, setSelected] = useState<ReadonlySet<number>>(() => new Set());
+  const [previewFilter, setPreviewFilter] = useState<PreviewFilter>('all');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const reset = useCallback(() => {
@@ -48,6 +60,8 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
     setPreview(null);
     setProgress(null);
     setResult(null);
+    setSelected(new Set());
+    setPreviewFilter('all');
   }, []);
 
   const handleFile = useCallback(async (file: File) => {
@@ -59,6 +73,10 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
     try {
       const p = await previewPunchImport(file);
       setPreview(p);
+      // 默认勾上所有"可导入"行 —— 与旧行为一致（全导），用户再按需取消。
+      // 重复行与错误行不进集合：它们本来也不会被送去导入（见 lib/importSelection 注释）
+      setSelected(new Set(p.rows.filter(isRowSelectable).map((r) => r.rowNumber)));
+      setPreviewFilter('all');
       setStep('preview');
       if (p.valid === 0) toast.warning('没有可导入的有效行，请修正后重试');
     } catch (e) {
@@ -74,7 +92,9 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
 
   const handleCommit = useCallback(async () => {
     if (!preview) return;
-    const validRows = preview.rows.filter((r) => r.errors.length === 0);
+    // 只送勾中的行。重复行/错误行即使被塞进集合也会在这里被剔除（isRowSelectable），
+    // 与改动前的 filter(errors.length === 0) 逐字一致
+    const validRows = rowsToImport(preview.rows, selected);
     if (validRows.length === 0) return;
     setCommitting(true);
     setStep('running');
@@ -103,9 +123,31 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
     } finally {
       setCommitting(false);
     }
-  }, [preview, onImported]);
+  }, [preview, selected, onImported]);
 
-  const validCount = preview?.rows.filter((r) => r.errors.length === 0).length ?? 0;
+  const counts = useMemo(
+    () => (preview ? computeCounts(preview.rows, previewFilter, selected) : null),
+    [preview, previewFilter, selected]
+  );
+  const visibleRows = useMemo(
+    () => (preview ? preview.rows.filter((r) => matchesFilter(r, previewFilter)) : []),
+    [preview, previewFilter]
+  );
+  const toggleRow = useCallback((rowNumber: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(rowNumber)) next.delete(rowNumber);
+      else next.add(rowNumber);
+      return next;
+    });
+  }, []);
+  const bulk = useCallback(
+    (action: 'all' | 'none' | 'invert') => {
+      if (!preview) return;
+      setSelected((prev) => applyBulk(preview.rows, previewFilter, action, prev));
+    },
+    [preview, previewFilter]
+  );
 
   return (
     <BaseModal
@@ -214,10 +256,85 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
             </Button>
           </div>
 
+          {/* 逐行勾选：筛选 + 批量。5000 行时靠"只看问题/重复"缩小范围再批量取消，
+              而不是让人在一张长表里一个个点 */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-zinc-200 px-3 py-2 dark:border-zinc-700">
+            <div
+              className="inline-flex rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800"
+              role="group"
+              aria-label="筛选预览行"
+            >
+              {PREVIEW_FILTERS.map((f) => {
+                const isActive = previewFilter === f.id;
+                const n =
+                  f.id === 'all'
+                    ? preview.total
+                    : f.id === 'problem'
+                      ? preview.invalid + preview.duplicates
+                      : f.id === 'duplicate'
+                        ? preview.duplicates
+                        : preview.valid;
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    aria-pressed={isActive}
+                    onClick={() => setPreviewFilter(f.id)}
+                    className={[
+                      'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors duration-200',
+                      isActive
+                        ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white'
+                        : 'text-muted-foreground hover:text-zinc-900 dark:hover:text-zinc-100',
+                    ].join(' ')}
+                  >
+                    {f.label}
+                    <span className="tabular-nums opacity-70">{n}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center gap-1">
+              <span className="text-2xs text-muted-foreground">对当前筛选：</span>
+              <Button type="button" variant="ghost" size="xs" className="h-6 px-2 text-xs" onClick={() => bulk('all')}>
+                全选
+              </Button>
+              <Button type="button" variant="ghost" size="xs" className="h-6 px-2 text-xs" onClick={() => bulk('none')}>
+                全不选
+              </Button>
+              <Button type="button" variant="ghost" size="xs" className="h-6 px-2 text-xs" onClick={() => bulk('invert')}>
+                反选
+              </Button>
+            </div>
+
+            <div className="flex-1" />
+            {counts && counts.deselected > 0 && (
+              <span className="text-2xs text-amber-700 dark:text-amber-400 tabular-nums">
+                已取消 {counts.deselected} 行
+              </span>
+            )}
+          </div>
+
           <div className="max-h-[45vh] overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
             <table className="w-full text-left text-sm" aria-label="导入预览">
               <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs text-muted-foreground">
                 <tr>
+                  <th className="w-9 px-3 py-2">
+                    {counts && counts.visibleSelectable > 0 ? (
+                      <input
+                        type="checkbox"
+                        aria-label="全选当前筛选下的可导入行"
+                        checked={counts.allVisibleSelected}
+                        ref={(el) => {
+                          if (el) el.indeterminate = counts.someVisibleSelected;
+                        }}
+                        onChange={() => bulk(counts.allVisibleSelected ? 'none' : 'all')}
+                        className="h-4 w-4 accent-[var(--primary)]"
+                      />
+                    ) : (
+                      <span className="block h-4" />
+                    )}
+                  </th>
                   <th className="px-3 py-2 font-medium">行</th>
                   <th className="px-3 py-2 font-medium">工号</th>
                   <th className="px-3 py-2 font-medium">姓名</th>
@@ -227,40 +344,80 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
                 </tr>
               </thead>
               <tbody>
-                {preview.rows.map((row) => {
-                  const ok = row.errors.length === 0;
-                  return (
-                    <tr
-                      key={row.rowNumber}
-                      className={`border-t border-zinc-100 dark:border-zinc-800 ${ok ? '' : 'bg-red-50/40 dark:bg-red-900/10'}`}
-                    >
-                      <td className="px-3 py-2 text-zinc-400 tabular-nums">{row.rowNumber}</td>
-                      <td className="px-3 py-2 font-mono text-xs text-zinc-600 dark:text-zinc-300">
-                        {row.data.employeeId || '—'}
-                      </td>
-                      <td className="px-3 py-2 text-zinc-900 dark:text-white">{row.data.employeeName || '—'}</td>
-                      <td className="px-3 py-2 text-zinc-600 dark:text-zinc-300 tabular-nums">{row.data.date || '—'}</td>
-                      <td className="px-3 py-2 text-zinc-600 dark:text-zinc-300 tabular-nums">{row.data.time || '—'}</td>
-                      <td className="px-3 py-2 text-xs">
-                        {ok ? (
-                          <span className="inline-flex items-center gap-1 text-brand-700 dark:text-brand-300">
-                            <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" /> 可导入
-                          </span>
-                        ) : (
-                          <span
-                            className={`inline-flex items-center gap-1 ${row.duplicate ? 'text-amber-700 dark:text-amber-300' : 'text-red-700 dark:text-red-300'}`}
-                          >
-                            <AlertCircle className="w-3.5 h-3.5" aria-hidden="true" />
-                            {row.errors.join('；')}
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {visibleRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-3 py-8 text-center text-xs text-muted-foreground">
+                      当前筛选下没有行
+                    </td>
+                  </tr>
+                ) : (
+                  visibleRows.map((row) => {
+                    const selectable = isRowSelectable(row);
+                    const checked = selected.has(row.rowNumber);
+                    return (
+                      <tr
+                        key={row.rowNumber}
+                        className={`border-t border-zinc-100 dark:border-zinc-800 ${
+                          row.duplicate
+                            ? 'bg-amber-50/40 dark:bg-amber-500/5'
+                            : row.errors.length > 0
+                              ? 'bg-red-50/40 dark:bg-red-900/10'
+                              : checked
+                                ? ''
+                                : 'opacity-60'
+                        }`}
+                      >
+                        <td className="px-3 py-2 align-middle">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={!selectable}
+                            onChange={() => toggleRow(row.rowNumber)}
+                            aria-label={`导入第 ${row.rowNumber} 行${row.data.employeeId || ''}`}
+                            className="h-4 w-4 accent-[var(--primary)] disabled:opacity-40"
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-zinc-400 tabular-nums">{row.rowNumber}</td>
+                        <td className="px-3 py-2 font-mono text-xs text-zinc-600 dark:text-zinc-300">
+                          {row.data.employeeId || '—'}
+                        </td>
+                        <td className="px-3 py-2 text-zinc-900 dark:text-white">{row.data.employeeName || '—'}</td>
+                        <td className="px-3 py-2 text-zinc-600 dark:text-zinc-300 tabular-nums">{row.data.date || '—'}</td>
+                        <td className="px-3 py-2 text-zinc-600 dark:text-zinc-300 tabular-nums">{row.data.time || '—'}</td>
+                        <td className="px-3 py-2 text-xs">
+                          {row.errors.length === 0 ? (
+                            <span className="inline-flex items-center gap-1 text-brand-700 dark:text-brand-300">
+                              <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" /> 可导入
+                            </span>
+                          ) : (
+                            <span
+                              className={`inline-flex items-center gap-1 ${row.duplicate ? 'text-amber-700 dark:text-amber-300' : 'text-red-700 dark:text-red-300'}`}
+                            >
+                              <AlertCircle className="w-3.5 h-3.5" aria-hidden="true" />
+                              {row.errors.join('；')}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
+
+          {counts && (
+            <p className="text-2xs text-muted-foreground">
+              将导入 <span className="tabular-nums text-brand-700 dark:text-brand-300">{counts.willImport}</span> 行新记录
+              {counts.willImportHidden > 0 && <span className="tabular-nums">（另有 {counts.willImportHidden} 行已勾选但被当前筛选隐藏）</span>}
+              ；库中已存在将跳过 <span className="tabular-nums">{counts.duplicates}</span> 行
+              {counts.invalid > 0 && <span className="tabular-nums">；校验错误 {counts.invalid} 行</span>}
+              {counts.deselected > 0 && <span className="tabular-nums text-amber-700 dark:text-amber-400">；已取消 {counts.deselected} 行</span>}。
+              <span className="ml-1">
+                重复行不可勾选 —— 它与库中那一行内容完全相同，导入与否结果一致。
+              </span>
+            </p>
+          )}
 
           <div className="flex justify-end gap-2">
             <Button
@@ -274,9 +431,13 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
             >
               取消
             </Button>
-            <Button type="button" onClick={() => void handleCommit()} disabled={committing || validCount === 0}>
+            <Button
+              type="button"
+              onClick={() => void handleCommit()}
+              disabled={committing || (counts?.willImport ?? 0) === 0}
+            >
               {committing ? <RotateCcw className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" /> : null}
-              确认导入 {validCount} 行
+              确认导入 {counts?.willImport ?? 0} 行
             </Button>
           </div>
         </div>
