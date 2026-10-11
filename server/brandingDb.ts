@@ -10,6 +10,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { getSetting, setSetting } from './settingsDb.ts';
 import { UPLOADS_DIR } from './documentsDb.ts';
 
@@ -82,6 +83,34 @@ export function getBrandingSlot(slot: BrandingSlot): (SlotRecord & { absPath: st
   return { ...rec, absPath };
 }
 
+/**
+ * 把临时文件原子地落定成 target。
+ *
+ * 上传的临时文件写在 os.tmpdir()（默认 C:\Users\...\AppData\Local\Temp），
+ * 而 target 在 DATA_DIR 下。**项目和数据目录不在同一盘时**（例如项目挪到 E:\，
+ * TEMP 仍在 C:\），fs.renameSync 会抛 EXDEV —— 品牌上传就变成 500，且只在这种
+ * 布局下复现，测试机在 C:\ 时一直"正常"。
+ *
+ * 所以 EXDEV 时改成"先拷进目标目录再改名"：最终那次 rename 是同盘操作，
+ * 仍然原子，半截文件不会顶掉正在用的图。
+ */
+function commitTmpFile(tmpPath: string, target: string): void {
+  try {
+    fs.renameSync(tmpPath, target);
+    return;
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== 'EXDEV') throw e;
+  }
+  const staged = `${target}.${crypto.randomUUID()}.tmp`;
+  try {
+    fs.copyFileSync(tmpPath, staged);
+    fs.renameSync(staged, target);
+  } finally {
+    fs.rmSync(staged, { force: true });
+  }
+  fs.rmSync(tmpPath, { force: true });
+}
+
 /** 用临时文件 + rename 落定，半截写入不会顶掉正在用的图 */
 export function commitBrandingFile(slot: BrandingSlot, tmpPath: string, sniff: { type: string; ext: string }, size: number): SlotRecord {
   fs.mkdirSync(BRANDING_DIR, { recursive: true });
@@ -90,7 +119,7 @@ export function commitBrandingFile(slot: BrandingSlot, tmpPath: string, sniff: {
   const map = readMap();
   const prev = map[slot];
 
-  fs.renameSync(tmpPath, target);
+  commitTmpFile(tmpPath, target);
   const record: SlotRecord = { file, type: sniff.type, size, updatedAt: new Date().toISOString() };
   setSetting(SETTINGS_KEY, { ...map, [slot]: record });
 
