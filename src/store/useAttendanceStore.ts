@@ -1,8 +1,13 @@
 import { create } from 'zustand';
 import { attendanceApi } from '../services/attendanceApi';
-import type { AnalyzeCoverage } from '../services/attendanceApi';
+import type { AnalyzeCoverage, DeptShiftRule } from '../services/attendanceApi';
 import { createAsyncAction } from './utils';
 
+/**
+ * 班次与排班类型仍保留导出：`attendanceApi` 还有这几个端点，服务端判定链路
+ * `attendanceDb.buildShiftPlanner` 也仍以它们为兜底（部门时段没配时逐日排班）。
+ * 2026-10-10 把这两页的界面撤了，所以 store 不再持有它们 —— 见 fetchData 注释。
+ */
 export type Shift = {
   id: string;
   name: string;
@@ -37,8 +42,8 @@ export type Anomaly = {
 };
 
 interface AttendanceState {
-  shifts: Shift[];
-  schedules: EmployeeSchedule[];
+  /** 部门工作时段：判定链路的**实际**口径来源，进页面就要拿到（统计卡与工作流条都读它） */
+  shiftRules: DeptShiftRule[];
   records: PunchRecord[];
   anomalies: Anomaly[];
   /** 最近一次异常分析的覆盖统计（null = 服务端还没有留档） */
@@ -49,15 +54,10 @@ interface AttendanceState {
   error: string | null;
 
   fetchData: () => Promise<string | null>;
+  /** 时段被增删改后单独回读，不必整页重取 */
+  fetchShiftRules: () => Promise<string | null>;
 
-  addShift: (shift: Shift) => Promise<string | null>;
-  updateShift: (id: string, shift: Partial<Shift>) => Promise<string | null>;
-  deleteShift: (id: string) => Promise<string | null>;
-
-  setSchedules: (schedules: EmployeeSchedule[]) => Promise<string | null>;
   setRecords: (records: PunchRecord[]) => Promise<string | null>;
-  removeSchedule: (employeeId: string) => Promise<string | null>;
-  clearSchedules: () => Promise<string | null>;
   removeRecord: (id: string) => Promise<string | null>;
   clearRecords: () => Promise<string | null>;
 
@@ -65,8 +65,7 @@ interface AttendanceState {
 }
 
 export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
-  shifts: [],
-  schedules: [],
+  shiftRules: [],
   records: [],
   anomalies: [],
   analyzeCoverage: null,
@@ -74,18 +73,29 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
   isLoading: false,
   error: null,
 
+  /**
+   * 一次拉齐考勤页需要的全部数据。
+   *
+   * 这里原先还并发了 `fetchShifts()` 与 `fetchSchedules()`：班次与排班的界面
+   * 2026-10-10 已撤，全站没有任何组件读 `state.shifts` / `state.schedules`，
+   * 于是每次进页面白打两个请求、取回没人看的数据。班次/排班本身仍是服务端的
+   * 兜底链路，所以端点保留，只是界面不再替它去取。
+   *
+   * 部门时段原先不在这里取 —— 页面用 `useEffect([activeTab])` 单独拉一次来喂
+   * 统计卡，切标签才刷新。那是个自认的绕法（注释里写着"避免再引一层全局
+   * store"），后果是统计卡的"部门时段"初次进页面显示 0、切一下标签才对。
+   * 现在时段是一等公民，跟记录/异常一起进来。
+   */
   fetchData: async () => {
     return createAsyncAction(set, async () => {
-      const [shifts, schedules, records, anomalies, analysis] = await Promise.all([
-        attendanceApi.fetchShifts(),
-        attendanceApi.fetchSchedules(),
+      const [shiftRules, records, anomalies, analysis] = await Promise.all([
+        attendanceApi.fetchShiftRules(),
         attendanceApi.fetchRecords(),
         attendanceApi.fetchAnomalies(),
         attendanceApi.fetchAnalysisStatus(),
       ]);
       return {
-        shifts,
-        schedules,
+        shiftRules,
         records,
         anomalies,
         analyzeCoverage: analysis.coverage,
@@ -94,35 +104,9 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
     });
   },
 
-  addShift: async (shift) => {
+  fetchShiftRules: async () => {
     return createAsyncAction(set, async () => {
-      const newShift = await attendanceApi.createShift(shift);
-      return { shifts: [...get().shifts, newShift] };
-    });
-  },
-
-  updateShift: async (id, shift) => {
-    return createAsyncAction(set, async () => {
-      const updatedShift = await attendanceApi.updateShift(id, shift);
-      return {
-        shifts: get().shifts.map((s) => (s.id === id ? updatedShift : s)),
-      };
-    });
-  },
-
-  deleteShift: async (id) => {
-    return createAsyncAction(set, async () => {
-      await attendanceApi.deleteShift(id);
-      return {
-        shifts: get().shifts.filter((s) => s.id !== id),
-      };
-    });
-  },
-
-  setSchedules: async (schedules) => {
-    return createAsyncAction(set, async () => {
-      const updatedSchedules = await attendanceApi.updateSchedules(schedules);
-      return { schedules: updatedSchedules };
+      return { shiftRules: await attendanceApi.fetchShiftRules() };
     });
   },
 
@@ -130,22 +114,6 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
     return createAsyncAction(set, async () => {
       const updatedRecords = await attendanceApi.updateRecords(records);
       return { records: updatedRecords };
-    });
-  },
-
-  /** 删除单个员工排班：必须走 DELETE（PUT 批量是 upsert-only，删了会原地复活） */
-  removeSchedule: async (employeeId) => {
-    return createAsyncAction(set, async () => {
-      await attendanceApi.deleteSchedule(employeeId);
-      return { schedules: get().schedules.filter((s) => s.employeeId !== employeeId) };
-    });
-  },
-
-  /** 清空全部排班（服务端仅 ADMIN） */
-  clearSchedules: async () => {
-    return createAsyncAction(set, async () => {
-      const schedules = await attendanceApi.clearSchedules();
-      return { schedules };
     });
   },
 

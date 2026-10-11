@@ -1,43 +1,71 @@
 import PageContainer from "@/components/PageContainer";
 import React from 'react';
-import Filter from './components/Filter';
-import Stats from './components/Stats';
-import Table from './components/Table';
+import { toast } from 'sonner';
+import { AlertTriangle, TriangleAlert, Upload } from 'lucide-react';
 import MonthlyReport from './components/MonthlyReport';
 import ShiftRules from './components/ShiftRules';
+import Stats from './components/Stats';
+import WorkflowBar from './components/WorkflowBar';
+import { deriveWorkflowSteps, STEP_BLOCK_HINTS } from './lib/workflow';
+import { RecordsFilterBar, AnomalyFilterBar } from './components/FilterBar';
+import RecordsTable from './components/RecordsTable';
+import AnomaliesTable from './components/AnomaliesTable';
+import { ImportDialogHost } from './components/ImportPanel';
+import { Button } from '@/components/ui/button';
+import { Permission } from '@/components/Permission';
 import { useAttendance } from './hooks/useAttendance';
-import { attendanceApi, type DeptShiftRule } from '@/services/attendanceApi';
-import { useEffect, useMemo, useState } from 'react';
+import { useAttendanceStore } from '@/store/useAttendanceStore';
 
-/** 「出勤人次」= 有打卡的「员工 × 日期」组合数（与判定口径一致，跨零点班次仍算一天）。 */
-function countPunchDays(records: { employeeId: string; date: string }[]): number {
-  const days = new Set<string>();
-  for (const r of records) days.add(`${r.employeeId}|${r.date}`);
-  return days.size;
-}
-
+/**
+ * 考勤管理：一条四步流水线。
+ *
+ * ①配部门时段 → ②导打卡记录 → ③分析异常 → ④看月度报表。
+ *
+ * 重排的依据是**数据依赖**而不是功能分类：时段是分析的前置（不配就整批
+ * 「未判定」），打卡是分析的输入，月报是分析的产出。原先四个平铺标签把前置
+ * 条件夹在第二位，于是最常见的失败模式 —— "异常是 0 条" —— 看不出是没分析
+ * 还是分析过确实没人异常。现在工作流条把状态摆在最上面，且每步都能直达，
+ * 它同时承担了原来的标签栏（省掉两条重复的导航）。
+ */
 export default function Attendance() {
-  const attendanceData = useAttendance();
-  const [shiftRuleCount, setShiftRuleCount] = useState(0);
+  const a = useAttendance();
+  const [importOpen, setImportOpen] = React.useState(false);
 
-  // 部门时段条数：Stats 需要的口径条数。改动发生在 ShiftRules 组件内部，
-  // 这里靠「切回本页时重取」保持同步（避免为此再引一层全局 store）。
-  useEffect(() => {
-    let alive = true;
-    attendanceApi
-      .fetchShiftRules()
-      .then((rules: DeptShiftRule[]) => {
-        if (alive) setShiftRuleCount(rules.length);
-      })
-      .catch(() => {
-        if (alive) setShiftRuleCount(0);
-      });
-    return () => {
-      alive = false;
-    };
-  }, [attendanceData.activeTab]);
+  const analyzeCoverage = useAttendanceStore((s) => s.analyzeCoverage);
+  const analyzeCoverageAt = useAttendanceStore((s) => s.analyzeCoverageAt);
 
-  const punchDays = useMemo(() => countPunchDays(attendanceData.records), [attendanceData.records]);
+  const steps = deriveWorkflowSteps({
+    shiftRuleCount: a.shiftRuleCount,
+    recordCount: a.records.length,
+    anomalyCount: a.anomalies.length,
+    analyzedAt: analyzeCoverageAt,
+  });
+
+  const currentStep = steps.find((s) => s.tab === a.activeTab);
+  const blockHint = currentStep?.state === 'blocked' ? STEP_BLOCK_HINTS[a.activeTab] : undefined;
+  const canManage = a.hasPermission('attendance:manage');
+
+  const handleAnalyze = React.useCallback(async () => {
+    if (a.records.length === 0) {
+      toast.warning('还没有打卡记录，先去「打卡记录」导入或等待企业微信同步');
+      a.setActiveTab('records');
+      return;
+    }
+    if (a.shiftRuleCount === 0) {
+      toast.warning('还没有配置部门时段，无法对班判定');
+      a.setActiveTab('shift-rules');
+      return;
+    }
+    // store 动作把失败原因作为返回值（不抛异常），必须看返回值再报成功 ——
+    // 否则后端 403/500 时界面照样弹「异常分析完成」。
+    const failure = await a.analyzeAnomalies();
+    if (failure) toast.error(failure);
+    else toast.success('异常分析完成');
+  }, [a]);
+
+  const recordFilterActive = a.recordFilterActive;
+  const anomalyFilterActive = a.anomalyQuery.trim() !== '' || a.anomalyGroup !== 'all';
+  const showStatsAndFilter = a.activeTab !== 'monthly' && a.activeTab !== 'shift-rules';
 
   return (
     <PageContainer width="none">
@@ -45,53 +73,120 @@ export default function Attendance() {
         <div className="page-header shrink-0">
           <div>
             <h1 className="page-title">考勤管理</h1>
-            <p className="page-subtitle">导入打卡记录，按部门工作时段自动对班并分析考勤异常</p>
+            <p className="page-subtitle">先配部门时段，再导入打卡，最后做异常判定与月报</p>
           </div>
-          {/* Tab 切换 */}
-          <div className="tab-group" role="tablist" aria-label="考勤管理">
-            {(
-              [
-                { tab: 'records', label: '打卡记录' },
-                { tab: 'shift-rules', label: '部门时段' },
-                { tab: 'anomalies', label: '异常分析' },
-                { tab: 'monthly', label: '月度报表' },
-              ] as const
-            ).map(({ tab, label }) => (
-              <button
-                key={tab}
-                role="tab"
-                aria-selected={attendanceData.activeTab === tab}
-                onClick={() => attendanceData.setActiveTab(tab)}
-                className={attendanceData.activeTab === tab ? 'tab-item-active' : 'tab-item'}
-              >
-                {label}
-              </button>
-            ))}
+          <div className="flex items-center gap-2">
+            {a.activeTab === 'records' && canManage && (
+              <Button variant="secondary" onClick={() => setImportOpen(true)}>
+                <Upload className="h-4 w-4" aria-hidden="true" />
+                导入打卡记录
+              </Button>
+            )}
+            {a.activeTab === 'anomalies' && (
+              <Permission code="attendance:manage">
+                <Button onClick={() => void handleAnalyze()}>
+                  <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+                  一键分析异常
+                </Button>
+              </Permission>
+            )}
           </div>
         </div>
-        {attendanceData.activeTab !== 'monthly' && attendanceData.activeTab !== 'shift-rules' && (
-          <div className="shrink-0 space-y-4 mb-4">
-            <Stats
-              records={attendanceData.records}
-              anomalies={attendanceData.anomalies}
-              shiftRuleCount={shiftRuleCount}
-              punchDays={punchDays}
-            />
-            <Filter {...attendanceData} />
-          </div>
-        )}
+
+        <div className="shrink-0 space-y-3">
+          <WorkflowBar steps={steps} activeTab={a.activeTab} onSelect={a.setActiveTab} />
+
+          {blockHint && (
+            <div
+              role="status"
+              className="flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-50 px-4 py-2.5 dark:border-amber-500/30 dark:bg-amber-500/10"
+            >
+              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-400" aria-hidden="true" />
+              <p className="text-2xs text-amber-800 dark:text-amber-300">{blockHint}</p>
+            </div>
+          )}
+
+          {showStatsAndFilter && (
+            <>
+              <Stats
+                recordCount={a.records.length}
+                punchDays={recordFilterActive ? a.punchDays : a.totalPunchDays}
+                punchDaysFiltered={recordFilterActive}
+                shiftRuleCount={a.shiftRuleCount}
+                anomalyCount={a.anomalies.length}
+              />
+              {a.activeTab === 'records' ? (
+                <RecordsFilterBar
+                  filter={a.recordFilter}
+                  onChange={a.setRecordFilter}
+                  onReset={a.resetRecordFilter}
+                  active={recordFilterActive}
+                  matched={a.filteredRecords.length}
+                  total={a.records.length}
+                />
+              ) : (
+                <AnomalyFilterBar
+                  query={a.anomalyQuery}
+                  onQueryChange={a.setAnomalyQuery}
+                  group={a.anomalyGroup}
+                  onGroupChange={a.setAnomalyGroup}
+                  counts={a.anomalyCounts}
+                />
+              )}
+            </>
+          )}
+        </div>
+
         <div className="flex-1 card-base overflow-hidden flex flex-col min-h-0">
           <div className="flex-1 overflow-auto" tabIndex={0} role="region" aria-label="考勤数据表">
-            {attendanceData.activeTab === 'monthly' ? (
+            {a.activeTab === 'monthly' ? (
               <MonthlyReport />
-            ) : attendanceData.activeTab === 'shift-rules' ? (
+            ) : a.activeTab === 'shift-rules' ? (
               <ShiftRules />
+            ) : a.activeTab === 'records' ? (
+              <RecordsTable
+                records={a.filteredRecords}
+                totalCount={a.records.length}
+                filterActive={recordFilterActive}
+                onResetFilter={a.resetRecordFilter}
+                onImportClick={() => setImportOpen(true)}
+                isLoading={a.isLoading}
+                canManage={canManage}
+                canPurge={a.hasPermission('attendance:purge')}
+                removeRecord={a.removeRecord}
+                clearRecords={a.clearRecords}
+                page={a.recordsPage}
+                onPageChange={a.setRecordsPage}
+                itemsPerPage={a.ITEMS_PER_PAGE}
+              />
             ) : (
-              <Table {...attendanceData} />
+              <AnomaliesTable
+                anomalies={a.filteredAnomalies}
+                totalCount={a.anomalies.length}
+                filterActive={anomalyFilterActive}
+                onResetFilter={() => {
+                  a.setAnomalyQuery('');
+                  a.setAnomalyGroup('all');
+                }}
+                onAnalyze={() => void handleAnalyze()}
+                canAnalyze={canManage}
+                hasAnalysis={!!analyzeCoverage}
+                isLoading={a.isLoading}
+              />
             )}
           </div>
         </div>
       </div>
+
+      <ImportDialogHost
+        isOpen={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={() => void a.fetchData()}
+        onGoAnalyze={() => {
+          setImportOpen(false);
+          a.setActiveTab('anomalies');
+        }}
+      />
     </PageContainer>
   );
 }

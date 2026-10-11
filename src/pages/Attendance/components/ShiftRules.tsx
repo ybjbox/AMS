@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useDepartmentStore } from '@/store/useDepartmentStore';
+import { useAttendanceStore } from '@/store/useAttendanceStore';
 import { useUserStore as useAuthStore } from '@/store/useUserStore';
 import { attendanceApi, type DeptShiftRule, type EffectiveRulesView } from '@/services/attendanceApi';
 
@@ -85,6 +86,11 @@ export default function ShiftRules() {
   const departmentsReady = useDepartmentStore((state) => state.initialized);
   // 与服务端同一档（/attendance 写操作默认 HR+）；开关关闭时 hasPermission 恒真，真门槛仍在服务端
   const canManage = useAuthStore((state) => state.hasPermission)('attendance:manage');
+
+  // 页面顶部的四步工作流条与统计卡都读 store 里的时段条数。本组件自己维护
+  // 一份本地列表用于渲染表格，所以每次增删改后顺手把 store 也回读一次 ——
+  // 否则用户改完时段，工作流条第 ① 步仍显示"尚未配置"，要切标签才刷新。
+  const syncShiftRulesToStore = useAttendanceStore((state) => state.fetchShiftRules);
 
   const optionList = useMemo(() => flattenDepartments(departmentTree as never), [departmentTree]);
 
@@ -163,6 +169,7 @@ export default function ShiftRules() {
         });
       }
       await load();
+      void syncShiftRulesToStore();
       setDraft(null);
       toast.success('部门时段已保存，下次异常分析即按新时段对班');
     } catch (e) {
@@ -183,6 +190,7 @@ export default function ShiftRules() {
     try {
       await attendanceApi.deleteShiftRule(rule.id);
       await load();
+      void syncShiftRulesToStore();
       toast.success('时段已删除');
     } catch (e) {
       toast.error(`删除失败：${e instanceof Error ? e.message : String(e)}`);
