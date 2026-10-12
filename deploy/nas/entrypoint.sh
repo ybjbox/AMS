@@ -87,8 +87,13 @@ ensure_repo() {
 build_at() {
   local sha="$1"
   git -C "$APP" checkout -q --detach "$(short "$sha")" || { log "checkout $(short "$sha") 失败"; return 1; }
-  # 前端构建要 devDependencies（vite/tailwind），所以这里不能 --omit=dev
-  ( cd "$APP" && npm ci --legacy-peer-deps --no-audit --no-fund ) || { log "npm ci 失败"; return 1; }
+  # 前端构建要 devDependencies（vite/tailwind）。光写"不加 --omit=dev"是不够的：
+  # 镜像和 compose 里都设了 NODE_ENV=production，而 npm v9+ 会据此**自己**推出 --omit=dev，
+  # 于是 768 个 dev 包一个都不装，`vite build` 得到 `sh: 1: vite: not found`。
+  # 必须显式 --include=dev，并且把 npm ci 这一步的 NODE_ENV 摘掉（两道都上：容器里的 npm 版本
+  # 我本地没法复现，而这个 bug 的成因正是 NODE_ENV 推导出的 omit）。
+  # 下一步 `npm run build` 仍在 NODE_ENV=production 下跑，产物是生产构建。
+  ( cd "$APP" && NODE_ENV=development npm ci --include=dev --legacy-peer-deps --no-audit --no-fund ) || { log "npm ci 失败"; return 1; }
   ( cd "$APP" && npm run build ) || { log "前端构建失败（npm run build 退出码非 0）"; return 1; }
   # 构建"成功退出"不等于产物在：vite 偶发只写出一半
   [ -f "$APP/dist/index.html" ] || { log "构建后仍缺 dist/index.html"; return 1; }

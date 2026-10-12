@@ -21,6 +21,14 @@ services:
     image: ams-runtime:latest
     container_name: ams
     restart: unless-stopped
+    # 覆盖镜像里烧进去的 ENTRYPOINT，改用卷里那份（= main 上的 deploy/nas/entrypoint.sh）。
+    # 为什么要绕这一下：飞牛面板的"启动/更新"只做 recreate、不 build（实测镜像 ID 三次不变），
+    # 而 entrypoint 恰恰是最需要改的东西 —— 走这条路径后，改它只要 git push，下一次容器重启
+    # 就生效，不必再进面板。首次部署时卷是空的、那份文件还不存在，退回镜像里的引导副本。
+    entrypoint:
+      - /bin/sh
+      - -c
+      - 'e=/app/deploy/nas/entrypoint.sh; [ -f "$e" ] || e=/usr/local/bin/entrypoint.sh; exec bash "$e"'
     ports:
       # 宿主 3100 → 容器 3000。**不是** 3000:3000：NAS 上 3000 是 MoviePilot 的
       # nginx 在用，而它跑 `network_mode: host`，在 `docker container ls` 的 Ports
