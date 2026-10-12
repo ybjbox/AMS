@@ -22,7 +22,11 @@ services:
     container_name: ams
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      # 宿主 3100 → 容器 3000。**不是** 3000:3000：NAS 上 3000 是 MoviePilot 的
+      # nginx 在用，而它跑 `network_mode: host`，在 `docker container ls` 的 Ports
+      # 列里根本不出现 —— 只看映射表会以为 3000 是空的，起容器时才报 address already in use。
+      # 容器内部端口保持 3000（runtime.Dockerfile 的 HEALTHCHECK 打的是 127.0.0.1:3000）。
+      - "3100:3000"
     # 管理员口令只存在于 NAS 上的这个文件里，不进仓库、不进聊天
     env_file:
       - .env

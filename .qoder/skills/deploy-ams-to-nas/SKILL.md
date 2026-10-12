@@ -38,8 +38,12 @@ scripts\nas-cli.cmd docker compose ls
 
 ## 已踩过的坑（都是本机实测）
 
-1. **Git Bash 会把 `/vol1/...` 转换成本地路径**，直连 exe 时报 `Unsupported path`。
-   解决：`export MSYS_NO_PATHCONV=1`；整条命令走 `cmd //c "scripts\\nas-cli.cmd ..."` 也可以。
+1. **Git Bash 会把 `/vol1/...` 转换成本地路径**，直连 exe 时报 `Unsupported path`，走
+   `cmd //c` 时会被改写成 `C:\Program Files\Git\vol1\...`（空格还把参数劈成两半）。
+   **凡是参数里带 NAS 绝对路径**（`file upload/ls`、任何 `--json` 里含 `/vol1`）就用这一种形式：
+   `MSYS_NO_PATHCONV=1 cmd /c "scripts\\nas-cli.cmd ..."` —— 注意是 `/c` 单反杠；
+   写成 `//c` 加上 `MSYS_NO_PATHCONV=1` 会让 cmd 收到非法开关，只打出 banners 什么也不干。
+   参数里没有 `/vol1` 时（`docker container ls`、`file ls` 之外的绝大多数）`cmd //c` 正常可用。
 2. **`--overwrite` 的取值是 `skip|replace|rename`**，不是布尔。写操作一律要 `--yes`。
 3. **子命令名不要猜**：删镜像是 `docker image rm`（不是 `remove`）；`file upload <远端目录> <本地文件>`
    落地文件名**取本地文件名** —— 想传成 `docker-compose.yml` 就得先让本地文件叫这个名字，
@@ -48,6 +52,18 @@ scripts\nas-cli.cmd docker compose ls
    （194 MB）在 NAS 上挂了半天才删掉。上传过的文件、预拉的镜像、建过的项目都算残留。
 5. NAS 侧的编排文件名必须是 **`docker-compose.yml`**（现有 10 个项目都是这个名），
    仓库里那份叫 `deploy/nas/compose.yml`，上传时要改名 —— 面板按前者找。
+6. **`docker container ls` 的 Ports 列不能用来判断端口空不空**：跑 `network_mode: host` 的
+   容器（本机 MoviePilot、airconnect、homeassistant）在该列是**空白**的。第一次部署就因此
+   把 AMS 写成 `3000:3000`，起容器才报 `address already in use` —— 3000 其实是 MoviePilot 的
+   nginx。现在宿主端口是 **3100**（`docker-compose.yml` 里 `3100:3000`，容器内仍是 3000）。
+   挑端口前先直接探一次：
+   `node -e "net.connect({host:NAS_HOST,port:P,timeout:1200},()=>console.log('占用')).on('error',()=>console.log('空闲'))"`。
+7. **`containerRemove` 认容器名，不认 id**：传 64 位 id 或 12 位短 id 都是 `errno 52428814`，
+   传 `{"containerId":"ams","force":true}` 才回 `"ok"`。删不掉的容器会占住端口占用判断，
+   遇到 `address already in use` 又确认宿主没人用时，先按名字删。
+8. **compose 系列端点的入参一个都猜不出来**：`composeContainers` 用 `name` / `projectName` /
+   `project` / `composeName` / 加 `folder` 全是 `errno 52428803`（参数无效）。别再花时间试了，
+   项目级的启动/更新只在面板做。只读探测 `docker request` 也要带 `--yes`，否则 CLI 本地就拦下。
 
 ## 常用操作
 
@@ -57,8 +73,12 @@ scripts\nas-cli.cmd docker compose ls                 # 看 ams 项目的 runnin
 scripts\nas-cli.cmd docker container ls --all         # 看容器状态（含 stopped）
 scripts\nas-cli.cmd docker container inspect <id>     # State.Running / 端口映射
 
+# 删掉建失败的容器（端口占位/名字冲突时用；值必须是容器名，传 id 得 errno 52428814）
+scripts\nas-cli.cmd docker request appcgi.dockermgr.containerRemove --json '{"containerId":"ams","force":true}' --yes
+
 # 看部署日志（entrypoint 会写"发现新版本 / 已上线 / 构建失败 / 回滚"）
-scripts\nas-cli.cmd docker request appcgi.dockermgr.containerLogs --json '{"id":"<容器id>","tail":200}' --yes
+# 参数键是 containerId（写 id 会被设备拒掉：errno 52428803）；值可以用容器名
+scripts\nas-cli.cmd docker request appcgi.dockermgr.containerLogs --json '{"containerId":"ams","tail":200}' --yes
 
 # 改了 deploy/nas 下的文件后重新上传（NAS 侧是平铺布局，编排文件必须叫 docker-compose.yml）
 export MSYS_NO_PATHCONV=1        # 不加这条，Git Bash 会把 /vol1/... 换成本地路径
@@ -86,7 +106,7 @@ composeStart / composeStop`，**没有 composeCreate 的入参 schema，也没�
 ## 验证一次部署是否成功
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}\n" "http://<NAS_HOST>:3000/api/health"   # 期望 200；地址取 .env.local 的 NAS_HOST
+curl -s -o /dev/null -w "%{http_code}\n" "http://<NAS_HOST>:3100/api/health"   # 期望 200；地址取 .env.local 的 NAS_HOST
 ```
 
 再看容器日志里的 `已上线 <sha10>`，sha 应与 `git log -1 --format=%h origin/main` 对得上。
