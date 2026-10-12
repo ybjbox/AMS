@@ -56,9 +56,13 @@ services:
       REPO_URL: "https://github.com/ybjbox/AMS.git"
       BRANCH: "main"
       INTERVAL_SECONDS: "300"
-      # 每份备份都带 uploads + 模板快照，只按天数删会没上界；NAS 上给 4 GB
+      # 每份备份都带 uploads + 模板快照，只按天数删会没上界。
+      # 256 MB 不是随手写的：本项目住在 /vol1（53 GB 的 SSD，与另外 10 个 compose
+      # 项目和系统应用共用），清理掉三张安装 ISO 之后空闲也只有 ~10 GB。
+      # 先前这里写 4096（4 GB）比这块盘的剩余空间还大 —— 等于"按容量清理"这道保险
+      # 永远不会触发，写满只会 ENOSPC。份数上限 14 保持不动，由容量先收口。
       BACKUP_MAX_COUNT: "14"
-      BACKUP_MAX_TOTAL_MB: "4096"
+      BACKUP_MAX_TOTAL_MB: "256"
     volumes:
       # 代码 + 构建产物 + node_modules 都在这个卷里：容器重建不用重新 npm ci，
       # 而 entrypoint 只做 git fetch 就能升到新版本
