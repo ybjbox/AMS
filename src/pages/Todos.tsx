@@ -1,13 +1,15 @@
 import PageContainer from "@/components/PageContainer";
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { useTodoStore } from '../store/useTodoStore';
+import { useTodoStore, todoUrgency } from '../store/useTodoStore';
 import { CheckCircle2, Circle, Clock, Plus, Trash2, Calendar, ListTodo } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { formatDateTime } from '@/utils/dateUtils';
+import { formatDateTime, formatDate } from '@/utils/dateUtils';
 import { useConfirm } from '@/hooks/useConfirm';
+
+type Filter = 'all' | 'pending' | 'overdue' | 'today';
 
 export default function Todos() {
   const confirm = useConfirm();
@@ -22,6 +24,7 @@ export default function Todos() {
     fetchTodos();
   }, [fetchTodos]);
   const [isAdding, setIsAdding] = useState(false);
+  const [only, setOnly] = useState<Filter>('all');
   const [newTodo, setNewTodo] = useState({ title: '', description: '', dueDate: '' });
 
   const handleAdd = useCallback(
@@ -39,11 +42,30 @@ export default function Todos() {
   );
 
   const sortedTodos = useMemo(() => {
-    return [...todos].sort((a, b) => {
-      if (a.completed !== b.completed) return a.completed ? 1 : -1;
-      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-    });
-  }, [todos]);
+    const key = formatDate(new Date());
+    return [...todos]
+      .filter((t) => {
+        if (only === 'all') return true;
+        if (only === 'pending') return !t.completed;
+        if (t.completed) return false;
+        const due = (t.dueDate ?? '').slice(0, 10);
+        if (!due) return false;
+        return only === 'overdue' ? due < key : due === key;
+      })
+      .sort((a, b) => {
+        if (a.completed !== b.completed) return a.completed ? 1 : -1;
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      });
+  }, [todos, only]);
+
+  /** 未完成 / 已逾期 / 今天到期 —— 点数字即筛选，所以它们不是装饰 */
+  const urgency = useMemo(() => todoUrgency(todos), [todos]);
+  const chips: { id: Filter; label: string; n: number; tone: string }[] = [
+    { id: 'all', label: '全部', n: todos.length, tone: '' },
+    { id: 'overdue', label: '已逾期', n: urgency.overdue, tone: urgency.overdue ? 'text-red-700 dark:text-red-400' : '' },
+    { id: 'today', label: '今天到期', n: urgency.dueToday, tone: urgency.dueToday ? 'text-amber-700 dark:text-amber-400' : '' },
+    { id: 'pending', label: '未完成', n: urgency.pending, tone: '' },
+  ];
 
   const onToggleTodoClick = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -85,6 +107,30 @@ export default function Todos() {
             新建待办
           </button>
         </div>
+
+      {/*
+        催办数字。原先整页一个计数都没有，而侧栏角标只说"未完成 N 件" ——
+        看不出来里面有几件已经过期。点数字即筛选。
+      */}
+      <div className="shrink-0 flex flex-wrap items-center gap-2 text-xs">
+        {chips.map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            aria-pressed={only === c.id}
+            onClick={() => setOnly(c.id)}
+            className={
+              'rounded-full border px-2.5 py-1 transition-colors duration-200 ' +
+              (c.tone ?? '') +
+              (only === c.id
+                ? ' border-brand-500 bg-brand-50 font-medium dark:bg-brand-500/15'
+                : ' border-zinc-200 dark:border-zinc-600')
+            }
+          >
+            {c.label} <span className="font-semibold tabular-nums">{c.n}</span>
+          </button>
+        ))}
+      </div>
 
       <AnimatePresence>
         {isAdding && (
@@ -151,17 +197,25 @@ export default function Todos() {
       <div className="card-base overflow-hidden">
         {sortedTodos.length === 0 ? (
           <EmptyState
-            title="暂无待办事项"
-            description="点击右上角按钮添加您的第一个任务"
+            title={only === 'all' ? '暂无待办事项' : `没有「${chips.find((c) => c.id === only)?.label ?? ''}」的待办`}
+            description={
+              only === 'all' ? '点击右上角按钮添加您的第一个任务' : '这类暂时没有，换回「全部」看看其余待办。'
+            }
             icon={ListTodo}
             action={
-              <button
-                onClick={() => setIsAdding(true)}
-                className="btn-primary"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                立即创建
-              </button>
+              only === 'all' ? (
+                <button
+                  onClick={() => setIsAdding(true)}
+                  className="btn-primary"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  立即创建
+                </button>
+              ) : (
+                <button onClick={() => setOnly('all')} className="btn-secondary">
+                  看全部
+                </button>
+              )
             }
           />
         ) : (

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { toast } from 'sonner';
 import { Todo } from '../types';
 import { todoApi } from '../services/todoApi';
+import { formatDate } from '../utils/dateUtils';
 
 interface TodoState {
   todos: Todo[];
@@ -14,6 +15,32 @@ interface TodoState {
 
 function errText(e: unknown, fallback: string): string {
   return (e as { error?: string })?.error || fallback;
+}
+
+/**
+ * 待办的催办口径：未完成 / 已逾期 / 今天到期。
+ *
+ * 侧栏角标、首页卡、待办页原先各写一遍 `todos.filter(t => !t.completed).length`，
+ * 而"未完成 N 件"本身不指向任何动作 —— 真正要看到的是其中几件已经过期、几件今天到期。
+ * 一份算法放这里，三处读它，才不会出现角标 5、页面写 4 的打架。
+ */
+export function todoUrgency(
+  todos: Todo[],
+  today = new Date()
+): { pending: number; overdue: number; dueToday: number } {
+  const key = formatDate(today);
+  let pending = 0;
+  let overdue = 0;
+  let dueToday = 0;
+  for (const t of todos) {
+    if (t.completed) continue;
+    pending += 1;
+    const due = (t.dueDate ?? '').slice(0, 10);
+    if (!due) continue; // 没设截止日的待办不该被算成逾期
+    if (due === key) dueToday += 1;
+    else if (due < key) overdue += 1;
+  }
+  return { pending, overdue, dueToday };
 }
 
 // 并发去重：同一时刻只允许一个 todos 请求在途

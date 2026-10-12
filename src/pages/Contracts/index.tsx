@@ -13,6 +13,8 @@ import { ContractPreviewModal } from './components/ContractPreviewModal';
 import { ContractTemplateEditor } from './components/ContractTemplateEditor';
 import { useContractPrint } from './hooks/useContractPrint';
 import { ContractTemplate } from './components/ContractTemplate';
+import { expiryBucket, expiryCounts, EXPIRY_BUCKET_LABEL, type ExpiryBucket } from './utils/expiryBucket';
+import { cn } from '@/lib/utils';
 
 // 状态筛选选项（value 与展示文案不一致，交由 ui/Select 的 items 映射）
 const STATUS_OPTIONS = [
@@ -45,6 +47,12 @@ export default function ContractsPage() {
     (p: number) => urlState.set({ page: p <= 1 ? null : p }),
     [urlState]
   );
+  /** 到期分档筛选：点顶部那行数字即切换（与状态筛选同样是 URL 态，可深链） */
+  const filterBucket = urlState.get('bucket');
+  const setFilterBucket = useCallback(
+    (b: string) => urlState.set({ bucket: !b || b === 'ALL' ? null : b, page: null }),
+    [urlState]
+  );
 
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -54,7 +62,8 @@ export default function ContractsPage() {
 
   useBodyOverflow(isPreviewOpen || isTemplateEditorOpen);
 
-  const filteredUsers = useMemo(() => {
+  /** 搜索 + 在职状态筛完的那一份：顶部量级数字按它算，所以数字永远等于"点进去能看到的" */
+  const scopedUsers = useMemo(() => {
     return users.filter((user) => {
       const matchesSearch =
         user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -66,6 +75,13 @@ export default function ContractsPage() {
       return matchesSearch && matchesStatus;
     });
   }, [users, searchQuery, filterStatus]);
+
+  const counts = useMemo(() => expiryCounts(scopedUsers), [scopedUsers]);
+
+  const filteredUsers = useMemo(
+    () => (filterBucket ? scopedUsers.filter((u) => expiryBucket(u) === filterBucket) : scopedUsers),
+    [scopedUsers, filterBucket]
+  );
 
   const ITEMS_PER_PAGE = 20;
   // 当筛选条件变化时重置页码
@@ -136,6 +152,48 @@ export default function ContractsPage() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/*
+            到期量级。原先页面上只有逐行的红色徽章，于是"到底几个人合同过期了"
+            这个问题没有答案 —— 得自己一页页数。每个数字点下去就是筛选，
+            所以它们不是装饰；数字按上面搜索+状态筛完的集合算，点进去必然看到这么多行。
+          */}
+          <div className="shrink-0 flex flex-wrap items-center gap-2 px-4 py-2 border-b border-zinc-200 dark:border-zinc-700 text-xs">
+            {(['expired', 'soon', 'none', 'ok'] as ExpiryBucket[]).map((b) => {
+              const n = counts[b];
+              const active = filterBucket === b;
+              const tone =
+                b === 'expired' && n > 0
+                  ? 'text-red-700 dark:text-red-400'
+                  : b === 'soon' && n > 0
+                    ? 'text-amber-700 dark:text-amber-400'
+                    : 'text-muted-foreground';
+              return (
+                <button
+                  key={b}
+                  type="button"
+                  aria-pressed={active}
+                  disabled={n === 0 && !active}
+                  onClick={() => setFilterBucket(active ? 'ALL' : b)}
+                  className={cn(
+                    'rounded-full border px-2.5 py-1 transition-colors duration-200',
+                    tone,
+                    active
+                      ? 'border-brand-500 bg-brand-50 font-medium dark:bg-brand-500/15'
+                      : 'border-zinc-200 dark:border-zinc-600',
+                    n === 0 && !active && 'opacity-50'
+                  )}
+                >
+                  {EXPIRY_BUCKET_LABEL[b]} <span className="font-semibold tabular-nums">{n}</span>
+                </button>
+              );
+            })}
+            {filterBucket && (
+              <button type="button" onClick={() => setFilterBucket('ALL')} className="text-muted-foreground underline underline-offset-2">
+                清除分档
+              </button>
+            )}
           </div>
 
           <ContractTable

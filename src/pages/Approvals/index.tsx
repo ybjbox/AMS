@@ -25,6 +25,9 @@ const STATUS_META: Record<ApprovalStatus, { label: string; variant: BadgeVariant
 };
 
 /** 台账筛选（status 值与后端 listApprovals 一致） */
+/** 审批记录一次取多少条：取满时在页面上说清楚，不静默截断 */
+const LEDGER_LIMIT = 300;
+
 const LEDGER_FILTERS: Array<{ id: 'decided' | 'pending' | 'approved' | 'rejected' | 'withdrawn' | ''; label: string }> = [
   { id: 'decided', label: '已处理' },
   { id: 'pending', label: '还在等' },
@@ -88,7 +91,7 @@ export default function Approvals() {
         jobs.push(approvalApi.listPending().then(setPending));
         jobs.push(
           approvalApi
-            .listAll({ status: ledgerStatus || undefined, month: ledgerMonth || undefined, limit: 300 })
+            .listAll({ status: ledgerStatus || undefined, month: ledgerMonth || undefined, limit: LEDGER_LIMIT })
             .then(setLedger)
         );
       }
@@ -567,7 +570,8 @@ export default function Approvals() {
 
           {/* 台账筛选：状态 + 处理月份（批过的单子不再从视野里消失） */}
           {tab === 'ledger' && (
-            <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-zinc-100 dark:border-zinc-700/60">
+            <>
+              <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-zinc-100 dark:border-zinc-700/60">
               {LEDGER_FILTERS.map((f) => (
                 <button
                   key={f.id || 'all'}
@@ -588,7 +592,14 @@ export default function Approvals() {
                 aria-label="按处理月份筛选"
                 className="ml-auto rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent px-2 py-1 text-xs text-zinc-700 dark:text-zinc-200 dark:[color-scheme:dark]"
               />
-            </div>
+              </div>
+              {/* 取数有上限：静默截断会让人以为"记录就只有这些" */}
+              {ledger.length >= LEDGER_LIMIT && (
+                <p className="px-4 pb-2 text-2xs text-muted-foreground">
+                  审批记录一次只取 {LEDGER_LIMIT} 条，上面已列满 —— 更早的请用月份筛选查看。
+                </p>
+              )}
+            </>
           )}
 
           {/* 批量决定工具条 */}

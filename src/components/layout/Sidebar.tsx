@@ -4,7 +4,7 @@ import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAppSettings } from '@/store/appSettings';
 import { DEFAULT_SYSTEM_ICON } from '@/config/constants';
 import { useUserStore } from '@/store/useUserStore';
-import { useTodoStore } from '@/store/useTodoStore';
+import { useTodoStore, todoUrgency } from '@/store/useTodoStore';
 import { routeConfig, applyNavOrder, RouteConfig } from '@/config/routes';
 import UserMenu from './UserMenu';
 
@@ -36,8 +36,8 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
     });
   }, [hasPermission, userPermissions]);
 
-  // 待办未完成数（侧边栏角标）
-  const pendingTodoCount = useTodoStore((state) => state.todos.filter((t) => !t.completed).length);
+  // 待办未完成数（侧边栏角标）：与首页卡、待办页共用 todoUrgency 一份算法
+  const pendingTodoCount = useTodoStore((state) => todoUrgency(state.todos).pending);
 
   // 用户在「系统设置 → 功能模块排序」里保存的自定义顺序
   const navOrder = useAppSettings((state) => state.navOrder);

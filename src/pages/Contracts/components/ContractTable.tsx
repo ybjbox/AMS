@@ -4,6 +4,7 @@ import { User } from '@/types';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { FailedState } from '@/components/ui/FailedState';
 import Badge from '@/components/ui/Badge';
+import { expiryBucket } from '../utils/expiryBucket';
 import { Eye, Printer, FileText } from 'lucide-react';
 
 interface ContractTableProps {
@@ -84,12 +85,9 @@ export const ContractTable = ({ filteredUsers, loadError, onRetry, onPreview, on
                 )}
                 {rowVirtualizer.getVirtualItems().map((virtualRow) => {
                   const user = filteredUsers[virtualRow.index];
-                  const daysToExpiry = user.daysToExpiry;
-                  // 没有登记到期日就不能断言「已过期」：未填合同的老员工、以及
-                  // 被服务端读侧裁掉合同字段的低权限账号，daysToExpiry 都是 0
-                  const hasExpiry = Boolean(user.contractExpiry);
-                  const isExpiringSoon = hasExpiry && daysToExpiry <= 30 && daysToExpiry > 0;
-                  const isExpired = hasExpiry && daysToExpiry <= 0;
+                  // 分档判断只有 `utils/expiryBucket` 一份：徽章、顶部量级、点数字筛选
+                  // 全走它，才不会出现"表格说 3 个过期、顶部说 2 个"。
+                  const bucket = expiryBucket(user);
 
                   return (
                     <tr
@@ -106,8 +104,8 @@ export const ContractTable = ({ filteredUsers, loadError, onRetry, onPreview, on
                         {user.department}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge variant={hasExpiry ? (isExpired ? 'destructive' : isExpiringSoon ? 'warning' : 'primary') : 'neutral'}>
-                          {hasExpiry ? (isExpired ? '已过期' : isExpiringSoon ? '即将到期' : '正常') : '未登记'}
+                        <Badge variant={bucket === 'expired' ? 'destructive' : bucket === 'soon' ? 'warning' : bucket === 'ok' ? 'primary' : 'neutral'}>
+                          {bucket === 'expired' ? '已过期' : bucket === 'soon' ? '即将到期' : bucket === 'ok' ? '正常' : '未登记'}
                         </Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
@@ -115,8 +113,8 @@ export const ContractTable = ({ filteredUsers, loadError, onRetry, onPreview, on
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {user.contractExpiry || '-'}
-                        {isExpiringSoon && (
-                          <span className="ml-2 text-xs text-amber-700 dark:text-amber-400">({daysToExpiry}天后)</span>
+                        {bucket === 'soon' && (
+                          <span className="ml-2 text-xs text-amber-700 dark:text-amber-400">({user.daysToExpiry}天后)</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium sticky right-0 z-10 bg-white dark:bg-zinc-800 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-700/50 shadow-sticky-right">
