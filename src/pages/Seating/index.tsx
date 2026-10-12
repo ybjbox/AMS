@@ -270,6 +270,8 @@ export default function Seating() {
 
         <TableConfig
           tableCapacities={tableCapacities}
+          tables={tables}
+          capacities={capacitiesByNumber}
           addTableCapacity={addTableCapacity}
           updateTableCapacity={updateTableCapacity}
           removeTableCapacity={removeTableCapacity}

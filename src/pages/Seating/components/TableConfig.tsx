@@ -1,10 +1,14 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { TableCapacity } from '../hooks/useSeatingArrange';
+import { Table, TableCapacity } from '../hooks/useSeatingArrange';
 
 interface TableConfigProps {
   tableCapacities: TableCapacity[];
+  /** 画布上现有的桌：座位数只能按它算，见下方注释 */
+  tables: Table[];
+  /** 桌号 → 该桌容量（`capacitiesByNumber`） */
+  capacities: Record<number, number>;
   addTableCapacity: () => void;
   updateTableCapacity: (id: string, value: number) => void;
   removeTableCapacity: (id: string) => void;
@@ -15,6 +19,8 @@ interface TableConfigProps {
 
 export function TableConfig({
   tableCapacities,
+  tables,
+  capacities,
   addTableCapacity,
   updateTableCapacity,
   removeTableCapacity,
@@ -22,6 +28,15 @@ export function TableConfig({
   setSkippedNumbers,
   selectedCount,
 }: TableConfigProps) {
+  /**
+   * 座位按**画布上现有的桌**算，不按容量配置行求和。
+   *
+   * 配置行是"计划"：删掉一桌（`removeTable`）只动画布、不会缩配置行，「清空」也是；
+   * 求和于是会算进已经不存在的桌子 —— 按 40 席订餐、现场只排 32 桌就是这么来的。
+   * 每桌至少要有坐进去的人那么多座位，所以取 `max(容量, 已坐人数)`。
+   */
+  const seats = tables.reduce((n, t) => n + Math.max(capacities[t.number] ?? 0, t.members.length), 0);
+  const seated = tables.reduce((n, t) => n + t.members.length, 0);
   return (
     <div className="bg-white dark:bg-zinc-800 p-6 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl">
       <div className="flex flex-col md:flex-row md:items-start gap-6">
@@ -88,10 +103,18 @@ export function TableConfig({
           </div>
           <div className="text-center">
             <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">
-              总座位数
+              座位
             </div>
-            <div className="text-xl font-bold text-zinc-900 dark:text-white">
-              {tableCapacities.reduce((a, b) => a + b.capacity, 0)}
+            <div className="text-xl font-bold text-zinc-900 dark:text-white">{seats}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">
+              已入座
+            </div>
+            <div
+              className={`text-xl font-bold ${seated < selectedCount ? 'text-amber-700 dark:text-amber-400' : 'text-zinc-900 dark:text-white'}`}
+            >
+              {seated}
             </div>
           </div>
         </div>
