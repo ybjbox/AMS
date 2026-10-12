@@ -9,7 +9,6 @@ import {
   EMPTY_RECORD_FILTER,
   filterRecords,
   isRecordFilterActive,
-  countPunchDays,
   filterAnomalies,
   anomalyGroupCounts,
   anomalyGroupOf,
@@ -78,22 +77,6 @@ describe('打卡记录筛选', () => {
     expect(isRecordFilterActive({ ...EMPTY_RECORD_FILTER, query: ' ' })).toBe(false);
     expect(isRecordFilterActive({ ...EMPTY_RECORD_FILTER, dateFrom: '2026-09-01' })).toBe(true);
     expect(isRecordFilterActive({ ...EMPTY_RECORD_FILTER, source: 'wecom' })).toBe(true);
-  });
-});
-
-describe('出勤人次口径', () => {
-  it('按「员工 × 日期」去重，一天多卡只算一次', () => {
-    expect(
-      countPunchDays([
-        rec({ id: '1', date: '2026-09-01', time: '08:00:00' }),
-        rec({ id: '2', date: '2026-09-01', time: '20:00:00' }),
-        rec({ id: '3', date: '2026-09-02' }),
-      ])
-    ).toBe(2);
-  });
-
-  it('跨零点班次仍算一天（次日 00:5x 的下班卡归前一天）', () => {
-    expect(countPunchDays([rec({ id: '1', date: '2026-09-01' }), rec({ id: '2', date: '2026-09-02' })])).toBe(2);
   });
 });
 

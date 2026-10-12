@@ -4,7 +4,6 @@ import { toast } from 'sonner';
 import { AlertTriangle, TriangleAlert, Upload, CalendarClock } from 'lucide-react';
 import MonthlyReport from './components/MonthlyReport';
 import ShiftRulesDialog from './components/ShiftRulesDialog';
-import Stats from './components/Stats';
 import WorkflowBar from './components/WorkflowBar';
 import { deriveWorkflowSteps, STEP_BLOCK_HINTS } from './lib/workflow';
 import { RecordsFilterBar, AnomalyFilterBar } from './components/FilterBar';
@@ -39,8 +38,9 @@ export default function Attendance() {
   const steps = deriveWorkflowSteps({
     shiftRuleCount: a.shiftRuleCount,
     recordCount: a.records.length,
-    anomalyCount: a.anomalies.length,
     analyzedAt: analyzeCoverageAt,
+    freshness: a.freshness,
+    recentAnomalies: a.recentAnomalies,
   });
 
   const currentStep = steps.find((s) => s.tab === a.activeTab);
@@ -67,7 +67,7 @@ export default function Attendance() {
 
   const recordFilterActive = a.recordFilterActive;
   const anomalyFilterActive = a.anomalyQuery.trim() !== '' || a.anomalyGroup !== 'all';
-  const showStatsAndFilter = a.activeTab !== 'monthly';
+  const showFilter = a.activeTab !== 'monthly';
 
   /** 筛选摘要：说清当前在看哪一段，弹窗顶部与筛选栏共用同一份口径 */
   const filterSummary = useMemo(() => {
@@ -140,39 +140,29 @@ export default function Attendance() {
             </div>
           )}
 
-          {showStatsAndFilter && (
-            <>
-              <Stats
-                recordCount={a.records.length}
-                punchDays={recordFilterActive ? a.punchDays : a.totalPunchDays}
-                punchDaysFiltered={recordFilterActive}
-                shiftRuleCount={a.shiftRuleCount}
-                anomalyCount={a.anomalies.length}
+          {showFilter &&
+            (a.activeTab === 'records' ? (
+              <RecordsFilterBar
+                filter={a.recordFilter}
+                onChange={a.setRecordFilter}
+                onReset={a.resetRecordFilter}
+                active={recordFilterActive}
+                matched={a.filteredRecords.length}
+                total={a.records.length}
+                activePreset={a.activeDatePreset}
+                onPreset={a.applyDatePreset}
+                padDays={a.padDays}
+                onPadDaysChange={a.setPadDays}
               />
-              {a.activeTab === 'records' ? (
-                <RecordsFilterBar
-                  filter={a.recordFilter}
-                  onChange={a.setRecordFilter}
-                  onReset={a.resetRecordFilter}
-                  active={recordFilterActive}
-                  matched={a.filteredRecords.length}
-                  total={a.records.length}
-                  activePreset={a.activeDatePreset}
-                  onPreset={a.applyDatePreset}
-                  padDays={a.padDays}
-                  onPadDaysChange={a.setPadDays}
-                />
-              ) : (
-                <AnomalyFilterBar
-                  query={a.anomalyQuery}
-                  onQueryChange={a.setAnomalyQuery}
-                  group={a.anomalyGroup}
-                  onGroupChange={a.setAnomalyGroup}
-                  counts={a.anomalyCounts}
-                />
-              )}
-            </>
-          )}
+            ) : (
+              <AnomalyFilterBar
+                query={a.anomalyQuery}
+                onQueryChange={a.setAnomalyQuery}
+                group={a.anomalyGroup}
+                onGroupChange={a.setAnomalyGroup}
+                counts={a.anomalyCounts}
+              />
+            ))}
         </div>
 
         <div className="flex-1 card-base overflow-hidden flex flex-col min-h-0">
@@ -182,6 +172,7 @@ export default function Attendance() {
             ) : a.activeTab === 'records' ? (
               <EmployeeRollupTable
                 records={a.filteredRecords}
+                totalCount={a.records.length}
                 anomalies={anomaliesInRange}
                 filterActive={recordFilterActive}
                 filterSummary={filterSummary}

@@ -5,7 +5,6 @@ import type { PunchRecord, Anomaly } from '@/store/useAttendanceStore';
 import { useUserStore as useAuthStore } from '@/store/useUserStore';
 import {
   EMPTY_RECORD_FILTER,
-  countPunchDays,
   filterAnomalies,
   filterRecords,
   anomalyGroupCounts,
@@ -14,6 +13,8 @@ import {
 import type { AnomalyGroup, RecordFilter } from '../lib/filters';
 import { matchPreset, presetRange } from '../lib/datePresets';
 import type { DatePresetId } from '../lib/datePresets';
+import { punchFreshness } from '../lib/workflow';
+import type { PunchFreshness } from '../lib/workflow';
 
 /**
  * 考勤页的三个标签。
@@ -53,9 +54,10 @@ export interface UseAttendanceReturn {
   resetRecordFilter: () => void;
   recordFilterActive: boolean;
   filteredRecords: PunchRecord[];
-  /** 筛选后的出勤人次：与统计卡同源，只是把范围收窄到当前筛选条件 */
-  punchDays: number;
-  totalPunchDays: number;
+  /** 最新打卡日距今几天（工作流第②步用它报"该导数据了"，全库口径，不受筛选影响） */
+  freshness: PunchFreshness | null;
+  /** 最近一个考勤月里还有多少条异常（累计数不指向动作，所以不按全历史报） */
+  recentAnomalies: { month: string; count: number } | null;
 
   // 日期快捷区间
   /** 区间前后各多留一天（跨零点班次）。默认开，可在筛选栏关掉 */
@@ -189,6 +191,14 @@ export function useAttendance(): UseAttendanceReturn {
   );
   const anomalyCounts = useMemo(() => anomalyGroupCounts(anomalies), [anomalies]);
 
+  // 新鲜度看的是**全库**最新打卡日：筛到上个月再报"距今 40 天"就成了误导
+  const freshness = useMemo(() => punchFreshness(records.map((r) => r.date), new Date()), [records]);
+  const recentAnomalies = useMemo(() => {
+    if (!freshness) return null;
+    const month = freshness.latestDate.slice(0, 7);
+    return { month, count: anomalies.filter((a) => a.date.startsWith(month)).length };
+  }, [freshness, anomalies]);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -207,8 +217,8 @@ export function useAttendance(): UseAttendanceReturn {
     resetRecordFilter,
     recordFilterActive: isRecordFilterActive(recordFilter),
     filteredRecords,
-    punchDays: countPunchDays(filteredRecords),
-    totalPunchDays: countPunchDays(records),
+    freshness,
+    recentAnomalies,
 
     padDays,
     setPadDays,

@@ -7,9 +7,9 @@
  * 所以筛选本身必须是**一个**函数，组件只负责收集条件。
  *
  * 为什么是前端筛选而不是走服务端 dateFrom/dateTo/分页：
- * `fetchData` 已经把全量记录拉进 store（`records.length` 同时供「打卡记录 1897」
- * 这张统计卡和出勤人次口径用），再分页会出现两份真相 —— 表格翻页翻的是服务端
- * 切片，统计卡数的是内存全量，两边对不上。数据量按当前口径（32 天 1897 条、
+ * `fetchData` 已经把全量记录拉进 store（`records.length` 就是「库里一共导了多少条」，
+ * 清空确认框与筛选栏的「命中 X / Y」都读它），再分页会出现两份真相 —— 表格翻页翻的是
+ * 服务端切片，表头合计数的是内存全量，两边对不上。数据量按当前口径（32 天 1897 条、
  * 约 60 条/天）完全撑得住内存筛选；真到需要分页时，把这三个函数换成请求即可，
  * 组件签名不变。
  */
@@ -60,13 +60,6 @@ export function filterRecords(records: PunchRecord[], filter: RecordFilter): Pun
     if (!query) return true;
     return r.employeeName.toLowerCase().includes(query) || r.employeeId.toLowerCase().includes(query);
   });
-}
-
-/** 「出勤人次」= 有打卡的「员工 × 日期」组合数（与判定口径一致，跨零点班次仍算一天）。 */
-export function countPunchDays(records: PunchRecord[]): number {
-  const days = new Set<string>();
-  for (const r of records) days.add(`${r.employeeId}|${r.date}`);
-  return days.size;
 }
 
 /**

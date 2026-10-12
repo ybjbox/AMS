@@ -15,6 +15,12 @@ import { reportWrite } from '@/store/saveFailure';
 export interface EmployeeRollupTableProps {
   /** 筛选后的打卡；汇总口径全部由它推导 */
   records: PunchRecord[];
+  /**
+   * 全库打卡条数（不受筛选影响）。破坏性操作的确认框必须报这个数，
+   * 而不是 `records.length` —— 筛到本月时报「63 条」却删掉 1897 条，
+   * 等于让唯一的防线给出错误的数字。
+   */
+  totalCount: number;
   /** 异常也按同一区间收窄，否则"异常数"会和打卡条数对不上 */
   anomalies: Anomaly[];
   filterActive: boolean;
@@ -46,6 +52,7 @@ const COLUMNS: { key: RollupSortKey | null; label: string; align?: 'right' }[] =
  */
 export default function EmployeeRollupTable({
   records,
+  totalCount,
   anomalies,
   filterActive,
   filterSummary,
@@ -80,10 +87,14 @@ export default function EmployeeRollupTable({
   };
 
   const onClearAll = async () => {
-    // 破坏性操作：确认框里带上真实条数，并说明它会连带影响月报与异常分析
+    // 破坏性操作：确认框报的是**全库**条数（服务端 `DELETE FROM punch_records` 无 WHERE），
+    // 并把筛选后的数字一并写出来 —— 否则筛到本月时"63 条"会替 1897 条背书。
     const ok = await confirm({
-      title: `确定要清空全部 ${records.length} 条打卡记录吗？`,
-      description: '月报与异常分析将随之失效，需重新导入打卡数据，此操作不可恢复。',
+      title: `确定要清空全部 ${totalCount} 条打卡记录吗？`,
+      description:
+        filterActive && records.length !== totalCount
+          ? `当前筛选下是 ${records.length} 条，但清空不受筛选影响，会删掉全部 ${totalCount} 条。月报与异常分析将随之失效，需重新导入打卡数据，此操作不可恢复。`
+          : '月报与异常分析将随之失效，需重新导入打卡数据，此操作不可恢复。',
       variant: 'danger',
     });
     if (!ok) return;
@@ -121,7 +132,7 @@ export default function EmployeeRollupTable({
             />
             只看有异常
           </label>
-          {canPurge && records.length > 0 && (
+          {canPurge && totalCount > 0 && (
             <Button
               variant="ghost"
               size="xs"
