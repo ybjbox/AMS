@@ -1,0 +1,70 @@
+# AMS 在飞牛 NAS 上的部署编排（自更新容器）
+#
+# 上传到 NAS 时是**平铺**的 4 个文件（NAS 侧构建上下文就是这个目录）：
+#   /vol1/1000/Docker/ams/compose.yml
+#   /vol1/1000/Docker/ams/runtime.Dockerfile
+#   /vol1/1000/Docker/ams/entrypoint.sh
+#   /vol1/1000/Docker/ams/.env          ← 只有 AMS_ADMIN_PASSWORD，不进仓库
+# 仓库里放在 deploy/nas/ 只是版本管理的家；构建上下文不带仓库路径。
+#
+# 飞牛 Docker 面板可以直接"从 Compose 创建项目"指过来；也可以用 trim-cli 的
+# `docker request appcgi.dockermgr.composeCreate` 建（见项目技能 deploy-ams-to-nas）。
+#
+# 没有特权容器、没有 docker.sock、没有镜像仓库：更新由容器内部的 entrypoint 完成。
+name: ams
+
+services:
+  ams:
+    build:
+      context: .
+      dockerfile: runtime.Dockerfile
+    image: ams-runtime:latest
+    container_name: ams
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    # 管理员口令只存在于 NAS 上的这个文件里，不进仓库、不进聊天
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      HOST: "0.0.0.0"
+      PORT: "3000"
+      # 业务按本地日历日判定；容器默认 UTC 会让考勤归属日、合同剩余天数、
+      # 提醒的"今天"整体偏移 8 小时，而 CI 钉在 Asia/Shanghai 测不出来
+      TZ: "Asia/Shanghai"
+      DATA_DIR: "/app/data"
+      # 自动更新的目标分支与轮询间隔（秒）
+      REPO_URL: "https://github.com/ybjbox/AMS.git"
+      BRANCH: "main"
+      INTERVAL_SECONDS: "300"
+      # 每份备份都带 uploads + 模板快照，只按天数删会没上界；NAS 上给 4 GB
+      BACKUP_MAX_COUNT: "14"
+      BACKUP_MAX_TOTAL_MB: "4096"
+    volumes:
+      # 代码 + 构建产物 + node_modules 都在这个卷里：容器重建不用重新 npm ci，
+      # 而 entrypoint 只做 git fetch 就能升到新版本
+      - ams-code:/app
+      # 数据用**宿主目录**而不是命名卷（学 MoviePilot 的 /config）：SQLite 库、每日备份、
+      # 上传的图片、打印模板全在这里，在飞牛文件管理器里直接看得见 ——
+      # 于是"手工拷一份到别的盘/网盘"这件事做得到，容器起不来时也拿得到 ams.db。
+      # 用绝对路径而不是 ./data：compose 是客户端解析相对路径的，路径不一致会挂到空目录
+      - /vol1/1000/Docker/ams/data:/app/data
+      # npm 缓存单独一个卷：容器里重装依赖时不必重新下载几百 MB
+      - ams-npm:/root/.npm
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      # 首次启动要 clone + npm ci + build + 建库，给足时间
+      start_period: 300s
+
+volumes:
+  ams-code:
+  ams-npm:

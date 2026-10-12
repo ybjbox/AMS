@@ -1,0 +1,5 @@
+# 行尾由这里钉死，不跟着各机器的 core.autocrlf 走：
+# entrypoint.sh 会被 COPY 进镜像，一旦在 Windows 上变成 CRLF，容器就死在第一行（$'\r'）
+*.sh text eol=lf
+# nas-cli.cmd 是 cmd.exe 批处理，LF 会被解析成乱码
+*.cmd text eol=crlf
