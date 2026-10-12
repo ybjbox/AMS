@@ -9,11 +9,11 @@ interface Props {
 
 /**
  * 部门人数分布（纯 CSS 水平条形图）。
- * 展示在职 + 试用期员工按部门聚合的人数（含状态分布脚注）。
+ * 展示在职 + 试用期员工按部门聚合的人数；表头那行「在职 · 试用期 · 离职」就是口径，
+ * 总数不在这里重复 —— 它是上方「在册员工」那张卡。
  */
 export default function DepartmentDistribution({ stats, isLoading }: Props) {
   const max = stats ? Math.max(1, ...stats.departments.map((d) => d.count)) : 1;
-  const total = stats ? Object.entries(stats.statuses).reduce((s, [, v]) => s + v, 0) : 0;
 
   return (
     <div className="card-base p-6 transition duration-250 hover:shadow-md">
@@ -56,11 +56,6 @@ export default function DepartmentDistribution({ stats, isLoading }: Props) {
               </span>
             </div>
           ))}
-          {total > 0 && (
-            <p className="text-2xs text-muted-foreground pt-1 border-t border-zinc-100 dark:border-zinc-800">
-              共 {total} 名在册员工（不含离职）
-            </p>
-          )}
         </div>
       )}
     </div>

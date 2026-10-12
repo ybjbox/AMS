@@ -24,7 +24,7 @@ export default function Dashboard() {
           <p className="page-subtitle">系统运行总览与快捷入口</p>
         </div>
         <div className="text-sm font-medium text-muted-foreground bg-white dark:bg-zinc-800 px-4 py-2 rounded-full shadow-sm border border-zinc-100 dark:border-zinc-700/50">
-          最后更新时间: {dashboardData.lastUpdated}
+          本次刷新: {dashboardData.refreshedAt}
         </div>
       </div>
 

@@ -1,5 +1,4 @@
 import React from 'react';
-import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { UseDashboardReturn } from '../hooks/useDashboard';
 
 export type StatCardsProps = Pick<UseDashboardReturn, 'stats' | 'isLoading'>;
@@ -43,23 +42,6 @@ export default function StatCards({ stats, isLoading }: StatCardsProps) {
               >
                 <item.icon className={`h-6 w-6 ${item.color}`} />
               </div>
-
-              {item.trend !== 'neutral' && (
-                <div
-                  className={`flex items-center text-sm font-bold px-3 py-1 rounded-full ${
-                    item.trend === 'up'
-                      ? 'bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400'
-                      : 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400'
-                  }`}
-                >
-                  {item.trend === 'up' ? (
-                    <ArrowUpRight className="h-4 w-4 mr-0.5 stroke-[3]" />
-                  ) : (
-                    <ArrowDownRight className="h-4 w-4 mr-0.5 stroke-[3]" />
-                  )}
-                  {item.change}
-                </div>
-              )}
             </div>
 
             <div className="mt-auto">

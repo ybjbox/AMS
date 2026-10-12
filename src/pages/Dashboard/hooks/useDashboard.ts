@@ -1,21 +1,18 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Users, Briefcase, FileText, Activity, Building2, Settings, LucideIcon } from 'lucide-react';
 import { ChartData } from '../components/DashboardChart';
-import { fetchUsersPage } from '@/services/userApi';
 import { useUserStore } from '@/store/useUserStore';
 import { attendanceApi } from '@/services/attendanceApi';
 import { notificationApi } from '@/services/notificationApi';
 import { announcementApi, type Announcement } from '@/services/announcementApi';
 import { fetchWorkforceStats, fetchAttendanceStats, type WorkforceStats, type AttendanceStats } from '@/services/statsApi';
 import { flattenDepartments, useDepartments } from '@/store/useDepartmentStore';
-import { useTodoStore } from '@/store/useTodoStore';
+import { useTodoStore, todoUrgency } from '@/store/useTodoStore';
 import { formatDate, formatDateTime } from '@/utils/dateUtils';
 
 export interface StatItem {
   name: string;
   value: string;
-  change: string;
-  trend: 'up' | 'down' | 'neutral';
   icon: LucideIcon;
   color: string;
   bg: string;
@@ -47,7 +44,8 @@ export interface UseDashboardReturn {
   chartData: ChartData[];
   workforce: WorkforceStats | null;
   attendance: AttendanceStats | null;
-  lastUpdated: string;
+  /** 本次取数完成的时刻（不是库里数据的新旧） */
+  refreshedAt: string;
   isLoading: boolean;
 }
 
@@ -95,11 +93,12 @@ export function filterQuickActions(hasPermission: (code: string) => boolean): Qu
 
 export function useDashboard(): UseDashboardReturn {
   const [raw, setRaw] = useState<{
-    totalEmployees: number;
     todayPunchers: number;
     notices: NoticeItem[];
     chartData: ChartData[];
-    lastUpdated: string;
+    /** 本次取数完成的时刻。它只说明"这屏数据多新"，不代表库里数据新旧 ——
+     *  后者是考勤模块的「最新打卡日 · 距今 N 天」，别在这里冒充它。 */
+    refreshedAt: string;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [workforce, setWorkforce] = useState<WorkforceStats | null>(null);
@@ -109,7 +108,7 @@ export function useDashboard(): UseDashboardReturn {
   const departments = useDepartments((state) => state.departments);
   const fetchDepartments = useDepartments((state) => state.fetchDepartments);
   // 待办未完成数复用全局 store（useInitData 已全局拉取，无需再直连 API）
-  const pendingTodos = useTodoStore((state) => state.todos.filter((t) => !t.completed).length);
+  const pendingTodos = useTodoStore((state) => todoUrgency(state.todos).pending);
 
   useEffect(() => {
     // 确保组织架构已加载（store 内有 initialized/inflight 去重）
@@ -144,8 +143,7 @@ export function useDashboard(): UseDashboardReturn {
 
     (async () => {
       try {
-        const [usersPage, records, notifications, announcements] = await Promise.all([
-          fetchUsersPage({ page: 1, pageSize: 1 }),
+        const [records, notifications, announcements] = await Promise.all([
           attendanceApi.fetchRecords(),
           notificationApi.list(),
           // 公告为全员可读接口；失败时回退到最近通知（不阻断仪表盘）
@@ -171,7 +169,6 @@ export function useDashboard(): UseDashboardReturn {
         }
 
         setRaw({
-          totalEmployees: usersPage.total,
           todayPunchers,
           notices:
             announcements.length > 0
@@ -190,7 +187,7 @@ export function useDashboard(): UseDashboardReturn {
                   isNew: !n.read,
                 })),
           chartData: trend,
-          lastUpdated: formatDateTime(new Date()),
+          refreshedAt: formatDateTime(new Date()),
         });
       } catch {
         // 保持空态（加载失败时由全局错误提示兜底）
@@ -207,13 +204,20 @@ export function useDashboard(): UseDashboardReturn {
   // 统计卡片：从原始数据 + store 派生值组合（render 期派生，不触发副作用）
   const stats = useMemo<StatItem[]>(() => {
     const deptCount = flattenDepartments(departments).length;
+    /**
+     * 在册 = 在职 + 试用期，取自 `/stats/workforce`，与下方部门分布同一份数据 ——
+     * 原先这里另发一次 `/users?page=1&pageSize=1` 取其 `total`（**含离职**），
+     * 于是同屏挂着两个"员工数"且口径不同：卡片 28、部门分布 28 现在恰好相等，
+     * 一旦有人被标离职就会当场打架。留一个数，并且它和部门分布加起来必然相等。
+     */
+    const active = workforce ? Object.values(workforce.statuses).reduce((s, n) => s + n, 0) : 0;
     return [
-      { name: '总员工数', value: String(raw?.totalEmployees ?? 0), change: '—', trend: 'neutral', icon: Users, color: 'text-brand-600 dark:text-brand-400', bg: 'bg-brand-50 dark:bg-brand-900/30' },
-      { name: '今日打卡', value: String(raw?.todayPunchers ?? 0), change: '—', trend: 'neutral', icon: Activity, color: 'text-brand-600 dark:text-brand-400', bg: 'bg-brand-50 dark:bg-brand-900/30' },
-      { name: '待办事项', value: String(pendingTodos), change: '—', trend: 'neutral', icon: FileText, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/30' },
-      { name: '部门数量', value: String(deptCount), change: '—', trend: 'neutral', icon: Briefcase, color: 'text-brand-600 dark:text-brand-400', bg: 'bg-brand-50 dark:bg-brand-900/30' },
+      { name: '在册员工', value: String(active), icon: Users, color: 'text-brand-600 dark:text-brand-400', bg: 'bg-brand-50 dark:bg-brand-900/30' },
+      { name: '今日打卡', value: String(raw?.todayPunchers ?? 0), icon: Activity, color: 'text-brand-600 dark:text-brand-400', bg: 'bg-brand-50 dark:bg-brand-900/30' },
+      { name: '待办事项', value: String(pendingTodos), icon: FileText, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/30' },
+      { name: '部门数量', value: String(deptCount), icon: Briefcase, color: 'text-brand-600 dark:text-brand-400', bg: 'bg-brand-50 dark:bg-brand-900/30' },
     ];
-  }, [raw, departments, pendingTodos]);
+  }, [raw, departments, pendingTodos, workforce]);
 
   // 快捷入口与侧栏同一套能力码过滤：写死的常量会摆出「员工点了进 /403」的假入口
   const hasPermission = useUserStore((state) => state.hasPermission);
@@ -226,7 +230,7 @@ export function useDashboard(): UseDashboardReturn {
     chartData: raw?.chartData ?? [],
     workforce,
     attendance,
-    lastUpdated: raw?.lastUpdated ?? '',
+    refreshedAt: raw?.refreshedAt ?? '',
     isLoading,
   };
 }
