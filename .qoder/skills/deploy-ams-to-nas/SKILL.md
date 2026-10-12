@@ -64,6 +64,12 @@ scripts\nas-cli.cmd docker compose ls
 8. **compose 系列端点的入参一个都猜不出来**：`composeContainers` 用 `name` / `projectName` /
    `project` / `composeName` / 加 `folder` 全是 `errno 52428803`（参数无效）。别再花时间试了，
    项目级的启动/更新只在面板做。只读探测 `docker request` 也要带 `--yes`，否则 CLI 本地就拦下。
+9. **compose 文件里凡是带 `$` 的取值都会被插值**，YAML 的单引号挡不住：`entrypoint` 里写 `$e`
+   得到 `The "e" variable is not set. Defaulting to a blank string.`，容器实际执行 `exec bash ""`
+   → `Restarting (127)`。写 `$$` 转义，或者干脆不引入变量。
+10. **面板两个动作不等价**：「启动/更新」只做 recreate（改 compose 的非 build 字段够用，比如端口、
+    entrypoint）；「重新构建」才会真的 `docker build`（改 `runtime.Dockerfile` 或想让新的烧入副本
+    生效时要用）。判据：`docker container inspect ams` 里的 Image ID 变没变。
 
 ## 常用操作
 

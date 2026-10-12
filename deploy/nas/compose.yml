@@ -25,10 +25,14 @@ services:
     # 为什么要绕这一下：飞牛面板的"启动/更新"只做 recreate、不 build（实测镜像 ID 三次不变），
     # 而 entrypoint 恰恰是最需要改的东西 —— 走这条路径后，改它只要 git push，下一次容器重启
     # 就生效，不必再进面板。首次部署时卷是空的、那份文件还不存在，退回镜像里的引导副本。
+    #
+    # 这条命令里**一个 $ 都不能有**：compose 会对 `--entrypoint` 的取值做变量插值，YAML 的单引号
+    # 挡不住它。实测写 `$e` 得到 `The "e" variable is not set. Defaulting to a blank string.`，
+    # 于是容器执行的是 `exec bash ""`。要么写 `$$e` 转义，要么像这样干脆不用变量。
     entrypoint:
       - /bin/sh
       - -c
-      - 'e=/app/deploy/nas/entrypoint.sh; [ -f "$e" ] || e=/usr/local/bin/entrypoint.sh; exec bash "$e"'
+      - 'if [ -f /app/deploy/nas/entrypoint.sh ]; then exec bash /app/deploy/nas/entrypoint.sh; else exec bash /usr/local/bin/entrypoint.sh; fi'
     ports:
       # 宿主 3100 → 容器 3000。**不是** 3000:3000：NAS 上 3000 是 MoviePilot 的
       # nginx 在用，而它跑 `network_mode: host`，在 `docker container ls` 的 Ports
