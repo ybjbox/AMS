@@ -5,10 +5,14 @@
  *   GET    /            列表 + 当前配置
  *   POST   /create      手动触发一次备份（body: { label? }）
  *   GET    /export/:name 下载某份备份文件（带凭据，供前端直接下载）
+ *   POST   /import      导入外部备份（原始字节流，body 不是 JSON；SUPER_ADMIN）
  *   POST   /restore     从某份备份恢复（body: { name }，危险操作，先打安全备份）
  *   DELETE /:name       删除某份备份文件
  */
 import { Router, json } from "express";
+import { randomUUID } from "node:crypto";
+import fs from "fs";
+import path from "path";
 import { serverErrorResponse } from "./errorHandler.ts";
 import { createReadStream } from "fs";
 import {
@@ -17,10 +21,13 @@ import {
   pruneBackups,
   restoreBackup,
   deleteBackup,
+  importBackup,
   getBackupConfig,
+  backupDir,
   isSqliteFile,
   BackupCapacityError,
 } from "./backupDb.ts";
+import { isZipFile } from "./backupArchive.ts";
 import { otherInstances } from "./instanceLock.ts";
 import { requireRole } from "./authMiddleware.ts";
 
@@ -39,10 +46,10 @@ backupRopter.get("/", (_req, res) => {
 });
 
 // POST /api/backup/create — 手动备份
-backupRopter.post("/create", (req, res) => {
+backupRopter.post("/create", async (req, res) => {
   try {
     const label = typeof req.body?.label === "string" ? req.body.label : undefined;
-    const backup = createBackup(label);
+    const backup = await createBackup(label);
     // 手动备份也要参与滚动清理：只让定时任务清理的话，连点几次「立即备份」就能把
     // 份数上限刷爆（每份都带 uploads + 模板快照）。
     const cfg = getBackupConfig();
@@ -64,7 +71,8 @@ backupRopter.get("/export/:name", (req, res) => {
     }
     const dir = getBackupConfig().backupDir;
     const filePath = `${dir}/${name}`;
-    if (!isSqliteFile(filePath)) {
+    // 新格式是 zip 归档，遗留的是裸 .db —— 两种都是合法的可下载备份产物
+    if (!isSqliteFile(filePath) && !isZipFile(filePath)) {
       return res.status(404).json({ error: "备份不存在或已损坏" });
     }
     res.setHeader("Content-Type", "application/octet-stream");
@@ -87,7 +95,7 @@ backupRopter.get("/export/:name", (req, res) => {
 });
 
 // POST /api/backup/restore — 从备份恢复（危险）
-backupRopter.post("/restore", (req, res) => {
+backupRopter.post("/restore", async (req, res) => {
   try {
     const name = req.body?.name;
     if (typeof name !== "string" || !name) {
@@ -104,11 +112,92 @@ backupRopter.post("/restore", (req, res) => {
           .join("、")}）。请先停掉它们再恢复，否则那些实例的写入会静默丢失。`,
       });
     }
-    const result = restoreBackup(name);
+    const result = await restoreBackup(name);
     res.json({ success: true, ...result });
   } catch (e) {
     res.status(400).json({ error: e instanceof Error ? e.message : "恢复失败" });
   }
+});
+
+/**
+ * POST /api/backup/import — 导入外部备份（只入库，不恢复）
+ *
+ * 请求体是文件**原始字节**（Content-Type: application/octet-stream），直接管道落盘：
+ * 备份动辄几十 MB，走 base64+JSON 会把整份文件堆进内存（本站 P2-4 的 OOM 事故就是这条）。
+ * 文件名走 query（`?name=`），只当显示素材用 —— 入库名由服务端生成。
+ *
+ * 权限收到 SUPER_ADMIN：导入的内容接下来是要覆盖全站库的，比导出/删除重一档。
+ */
+const MAX_IMPORT_BYTES = 200 * 1024 * 1024; // 与前端上传框一致；备份目录容量另有滚动清理兜底
+
+backupRopter.post("/import", requireRole("SUPER_ADMIN"), (req, res) => {
+  const url = new URL(req.originalUrl, "http://localhost");
+  const originalName = url.searchParams.get("name") || "imported.zip";
+  // 暂存名必须以 `.part` 结尾：listBackups() 是按 .zip/.db 后缀筛的，
+  // 用 `._import-xxx.zip` 会让一份**还在上传中**的半截文件先出现在备份列表里。
+  const staged = path.join(backupDir(), `._import-${randomUUID()}.part`);
+  const writeStream = fs.createWriteStream(staged);
+
+  // 让审计网关在 finish 时能从 req.body 读到文件名（本路由不挂 json 解析，默认是 {}）
+  req.body = { name: originalName };
+
+  let settled = false;
+  const fail = (status: number, message: string) => {
+    if (settled) return;
+    settled = true;
+    try {
+      fs.rmSync(staged, { force: true });
+    } catch {
+      /* 暂存文件可能还没建出来 */
+    }
+    if (!res.headersSent) res.status(status).json({ error: message });
+  };
+
+  req.on("aborted", () => {
+    writeStream.destroy();
+    fail(400, "上传中断，暂存文件已清理");
+  });
+  req.on("error", () => {
+    writeStream.destroy();
+    fail(400, "上传流出错");
+  });
+  writeStream.on("error", () => fail(500, "写入暂存文件失败"));
+  writeStream.on("close", () => {
+    if (settled) return;
+    void (async () => {
+      try {
+        const backup = await importBackup(staged, originalName);
+        settled = true;
+        res.status(201).json({ success: true, backup });
+      } catch (e) {
+        // 校验没过 / 认不出格式：说清原因，并保证暂存文件不留下来（importBackup 自己会删，
+        // 这里再兜一次，防止它在删除之前抛错）
+        fail(400, e instanceof Error ? e.message : "导入失败");
+      }
+    })();
+  });
+
+  // 磁盘耗尽防护：先按 Content-Length 预检（立即 413，一个字节都不读），
+  // 分块上传没有长度时靠流式计数兜底。
+  const contentLength = Number(req.headers["content-length"] ?? 0);
+  if (contentLength > MAX_IMPORT_BYTES) {
+    writeStream.destroy();
+    fail(413, `备份文件超过 ${Math.round(MAX_IMPORT_BYTES / 1024 / 1024)}MB 上限`);
+    return;
+  }
+  let received = 0;
+  req.on("data", (chunk: Buffer) => {
+    received += chunk.length;
+    if (received > MAX_IMPORT_BYTES) {
+      req.unpipe(writeStream);
+      writeStream.destroy();
+      // 暂停而不是销毁请求：保证 413 响应能完整送达客户端
+      req.pause();
+      fail(413, `备份文件超过 ${Math.round(MAX_IMPORT_BYTES / 1024 / 1024)}MB 上限`);
+    }
+  });
+
+  req.pipe(writeStream);
 });
 
 // DELETE /api/backup/:name — 删除某份备份

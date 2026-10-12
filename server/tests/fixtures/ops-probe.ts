@@ -13,7 +13,7 @@ import path from "path";
 import { DATA_DIR, db, closeDb, reloadDb } from "../../db.ts";
 import { probeHealth } from "../../health.ts";
 import { TEMPLATES_DIR, listTemplates, writeTemplate } from "../../templateStore.ts";
-import { freeBytesAt, pruneBackups, backupDir, type BackupMeta } from "../../backupDb.ts";
+import { freeBytesAt, pruneBackups, backupDir, listBackups } from "../../backupDb.ts";
 import { otherInstances, startInstanceHeartbeat, stopInstanceHeartbeat } from "../../instanceLock.ts";
 
 const out: Record<string, unknown> = {};
@@ -60,10 +60,7 @@ out.remainAfterCountPrune = fs.readdirSync(dir).filter((f) => f.endsWith(".db"))
 for (let i = 1; i <= 6; i += 1) mk(`ams-bytes-${String(i).padStart(2, "0")}.db`, i);
 // 总量上限：只留最新的，至少保一份
 out.prunedByBytes = pruneBackups(0, { maxCount: 99, maxTotalBytes: 2500 });
-const left: BackupMeta[] = fs
-  .readdirSync(dir)
-  .filter((f) => f.endsWith(".db"))
-  .map((f) => ({ name: f, path: path.join(dir, f), size: fs.statSync(path.join(dir, f)).size, createdAt: "" }));
+const left = listBackups().filter((m) => m.name.endsWith(".db"));
 out.keepsNewest = left.some((m) => m.name.includes("bytes-01"));
 out.atLeastOneKept = left.length >= 1;
 out.freeBytesPositive = (freeBytesAt(dir) ?? 0) > 0;

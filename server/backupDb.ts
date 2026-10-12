@@ -5,17 +5,21 @@
  * 磁盘损坏 / 误删 = 全公司人事数据归零。
  *
  * 设计要点：
- * 1. 备份用 SQLite 原生 `VACUUM INTO '<file>'` —— 在线热备份，不阻塞读写，
- *    产出的文件是自包含的完整库（不含 -wal / -shm），可直接拿去恢复。
- * 2. 定时备份 + 滚动保留（默认 7 天，由 BACKUP_RETENTION_DAYS 控制）。
- * 3. 恢复：先打一份「恢复前」安全备份，再把指定备份拷贝覆盖 ams.db，
- *    最后通过 db.reloadDb() 热重载连接（审计/安全模块的缓存语句也会重 prepare），
- *    全程不丢当前数据、不崩进程。
- * 4. 文件名做穿越校验，绝不允许 ../../ 这类路径。
- * 5. （第二梯队 #13）documents.storedPath 指向 data/uploads/ 的真实文件，
- *    只备 DB 会让「恢复后文档行存在、文件丢失」。因此每份备份 ams-x.db 都配一个
- *    同名 sidecar 目录 ams-x.db.uploads（uploads 的整目录快照）；恢复时若快照存在
- *    则一并回滚 uploads，旧备份无快照时保持 uploads 不动并在结果里如实上报。
+ * 1. 备份用 SQLite 原生 `VACUUM INTO` —— 在线热备份，不阻塞读写，产出**自包含的完整库**
+ *    （不含 -wal / -shm）。它是单文件备份的最后一块：库 + `data/uploads/` 快照 +
+ *    `data/templates/` 快照 + manifest.json 一起打进一个 `ams-<时间戳>.zip`。
+ * 2. 为什么要打成单文件：恢复前必然要跨机器搬（本机 → NAS、NAS → 移动盘），
+ *    而上一代形态是三件套（`ams-x.db` + 两个同名 sidecar 目录），导出接口只能流那个
+ *    `.db`，两个目录走不了 HTTP —— "下载一份完整备份"在界面上就凑不齐。
+ *    现在导出=一个文件、导入=一个文件、列表一行就是一个文件。
+ * 3. **老的三件套备份继续可读**（`openBackup` 按扩展名分派），所以这版改动不用先迁历史。
+ * 4. 定时备份 + 滚动保留（默认 7 天，由 BACKUP_RETENTION_DAYS 控制），
+ *    以及份数 / 总容量两个上界 —— 见 pruneBackups。
+ * 5. 恢复：先打一份「恢复前」安全备份，再把归档里的库拷去覆盖 ams.db，
+ *    热重载连接（审计/安全模块的缓存语句也会重 prepare），uploads/模板快照存在才一并回滚，
+ *    不存在就保持现状并在结果里如实上报。全程不丢当前数据、不崩进程。
+ * 6. 文件名做穿越校验，绝不允许 ../../ 这类路径；解包时条目名还要再过一道白名单
+ *    （见 backupArchive.ts —— 那是外部送进来的字节，不能信）。
  */
 import fs from "fs";
 import path from "path";
@@ -24,6 +28,27 @@ import { db, DB_PATH, closeDb, reloadDb } from "./db.ts";
 import { runMigrations } from "./migrate.ts";
 import { UPLOADS_DIR } from "./documentsDb.ts";
 import { TEMPLATES_DIR } from "./templateStore.ts";
+import {
+  writeArchiveZip,
+  extractArchiveZip,
+  listFilesRel,
+  isZipFile,
+  type BackupManifest,
+} from "./backupArchive.ts";
+
+/**
+ * 产出这份备份的应用版本，写进 manifest 供跨机排查（"是哪个版本导的"）。
+ * 取不到就留空 —— 它是元信息，不该把备份本身搞失败。
+ */
+const APP_VERSION: string | undefined = (() => {
+  try {
+    return (
+      JSON.parse(fs.readFileSync(path.join(process.cwd(), "package.json"), "utf-8")) as { version?: string }
+    ).version;
+  } catch {
+    return undefined;
+  }
+})();
 
 const SQLITE_MAGIC = "SQLite format 3\u0000"; // 前 16 字节
 
@@ -98,7 +123,17 @@ export interface BackupMeta {
   size: number;
   /** ISO 本地时间字符串 */
   createdAt: string;
-  /** 是否附带 uploads 目录快照（v2 备份才有；旧的纯 DB 备份为 false） */
+  /**
+   * 归档格式。`zip` = v3 单文件（库 + uploads + 模板都在里面）；
+   * `legacy` = v1/v2 的 `ams-x.db` + 同名 `.uploads/` `.templates/` sidecar 目录。
+   * 读侧两种都支持，新产的备份一律是 zip。
+   */
+  format: "zip" | "legacy";
+  /**
+   * 是否附带 uploads 目录快照。legacy 按 sidecar 目录是否存在判断；
+   * zip 恒为 undefined —— 单文件归档本来就带这两块，不需要再问，
+   * 面板对 zip 直接显示"整套归档"而不是这一个布尔。
+   */
   withUploads?: boolean;
 }
 
@@ -115,14 +150,17 @@ function templatesSnapshotDir(backupName: string): string {
   return path.join(backupDir(), `${backupName}.templates`);
 }
 
-/** 生成唯一备份文件名：ams-YYYYMMDD-HHmmss[.label].db（已存在则追加序号） */
-function nextBackupName(label?: string): string {
+/**
+ * 生成唯一备份文件名：ams-YYYYMMDD-HHmmss[.label].<ext>（已存在则追加序号）。
+ * 新备份是 `.zip`；`.db` 只留给导入外来纯库文件的老场景（v1 形态，没有文件快照）。
+ */
+function nextBackupName(label?: string, ext = "zip"): string {
   const ts = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14); // YYYYMMDDHHmmss
   const safe = label ? "." + label.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 40) : "";
-  let base = `ams-${ts}${safe}.db`;
+  let base = `ams-${ts}${safe}.${ext}`;
   let n = 2;
   while (fs.existsSync(path.join(backupDir(), base))) {
-    base = `ams-${ts}${safe}-${n}.db`;
+    base = `ams-${ts}${safe}-${n}.${ext}`;
     n++;
   }
   return base;
@@ -163,10 +201,15 @@ export function getLastBackupRun(): BackupRun | null {
 }
 
 /**
- * 创建一份热备份。默认先 wal_checkpoint 把 WAL 数据落进主库，保证备份一致。
+ * 创建一份热备份，产出**单个** `ams-<时间戳>.zip`。
+ *
+ * 流程：wal_checkpoint → `VACUUM INTO` 到临时库 → 打包（库 + uploads + 模板 + manifest）
+ * → 删临时库。VACUUM INTO 的产物必须在打包前落成磁盘上的真实文件，所以这里用一个
+ * `._staging-*` 中转；它和半份归档一样，任何失败路径都要清掉。
+ *
  * 返回备份元数据；任何失败都向上抛出，由调用方决定如何提示。
  */
-export function createBackup(label?: string): BackupMeta {
+export async function createBackup(label?: string): Promise<BackupMeta> {
   const dir = backupDir();
   const free = freeBytesAt(dir);
   const needed = estimateBackupBytes();
@@ -179,41 +222,55 @@ export function createBackup(label?: string): BackupMeta {
   }
   const name = nextBackupName(label);
   const target = path.join(dir, name);
-  const uploadsSnap = uploadsSnapshotDir(name);
-  const templatesSnap = templatesSnapshotDir(name);
-  let withUploads = false;
+  const stageDb = path.join(dir, `._staging-${process.pid}-${Date.now()}.db`);
+  const createdAt = new Date().toISOString();
   try {
     db.exec("PRAGMA wal_checkpoint(TRUNCATE)");
-    // VACUUM INTO 要求目标文件不存在，且产出自包含的完整库
-    db.exec(`VACUUM INTO '${target.replace(/'/g, "''")}'`);
-    // uploads 快照：与 DB 备份尽力同窗（秒级窗口内的新上传文件可能落在两侧之间，
+    // VACUUM INTO 要求目标文件不存在，且产出自包含的完整库（不含 -wal / -shm）
+    db.exec(`VACUUM INTO '${stageDb.replace(/'/g, "''")}'`);
+    // uploads / 模板快照与库备份尽力同窗（秒级窗口内的新上传文件可能落在两侧之间，
     // 属可接受偏差——孤儿文件由 uploadsCleanup 兜底，缺文件在恢复场景里本就要人工核对）
-    if (fs.existsSync(UPLOADS_DIR)) {
-      fs.cpSync(UPLOADS_DIR, uploadsSnap, { recursive: true });
-      withUploads = true;
-    }
-    if (fs.existsSync(TEMPLATES_DIR)) fs.cpSync(TEMPLATES_DIR, templatesSnap, { recursive: true });
+    const withUploads = listFilesRel(UPLOADS_DIR).length > 0;
+    const withTemplates = listFilesRel(TEMPLATES_DIR).length > 0;
+    await writeArchiveZip(target, {
+      dbFile: stageDb,
+      uploadsDir: withUploads ? UPLOADS_DIR : undefined,
+      templatesDir: withTemplates ? TEMPLATES_DIR : undefined,
+      manifest: {
+        version: 3,
+        createdAt,
+        appVersion: APP_VERSION,
+        sourceDbPath: DB_PATH,
+        withUploads,
+        withTemplates,
+        dbBytes: fs.statSync(stageDb).size,
+      },
+    });
   } catch (e) {
-    // 清理可能残留下来的半个文件 / 半个快照
+    // 清理可能残留下来的半份归档与临时库
     try {
-      if (fs.existsSync(target)) fs.rmSync(target, { force: true });
-      fs.rmSync(uploadsSnap, { recursive: true, force: true });
-      fs.rmSync(templatesSnap, { recursive: true, force: true });
+      fs.rmSync(target, { force: true });
+      fs.rmSync(stageDb, { force: true });
     } catch {
       /* ignore */
     }
     lastRun = { at: new Date().toISOString(), ok: false, detail: e instanceof Error ? e.message : String(e) };
     throw new Error(`备份失败：${e instanceof Error ? e.message : e}`, { cause: e });
   }
+  try {
+    fs.rmSync(stageDb, { force: true });
+  } catch {
+    /* 临时库没删掉只占空间，归档已经写完了，不能因此把这次备份报成失败 */
+  }
   const stat = fs.statSync(target);
   lastRun = { at: new Date().toISOString(), ok: true, detail: name };
-  return { name, path: target, size: stat.size, createdAt: new Date().toISOString(), withUploads };
+  return { name, path: target, size: stat.size, createdAt, format: "zip" };
 }
 
-/** 列出全部备份，按时间倒序（最新在前） */
+/** 列出全部备份，按时间倒序（最新在前）。zip 与遗留的 .db 混列，靠 format 区分 */
 export function listBackups(): BackupMeta[] {
   const dir = backupDir();
-  const files = fs.readdirSync(dir).filter((f) => f.endsWith(".db"));
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith(".zip") || f.endsWith(".db"));
   const metas: BackupMeta[] = [];
   for (const f of files) {
     try {
@@ -224,7 +281,8 @@ export function listBackups(): BackupMeta[] {
         path: p,
         size: st.size,
         createdAt: new Date(st.mtimeMs).toISOString(),
-        withUploads: fs.existsSync(uploadsSnapshotDir(f)),
+        format: f.endsWith(".zip") ? "zip" : "legacy",
+        withUploads: f.endsWith(".zip") ? undefined : fs.existsSync(uploadsSnapshotDir(f)),
       });
     } catch {
       /* 读取失败的文件跳过 */
@@ -234,7 +292,54 @@ export function listBackups(): BackupMeta[] {
   return metas;
 }
 
-/** 删除一份备份的三个产物（.db / uploads 快照 / 模板快照） */
+/** 一份备份解出来的可恢复材料；`cleanup` 必须调用（zip 会在备份目录里留临时树） */
+export interface OpenedBackup {
+  format: "zip" | "legacy";
+  /** 可直接 copy 覆盖主库的 SQLite 文件 */
+  dbFile: string;
+  /** uploads 快照目录；没有快照（或快照为空）时为 null */
+  uploadsDir: string | null;
+  templatesDir: string | null;
+  manifest: BackupManifest | null;
+  cleanup: () => void;
+}
+
+/**
+ * 把一份备份读成「库文件 + 两个可选快照目录」。
+ *
+ * 这是新旧两种形态唯一的分叉点：`restoreBackup` 及它之后的一切都不再关心备份是
+ * zip 还是三件套。zip 解到 `._extract-<随机>` 临时目录，调用方 cleanup 后不留痕迹。
+ */
+export async function openBackup(name: string): Promise<OpenedBackup> {
+  const p = resolveBackupPath(name);
+  if (!fs.existsSync(p)) throw new Error("备份不存在");
+
+  if (name.endsWith(".zip")) {
+    const into = path.join(backupDir(), `._extract-${process.pid}-${Math.random().toString(36).slice(2, 10)}`);
+    const got = await extractArchiveZip(p, into);
+    return {
+      format: "zip",
+      dbFile: got.dbFile,
+      uploadsDir: got.uploadsDir,
+      templatesDir: got.templatesDir,
+      manifest: got.manifest,
+      cleanup: got.cleanup,
+    };
+  }
+
+  const legacyUploads = uploadsSnapshotDir(name);
+  const legacyTemplates = templatesSnapshotDir(name);
+  return {
+    format: "legacy",
+    dbFile: p,
+    uploadsDir: fs.existsSync(legacyUploads) ? legacyUploads : null,
+    templatesDir: fs.existsSync(legacyTemplates) ? legacyTemplates : null,
+    manifest: null,
+    cleanup: () => {},
+  };
+}
+
+/** 删除一份备份的全部产物（zip 单文件；legacy 的 .db + 两个快照目录） */
 function removeBackupArtifacts(m: BackupMeta): void {
   fs.rmSync(m.path, { force: true });
   fs.rmSync(uploadsSnapshotDir(m.name), { recursive: true, force: true });
@@ -332,23 +437,26 @@ export function checkSqliteIntegrity(file: string): IntegrityResult {
   }
 }
 
-export function restoreBackup(name: string, safetyLabel = "pre-restore"): RestoreResult {
-  const src = resolveBackupPath(name);
-  if (!fs.existsSync(src)) throw new Error("备份不存在");
-  if (!isSqliteFile(src)) throw new Error("无效的备份文件（不是 SQLite 数据库）");
-  // 覆盖线上库之前的闸门：魔数检查（isSqliteFile）能挡住 txt/zip，挡不住半份拷贝或被截断的库。
-  const srcCheck = checkSqliteIntegrity(src);
-  if (srcCheck.verdict !== "ok") {
-    throw new Error(`备份文件校验未通过，线上库保持不变：${srcCheck.detail}`);
-  }
-
-  // 1) 先保留当前状态，万一恢复后想反悔还有退路
-  let safetyBackup: string | undefined;
+export async function restoreBackup(name: string, safetyLabel = "pre-restore"): Promise<RestoreResult> {
+  // 先解包再判断：zip 的"库文件"在归档里，落出来才谈得上 isSqliteFile / integrity_check。
+  // opened.cleanup() 放在最外层 finally —— 下面任何一条 throw 都不能把临时树留在备份目录里。
+  const opened = await openBackup(name);
   try {
-    safetyBackup = createBackup(safetyLabel).name;
-  } catch (e) {
-    console.error("[backup] 恢复前安全备份失败（继续恢复）：", e);
-  }
+    const src = opened.dbFile;
+    if (!isSqliteFile(src)) throw new Error("无效的备份文件（不是 SQLite 数据库）");
+    // 覆盖线上库之前的闸门：魔数检查（isSqliteFile）能挡住 txt/伪装文件，挡不住半份拷贝或被截断的库。
+    const srcCheck = checkSqliteIntegrity(src);
+    if (srcCheck.verdict !== "ok") {
+      throw new Error(`备份文件校验未通过，线上库保持不变：${srcCheck.detail}`);
+    }
+
+    // 1) 先保留当前状态，万一恢复后想反悔还有退路
+    let safetyBackup: string | undefined;
+    try {
+      safetyBackup = (await createBackup(safetyLabel)).name;
+    } catch (e) {
+      console.error("[backup] 恢复前安全备份失败（继续恢复）：", e);
+    }
 
   // 2) 把 WAL 已提交数据落进主库，确保安全备份覆盖最新状态
   try {
@@ -395,41 +503,48 @@ export function restoreBackup(name: string, safetyLabel = "pre-restore"): Restor
     console.warn(`[backup] 恢复后无法校验库（${liveCheck.detail}），跳过校验继续`);
   }
   if (liveCheck.verdict === "corrupt") {
-    const safetyBackupPath = safetyBackup ? resolveBackupPath(safetyBackup) : "";
+    // 回滚源是刚打的**安全备份**，它现在也是 zip —— 不能直接把文件拷回主库，
+    // 必须先经 openBackup 解出里面的库。
+    const rollbackFrom = async (): Promise<string> => {
+      if (!safetyBackup) return "";
+      const o = await openBackup(safetyBackup);
+      try {
+        const c = checkSqliteIntegrity(o.dbFile);
+        if (c.verdict !== "ok") return c.verdict === "corrupt" ? `已损坏：${c.detail}` : `无法校验：${c.detail}`;
+        closeDb();
+        fs.copyFileSync(o.dbFile, DB_PATH);
+        for (const ext of ["-wal", "-shm"]) fs.rmSync(DB_PATH + ext, { force: true });
+        reloadDb();
+        return "";
+      } finally {
+        o.cleanup();
+      }
+    };
     const safetyProblem = safetyBackup
-      ? (() => {
-          const c = checkSqliteIntegrity(safetyBackupPath);
-          return c.verdict === "ok" ? "" : `${c.verdict === "corrupt" ? "已损坏" : "无法校验"}：${c.detail}`;
-        })()
+      ? await rollbackFrom()
       : "恢复前的安全备份没有做成";
     if (safetyProblem) {
       throw new Error(
         `恢复后的库校验失败（${liveCheck.detail}），而且安全备份也不可用（${safetyProblem}）——请停服后从更早的备份手工替换 ${DB_PATH}`
       );
     }
-    closeDb();
-    fs.copyFileSync(safetyBackupPath, DB_PATH);
-    for (const ext of ["-wal", "-shm"]) fs.rmSync(DB_PATH + ext, { force: true });
-    reloadDb();
     throw new Error(`恢复后的库校验失败（${liveCheck.detail}），已自动回滚到恢复前的安全备份 ${safetyBackup}`);
   }
 
   // 4) uploads / 模板快照回滚：与恢复前安全备份（步骤 1，同样带这两份快照）配对，
   //    即使拷贝中途失败也有退路。快照不存在的旧备份只恢复 DB，不擅自动文件。
-  const srcUploads = uploadsSnapshotDir(name);
   let uploadsRestored = false;
-  if (fs.existsSync(srcUploads)) {
+  if (opened.uploadsDir) {
     fs.rmSync(UPLOADS_DIR, { recursive: true, force: true });
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-    fs.cpSync(srcUploads, UPLOADS_DIR, { recursive: true });
+    fs.cpSync(opened.uploadsDir, UPLOADS_DIR, { recursive: true });
     uploadsRestored = true;
   }
   let templatesRestored = false;
-  const srcTemplates = templatesSnapshotDir(name);
-  if (fs.existsSync(srcTemplates)) {
+  if (opened.templatesDir) {
     fs.rmSync(TEMPLATES_DIR, { recursive: true, force: true });
     fs.mkdirSync(TEMPLATES_DIR, { recursive: true });
-    fs.cpSync(srcTemplates, TEMPLATES_DIR, { recursive: true });
+    fs.cpSync(opened.templatesDir, TEMPLATES_DIR, { recursive: true });
     templatesRestored = true;
   }
 
@@ -460,14 +575,102 @@ export function restoreBackup(name: string, safetyLabel = "pre-restore"): Restor
   }
 
   return { restoredFrom: name, safetyBackup, uploadsRestored, templatesRestored, schemaOk, schemaNote, journalMode };
+  } finally {
+    // zip 解出来的临时树必须走这里被带走；上面任何一条 throw 都不例外
+    opened.cleanup();
+  }
 }
 
-/** 删除单份备份（仅删备份文件与 uploads 快照，不影响线上库）。返回是否删除成功。 */
+/**
+ * 删除单份备份（只删备份产物，不碰线上库）。返回是否删掉了东西。
+ * 名字里的 format 只用来决定要不要顺带清 legacy 的 sidecar 目录，所以按扩展名判即可。
+ */
 export function deleteBackup(name: string): boolean {
   const p = resolveBackupPath(name);
   if (!fs.existsSync(p)) return false;
-  removeBackupArtifacts({ name, path: p, size: 0, createdAt: "" });
+  removeBackupArtifacts({ name, path: p, size: 0, createdAt: "", format: p.endsWith(".zip") ? "zip" : "legacy" });
   return true;
+}
+
+/**
+ * 把一份外部送来的备份收进备份目录（**只入库，不恢复**）。
+ *
+ * 这是"界面导入"的服务端一侧：用户在面板选一个文件，它落到 `data/backups/` 里成为一行，
+ * 之后要不要恢复仍由那个已有的「恢复」按钮决定 —— 导入和恢复分开，才有反悔的余地。
+ *
+ * 进来的是别的机器产生的字节，所以全部校验都在改名入库**之前**做完：
+ * 文件头判格式 → zip 走解包防线（条目白名单 + 越界路径 + 容量上限）→ 库跑 integrity_check。
+ * 任何一步失败都只销毁暂存文件，备份目录里不会多出半份"看着像备份"的东西。
+ *
+ * `originalName` 是客户端给的显示名，只当素材用：取 basename、去扩展名、过滤到
+ * `[A-Za-z0-9_-]`，绝不当路径拼。
+ */
+export async function importBackup(stagedPath: string, originalName: string): Promise<BackupMeta> {
+  try {
+    return await landImportedBackup(stagedPath, originalName);
+  } catch (e) {
+    // 不变量收在这里：**任何**失败路径都不留暂存文件。散在各条 throw 前删容易漏
+    // （空文件、认不出格式、容量不足这三条就漏过），改名入库成功后 stagedPath 已不存在，
+    // 这里的 rm 是 force 的空操作，不会误删正式备份。
+    fs.rmSync(stagedPath, { force: true });
+    throw e;
+  }
+}
+
+async function landImportedBackup(stagedPath: string, originalName: string): Promise<BackupMeta> {
+  const dir = backupDir();
+  if (!fs.existsSync(stagedPath)) throw new Error("上传的备份没落到磁盘上");
+  const size = fs.statSync(stagedPath).size;
+  if (size === 0) throw new Error("备份文件是空的");
+
+  const free = freeBytesAt(dir);
+  if (free !== null && free < size * 2) {
+    const mb = (n: number) => Math.round(n / 1024 / 1024);
+    throw new BackupCapacityError(`磁盘剩余不足：这份备份 ${mb(size)} MB，只剩 ${mb(free)} MB，请先清理旧备份`);
+  }
+
+  const isArchive = isZipFile(stagedPath);
+  if (!isArchive && !isSqliteFile(stagedPath)) {
+    throw new Error("无法识别的备份文件：既不是 zip 归档，也不是 SQLite 数据库");
+  }
+
+  const label = path
+    .basename(originalName)
+    .replace(/\.(zip|db)$/i, "")
+    .replace(/[^A-Za-z0-9_-]/g, "_")
+    .slice(0, 40);
+
+  const name = nextBackupName(label || undefined, isArchive ? "zip" : "db");
+  const target = path.join(dir, name);
+
+  if (isArchive) {
+    // 解到临时目录验一遍库；extractArchiveZip 自己会在失败时清干净临时树
+    const into = path.join(dir, `._validate-${process.pid}-${Date.now()}`);
+    const got = await extractArchiveZip(stagedPath, into);
+    try {
+      if (!isSqliteFile(got.dbFile)) throw new Error("归档里的 database.sqlite 不是 SQLite 数据库");
+      const c = checkSqliteIntegrity(got.dbFile);
+      if (c.verdict !== "ok") throw new Error(`归档里的库校验未通过：${c.detail}`);
+    } finally {
+      got.cleanup();
+    }
+  } else {
+    const c = checkSqliteIntegrity(stagedPath);
+    if (c.verdict !== "ok") throw new Error(`导入失败：这份库校验不通过（${c.detail}）`);
+  }
+
+  // 暂存文件与目标同目录，rename 是原子的：不会出现"半个备份已经在列表里"
+  fs.renameSync(stagedPath, target);
+
+  console.log(`[backup] 已导入备份 ${name}（来自 ${path.basename(originalName)}，${Math.round(size / 1024)} KB）`);
+  return {
+    name,
+    path: target,
+    size: fs.statSync(target).size,
+    createdAt: new Date().toISOString(),
+    format: isArchive ? "zip" : "legacy",
+    withUploads: isArchive ? undefined : false,
+  };
 }
 
 export interface BackupConfig {
@@ -524,18 +727,22 @@ export function startBackupScheduler(): ReturnType<typeof setInterval> | null {
     console.error("[backup] 启动时清理旧备份失败：", e);
   }
   const timer = setInterval(() => {
-    try {
-      createBackup();
-      pruneBackups(cfg.retentionDays, { maxCount: cfg.maxCount, maxTotalBytes: cfg.maxTotalMb * 1024 * 1024 });
-    } catch (e) {
-      // 磁盘满与 SQL 错误是两类问题，运维要能在日志里分辨出来
-      console.error(
-        e instanceof BackupCapacityError
-          ? `[backup] ${e.message}（自动备份将在下次调度重试）`
-          : "[backup] 定时备份失败：",
-        e instanceof BackupCapacityError ? undefined : e
-      );
-    }
+    // createBackup 现在是异步的（要流式写 zip）。定时器回调里不能 await，
+    // 也不能让它有机会变成 unhandledRejection —— 那会撞上全站兜底 process.exit(1)。
+    void (async () => {
+      try {
+        await createBackup();
+        pruneBackups(cfg.retentionDays, { maxCount: cfg.maxCount, maxTotalBytes: cfg.maxTotalMb * 1024 * 1024 });
+      } catch (e) {
+        // 磁盘满与 SQL 错误是两类问题，运维要能在日志里分辨出来
+        console.error(
+          e instanceof BackupCapacityError
+            ? `[backup] ${e.message}（自动备份将在下次调度重试）`
+            : "[backup] 定时备份失败：",
+          e instanceof BackupCapacityError ? undefined : e
+        );
+      }
+    })();
   }, cfg.intervalMs);
   // 不让定时器阻止进程退出（仅服务器长期运行需要）
   if (typeof timer.unref === "function") timer.unref();

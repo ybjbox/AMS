@@ -153,6 +153,10 @@ const POLICIES: Policy[] = [
   // 普通 ADMIN 在其他任何接口上都只能看到这些字段的掩码值，所以把它们一次性打包带走
   // 的动作只给超级管理员（backupRopter 里还有一道 requireRole("ADMIN") 作纵深）。
   { pattern: /^\/backup\/export\b/, methods: ["GET"], minRole: "SUPER_ADMIN" },
+  // 导入是同一个payload类的反面：送进来的整库副本接下来会被「恢复」覆盖到线上。
+  // 能导入就等于能重写全站数据，所以与导出一档，且 backupRopter 里另有
+  // requireRole("SUPER_ADMIN") 作纵深。
+  { pattern: /^\/backup\/import\b/, methods: ["POST"], minRole: "SUPER_ADMIN" },
 
   // 审计日志含全量操作留痕（谁改了谁的薪资），只对管理员开放，且没有任何删除入口
   { pattern: /^\/audit-logs\b/, methods: "*", minRole: "ADMIN" },
