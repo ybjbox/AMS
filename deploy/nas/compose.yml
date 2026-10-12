@@ -21,14 +21,16 @@ services:
     image: ams-runtime:latest
     container_name: ams
     restart: unless-stopped
-    # 覆盖镜像里烧进去的 ENTRYPOINT，改用卷里那份（= main 上的 deploy/nas/entrypoint.sh）。
-    # 为什么要绕这一下：飞牛面板的"启动/更新"只做 recreate、不 build（实测镜像 ID 三次不变），
-    # 而 entrypoint 恰恰是最需要改的东西 —— 走这条路径后，改它只要 git push，下一次容器重启
-    # 就生效，不必再进面板。首次部署时卷是空的、那份文件还不存在，退回镜像里的引导副本。
+    # 优先执行卷里那份（= main 上的 deploy/nas/entrypoint.sh）；卷里还没有才退回镜像副本。
     #
-    # 这条命令里**一个 $ 都不能有**：compose 会对 `--entrypoint` 的取值做变量插值，YAML 的单引号
-    # 挡不住它。实测写 `$e` 得到 `The "e" variable is not set. Defaulting to a blank string.`，
-    # 于是容器执行的是 `exec bash ""`。要么写 `$$e` 转义，要么像这样干脆不用变量。
+    # 为什么要绕：面板只在**新建项目**那一刻真的 build 过一次。之后点「启动/更新」和点
+    # 「重新构建」，镜像 ID 都是同一个 sha256:53a526bcc850（2026-10-12 实测两次，其中 23:50
+    # 那次 COPY 的源文件早已换过内容）—— 想改镜像里那份 entrypoint 只能删项目重建，代价太大。
+    # 走这个覆盖之后，改 supervisor = git push + 一次「启动/更新」。
+    #
+    # 这条命令里**一个 $ 都不能有**：compose 会对它做变量插值，YAML 的单引号挡不住。写 `$e`
+    # 会得到 `The "e" variable is not set. Defaulting to a blank string.`，容器实际执行的是
+    # `exec bash ""` → Restarting (127)。要么 `$$e` 转义，要么像这样根本不引入变量。
     entrypoint:
       - /bin/sh
       - -c

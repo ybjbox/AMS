@@ -67,9 +67,11 @@ scripts\nas-cli.cmd docker compose ls
 9. **compose 文件里凡是带 `$` 的取值都会被插值**，YAML 的单引号挡不住：`entrypoint` 里写 `$e`
    得到 `The "e" variable is not set. Defaulting to a blank string.`，容器实际执行 `exec bash ""`
    → `Restarting (127)`。写 `$$` 转义，或者干脆不引入变量。
-10. **面板两个动作不等价**：「启动/更新」只做 recreate（改 compose 的非 build 字段够用，比如端口、
-    entrypoint）；「重新构建」才会真的 `docker build`（改 `runtime.Dockerfile` 或想让新的烧入副本
-    生效时要用）。判据：`docker container inspect ams` 里的 Image ID 变没变。
+10. **面板只有"新建项目"会真的 build**：之后「启动/更新」和「重新构建」都只做 recreate ——
+    2026-10-12 实测两次点「重新构建」，`COPY` 的源文件内容早换了，镜像 ID 仍是同一个
+    `sha256:53a526bcc850`。判据统一用 `docker container inspect ams` 里的 Image ID。
+    所以 `deploy/nas/entrypoint.sh` 靠"改了重建镜像"是生效不了的，compose 里那条
+    `entrypoint:` 覆盖（优先跑卷里那份 = main 上的文件）才是通路；要改镜像里的副本只能删项目重建。
 
 ## 常用操作
 
@@ -98,15 +100,20 @@ scripts\nas-cli.cmd file upload /vol1/1000/Docker/ams E:/AMS/deploy/nas/entrypoi
 但 `entrypoint.sh` 是烧在镜像里的 —— 改了它必须 `docker compose build` 重建镜像，
 这一步只能走飞牛面板，见下）。
 
-## 首次建项目 / 改了 runtime.Dockerfile：只能走面板
+## 首次建项目：只能走面板；改 supervisor 不用
 
 `appcgi.dockermgr.*` 里 compose 只有 `composeList / composeContainers / composeCreate /
 composeStart / composeStop`，**没有 composeCreate 的入参 schema，也没有 composeRemove**。
-用猜的 payload 建错项目无法用 CLI 删除，所以这两件事固定在飞牛 Web 面板做（用户本人操作）：
+用猜的 payload 建错项目无法用 CLI 删除，所以建项目固定在飞牛 Web 面板做（用户本人操作）：
 
 1. Docker → 编排/Compose → 新建项目 → 目录选 `/vol1/1000/Docker/ams` → 构建并启动。
-2. 改了 `runtime.Dockerfile` 或 `entrypoint.sh` 后，同样在面板里对该项目"重新构建"。
 
+改 `deploy/nas/entrypoint.sh` **不要指望面板**（见坑 10：面板不再 build）。流程是：
+仓库里改 → `git push` → 上传新的 `compose.yml`/`docker-compose.yml`（若 compose 本身有变）→
+请用户在面板点「启动/更新」做 recreate。容器启动时会 `git fetch` 卷里的新脚本，
+`entrypoint:` 覆盖会优先执行它。
+
+改 `runtime.Dockerfile`（镜像层本身）就得删项目再建一次 —— 这是唯一需要重镜像的情况。
 其余（看状态、看日志、启停、上传文件）都能用 CLI。
 
 ## 验证一次部署是否成功
