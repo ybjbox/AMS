@@ -1,12 +1,15 @@
-import React, { useMemo, useState } from 'react';
-import { CalendarDays, Clock, AlertTriangle, Trash2 } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { CalendarDays, Clock, AlertTriangle, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Badge } from '@/components/ui/Badge';
+import type { BadgeVariant } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/input';
 import { useConfirm } from '@/hooks/useConfirm';
 import { reportWrite } from '@/store/saveFailure';
+import { useAttendanceStore } from '@/store/useAttendanceStore';
 import type { PunchRecord, Anomaly } from '@/store/useAttendanceStore';
+import type { DayVerdict } from '@/services/attendanceApi';
 import {
   anomalyDatesFor,
   groupPunchesByDate,
@@ -59,6 +62,9 @@ export default function EmployeePunchDialog({
   // 想精确定位某一周仍要再筛一层。初值取外层的区间，打开即与列表一致。
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  /** 展开看完整「判定依据」的日子 —— 一句话能说完的就别多一层点击 */
+  const [openWhy, setOpenWhy] = useState<Set<string>>(new Set());
+  const [verdictError, setVerdictError] = useState<string | null>(null);
   const confirm = useConfirm();
 
   const onDelete = async (r: PunchRecord) => {
@@ -79,6 +85,8 @@ export default function EmployeePunchDialog({
     setLastOpenKey(openKey);
     setFrom('');
     setTo('');
+    setOpenWhy(new Set());
+    setVerdictError(null);
   }
 
   const scoped = useMemo(() => {
@@ -99,6 +107,43 @@ export default function EmployeePunchDialog({
     () => (employee ? anomalyDatesFor(anomalies, employee.employeeId) : new Set<string>()),
     [anomalies, employee]
   );
+
+  // 判定结果由服务端算（与「判定明细（人工校对）」导出同一份装配），这里只取来显示。
+  // 按弹窗里真正出现的月份取数：外层区间可能跨两三个月，没必要全取。
+  const verdictsByMonth = useAttendanceStore((s) => s.verdictsByMonth);
+  const loadVerdicts = useAttendanceStore((s) => s.loadVerdicts);
+  const months = useMemo(() => [...new Set(scoped.map((g) => g.date.slice(0, 7)))].sort(), [scoped]);
+  useEffect(() => {
+    let cancelled = false;
+    for (const m of months) {
+      void loadVerdicts(m).then((reason) => {
+        if (!cancelled && reason) setVerdictError(reason);
+      });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [months, loadVerdicts]);
+
+  const verdictOfDay = useMemo(() => {
+    const map = new Map<string, DayVerdict>();
+    if (!employee) return map;
+    for (const m of months) {
+      for (const d of verdictsByMonth[m] ?? []) {
+        if (d.employeeId === employee.employeeId) map.set(d.date, d);
+      }
+    }
+    return map;
+  }, [employee, months, verdictsByMonth]);
+
+  /** 展开看完整「判定依据」的日子 —— 一句话能说完的就别多一层点击 */
+  const toggleWhy = (date: string) =>
+    setOpenWhy((prev) => {
+      const next = new Set(prev);
+      if (next.has(date)) next.delete(date);
+      else next.add(date);
+      return next;
+    });
 
   if (!employee) return null;
 
@@ -197,6 +242,13 @@ export default function EmployeePunchDialog({
         </span>
       </div>
 
+      {/* 判定没取到只说一次，别在每一天那行重复贴同一条错误 */}
+      {verdictError && (
+        <p className="border-b border-zinc-100 px-4 py-1.5 text-2xs text-destructive dark:border-zinc-700/60">
+          {verdictError}
+        </p>
+      )}
+
       {scoped.length === 0 ? (
         <EmptyState
           title={from || to ? '这个区间内没有打卡' : outerFilterActive ? '当前筛选下没有这个人的打卡' : '这个人还没有打卡记录'}
@@ -216,6 +268,7 @@ export default function EmployeePunchDialog({
             <tbody>
               {scoped.map((g) => {
                 const flagged = anomalyDates.has(g.date);
+                const v = verdictOfDay.get(g.date);
                 return (
                   <tr
                     key={g.date}
@@ -268,6 +321,64 @@ export default function EmployeePunchDialog({
                           </span>
                         ))}
                       </div>
+
+                      {/* 判定：这一行字与「判定明细（人工校对）」导出的那三列逐字相同 */}
+                      {v ? (
+                        <div className="mt-2 border-t border-zinc-100 pt-2 dark:border-zinc-700/60">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <Badge variant={verdictVariant(v.verdict)}>{v.verdict}</Badge>
+                            {v.flag && (
+                              <span
+                                className={`text-2xs ${
+                                  v.flag.startsWith('★')
+                                    ? 'font-medium text-amber-800 dark:text-amber-300'
+                                    : 'text-muted-foreground'
+                                }`}
+                              >
+                                {v.flag}
+                              </span>
+                            )}
+                            {v.shiftSummary !== '—' && (
+                              <span className="text-2xs text-muted-foreground">对上班次 {v.shiftSummary}</span>
+                            )}
+                            {(v.why.length > 44 || v.orphan.length > 0) && (
+                              <button
+                                type="button"
+                                onClick={() => toggleWhy(g.date)}
+                                className="inline-flex items-center gap-0.5 rounded text-2xs text-brand-700 underline-offset-2 hover:underline dark:text-brand-300"
+                              >
+                                {openWhy.has(g.date) ? (
+                                  <ChevronDown className="h-3 w-3" aria-hidden="true" />
+                                ) : (
+                                  <ChevronRight className="h-3 w-3" aria-hidden="true" />
+                                )}
+                                {openWhy.has(g.date) ? '收起' : '全文'}
+                              </button>
+                            )}
+                          </div>
+                          {/* 依据只在它**多说了一点东西**时才占一行：正常且没有边界情况时，
+                              那句「常规班次 08:00-18:00：正常」只是把徽章和对上班次重念一遍。
+                              显示出来的文本仍与服务端逐字相同 —— 这里只决定要不要念。 */}
+                          {(v.verdict !== '正常' || v.flag || v.orphan.length > 0 || v.borrowed.length > 0) && (
+                            <p
+                              className={`mt-1 text-2xs leading-relaxed text-muted-foreground ${
+                                openWhy.has(g.date) ? '' : 'line-clamp-2'
+                              }`}
+                            >
+                              {v.why}
+                            </p>
+                          )}
+                          {v.orphan.length > 0 && (
+                            <p className="mt-1 text-2xs text-amber-800 dark:text-amber-300">
+                              未归属卡 {v.orphan.join('、')} 没被任何班次收走
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-2xs text-muted-foreground">
+                          {verdictError ? '判定未取到（原因见上方提示）' : '判定计算中…'}
+                        </p>
+                      )}
                     </td>
                   </tr>
                 );
@@ -278,4 +389,17 @@ export default function EmployeePunchDialog({
       )}
     </BaseModal>
   );
+}
+
+/**
+ * 判定文本 → 徽章色。文本来自服务端（与校对表那三列逐字相同），这里只决定颜色语义：
+ * 缺卡最重（要人补证明），迟到/早退次之（要人扣钱），没对上班次 / 没配时段是数据问题，
+ * 而「班次归前一日」「无打卡」不是问题 —— 别用警告色去吓人。
+ */
+function verdictVariant(verdict: string): BadgeVariant {
+  if (verdict === '正常') return 'success';
+  if (verdict === '请假') return 'primary';
+  if (verdict.includes('缺') || verdict === '未对班' || verdict === '未配置时段') return 'destructive';
+  if (verdict.includes('迟到') || verdict.includes('早退')) return 'warning';
+  return 'neutral';
 }

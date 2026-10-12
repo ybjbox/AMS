@@ -81,6 +81,57 @@ export interface AnalyzeCoverage {
   unmatchedSample: { employeeId: string; employeeName: string; date: string; reason: string }[];
 }
 
+/** 某个班次实例的判定（一天可能两个班；跨零点时归属日与卡所在日不是同一天） */
+export interface DayShiftVerdict {
+  date: string;
+  shiftLabel: string;
+  times: string[];
+  single: boolean;
+  cross: boolean;
+  isLeave: boolean;
+  inReport: boolean;
+  spanTxt: string;
+  verdict: string;
+  why: string;
+  flag: string;
+  findings: { type: string; label: string; minutes: number | null }[];
+  late: number | null;
+  early: number | null;
+}
+
+/**
+ * 某一天的判定结果 —— 服务端 `buildMonthDayVerdicts()` 的产物，与「判定明细（人工校对）」
+ * 导出**同一份装配**，所以 `verdict / why / flag` 与 Excel 里那三列逐字相同
+ * （回归见 `server/tests/attendance-verdicts-parity.test.ts`）。
+ *
+ * 前端不要在这里再算一遍判定：迟到分档、窗口平移、跨零点归属都只在
+ * `server/shiftMatch.ts` 有一份，界面上多一处推导就多一处会漂移的地方。
+ */
+export interface DayVerdict {
+  employeeId: string;
+  employeeName: string;
+  department: string;
+  date: string;
+  weekday: string;
+  /** 当天全部原始卡点（含没被任何班次收走的） */
+  times: string[];
+  instances: DayShiftVerdict[];
+  /** 没对上任何班次的卡：界面上要单独标出来，否则看着像"这天没打"\"判错了」 */
+  orphan: string[];
+  /** 当天这些卡其实属于更早那个班次（跨零点的下班卡） */
+  borrowed: string[];
+  isLeave: boolean;
+  noRule: boolean;
+  verdict: string;
+  why: string;
+  flag: string;
+  shiftSummary: string;
+  spanSummary: string;
+  lateText: string;
+  earlyText: string;
+  missingText: string;
+}
+
 export const attendanceApi = {
   // ---- 班次 ----
   fetchShifts: (): Promise<Shift[]> => http.get<Shift[]>('/attendance/shifts'),
@@ -128,6 +179,10 @@ export const attendanceApi = {
   /** 不指定月份：服务端返回最近有数据的月份（新库则回退当月） */
   fetchLatestMonthlySummary: (): Promise<MonthlySummaryResponse> =>
     http.get<MonthlySummaryResponse>('/attendance/summary'),
+
+  /** 某月逐人逐日的判定结果（与校对表导出同一份装配） */
+  fetchDayVerdicts: (month: string): Promise<{ month: string; days: DayVerdict[] }> =>
+    http.get(`/attendance/day-verdicts?month=${encodeURIComponent(month)}`),
 
   // ---- 异常 ----
   fetchAnomalies: (): Promise<Anomaly[]> => http.get<Anomaly[]>('/attendance/anomalies'),

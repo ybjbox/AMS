@@ -33,6 +33,7 @@ import {
 import { db } from "./db.ts";
 import { asString } from "./sqliteUtil.ts";
 import { buildAttendanceProofSheet, proofSheetFileName } from "./attendanceProofSheet.ts";
+import { buildMonthDayVerdicts, MONTH_RE } from "./attendanceDayVerdicts.ts";
 import { requireRole } from "./authMiddleware.ts";
 import { ROLE_LEVEL } from "./authDb.ts";
 import { createNotification } from "./notificationsDb.ts";
@@ -405,7 +406,7 @@ attendanceRouter.get("/summary", (req, res) => {
  */
 attendanceRouter.get("/export/proof-sheet", async (req, res) => {
   const month = typeof req.query.month === "string" ? req.query.month : localToday().slice(0, 7);
-  if (!/^\d{4}-\d{2}$/.test(month)) {
+  if (!MONTH_RE.test(month)) {
     res.status(400).json({ error: "月份格式应为 YYYY-MM" });
     return;
   }
@@ -417,6 +418,27 @@ attendanceRouter.get("/export/proof-sheet", async (req, res) => {
     );
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.send(buffer);
+  } catch (error) {
+    serverErrorResponse(res, error);
+  }
+});
+
+/**
+ * 逐人逐日的判定结果（界面用）：GET /api/attendance/day-verdicts?month=YYYY-MM
+ *
+ * 与「判定明细（人工校对）」导出同一份装配（`buildMonthDayVerdicts`），所以屏幕上
+ * 那行「判定 / 判定依据 / ★」和 Excel 里那三列必然逐字相同。判定本身仍在
+ * `shiftMatch.ts`，这里只把结果搬出来 —— 前端不自己算，才不会漂出第二套口径。
+ */
+attendanceRouter.get("/day-verdicts", (req, res) => {
+  const month = typeof req.query.month === "string" && req.query.month ? req.query.month : localToday().slice(0, 7);
+  if (!MONTH_RE.test(month)) {
+    res.status(400).json({ error: "月份格式应为 YYYY-MM" });
+    return;
+  }
+  try {
+    const v = buildMonthDayVerdicts(month);
+    res.json({ month: v.month, days: v.days });
   } catch (error) {
     serverErrorResponse(res, error);
   }

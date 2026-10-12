@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { attendanceApi } from '../services/attendanceApi';
-import type { AnalyzeCoverage, DeptShiftRule } from '../services/attendanceApi';
+import type { AnalyzeCoverage, DayVerdict, DeptShiftRule } from '../services/attendanceApi';
 import { createAsyncAction } from './utils';
+import { describeSaveError } from './saveFailureCore';
 
 /**
  * 班次与排班类型仍保留导出：`attendanceApi` 还有这几个端点，服务端判定链路
@@ -50,12 +51,19 @@ interface AttendanceState {
   analyzeCoverage: AnalyzeCoverage | null;
   /** 该次分析的时间（ISO），来自服务端留档 */
   analyzeCoverageAt: string | null;
+  /**
+   * 逐日判定结果，按月份缓存（服务端同一份装配，与校对表导出逐字一致）。
+   * 只在打开某人某月的打卡时才取 —— 全月全员算一遍不便宜，而多数时候只看一个人。
+   */
+  verdictsByMonth: Record<string, DayVerdict[]>;
   isLoading: boolean;
   error: string | null;
 
   fetchData: () => Promise<string | null>;
   /** 时段被增删改后单独回读，不必整页重取 */
   fetchShiftRules: () => Promise<string | null>;
+  /** 取某月判定结果（已缓存则直接返回）；失败原因作为返回值，不置 isLoading */
+  loadVerdicts: (month: string) => Promise<string | null>;
 
   setRecords: (records: PunchRecord[]) => Promise<string | null>;
   removeRecord: (id: string) => Promise<string | null>;
@@ -70,6 +78,7 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
   anomalies: [],
   analyzeCoverage: null,
   analyzeCoverageAt: null,
+  verdictsByMonth: {},
   isLoading: false,
   error: null,
 
@@ -110,10 +119,25 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
     });
   },
 
+  /**
+   * 判定结果走独立通道，不套 `createAsyncAction`：那个包装会翻全局 `isLoading`，
+   * 而统计卡/主表都读它 —— 点开一个人的弹窗看判定，不该让整张表闪回骨架屏。
+   */
+  loadVerdicts: async (month) => {
+    if (get().verdictsByMonth[month]) return null;
+    try {
+      const res = await attendanceApi.fetchDayVerdicts(month);
+      set((state) => ({ verdictsByMonth: { ...state.verdictsByMonth, [month]: res.days } }));
+      return null;
+    } catch (error: unknown) {
+      return describeSaveError(error, '判定结果加载失败');
+    }
+  },
+
   setRecords: async (records) => {
     return createAsyncAction(set, async () => {
       const updatedRecords = await attendanceApi.updateRecords(records);
-      return { records: updatedRecords };
+      return { records: updatedRecords, verdictsByMonth: {} };
     });
   },
 
@@ -121,7 +145,8 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
   removeRecord: async (id) => {
     return createAsyncAction(set, async () => {
       await attendanceApi.deleteRecord(id);
-      return { records: get().records.filter((r) => r.id !== id) };
+      // 判定缓存整月作废：删掉一张卡可能让隔壁那天的班次重新归属，按单月失效不够安全
+      return { records: get().records.filter((r) => r.id !== id), verdictsByMonth: {} };
     });
   },
 
@@ -129,7 +154,7 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
   clearRecords: async () => {
     return createAsyncAction(set, async () => {
       const records = await attendanceApi.clearRecords();
-      return { records };
+      return { records, verdictsByMonth: {} };
     });
   },
 
@@ -138,7 +163,12 @@ export const useAttendanceStore = create<AttendanceState>()((set, get) => ({
       const { anomalies } = await attendanceApi.analyzeAnomalies();
       // 覆盖率回读服务端留档：界面上的"上次分析 …"与刷新后看到的必须是同一份
       const status = await attendanceApi.fetchAnalysisStatus();
-      return { anomalies, analyzeCoverage: status.coverage, analyzeCoverageAt: status.at };
+      return {
+        anomalies,
+        analyzeCoverage: status.coverage,
+        analyzeCoverageAt: status.at,
+        verdictsByMonth: {},
+      };
     });
   },
 }));

@@ -7,24 +7,19 @@
  * 所以这里穷举分支，把「哪天该被标出来」钉死。
  */
 import { describe, it, expect } from 'vitest';
-import { proofDayVerdict, proofDayFlag } from '../attendanceProofSheet.ts';
-import type { DayJudgement, DayFinding } from '../shiftMatch.ts';
+import { proofDayVerdict, proofDayFlag, type VerdictFinding } from '../attendanceDayVerdicts.ts';
 
-const OK: DayJudgement = { findings: [], summary: '正常' };
-const late = (minutes: number): DayJudgement => ({
-  findings: [{ type: 'LATE_15', minutes, description: '迟到' } as DayFinding],
-  summary: '迟到',
-});
-const missingIn: DayJudgement = {
-  findings: [{ type: 'MISSING_IN', minutes: null, description: '缺上班卡' } as DayFinding],
-  summary: '缺上班卡',
-};
+// 夹具直接造 VerdictFinding（判定装配出来的形状），label 与 FINDING_CN 保持一致 ——
+// 判定文案是这两函数唯一读进去的东西，测试要盯的就是它。
+const OK: VerdictFinding[] = [];
+const late = (minutes: number): VerdictFinding[] => [{ type: 'LATE_15', label: '迟到(>15分)', minutes }];
+const missingIn: VerdictFinding[] = [{ type: 'MISSING_IN', label: '缺上班卡', minutes: null }];
 
 const base = {
   noRule: false,
   isLeave: false,
   times: [] as string[],
-  list: [] as { judgement: DayJudgement; single: boolean }[],
+  list: [] as { findings: VerdictFinding[]; single: boolean }[],
   orphan: [] as string[],
   borrowedInMonth: [] as string[],
   borrowedPrevMonth: [] as string[],
@@ -42,7 +37,7 @@ describe('proofDayVerdict：判定优先级', () => {
         noRule: false,
         isLeave: true,
         times: ['08:00', '18:00'],
-        list: [{ judgement: missingIn }],
+        list: [{ findings: missingIn }],
         borrowed: [],
       })
     ).toBe('请假');
@@ -62,7 +57,7 @@ describe('proofDayVerdict：判定优先级', () => {
 
   it('对上班且无异常 → 正常', () => {
     expect(
-      proofDayVerdict({ noRule: false, isLeave: false, times: ['08:00', '18:00'], list: [{ judgement: OK }], borrowed: [] })
+      proofDayVerdict({ noRule: false, isLeave: false, times: ['08:00', '18:00'], list: [{ findings: OK }], borrowed: [] })
     ).toBe('正常');
   });
 
@@ -72,7 +67,7 @@ describe('proofDayVerdict：判定优先级', () => {
         noRule: false,
         isLeave: false,
         times: ['08:20', '18:00', '19:30'],
-        list: [{ judgement: late(20) }, { judgement: late(30) }],
+        list: [{ findings: late(20) }, { findings: late(30) }],
         borrowed: [],
       })
     ).toBe('迟到(>15分) + 迟到(>15分)');
@@ -81,7 +76,7 @@ describe('proofDayVerdict：判定优先级', () => {
 
 describe('proofDayFlag：★ 的优先级', () => {
   it('干净的班什么都不标', () => {
-    expect(proofDayFlag({ ...base, times: ['08:00', '18:00'], list: [{ judgement: OK, single: false }] })).toBe('');
+    expect(proofDayFlag({ ...base, times: ['08:00', '18:00'], list: [{ findings: OK, single: false }] })).toBe('');
   });
 
   it('★未配置时段压过一切', () => {
@@ -94,7 +89,7 @@ describe('proofDayFlag：★ 的优先级', () => {
 
   it('★有未归属卡：对上班了，但当天还多出一张对不上的卡', () => {
     expect(
-      proofDayFlag({ ...base, times: ['08:00', '18:00', '21:30'], list: [{ judgement: OK, single: false }], orphan: ['21:30'] })
+      proofDayFlag({ ...base, times: ['08:00', '18:00', '21:30'], list: [{ findings: OK, single: false }], orphan: ['21:30'] })
     ).toBe('★有未归属卡');
   });
 
@@ -103,14 +98,14 @@ describe('proofDayFlag：★ 的优先级', () => {
       proofDayFlag({
         ...base,
         times: ['17:30'],
-        list: [{ judgement: missingIn, single: false }],
+        list: [{ findings: missingIn, single: false }],
         monthEdge: true,
       })
     ).toBe('★下班卡可能在次日');
   });
 
   it('记录边界优先于单卡：同一天既有单卡又到边界，要报更值得问的那条', () => {
-    expect(proofDayFlag({ ...base, times: ['17:30'], list: [{ judgement: missingIn, single: true }], monthEdge: true })).toBe(
+    expect(proofDayFlag({ ...base, times: ['17:30'], list: [{ findings: missingIn, single: true }], monthEdge: true })).toBe(
       '★下班卡可能在次日'
     );
   });
@@ -129,6 +124,6 @@ describe('proofDayFlag：★ 的优先级', () => {
   });
 
   it('单卡天要提示：只有一张卡时缺哪张是猜的，人来核一下才靠谱', () => {
-    expect(proofDayFlag({ ...base, times: ['08:00'], list: [{ judgement: missingIn, single: true }] })).toBe('单卡');
+    expect(proofDayFlag({ ...base, times: ['08:00'], list: [{ findings: missingIn, single: true }] })).toBe('单卡');
   });
 });
