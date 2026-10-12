@@ -120,9 +120,32 @@ composeStart / composeStop`，**没有 composeCreate 的入参 schema，也没�
 
 ```bash
 curl -s -o /dev/null -w "%{http_code}\n" "http://<NAS_HOST>:3100/api/health"   # 期望 200；地址取 .env.local 的 NAS_HOST
+curl -s -o /dev/null -w "%{http_code}\n" "http://<NAS_HOST>:3100/"             # 也必须 200 —— 只看 health 会放过"后端活着、前端没产物"
 ```
 
-再看容器日志里的 `已上线 <sha10>`，sha 应与 `git log -1 --format=%h origin/main` 对得上。
+**没有容器日志时怎么证明线上跑的是哪个 commit**（`file download-url` 会把 URI 打码成
+`[REDACTED]`，`deploy.log` 内容拿不到，只能看它在不在、有没有变大）：比前端产物的内容哈希。
+
+```bash
+curl -s "http://<NAS_HOST>:3100/" | grep -o '/assets/index-[A-Za-z0-9_-]*\.js' | head -1
+# 拿这个资源算 sha256，与本地 `npm run build` 出来的同名文件对比；相同即同一 commit
+sha256sum < <(curl -s "http://<NAS_HOST>:3100/assets/index-XXXX.js"); sha256sum dist/assets/index-XXXX.js
+```
+
+注意 `index.html` 本身**每次响应都不同**（CSP nonce 是随机的），别直接 diff 它。
+
+**验证自更新有没有真的在跑**：`/api/health` 的 `uptimeSec` 是最省事的探针 —— 推一个新 commit，
+5~10 分钟内它应该被打回个位数（entrypoint 构建完会重启 node）。
+
+登录验证用 `.env.local` 里的 `AMS_ADMIN_PASSWORD` 时**要剥掉包裹的引号**（dotenv 会剥，
+shell 里直接 `cut` 出来带着引号会 401）：`grep ... | cut -d= -f2- | tr -d '\r"'`。
+
+## 线上状态（2026-10-12 23:55 首次上线）
+
+`http://<NAS_HOST>:3100` 已可访问，**空库**（按 Ryan 选的"空库上线"）：`/api/users`、
+`/api/attendance/records`、`/api/attendance/shift-rules` 全返回 0 条。真实数据还没推过去 ——
+要把本机库带上去，走 `GET /api/backup/export/:name` 下载 + NAS 侧 `POST /api/backup/restore`。
+初始管理员是 `admin`，口令取 NAS 上 `.env` 的 `AMS_ADMIN_PASSWORD`（本机 `.env.local` 同一个值）。
 
 ## 回滚线上版本
 
