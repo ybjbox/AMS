@@ -7,8 +7,9 @@
  *     生成提醒，等于把同事的合同到期日广播出去；
  *  3. 阈值要有一份服务端真相：此前存 localStorage，换浏览器/换机器就回到默认值。
  *
- * 文案与归并键（refKey）与客户端版本逐字保持一致，v9 已归并好的那批未读提醒会被
- * 原地刷新而不是再生成一份。
+ * 归并键（refKey）与客户端版本逐字保持一致，v9 已归并好的那批未读提醒会被
+ * 原地刷新而不是再生成一份。文案本身允许改（2026-10-12 起把"已过期"与"将至"
+ * 分开写）—— 刷新靠的是 refKey，不靠文案。
  */
 import { db } from "./db.ts";
 import { getSetting, setSetting } from "./settingsDb.ts";
@@ -123,7 +124,10 @@ export function collectReminderItems(config = getReminderConfig()): ReminderItem
   for (const emp of employees) {
     if (emp.contractExpiry) {
       const days = daysUntilLocalOrNull(emp.contractExpiry);
-      if (days !== null && days > 0 && days <= config.contractExpiryDays) {
+      // 上界是阈值，**下界没有**：已经过期的人比"还有 3 天"的人更该被催。
+      // 早先这里写的是 `days > 0 && days <= 阈值`，于是合同一过期就自动静默 ——
+      // 页面上只剩一个红色徽章，没有任何东西会再提醒 HR 去处理。
+      if (days !== null && days <= config.contractExpiryDays) {
         items.push({
           kind: "contract",
           employeeId: emp.id,
@@ -147,7 +151,9 @@ export function collectReminderItems(config = getReminderConfig()): ReminderItem
       }
     }
   }
-  return items;
+  // 最紧急的排最前：已过期（负数）→ 今天 → 还有 N 天。收件人是列表形式看的，
+  // 让"早就该处理"的那几条落在最上面，而不是按工号把过期两年的排在第一行。
+  return items.sort((a, b) => a.daysLeft - b.daysLeft || a.employeeId.localeCompare(b.employeeId));
 }
 
 const COPY: Record<ReminderItem["kind"], { title: string; type: "warning" | "info"; prefix: string }> = {
@@ -182,13 +188,21 @@ export function scanReminders(config = getReminderConfig()): ReminderScanReport 
     for (const recipient of recipients) {
       for (const item of items) {
         const copy = COPY[item.kind];
+        // 已过期与"将至"是两件事，文案与标题都要分开：标题会进待办列表和通知标题，
+        // 写「合同到期提醒」而内容其实是"过期 45 天没人管"，等于把最急的降级成常规。
+        const overdue = item.kind === "contract" && item.daysLeft < 0;
+        const title = overdue ? "合同已过期" : copy.title;
         const message =
           item.kind === "contract"
-            ? `${nameLabel(item.employeeName)} (${item.employeeId}) 的合同将于 ${item.dueDate} 到期（剩余 ${item.daysLeft} 天）`
+            ? overdue
+              ? `${nameLabel(item.employeeName)} (${item.employeeId}) 的合同已于 ${item.dueDate} 到期（逾期 ${-item.daysLeft} 天），需尽快续签或说明`
+              : item.daysLeft === 0
+                ? `${nameLabel(item.employeeName)} (${item.employeeId}) 的合同今天（${item.dueDate}）到期`
+                : `${nameLabel(item.employeeName)} (${item.employeeId}) 的合同将于 ${item.dueDate} 到期（剩余 ${item.daysLeft} 天）`
             : `${nameLabel(item.employeeName)} (${item.employeeId}) 的试用期将于 ${item.dueDate} 结束（剩余 ${item.daysLeft} 天）`;
 
         createTodo({
-          title: copy.title,
+          title,
           description: message,
           dueDate: item.dueDate,
           type: item.kind,
@@ -197,7 +211,7 @@ export function scanReminders(config = getReminderConfig()): ReminderScanReport 
           assignee: recipient,
         });
         createNotification({
-          title: copy.title,
+          title,
           message,
           type: copy.type,
           recipient,

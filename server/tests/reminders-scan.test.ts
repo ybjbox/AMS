@@ -1,7 +1,8 @@
 /**
  * 到期提醒扫描（服务端版）回归测试：
  *  1. 收件人只含启用中的 HR 及以上——普通员工绝不能再因为"打开了浏览器"收到全员合同到期提醒；
- *  2. 命中窗口才生成：离职、已过期、超出窗口都不算；
+ *  2. 命中才生成：离职与超出窗口不算；**已过期的算**（2026-10-12 起，
+ *     原先 `days > 0` 让合同一过期就自动静默，最该催的人反而不再提醒）；
  *  3. 幂等：重复扫描不堆待办，通知按 refKey 原地刷新（这是 v9 归并的延续）。
  *
  * 运行环境：vitest server project，DATA_DIR=data-test。用例自造数据并在结尾清理干净。
@@ -41,6 +42,7 @@ function minusMonths(dateIso: string, months: number): string {
 
 let soon = "";
 let empSoon = { id: "", name: "" };
+let empExpired = { id: "", name: "" };
 let empProbation = { id: "", name: "" };
 let empResigned = { id: "", name: "" };
 let empFar = { id: "", name: "" };
@@ -51,9 +53,9 @@ function todosOf(username: string): number {
   const row = db
     .prepare(
       `SELECT COUNT(*) AS n FROM todos
-        WHERE createdBy = ? AND type IN ('contract','probation') AND targetId IN (?, ?, ?, ?)`
+        WHERE createdBy = ? AND type IN ('contract','probation') AND targetId IN (?, ?, ?, ?, ?)`
     )
-    .get(username, empSoon.id, empProbation.id, empResigned.id, empFar.id) as unknown as { n: number | bigint };
+    .get(username, empSoon.id, empExpired.id, empProbation.id, empResigned.id, empFar.id) as unknown as { n: number | bigint };
   return Number(row.n ?? 0);
 }
 function notificationsOf(recipient: string, refKey: string): number {
@@ -69,6 +71,7 @@ let apiBase = "";
 beforeAll(async () => {
   soon = plusDays(10);
   empSoon = createEmployee({ name: "提醒测试-合同将至", contractExpiry: soon, status: "在职" })!;
+  empExpired = createEmployee({ name: "提醒测试-合同已过期", contractExpiry: plusDays(-20), status: "在职" })!;
   const conversionDay = plusDays(5);
   empProbation = createEmployee({
     name: "提醒测试-试用期内",
@@ -93,7 +96,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  const ids = [empSoon.id, empProbation.id, empResigned.id, empFar.id];
+  const ids = [empSoon.id, empExpired.id, empProbation.id, empResigned.id, empFar.id];
   for (const id of ids) {
     db.prepare("DELETE FROM todos WHERE targetId = ?").run(id);
     db.prepare("DELETE FROM notifications WHERE refKey LIKE ?").run(`%:${id}`);
@@ -104,7 +107,7 @@ afterAll(async () => {
 });
 
 describe("collectReminderItems", () => {
-  it("只收在职且落在窗口里的人", () => {
+  it("只收在职且落在窗口里的人，已过期的收进来并排在最前", () => {
     const items = collectReminderItems(CONFIG);
     const byEmployee = new Map(items.map((i) => [i.employeeId, i]));
     expect(byEmployee.get(empSoon.id)?.kind).toBe("contract");
@@ -112,11 +115,18 @@ describe("collectReminderItems", () => {
     expect(byEmployee.get(empProbation.id)?.kind).toBe("probation");
     expect(byEmployee.has(empResigned.id)).toBe(false); // 离职不算
     expect(byEmployee.has(empFar.id)).toBe(false); // 200 天后，超出 30 天窗口
+
+    // 已过期：daysLeft 是负数，且排序要压过"还有 10 天"的那位
+    const expired = byEmployee.get(empExpired.id);
+    expect(expired?.kind).toBe("contract");
+    expect(expired?.daysLeft).toBe(-20);
+    expect(items[0].employeeId).toBe(empExpired.id);
   });
 
-  it("窗口调小到 5 天时，10 天后到期的合同就不再提醒", () => {
+  it('窗口调小到 5 天时，10 天后到期的合同就不再提醒，但已过期的仍然提醒', () => {
     const items = collectReminderItems({ ...CONFIG, contractExpiryDays: 5 });
     expect(items.some((i) => i.employeeId === empSoon.id && i.kind === "contract")).toBe(false);
+    expect(items.some((i) => i.employeeId === empExpired.id)).toBe(true);
   });
 });
 
@@ -145,6 +155,12 @@ describe("scanReminders", () => {
     expect(notificationsOf(HR, `probation:${empProbation.id}`)).toBe(1);
     // 收件人限定 HR+：普通员工一条也不该收到
     expect(notificationsOf(STAFF, `contract:${empSoon.id}`)).toBe(0);
+    // 已过期的人标题要分开：待办列表里写「合同到期提醒」而实际是"过期 20 天没人管"，
+    // 等于把最急的一条降级成常规提醒
+    const expiredTodo = db
+      .prepare("SELECT title FROM todos WHERE targetId = ? AND type = 'contract' AND createdBy = ?")
+      .get(empExpired.id, HR) as unknown as { title: string } | undefined;
+    expect(expiredTodo?.title).toBe("合同已过期");
   });
 
   it("配置读写落在 settings KV，形状异常的值会被收敛", () => {    const original = getReminderConfig();

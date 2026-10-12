@@ -130,6 +130,8 @@ export default function RemindersPanel() {
                   }
                   className="w-32 tabular-nums"
                 />
+                {/* 这个数只是**上界**：它决定"提前多少天开始提醒"，不决定"过期多久就不管" */}
+                <p className="text-2xs text-muted-foreground">已过期的合同不受此数限制，会一直提醒</p>
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground" htmlFor="reminder-probation">
@@ -180,7 +182,15 @@ export default function RemindersPanel() {
                   <span className="text-muted-foreground">（{item.employeeId}）</span>
                 </span>
                 <span className="text-muted-foreground tabular-nums whitespace-nowrap">
-                  {KIND_LABEL[item.kind]} {item.dueDate} · 剩 {item.daysLeft} 天
+                  {KIND_LABEL[item.kind]} {item.dueDate} ·{' '}
+                  {/* daysLeft 为负 = 已经过期，写「剩 -45 天」是没人看得懂的字 */}
+                  <span className={item.daysLeft < 0 ? 'font-medium text-red-700 dark:text-red-400' : undefined}>
+                    {item.daysLeft < 0
+                      ? `已逾期 ${-item.daysLeft} 天`
+                      : item.daysLeft === 0
+                        ? '今天到期'
+                        : `剩 ${item.daysLeft} 天`}
+                  </span>
                 </span>
               </li>
             ))}
