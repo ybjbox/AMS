@@ -634,11 +634,11 @@ async function landImportedBackup(stagedPath: string, originalName: string): Pro
     throw new Error("无法识别的备份文件：既不是 zip 归档，也不是 SQLite 数据库");
   }
 
-  const label = path
-    .basename(originalName)
-    .replace(/\.(zip|db)$/i, "")
-    .replace(/[^A-Za-z0-9_-]/g, "_")
-    .slice(0, 40);
+  const base = path.basename(originalName).replace(/\.(zip|db)$/i, "");
+  // 文件名本身就是一枚自动生成的备份名（ams-2026…）时不再拿来当 label：
+  // 否则导入一次就得到 `ams-<新戳>.ams-<旧戳>.zip`，看着像出了错。
+  // 人肉改过名的（"上线前备份.zip"）保留，那才是有用的出处信息。
+  const label = /^ams-\d{8}/.test(base) ? "" : base.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 40);
 
   const name = nextBackupName(label || undefined, isArchive ? "zip" : "db");
   const target = path.join(dir, name);

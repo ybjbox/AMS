@@ -10,7 +10,13 @@ export interface BackupMeta {
   path: string;
   size: number;
   createdAt: string;
-  /** 是否附带 uploads 文件快照（旧备份无此字段 = 只含数据库） */
+  /**
+   * 归档形态。`zip` = 单文件（数据库 + 上传文件 + 导出模板都在里面）；
+   * `legacy` = 老格式 `ams-x.db`，上传文件与模板在同名 sidecar 目录里（可能没有）。
+   * 界面按它决定徽章：zip 恒为整套，不能再拿 withUploads 去判"仅数据库"。
+   */
+  format: 'zip' | 'legacy';
+  /** 仅对 legacy 有意义：sidecar 的 uploads 快照在不在。zip 为 undefined（整套必然带着） */
   withUploads?: boolean;
 }
 
@@ -67,6 +73,33 @@ export const restoreBackup = (name: string): Promise<RestoreResponse> =>
 
 export const deleteBackup = (name: string): Promise<{ success: boolean }> =>
   http.delete(`/backup/${encodeURIComponent(name)}`);
+
+/** 单文件导入上限，与服务端 backupRopter 的 MAX_IMPORT_BYTES 同一数值 */
+export const BACKUP_IMPORT_MAX_BYTES = 200 * 1024 * 1024;
+
+/**
+ * 导入一份外部备份（别的机器下载下来的 `.zip`，或老式的裸 `.db`）。
+ *
+ * 请求体是文件**原始字节**直传，不走 base64+JSON —— 备份动辄几十 MB，
+ * 那种写法会把堆打爆（见 AUDIT P2-4）。原文件名只作显示素材，入库名由服务端生成。
+ *
+ * 注意：**导入 ≠ 恢复**。文件只是进了备份列表，要不要覆盖当前库仍由列表里的
+ * 「恢复」决定 —— 分成两步才留有反悔的余地。
+ */
+export const importBackup = (
+  file: File,
+  onProgress?: (percent: number) => void
+): Promise<{ success: boolean; backup: BackupMeta }> => {
+  const params = new URLSearchParams({ name: file.name });
+  return http.post<{ success: boolean; backup: BackupMeta }>(`/backup/import?${params.toString()}`, file, {
+    // 大文件上传不能用默认的 10s 超时
+    timeout: 0,
+    headers: { 'Content-Type': 'application/octet-stream' },
+    onUploadProgress: (event) => {
+      if (onProgress && event.total) onProgress(Math.round((event.loaded / event.total) * 100));
+    },
+  });
+};
 
 /**
  * 下载备份文件：改走请求头（fetchBlob）而不是 `?access_token=`。

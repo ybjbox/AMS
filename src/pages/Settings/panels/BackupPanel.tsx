@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Database, Download, History, RotateCcw, Trash2, Plus } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Database, Download, History, RotateCcw, Trash2, Plus, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfirm } from '@/hooks/useConfirm';
 import { notifySaveFailure } from '@/store/saveFailure';
@@ -11,6 +11,8 @@ import {
   restoreBackup,
   deleteBackup,
   downloadBackup,
+  importBackup,
+  BACKUP_IMPORT_MAX_BYTES,
   type BackupListResponse,
   type BackupMeta,
 } from '@/services/backupApi';
@@ -32,9 +34,16 @@ export default function BackupPanel() {
   const confirm = useConfirm();
   // 备份文件是含凭据的整库副本，服务端只让超管下载；按钮同源收口，免得 ADMIN 点了必 403
   const canDownload = useUserStore((state) => state.hasPermission('backup:export'));
+  // 导入进来的整库副本下一步就是被「恢复」覆盖到线上，服务端收到 SUPER_ADMIN；
+  // 按钮同源收口，免得 ADMIN 看见一个点了必 403 的入口
+  const canImport = useUserStore((state) => state.hasPermission('backup:import'));
   const [data, setData] = useState<BackupListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  // null = 没在传；否则是已上传百分比。导入是"选中文件就开始"的动作，
+  // 没有进度反馈的话，几十 MB 的备份看起来就像按钮坏了
+  const [importPct, setImportPct] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -134,6 +143,31 @@ export default function BackupPanel() {
     [confirm, load]
   );
 
+  const handleImportFile = useCallback(
+    async (file: File) => {
+      if (file.size > BACKUP_IMPORT_MAX_BYTES) {
+        // 先在前端拦掉：服务端也会拒，但要传上去才知道，白等一次上传
+        toast.error(`这份文件 ${formatSize(file.size)}，超过导入上限 ${formatSize(BACKUP_IMPORT_MAX_BYTES)}`);
+        return;
+      }
+      setBusy(true);
+      setImportPct(0);
+      try {
+        const res = await importBackup(file, (p) => setImportPct(p));
+        toast.success(`已导入 ${res.backup.name} —— 在列表里点「恢复」才会覆盖当前数据`, {
+          duration: 9000,
+        });
+        await load();
+      } catch (err) {
+        notifySaveFailure({ title: '导入备份失败', error: err });
+      } finally {
+        setImportPct(null);
+        setBusy(false);
+      }
+    },
+    [load]
+  );
+
   const cfg = data?.config;
 
   return (
@@ -145,6 +179,7 @@ export default function BackupPanel() {
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
           系统会定时对数据库做在线热备份（不中断服务）。如遇误删或磁盘损坏，可随时从备份恢复。
+          {canImport && ' 换机器时：在旧机器「下载备份」取到 .zip，到这里「导入备份」，再点恢复。'}
         </p>
       </div>
 
@@ -192,7 +227,34 @@ export default function BackupPanel() {
         </div>
       )}
 
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {canImport && (
+          <>
+            {/* 选完即传，没有"先选中再点确认"那一步 —— 少一次可能选错文件的空档 */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".zip,.db,application/zip,application/x-sqlite3"
+              className="sr-only"
+              aria-label="选择要导入的备份文件"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                // 立刻清空 value：同一个文件连着选两次也要算一次新的上传
+                e.target.value = '';
+                if (file) void handleImportFile(file);
+              }}
+            />
+            <button
+              type="button"
+              className="btn-secondary flex items-center gap-1.5"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={busy}
+            >
+              <Upload className="size-4" />
+              {importPct === null ? '导入备份' : importPct < 100 ? `导入中 ${importPct}%` : '校验中…'}
+            </button>
+          </>
+        )}
         <button
           type="button"
           className="btn-primary flex items-center gap-1.5"
@@ -229,7 +291,14 @@ export default function BackupPanel() {
                 >
                   <td className="px-4 py-2.5 font-mono text-xs">
                     {b.name}
-                    {b.withUploads ? (
+                    {b.format === 'zip' ? (
+                      <span
+                        className="ml-2 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-3xs font-sans"
+                        title="单文件归档：数据库、上传的文件、导出模板都在这一个文件里"
+                      >
+                        整套归档
+                      </span>
+                    ) : b.withUploads ? (
                       <span className="ml-2 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-3xs font-sans">
                         含上传文件
                       </span>

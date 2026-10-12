@@ -111,6 +111,24 @@ describe("正路：导入后能出现在列表里、也能恢复", () => {
     backup.deleteBackup(imported.name);
   });
 
+  it("来源名本身就是自动生成的备份名时，不再叠一层时间戳", async () => {
+    const donor = await createBackup("auto-name");
+    const staged = stage("auto.zip", fs.readFileSync(donor.path));
+    const imported = await importBackup(staged, donor.name); // 上传的正是 ams-<14位>.zip
+    expect(imported.name).toMatch(/^ams-\d{14}\.zip$/);
+    expect(imported.name.split(".").length).toBe(2);
+    backup.deleteBackup(imported.name);
+    backup.deleteBackup(donor.name);
+  });
+
+  it("人肉改过名的备份保留出处信息作 label", async () => {
+    const sqlite = await realSqliteBytes();
+    const staged = stage("renamed.db", sqlite);
+    const imported = await importBackup(staged, "上线前备份.db");
+    expect(imported.name).toMatch(/^ams-\d{14}\._{5}\.db$/); // 上线前备份 = 5 个非 ASCII 字符 → 5 个下划线
+    backup.deleteBackup(imported.name);
+  });
+
   it("只含库的老式 .db 也收：format=legacy、没有文件快照", async () => {
     const sqlite = await realSqliteBytes();
     const staged = stage("legacy.db", sqlite);
