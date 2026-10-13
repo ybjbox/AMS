@@ -1,8 +1,8 @@
 /**
  * 到期提醒扫描（服务端版）回归测试：
  *  1. 收件人只含启用中的 HR 及以上——普通员工绝不能再因为"打开了浏览器"收到全员合同到期提醒；
- *  2. 命中才生成：离职与超出窗口不算；**已过期的算**（2026-10-12 起，
- *     原先 `days > 0` 让合同一过期就自动静默，最该催的人反而不再提醒）；
+ *  2. 命中才生成：离职与超出窗口不算；**已过期的算**（2026-10-12 起合同、2026-10-13 起
+ *     试用期，原先 `days > 0` 让到期日一过就自动静默，最该催的人反而不再提醒）；
  *  3. 幂等：重复扫描不堆待办，通知按 refKey 原地刷新（这是 v9 归并的延续）。
  *
  * 运行环境：vitest server project，DATA_DIR=data-test。用例自造数据并在结尾清理干净。
@@ -44,6 +44,8 @@ let soon = "";
 let empSoon = { id: "", name: "" };
 let empExpired = { id: "", name: "" };
 let empProbation = { id: "", name: "" };
+/** 转正日已过两周还挂着"试用期"—— 旧口径（`days > 0`）会把这条整滤掉 */
+let empProbationLate = { id: "", name: "" };
 let empResigned = { id: "", name: "" };
 let empFar = { id: "", name: "" };
 
@@ -81,6 +83,12 @@ beforeAll(async () => {
   })!;
   empResigned = createEmployee({ name: "提醒测试-已离职", contractExpiry: plusDays(3), status: "离职" })!;
   empFar = createEmployee({ name: "提醒测试-远未来", contractExpiry: plusDays(200), status: "在职" })!;
+  empProbationLate = createEmployee({
+    name: "提醒测试-试用期满未转正",
+    status: "试用期",
+    joinDate: minusMonths(plusDays(-12), 3),
+    contractExpiry: "",
+  })!;
 
   createAccount({ username: HR, password: PW, systemRole: "HR" });
   createAccount({ username: STAFF, password: PW, systemRole: "EMPLOYEE" });
@@ -96,7 +104,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  const ids = [empSoon.id, empExpired.id, empProbation.id, empResigned.id, empFar.id];
+  const ids = [empSoon.id, empExpired.id, empProbation.id, empProbationLate.id, empResigned.id, empFar.id];
   for (const id of ids) {
     db.prepare("DELETE FROM todos WHERE targetId = ?").run(id);
     db.prepare("DELETE FROM notifications WHERE refKey LIKE ?").run(`%:${id}`);
@@ -116,11 +124,23 @@ describe("collectReminderItems", () => {
     expect(byEmployee.has(empResigned.id)).toBe(false); // 离职不算
     expect(byEmployee.has(empFar.id)).toBe(false); // 200 天后，超出 30 天窗口
 
-    // 已过期：daysLeft 是负数，且排序要压过"还有 10 天"的那位
+    // 已过期：daysLeft 是负数
     const expired = byEmployee.get(empExpired.id);
     expect(expired?.kind).toBe("contract");
     expect(expired?.daysLeft).toBe(-20);
-    expect(items[0].employeeId).toBe(empExpired.id);
+
+    // 试用期满未转正：以前这条根本进不来（`days > 0` 把它整滤掉），
+    // 现在它是"最该催"的那一类
+    const late = byEmployee.get(empProbationLate.id);
+    expect(late?.kind).toBe("probation");
+    expect(late?.daysLeft).toBeLessThan(0);
+
+    // 排序只在本组自造数据里断言：data-test 是多个测试文件共用的库，
+    // 演示种子（AMS_SEED_DEMO）里也有挂着"试用期"的老入职日样本，
+    // 断言全局 items[0] 会随别的用例写入而飘。
+    const ours = [empExpired.id, empProbationLate.id, empProbation.id, empSoon.id];
+    const ordered = items.filter((i) => ours.includes(i.employeeId)).map((i) => i.employeeId);
+    expect(ordered).toEqual([empExpired.id, empProbationLate.id, empProbation.id, empSoon.id]);
   });
 
   it('窗口调小到 5 天时，10 天后到期的合同就不再提醒，但已过期的仍然提醒', () => {
@@ -161,6 +181,23 @@ describe("scanReminders", () => {
       .prepare("SELECT title FROM todos WHERE targetId = ? AND type = 'contract' AND createdBy = ?")
       .get(empExpired.id, HR) as unknown as { title: string } | undefined;
     expect(expiredTodo?.title).toBe("合同已过期");
+
+    // 试用期逾期同样要分开写，并且从 info 升成 warning：
+    // "到点该办手续"是常规，"过了两周还没办"是漏办
+    const lateTodo = db
+      .prepare("SELECT title, description FROM todos WHERE targetId = ? AND type = 'probation' AND createdBy = ?")
+      .get(empProbationLate.id, HR) as unknown as { title: string; description: string } | undefined;
+    expect(lateTodo?.title).toBe("试用期已届满");
+    expect(lateTodo?.description).toMatch(/已于 .* 结束（逾期 \d+ 天），需尽快办理转正或说明/);
+    const lateNotif = db
+      .prepare("SELECT type FROM notifications WHERE recipient = ? AND refKey = ?")
+      .get(HR, `probation:${empProbationLate.id}`) as unknown as { type: string } | undefined;
+    expect(lateNotif?.type).toBe("warning");
+    // 还没到期的那位仍是常规提醒，标题不该被带成"已届满"
+    const onTimeTodo = db
+      .prepare("SELECT title FROM todos WHERE targetId = ? AND type = 'probation' AND createdBy = ?")
+      .get(empProbation.id, HR) as unknown as { title: string } | undefined;
+    expect(onTimeTodo?.title).toBe("试用期转正提醒");
   });
 
   it("配置读写落在 settings KV，形状异常的值会被收敛", () => {    const original = getReminderConfig();

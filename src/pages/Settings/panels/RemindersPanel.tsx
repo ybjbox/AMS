@@ -148,6 +148,8 @@ export default function RemindersPanel() {
                   }
                   className="w-32 tabular-nums"
                 />
+                {/* 同上：只管"提前多少天开始提醒"，不管"过了多久就不管" */}
+                <p className="text-2xs text-muted-foreground">届满未转正的不受此数限制，会一直提醒</p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">

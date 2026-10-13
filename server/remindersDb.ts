@@ -9,7 +9,8 @@
  *
  * 归并键（refKey）与客户端版本逐字保持一致，v9 已归并好的那批未读提醒会被
  * 原地刷新而不是再生成一份。文案本身允许改（2026-10-12 起把"已过期"与"将至"
- * 分开写）—— 刷新靠的是 refKey，不靠文案。
+ * 分开写，2026-10-13 起合同与试用期两类都走同一套"逾期/今天/将至"句式）——
+ * 刷新靠的是 refKey，不靠文案。
  */
 import { db } from "./db.ts";
 import { getSetting, setSetting } from "./settingsDb.ts";
@@ -140,7 +141,9 @@ export function collectReminderItems(config = getReminderConfig()): ReminderItem
     if (emp.status === "试用期" && emp.joinDate) {
       const due = plusMonths(emp.joinDate, 3);
       const days = due ? daysUntilLocalOrNull(due) : null;
-      if (due && days !== null && days > 0 && days <= config.probationConversionDays) {
+      // 与合同同理：**没有下界**。试用期早过了还没转正是最需要被催的那一种，
+      // 旧的 `days > 0` 让它一过届满日就从提醒里消失。
+      if (due && days !== null && days <= config.probationConversionDays) {
         items.push({
           kind: "probation",
           employeeId: emp.id,
@@ -156,10 +159,49 @@ export function collectReminderItems(config = getReminderConfig()): ReminderItem
   return items.sort((a, b) => a.daysLeft - b.daysLeft || a.employeeId.localeCompare(b.employeeId));
 }
 
-const COPY: Record<ReminderItem["kind"], { title: string; type: "warning" | "info"; prefix: string }> = {
-  contract: { title: "合同到期提醒", type: "warning", prefix: "contract" },
-  probation: { title: "试用期转正提醒", type: "info", prefix: "probation" },
+/**
+ * 两类提醒共用一套"逾期 / 今天 / 将至"的句式，差别只填进三个槽位。
+ *
+ * 为什么合成一张表：合同那批文案 2026-10-12 拆出了逾期分支，试用期还留着单一的
+ * "将于…结束"，于是同一段嵌套三元里两种_kind 的写法不对称，读的人得跳来跳去确认
+ * 哪条走哪个分支。`noun`/`verb`/`overdueAction` 摆在一起后，加第三类提醒只要加一行。
+ */
+const COPY: Record<
+  ReminderItem["kind"],
+  { title: string; overdueTitle: string; noun: string; verb: string; overdueAction: string; type: "warning" | "info"; prefix: string }
+> = {
+  contract: {
+    title: "合同到期提醒",
+    overdueTitle: "合同已过期",
+    noun: "合同",
+    verb: "到期",
+    overdueAction: "续签或说明",
+    type: "warning",
+    prefix: "contract",
+  },
+  probation: {
+    title: "试用期转正提醒",
+    overdueTitle: "试用期已届满",
+    noun: "试用期",
+    verb: "结束",
+    overdueAction: "办理转正或说明",
+    type: "info",
+    prefix: "probation",
+  },
 };
+
+/** 提醒正文。逾期与将至不是一件事，所以标题和正文都分三种写法。 */
+function reminderMessage(item: ReminderItem): string {
+  const c = COPY[item.kind];
+  const who = `${nameLabel(item.employeeName)} (${item.employeeId})`;
+  if (item.daysLeft < 0) {
+    return `${who} 的${c.noun}已于 ${item.dueDate} ${c.verb}（逾期 ${-item.daysLeft} 天），需尽快${c.overdueAction}`;
+  }
+  if (item.daysLeft === 0) {
+    return `${who} 的${c.noun}今天（${item.dueDate}）${c.verb}`;
+  }
+  return `${who} 的${c.noun}将于 ${item.dueDate} ${c.verb}（剩余 ${item.daysLeft} 天）`;
+}
 
 /** 某收件人当前未完成的自动提醒待办数（用它前后对比得出本轮真正新增的条数） */
 function countOpenReminderTodos(recipient: string): number {
@@ -188,18 +230,13 @@ export function scanReminders(config = getReminderConfig()): ReminderScanReport 
     for (const recipient of recipients) {
       for (const item of items) {
         const copy = COPY[item.kind];
-        // 已过期与"将至"是两件事，文案与标题都要分开：标题会进待办列表和通知标题，
+        // 已过期与"将至"是两件事，标题要分开：标题会进待办列表和通知标题，
         // 写「合同到期提醒」而内容其实是"过期 45 天没人管"，等于把最急的降级成常规。
-        const overdue = item.kind === "contract" && item.daysLeft < 0;
-        const title = overdue ? "合同已过期" : copy.title;
-        const message =
-          item.kind === "contract"
-            ? overdue
-              ? `${nameLabel(item.employeeName)} (${item.employeeId}) 的合同已于 ${item.dueDate} 到期（逾期 ${-item.daysLeft} 天），需尽快续签或说明`
-              : item.daysLeft === 0
-                ? `${nameLabel(item.employeeName)} (${item.employeeId}) 的合同今天（${item.dueDate}）到期`
-                : `${nameLabel(item.employeeName)} (${item.employeeId}) 的合同将于 ${item.dueDate} 到期（剩余 ${item.daysLeft} 天）`
-            : `${nameLabel(item.employeeName)} (${item.employeeId}) 的试用期将于 ${item.dueDate} 结束（剩余 ${item.daysLeft} 天）`;
+        const overdue = item.daysLeft < 0;
+        const title = overdue ? copy.overdueTitle : copy.title;
+        // 试用期本来只是"到点该办手续"（info），逾期了就是漏办（warning）
+        const level = overdue ? "warning" : copy.type;
+        const message = reminderMessage(item);
 
         createTodo({
           title,
@@ -213,7 +250,7 @@ export function scanReminders(config = getReminderConfig()): ReminderScanReport 
         createNotification({
           title,
           message,
-          type: copy.type,
+          type: level,
           recipient,
           refKey: `${copy.prefix}:${item.employeeId}`,
         });
