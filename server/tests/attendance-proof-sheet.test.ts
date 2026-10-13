@@ -7,7 +7,7 @@
  * 所以这里穷举分支，把「哪天该被标出来」钉死。
  */
 import { describe, it, expect } from 'vitest';
-import { proofDayVerdict, proofDayFlag, type VerdictFinding } from '../attendanceDayVerdicts.ts';
+import { proofDayVerdict, proofDayFlag, proofDayNoLaterPunch, type VerdictFinding } from '../attendanceDayVerdicts.ts';
 
 // 夹具直接造 VerdictFinding（判定装配出来的形状），label 与 FINDING_CN 保持一致 ——
 // 判定文案是这两函数唯一读进去的东西，测试要盯的就是它。
@@ -125,5 +125,27 @@ describe('proofDayFlag：★ 的优先级', () => {
 
   it('单卡天要提示：只有一张卡时缺哪张是猜的，人来核一下才靠谱', () => {
     expect(proofDayFlag({ ...base, times: ['08:00'], list: [{ findings: missingIn, single: true }] })).toBe('单卡');
+  });
+});
+
+describe('proofDayNoLaterPunch：这行的证据是否不完整', () => {
+  // monthEdge 用的是全库最晚打卡日，所以"某人此后不再出现"它盖不到。
+  // 这一句只写进「判定依据」，不改变判定、也不加 ★ ——
+  // 换成按人的 monthEdge 会把真漏卡一起软化掉，那是拿隐瞒换清静。
+  it('是他最后一张卡、而库还有更晚的记录 → 该提示', () => {
+    expect(proofDayNoLaterPunch({ date: '2026-09-12', employeeLastDate: '2026-09-12', dbMaxDate: '2026-10-01' })).toBe(true);
+  });
+
+  it('他后来还有卡 → 不缺证据，缺卡就是缺卡', () => {
+    expect(proofDayNoLaterPunch({ date: '2026-09-12', employeeLastDate: '2026-09-20', dbMaxDate: '2026-10-01' })).toBe(false);
+  });
+
+  it('这天同时是全库最后一天 → 归 monthEdge 管，这里不再重复说一遍', () => {
+    expect(proofDayNoLaterPunch({ date: '2026-10-01', employeeLastDate: '2026-10-01', dbMaxDate: '2026-10-01' })).toBe(false);
+  });
+
+  it('整月没卡的人不参与（那是"无考勤"，不是记录断在半路）', () => {
+    expect(proofDayNoLaterPunch({ date: '2026-09-12', employeeLastDate: '', dbMaxDate: '2026-10-01' })).toBe(false);
+    expect(proofDayNoLaterPunch({ date: '', employeeLastDate: '2026-09-12', dbMaxDate: '2026-10-01' })).toBe(false);
   });
 });

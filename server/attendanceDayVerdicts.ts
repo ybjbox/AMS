@@ -143,8 +143,17 @@ export interface DayVerdictRow {
   orphan: string[];
   isLeave: boolean;
   noRule: boolean;
-  /** 下班点跨到次日但末卡没到那儿，且该员工的记录就停在这一天 */
+  /**
+   * 记录边界：下班点跨到次日、末卡还没落到那儿，而**全库**的打卡就停在这天之后
+   * （`date >= dbMaxDate`，dbMaxDate 是本月查询窗口内的最晚打卡日）。
+   * 注意它是全局口径、不是按人 —— 按人的那一半由 `noLaterPunch` 单独说。
+   */
   monthEdge: boolean;
+  /**
+   * 这天是该员工在整个库里的最后一张卡，而库还有更晚的记录：
+   * 此行的缺卡到底是漏卡还是"后续记录尚未导入"，系统分辨不了。只写进判定依据，不改判定。
+   */
+  noLaterPunch: boolean;
   verdict: string;
   /** 为什么这么判：与导出「判定依据」列逐字相同 */
   why: string;
@@ -214,6 +223,29 @@ export function proofDayVerdict(input: {
 }
 
 /**
+ * 这天是不是该员工在整个库里的最后一张卡、而库本身还有更晚的记录。
+ *
+ * 为什么要单独问一句：`monthEdge` 用的是**全库**最晚打卡日，所以"某人此后不再出现"
+ * 这种情况不会被它覆盖 —— 那种日子如果还挂着缺卡，究竟是**真漏卡**还是**他的后续记录
+ * 没导进来**，系统无法分辨。不改变判定、也不加 ★，只在「判定依据」里补一句，
+ * 让校对的人知道这一行的证据其实不完整。
+ *
+ * 纯函数（与 proofDayVerdict / proofDayFlag 同一套理由）：★ 与判定口径要能在没有
+ * 真实数据的情况下被测到。
+ */
+export function proofDayNoLaterPunch(input: {
+  date: string;
+  employeeLastDate: string;
+  dbMaxDate: string;
+}): boolean {
+  const { date, employeeLastDate, dbMaxDate } = input;
+  // 没有卡的人（employeeLastDate 为空）不参与：他们整月都不在，是"无考勤"那一类，
+  // 再补一句"此后再无记录"只是噪音。
+  if (!date || !employeeLastDate) return false;
+  return date === employeeLastDate && employeeLastDate < dbMaxDate;
+}
+
+/**
  * 这一行要不要标 ★（或退一档的普通提示）。
  *
  * 顺序即优先级：越靠前越严重。没配时段 > 对不上班 > 有未归属卡 > 记录边界。
@@ -227,7 +259,7 @@ export function proofDayFlag(input: {
   orphan: string[];
   borrowedInMonth: string[];
   borrowedPrevMonth: string[];
-  /** 班次下班点跨到次日但末卡没到，且没有更晚的记录 —— 分不清是缺卡还是没导数据 */
+  /** 记录边界：班次下班点跨到次日、末卡没到那儿，而全库的打卡记录就到此为止 */
   monthEdge: boolean;
 }): string {
   const { noRule, isLeave, times, list, orphan, borrowedInMonth, borrowedPrevMonth, monthEdge } = input;
@@ -281,6 +313,16 @@ export function buildMonthDayVerdicts(month: string): MonthVerdicts {
     list.push({ date, time: asString(r.time).slice(0, 5) });
     punchesOf.set(id, list);
     punchName.set(id, asString(r.employeeName));
+  }
+
+  // 每个员工在**整个库**里的最后一张卡。上面那份只覆盖本月 ±1 天，回答不了
+  // "他此后还有没有卡" —— 而那正是分辨"真漏卡"与"后续记录没导进来"需要的另一半信息。
+  // 走 idx_punch_employee_date_time 的索引分组，不是全表扫。
+  const lastDateOfEmp = new Map<string, string>();
+  for (const r of db
+    .prepare("SELECT employeeId, MAX(date) AS last FROM punch_records GROUP BY employeeId")
+    .all() as unknown as DbRow[]) {
+    lastDateOfEmp.set(asString(r.employeeId), asString(r.last));
   }
 
   // 员工档案。整月一张卡都没有的人**也要**列出来 —— 只列有打卡的人，
@@ -434,6 +476,10 @@ export function buildMonthDayVerdicts(month: string): MonthVerdicts {
       const isLeave = leaveDays.has(`${emp.id}__${date}`);
 
       const monthEdge = date >= dbMaxDate && list.some((x) => x.window.end > 1440 && x.lastOffset < x.window.end);
+      // 缺卡类的行才补这句：正常日子没必要告诉校对的人"他后来没卡了"，那只会稀释注意力
+      const missingCard = list.some((x) => x.findings.some((f) => f.type === "MISSING_IN" || f.type === "MISSING_OUT"));
+      const noLaterPunch =
+        missingCard && proofDayNoLaterPunch({ date, employeeLastDate: lastDateOfEmp.get(emp.id) ?? "", dbMaxDate });
 
       const verdict = proofDayVerdict({ noRule, isLeave, times, list, borrowed });
       const flag = proofDayFlag({
@@ -463,6 +509,9 @@ export function buildMonthDayVerdicts(month: string): MonthVerdicts {
         }
         if (orphan.length) why.push(`未归属卡：${orphan.join("、")}（与所有时段的上班时间都相差过大）`);
         if (!why.length) why.push(times.length === 0 ? "当天无打卡记录" : "打卡未对上任何班次");
+        // 判定不变、★ 不变，只把"这一行的证据不完整"写进依据里 ——
+        // 换成按人的 monthEdge 会把真漏卡一起软化掉，那是拿隐瞒换清静。
+        if (noLaterPunch) why.push("该员工此后再无打卡记录：可能是漏卡，也可能是后续记录尚未导入");
       }
 
       // 请假日与未配时段都不判异常，迟到/早退/缺卡三格必须跟着判定一起清空 ——
@@ -486,6 +535,7 @@ export function buildMonthDayVerdicts(month: string): MonthVerdicts {
         isLeave,
         noRule,
         monthEdge,
+        noLaterPunch,
         verdict,
         why: why.join("；"),
         flag,
