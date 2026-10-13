@@ -65,7 +65,10 @@ test.describe('工作餐券版面', () => {
     expect(m.blankMm).toBeGreaterThanOrEqual(4.5); // 一个中文字符 ≈ 4.6mm，且不随整行缩字变小
     expect(m.blankMm).toBeLessThan(6);
     expect(m.periodClipped).toBe(false);
-    await expect(page.getByText('打印预览 (2页)')).toBeVisible();
+    await expect(page.getByText('打印预览', { exact: true })).toBeVisible();
+    // 页数原来标题里写一次、规格行再写一次，2026-10-13 清重复计数后只留规格行这份；
+    // 纸数本身上面已经用 m.sheetCount === 2 断过，这里核的是"页数的说法还在"
+    await expect(page.getByText(/每页 \d+ 张 × 2 页/)).toBeVisible();
     await expect(page.locator('aside p', { hasText: /超过券宽|放不下/ })).toHaveCount(0);
   });
 
