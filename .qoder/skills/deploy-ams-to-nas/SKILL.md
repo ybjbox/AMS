@@ -147,6 +147,12 @@ shell 里直接 `cut` 出来带着引号会 401）：`grep ... | cut -d= -f2- | 
 要把本机库带上去，走 `GET /api/backup/export/:name` 下载 + NAS 侧 `POST /api/backup/restore`。
 初始管理员是 `admin`，口令取 NAS 上 `.env` 的 `AMS_ADMIN_PASSWORD`（本机 `.env.local` 同一个值）。
 
+**磁盘：AMS 就住在 `/vol1`（53 GB SSD，与另外 10 个 compose 项目 + 系统应用共用），Ryan 已明确
+决定不搬去 `/vol2`，别再提。** 配套事实：`storage space` 的 `frsizeStor` 是**跨卷合计**，判单卷
+要用 `storage overview` 的 `array[].mountpoint`+`frsize`，或直接读 `GET /api/backup` 的 `freeMb`；
+`BACKUP_MAX_TOTAL_MB=256` 就是照这个余量定的（原先写 4096 比整卷剩余还大，容量清理永不触发）。
+空间真不够时 `POST /api/backup/create` 返回 **507 并带具体数字**，不会伪装成 500。
+
 ## 回滚线上版本
 
 entrypoint 的自动回滚只在"新版本起不来"时生效。人工回滚（版本起得来但行为不对）：
