@@ -247,8 +247,8 @@ export default function MealVouchers() {
 
           <h2 className="mb-2 mt-5 text-sm font-semibold text-zinc-900 dark:text-white">
             打印记录
-            <span className="ml-2 text-xs font-normal text-muted-foreground">
-              {history.records.length} 批
+            <span className="ml-2 text-xs font-normal text-muted-foreground" title="不受左侧期间筛选影响">
+              全部历史 {history.records.length} 批
             </span>
           </h2>
           {history.loading ? (
@@ -299,7 +299,8 @@ export default function MealVouchers() {
         >
           <div className="flex shrink-0 items-center justify-between border-b border-zinc-200/70 bg-white/70 px-3 py-1.5 dark:border-zinc-700/60 dark:bg-zinc-800/60">
             <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              打印预览 ({facts.pages}页)
+              {/* 页数在左栏"每页 N 张 × M 页"里已经说过，这里不再重复一遍（审查 M1） */}
+            打印预览
             </span>
             <PreviewZoomControl zoom={zoom} onChange={changeZoom} onReset={resetZoom} />
           </div>

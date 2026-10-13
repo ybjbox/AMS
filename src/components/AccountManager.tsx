@@ -244,14 +244,22 @@ export default function AccountManager() {
     await run(`delete:${a.username}`, () => accountApi.remove(a.username), `账号 ${a.username} 已删除`);
   };
 
+  // 头部那串数是**全量口径**（未绑定 / 停用 / 锁定要跨全部账号才有意义），而表格是筛过的。
+  // 不标出筛选后条数，就会出现"共 12 个账号"配着 3 行表格的自相矛盾（审查 AC1）。
+  const filterActive =
+    query.trim() !== '' || roleFilter !== 'ALL' || bindingFilter !== 'ALL' || stateFilter !== 'ALL';
+
   return (
     <div className="animate-in fade-in duration-400 h-full flex flex-col">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <h2 className="text-lg font-medium text-zinc-900 dark:text-white">账号管理</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            共 {stats.total} 个账号 · 未绑定 {stats.unbound} · 绑定失效 {stats.dangling} · 停用 {stats.disabled} ·
-            待改密 {stats.mustChange} · 锁定 {stats.locked}
+            {filterActive ? `筛选后 ${rows.length} / 共 ${stats.total} 个账号` : `共 ${stats.total} 个账号`}
+            <span title="未绑定 / 绑定失效 / 停用 / 待改密 / 锁定 始终按全部账号统计，不随筛选变化">
+              {' · '}未绑定 {stats.unbound} · 绑定失效 {stats.dangling} · 停用 {stats.disabled} ·
+              待改密 {stats.mustChange} · 锁定 {stats.locked}
+            </span>
           </p>
         </div>
         <div className="flex items-center gap-2">

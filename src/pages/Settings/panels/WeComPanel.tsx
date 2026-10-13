@@ -210,6 +210,8 @@ export default function WeComPanel() {
   const lastReport = status?.state.lastReport ?? null;
   // 预览能看到、但映射表里还没有的账号：先登记（成为待认领），再认领到员工
   const previewUnbound = (preview?.unbound ?? []).filter((u) => !bindings.some((b) => b.wecomUserId === u.wecomUserId));
+  /** 已登记但还没认领到员工的账号数 —— 映射区最该露面的一个数，此前只在同步报表里有（审查 W1） */
+  const unclaimedBindings = bindings.filter((b) => !b.employeeId).length;
 
   return (
     <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-400 space-y-6">
@@ -365,7 +367,17 @@ export default function WeComPanel() {
 
       {/* ---------------- 成员映射 ---------------- */}
       <div className={CARD_CLASS}>
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-1">成员映射</h3>
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-1">
+          成员映射
+          {bindings.length > 0 && (
+            <span className="ml-2 text-xs font-normal text-muted-foreground">
+              {bindings.length} 个账号
+              {unclaimedBindings > 0 && (
+                <span className="text-amber-700 dark:text-amber-400"> · 待认领 {unclaimedBindings} 个</span>
+              )}
+            </span>
+          )}
+        </h3>
         <p className={`${HINT_CLASS} mb-4`}>
           打卡数据只认企业微信账号（userid），必须一条条认领到员工档案；认领错的代价是把别人的打卡算到这个人的考勤里，
           所以系统不按姓名自动认领。在企业管理后台「通讯录 → 成员」可以查到每个人的账号。
@@ -463,8 +475,15 @@ export default function WeComPanel() {
             立即同步
           </Button>
           <span className={HINT_CLASS + ' grow'}>
+            {/* 数字只说一遍：跑完之后的那四个数与下方「上次同步」表完全同源，
+                这里再抄一份就成了三份同数（审查 W1），所以进行中只报进度、
+                跑完只指路，明细交给下面的表。 */}
             {job
-              ? `任务 ${job.status === 'running' ? '进行中' : job.status === 'done' ? '已完成' : '失败'}：已处理 ${job.processed} 条，新增 ${job.created} 条${(job.upgraded ?? 0) > 0 ? `，补正来源 ${job.upgraded} 条` : ''}，跳过 ${job.skipped} 条`
+              ? job.status === 'running'
+                ? `任务进行中：已处理 ${job.processed} 条`
+                : job.status === 'done'
+                  ? '本轮同步已完成，明细见下方「上次同步」'
+                  : '本轮同步失败，原因见下方红字'
               : status?.state.cursorAt
                 ? `上次同步到：${new Date(status.state.cursorAt * 1000).toLocaleString('zh-CN', { hour12: false })}`
                 : '还没有同步过（第一次只拉最近 7 天，更早的数据请填日期区间补拉）'}

@@ -180,6 +180,28 @@ F1 与 AC1 不只是重复：F1 的计数**含已删文件**（数字会比可�
 `.design-qa/verify-metrics-fixes.mts` 11 项界面核对全过、
 `.design-qa/check-day-verdicts.mts` 仍是 840 行三方逐字一致（本轮没碰判定装配）。
 
+### 7.1 §4 那批重复计数 + 试用期逾期（2026-10-13 上午）
+
+| 项 | 改法 | 落点 |
+|---|---|---|
+| F1 | 计数改按**解析得到的**文件（`found`），并列出"另有 K 个已被删除"；`… 等共 N 份文件` 改成 `还有 N 份未列出`（不再重复总数）；全删空的套件禁用「一键打印」 | `DocumentSetGrid.tsx` |
+| AC1 | 头部改成 `筛选后 X / 共 Y 个账号`（有筛选时），其余五项加 `title` 说明它们恒为全量口径 | `AccountManager.tsx` |
+| MR1 | 表脚 `合计（N 人）` → `合计`（人数只在表头汇总说一次） | `MonthlyReport.tsx` |
+| M1 | 预览面板标题去掉 `（N页）`；`打印记录 N 批` → `全部历史 N 批` + `title` 说明不受期间筛选影响 | `MealVouchers/index.tsx` |
+| B1 | `A4 预览（N 张）` → `A4 预览`（张数在「打印 N 张」按钮上）；`已存档 N 条` → `本次已存档 N 条`（它是会话内累加、刷新归零，不写"本次"就是假累计） | `BusinessForms/index.tsx` |
+| W1 | 同步提示行不再抄一遍四个数：进行中只报 `已处理 X 条`，跑完指路到下方「上次同步」表；成员映射区补 `N 个账号 · 待认领 K 个` | `WeComPanel.tsx` |
+| 其他 | AI 配置折叠徽章 `已填写 N 字` → `已自定义`（字数只在编辑器下方那处保留） | `AiConfigPanel.tsx` |
+| 试用期 | 去掉 `days > 0` 下界：届满未转正会一直提醒；标题分 `试用期已届满`、级别从 info 升 warning；两类提醒的文案合并成一张 `COPY` 表 + 一个 `reminderMessage()`（逾期/今天/将至三种句式共用） | `remindersDb.ts`、`RemindersPanel.tsx` |
+
+**看过但判定不改**：座位方案「N 桌」在两处出现（`Seating/index.tsx` 的恢复横幅 与
+`PlansModal.tsx` 的方案列表行）—— 二者不在同一屏（横幅在画布页、行在弹窗里），
+且各自承担"这是哪个方案"的识别作用，删掉任一处都会让那一屏变成只有一句没有指代的话。
+
+验证：typecheck 干净、`npm run test:run` 102 文件 / 838 例全绿；
+`reminders-scan.test.ts` 新增"试用期满未转正"用例（断言被收进、daysLeft<0、标题与级别、
+以及**排序断言收窄到本组自造数据** —— data-test 是共享库，断言全局 `items[0]` 会随别的
+用例写入的演示种子漂移，这次就是这么红的）。
+
 ### 过程中挖出来的两件事
 
 1. **`attendance-verdicts-parity.test.ts` 偶发红的根因不是并发写库本身**，而是测试把装配算了两次

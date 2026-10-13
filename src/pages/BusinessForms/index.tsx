@@ -544,7 +544,9 @@ export default function BusinessForms() {
 
           {archivedCount > 0 && linkedEmployee && (
             <p className="text-xs text-muted-foreground">
-              已存档 {archivedCount} 条 ·{' '}
+              {/* 这个数只在本次会话里累加（刷新归零），所以必须写明"本次" ——
+                  写成「已存档 N 条」会让人以为是该员工的累计存档数（审查 B1） */}
+              本次已存档 {archivedCount} 条 ·{' '}
               <Link
                 to={`/users?detail=${linkedEmployee.id}`}
                 className="text-brand-600 dark:text-brand-400 hover:underline"
@@ -557,7 +559,8 @@ export default function BusinessForms() {
 
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="section-title">A4 预览（{plan.sheets.length} 张）</h2>
+            {/* 张数在「打印 N 张」按钮上已经有了，标题再写一次就是三份同数（审查 B1） */}
+            <h2 className="section-title">A4 预览</h2>
             <PreviewZoomControl zoom={zoom} onChange={change} onReset={reset} />
           </div>
           <div

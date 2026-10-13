@@ -62,7 +62,15 @@ export function DocumentSetGrid({
           />
         </div>
       ) : (
-        documentSets.map((set) => (
+        documentSets.map((set) => {
+          // 套件里记的是 documentIds，而文件可能已被删除 —— 列表对找不到的那条
+          // `if (!doc) return null` 静默跳过，所以计数必须按**解析得到的**那批算，
+          // 否则会出现"写着 5 份、下面只列得出 3 行"（审查 F1）。
+          const found = set.documentIds
+            .map((id) => documents.find((d) => d.id === id))
+            .filter((d): d is Document => Boolean(d));
+          const missing = set.documentIds.length - found.length;
+          return (
           <div
             key={set.id}
             className="bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl overflow-hidden flex flex-col hover:shadow-md transition-shadow"
@@ -93,33 +101,36 @@ export function DocumentSetGrid({
             </div>
             <div className="p-5 flex-1 bg-zinc-50/50 dark:bg-zinc-800/50">
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                包含文件 ({set.documentIds.length})
+                包含文件 ({found.length})
+                {missing > 0 && (
+                  <span className="ml-1.5 normal-case tracking-normal text-red-600 dark:text-red-400">
+                    另有 {missing} 个已被删除
+                  </span>
+                )}
               </div>
               <ul className="space-y-2">
-                {set.documentIds.slice(0, 3).map((id: string) => {
-                  const doc = documents.find((d) => d.id === id);
-                  if (!doc) return null;
-                  return (
-                    <li key={id} className="flex items-center text-sm text-zinc-700 dark:text-zinc-300">
-                      <FileText className="w-4 h-4 mr-2 text-zinc-400 dark:text-zinc-500 shrink-0" />
-                      <span className="truncate">{doc.name}</span>
-                    </li>
-                  );
-                })}
-                {set.documentIds.length > 3 && (
-                  <li className="text-xs text-muted-foreground pt-1">
-                    … 等共 {set.documentIds.length} 份文件
+                {found.slice(0, 3).map((doc) => (
+                  <li key={doc.id} className="flex items-center text-sm text-zinc-700 dark:text-zinc-300">
+                    <FileText className="w-4 h-4 mr-2 text-zinc-400 dark:text-zinc-500 shrink-0" />
+                    <span className="truncate">{doc.name}</span>
                   </li>
+                ))}
+                {/* 标题已经报了总数，这里只说"没列出来的还有几份"，不再重复一遍 */}
+                {found.length > 3 && (
+                  <li className="text-xs text-muted-foreground pt-1">还有 {found.length - 3} 份未列出</li>
                 )}
-                {set.documentIds.length === 0 && (
-                  <li className="text-sm text-muted-foreground italic">未选择任何文件</li>
+                {found.length === 0 && (
+                  <li className="text-sm text-muted-foreground italic">
+                    {set.documentIds.length === 0 ? '未选择任何文件' : '里面的文件都已被删除'}
+                  </li>
                 )}
               </ul>
             </div>
             <div className="p-4 border-t border-zinc-100 dark:border-zinc-700 bg-white dark:bg-zinc-800">
               <Button
                 onClick={() => onPrintSetClick(set)}
-                disabled={set.documentIds.length === 0}
+                // 按"还能打印几份"判空：文件全被删掉的套件，点打印只会得到空任务
+                disabled={found.length === 0}
                 size="lg"
                 className="w-full"
               >
@@ -128,7 +139,8 @@ export function DocumentSetGrid({
               </Button>
             </div>
           </div>
-        ))
+          );
+        })
       )}
     </div>
   );

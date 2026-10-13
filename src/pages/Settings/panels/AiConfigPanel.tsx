@@ -630,12 +630,13 @@ export default function AiConfigPanel() {
         </div>
       </Section>
 
-      {/* 大模型提示 */}
+      {/* 大模型提示。折叠状态下只需要知道"有没有自定义"，具体几字在展开后的编辑器
+          下面报一次就够 —— 同一屏两处「已填写 N 字」是重复计数（审查·其他） */}
       <Section
         title="大模型提示（System Prompt）"
         defaultOpen={false}
         className="space-y-2"
-        badge={form.systemPrompt.trim() ? `已填写 ${form.systemPrompt.trim().length} 字` : '使用默认提示'}
+        badge={form.systemPrompt.trim() ? '已自定义' : '使用默认提示'}
       >
         <p className="text-xs text-muted-foreground">
           自定义发给大模型的系统提示词，用于约束 AI 的角色、语气与回答范围。留空则使用内置默认提示。

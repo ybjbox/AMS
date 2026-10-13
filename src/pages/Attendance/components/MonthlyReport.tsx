@@ -281,7 +281,8 @@ export default function MonthlyReport() {
             <tfoot className="border-t-2 border-zinc-200 dark:border-zinc-700 bg-zinc-50/60 dark:bg-zinc-800/60 text-xs">
               <tr>
                 <td className="px-4 py-2.5 font-semibold text-zinc-700 dark:text-zinc-200" colSpan={3}>
-                  合计（{rows.length} 人）
+                  {/* 人数在表头上方的汇总里已经说过一次，这里只标"这一行是合计" */}
+                合计
                 </td>
                 <td className="px-4 py-2.5 text-right font-semibold text-zinc-700 dark:text-zinc-200 tabular-nums">{totals.workDays}</td>
                 <td className="px-4 py-2.5 text-right font-semibold text-zinc-700 dark:text-zinc-200 tabular-nums">{totals.punchCount}</td>
