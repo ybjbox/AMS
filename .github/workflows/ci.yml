@@ -1,4 +1,4 @@
-# AMS CI：六道闸门（类型 → lint → 单元测试 → 服务端验证 → 构建 → E2E）
+# AMS CI：七道闸门（类型 → lint → 单元测试 → 服务端验证 → 构建 → 产物验货 → E2E）
 # 说明：
 #  - lint 是**阻塞**门槛：上游既有债务已在 commit 4cdb471 前后清零（当前 0 error；
 #    warning 主要是 @typescript-eslint/no-explicit-any 与 React Compiler 的 incompatible-library 提示）。
@@ -51,6 +51,13 @@ jobs:
 
       - name: 生产构建（含分包验证）
         run: npm run build
+
+      # 构建退出码 0 不代表产物是生产版：NODE_ENV 若是 development，vite 会把 dev-only 的
+      # UI 分支折进包里、并打进 react-dom 开发版运行时 —— 界面照常能用，功能测试一条都不会红。
+      # 2026-10-18 ECS 上线时就这么把一个调试版发到了公网（登录页显示「开发模式 · 初始凭据见
+      # 服务端启动日志」），当时六道闸门全绿。这道断言装在这里，而不是装在本地。
+      - name: 产物必须是生产构建
+        run: node deploy/assert-prod-build.mjs dist
 
   e2e:
     runs-on: ubuntu-latest

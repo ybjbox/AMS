@@ -95,6 +95,9 @@ build_at() {
   # 下一步 `npm run build` 仍在 NODE_ENV=production 下跑，产物是生产构建。
   ( cd "$APP" && NODE_ENV=development npm ci --include=dev --legacy-peer-deps --no-audit --no-fund ) || { log "npm ci 失败"; return 1; }
   ( cd "$APP" && npm run build ) || { log "前端构建失败（npm run build 退出码非 0）"; return 1; }
+  # 构建"成功退出"不等于产物是生产版：NODE_ENV 一旦被带成 development，vite 会折进 dev-only
+  # 分支并打上开发版 react-dom，界面照常能用、测试也测不出来。挡住它，让调用方回退到旧版本。
+  ( cd "$APP" && node deploy/assert-prod-build.mjs dist ) || { log "产物不是生产构建，拒绝上线"; return 1; }
   # 构建"成功退出"不等于产物在：vite 偶发只写出一半
   [ -f "$APP/dist/index.html" ] || { log "构建后仍缺 dist/index.html"; return 1; }
   return 0
