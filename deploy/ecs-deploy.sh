@@ -22,7 +22,24 @@ PORT="${PORT:-3000}"
 cd "$APP"
 echo "[deploy] 当前 HEAD: $(git log -1 --format='%h %ci')"
 
-git fetch --depth=1 origin "$BRANCH"
+# 拉取必须能重试：这台机器到 github 的 git 通道**间歇性不可用**，同一时段内 HTTP/2 实测
+# 0/5 成功、HTTP/1.1 2/5 成功，失败形态有 `expected flush after ref listing`、
+# `GnuTLS recv error (-110)`、以及连不上 443。而 git 默认要 130 秒才放弃一次连接，
+# 一次部署能光等超时等十几分钟 —— 所以先用 lowSpeed 把单次尝试压到 20 秒内快速失败，
+# 再退避重试。api.github.com 不受影响（ci-gate 走的是它）。
+export GIT_HTTP_LOW_SPEED_LIMIT=1000
+export GIT_HTTP_LOW_SPEED_TIME=20
+tries=0
+until git -c http.version=HTTP/1.1 fetch --depth=1 origin "$BRANCH"; do
+  tries=$((tries + 1))
+  if [ "$tries" -ge 10 ]; then
+    echo "[deploy] 拉取 github 连续失败 $tries 次，放弃 —— 线上未做任何改动"
+    exit 1
+  fi
+  echo "[deploy] fetch 失败（第 $tries 次重试），8 秒后再试"
+  sleep 8
+done
+
 TARGET=$(git rev-parse FETCH_HEAD)
 echo "[deploy] 目标 commit: $(git log -1 --format='%h %ci' "$TARGET")"
 

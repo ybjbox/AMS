@@ -71,9 +71,12 @@
 2. **小内存机器上 vite build 会 OOM。** 800 MB 的机器上 V8 把堆上限压到约 400 MB，构建在
    15 秒处 `Reached heap limit` 自杀。这不是内存不足（当时还有 557 MB 可用、swap 只用 12 MB），
    加 swap 也治不了——堆上限是 V8 硬闸门。解法是 `NODE_OPTIONS=--max-old-space-size=1024`。
-3. **境内服务器到 github 的 git-over-HTTPS 可能被 RST**（`curl 56 Recv failure` / `early EOF`）。
-   `curl -I codeload.github.com` 返回 200 **不代表** git 传输能过。`--depth=1` 把 pack 缩到
-   几百 KB 可以通过；相应地，更新用 `git fetch --depth=1` + `git reset --hard FETCH_HEAD`。
+3. **境内服务器到 github 的 git 通道间歇性不可用**，不是"浅克隆就能过"那么乐观。实测某一时段
+   同一台机器：HTTP/2 **0/5** 成功、HTTP/1.1 **2/5** 成功，失败形态包括 `expected flush after
+   ref listing`、`GnuTLS recv error (-110)`、`Failed to connect to github.com port 443`。
+   而 git 默认单次连接要 130 秒才放弃。`ecs-deploy.sh` 的对策是：`--depth=1` + HTTP/1.1 +
+   `GIT_HTTP_LOW_SPEED_TIME=20` 快速失败 + 最多 10 次退避重试，全失败就放弃且**不碰线上**。
+   `api.github.com` 不受影响，所以 CI 闸门照常可靠。
 4. **systemd 里 `EnvironmentFile=` 覆盖同名 `Environment=`。** 想用 drop-in 临时改 `HOST`
    会不生效，进程拿到的是文件里的值——真实数据曾经因此对公网开放了一次。**改绑定只能改
    env 文件本身**，且改完必须从外部 `curl` 复测，不能只看 `ss` 或配置文件。
