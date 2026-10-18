@@ -2,6 +2,7 @@ export const STORAGE_KEYS = {
   TOKEN: 'app_auth_token',
   USER_INFO: 'app_user_info',
   THEME: 'app_settings_theme',
+  DASHBOARD_LAYOUT: 'app_dashboard_layout',
 } as const;
 
 export const EVENT_KEYS = {

@@ -16,6 +16,8 @@ export const SAVED_ITEM_KINDS = [
   "namecards-prefs",
   "meal-voucher-spec",
   "meal-voucher-print",
+  // 控制台卡片布局（顺序 + 每卡尺寸），一条记录整份覆盖。按账号存，换浏览器登录能带回来。
+  "dashboard-layout",
 ] as const;
 
 export type SavedItemKind = (typeof SAVED_ITEM_KINDS)[number];

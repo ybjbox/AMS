@@ -11,7 +11,8 @@ export type SavedItemKind =
   | 'seating-prefs'
   | 'namecards-prefs'
   | 'meal-voucher-spec'
-  | 'meal-voucher-print';
+  | 'meal-voucher-print'
+  | 'dashboard-layout';
 
 export interface SavedItem<T = unknown> {
   id: string;
