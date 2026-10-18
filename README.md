@@ -17,7 +17,9 @@
 
 | 文档 | 内容 |
 |---|---|
+| [AGENTS.md](AGENTS.md) | 给 AI 工具与新接手的人：容易做错的几条约定 |
 | [DEBUGGING.md](DEBUGGING.md) | 本地调试环境：热重载、VS Code 断点、接口联调、常见问题 |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | 部署方式（裸机 / 单容器 / NAS 自更新）、上线闸门与已知缺口 |
 | [docs/DESIGN-REVIEW.md](docs/DESIGN-REVIEW.md) | 整体设计审查（P0/P1/P2 发现）与五批次改造路线图 |
 | [docs/AUDIT.md](docs/AUDIT.md) | 安全审计记录（27 项修复） |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | 功能路线图 |
