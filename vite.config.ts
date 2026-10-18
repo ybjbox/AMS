@@ -49,6 +49,8 @@ export default defineConfig(() => {
             include: ['server/tests/**/*.test.ts'],
             // 每个文件跑一次：清掉上一轮留下的「已下架用户名」墓碑（详见该文件注释）
             setupFiles: './server/tests/setup.ts',
+            // 整轮开始前删掉 data-test：它不是缓存，留着会让本地越跑越慢直到偶发红（详见该文件注释）
+            globalSetup: './server/tests/globalSetup.ts',
             // 独立数据目录，与开发库 data/ams.db 完全隔离
             // AMS_SEED_DEMO=1：这些用例的历史夹具就是「45 名种子员工 + 演示部门树」，
             // 而演示数据默认已不再播种（见 server/db.ts demoSeedEnabled），测试要显式开。

@@ -68,9 +68,13 @@ export default defineConfig({
   //   CI 冷启动时过慢（2 核无缓存），是 E2E 超时的主要根因；
   //   生产模式启动快、无编译期、确定性高（这也是 CI 惯例）。
   webServer: {
-    command: isCI ? 'npm run build && npx tsx server.ts' : 'npm run dev',
-    url: 'http://127.0.0.1:3000/api/health',
-    reuseExistingServer: !isCI,
+    // E2E_SERVER_COMMAND 存在时（npm run release-check 走这条路），本地也改用与 CI/生产
+    // 同一套的生产模式服务器 —— 默认的 `npm run dev` 验的是另一种产物，见 deploy/assert-prod-build.mjs。
+    command: process.env.E2E_SERVER_COMMAND || (isCI ? 'npm run build && npx tsx server.ts' : 'npm run dev'),
+    url: `http://127.0.0.1:${process.env.PORT || 3000}/api/health`,
+    // 显式指定了启动命令，就说明父进程已经安排了隔离的 DATA_DIR/端口，
+    // 此时绝不能复用别处已在跑的实例（那会连着真实库，历史上有过一次）。
+    reuseExistingServer: !isCI && !process.env.E2E_SERVER_COMMAND,
     timeout: 240 * 1000, // 构建 + 启动的余量
     env: {
       ...process.env,
