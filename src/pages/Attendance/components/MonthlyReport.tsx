@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, ChevronDown, ClipboardCheck, Download, FileSpreadsheet, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { FailedState } from '@/components/ui/FailedState';
 import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
@@ -55,6 +56,11 @@ export default function MonthlyReport() {
   const [stats, setStats] = useState<PunchMonthStat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   /**
+   * 月报走自己的端点，失败原因不能借考勤页那个全局 `error`：那一屏是「这个月没有打卡」
+   * 还是「服务没答话」得说准（审查 M1）。
+   */
+  const [loadError, setLoadError] = useState<string | null>(null);
+  /**
    * 用户是否手动选过月份：没选过才跟随服务端推荐（最近有数据的月份）。
    * 用 ref 而不是 state —— 初始请求还在飞时用户就点了月份，
    * state 版本会在初始响应回来时用过期的 touched=false 把用户选的月份盖掉。
@@ -71,7 +77,11 @@ export default function MonthlyReport() {
       setRows(res.rows ?? []);
       if (Array.isArray(res.stats)) setStats(res.stats);
       if (!touchedRef.current) setMonth(res.month);
+      setLoadError(null);
     } catch (err) {
+      // 失败时清空当前表格：留着上一个月的行顶在新月份下面，等于屏幕上是一份标错月份的数据
+      setRows([]);
+      setLoadError((err as { error?: string })?.error || '月报加载失败');
       toast.error((err as { error?: string })?.error || '月报加载失败');
     } finally {
       setIsLoading(false);
@@ -221,7 +231,9 @@ export default function MonthlyReport() {
 
       {/* 报表 */}
       <div className="flex-1 overflow-auto">
-        {rows.length === 0 ? (
+        {rows.length === 0 && !isLoading && loadError ? (
+          <FailedState subject="月度汇总" reason={loadError} onRetry={() => void load(month)} />
+        ) : rows.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-sm text-muted-foreground py-12">
             <CalendarDays className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-3" aria-hidden="true" />
             {isLoading

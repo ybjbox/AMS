@@ -7,6 +7,11 @@ import { formatDate } from '../utils/dateUtils';
 interface TodoState {
   todos: Todo[];
   isLoading: boolean;
+  /**
+   * 拉取失败的原因。原先只弹一个四秒的 toast，屏幕上留下的是「暂无待办事项，
+   * 点击右上角添加第一个任务」——用户据此又录了一遍（2026-09-26 审查 M1，待办这一路当时漏做）。
+   */
+  loadError: string | null;
   fetchTodos: () => Promise<void>;
   addTodo: (todo: Omit<Todo, 'id' | 'createdAt' | 'completed'>) => void;
   toggleTodo: (id: string) => void;
@@ -54,6 +59,7 @@ let todosInflight: Promise<void> | null = null;
 export const useTodoStore = create<TodoState>()((set, get) => ({
   todos: [],
   isLoading: false,
+  loadError: null,
 
   /** 从后端拉取「我创建的 + 派给我的」待办（挂载时调用）。
    *  inflight 去重：并发调用复用同一 Promise，避免多组件同时 mount 重复请求。 */
@@ -63,9 +69,9 @@ export const useTodoStore = create<TodoState>()((set, get) => ({
       set({ isLoading: true });
       try {
         const todos = await todoApi.list();
-        set({ todos, isLoading: false });
+        set({ todos, isLoading: false, loadError: null });
       } catch (e) {
-        set({ isLoading: false });
+        set({ isLoading: false, loadError: errText(e, '待办加载失败，请先刷新或检查后端是否在线') });
         toast.error(errText(e, '待办加载失败'));
       } finally {
         todosInflight = null;

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { FailedState } from '@/components/ui/FailedState';
 import { AlertTriangle, ArrowUpDown, ChevronUp, ChevronDown, FileSpreadsheet, SearchX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/Badge';
@@ -28,6 +29,9 @@ export interface EmployeeRollupTableProps {
   onResetFilter: () => void;
   onImportClick: () => void;
   isLoading: boolean;
+  /** 全库打卡为 0 且最近一次读取失败时，界面要说「加载失败」而不是「还没有打卡记录」（审查 M1） */
+  loadError?: string | null;
+  onRetry?: () => void;
   canManage: boolean;
   canPurge: boolean;
   clearRecords: () => Promise<string | null>;
@@ -59,6 +63,8 @@ export default function EmployeeRollupTable({
   onResetFilter,
   onImportClick,
   isLoading,
+  loadError,
+  onRetry,
   canManage,
   canPurge,
   clearRecords,
@@ -106,6 +112,16 @@ export default function EmployeeRollupTable({
     return (
       <div className="p-6">
         <TableSkeleton columns={6} rows={8} />
+      </div>
+    );
+  }
+
+  // 判断用「全库条数为 0」而不是「这一屏没行」：写操作失败也会置 error，
+  // 那时表里明明还有人，不该整张表退成失败态。
+  if (loadError && totalCount === 0) {
+    return (
+      <div className="p-6">
+        <FailedState subject="打卡记录" reason={loadError} onRetry={onRetry} />
       </div>
     );
   }

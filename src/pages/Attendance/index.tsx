@@ -44,7 +44,13 @@ export default function Attendance() {
   });
 
   const currentStep = steps.find((s) => s.tab === a.activeTab);
-  const blockHint = currentStep?.state === 'blocked' ? STEP_BLOCK_HINTS[a.activeTab] : undefined;
+  /**
+   * 拉取失败时列表自然是空的，于是工作流条会说「还没配时段／还没导入」——那是空象。
+   * 这时候正文已经是失败态，别再递一条把用户支去导数据的提示（审查 M1）。
+   */
+  const emptyBecauseFailed = !a.isLoading && !!a.loadError && a.records.length === 0 && a.shiftRuleCount === 0;
+  const blockHint =
+    !emptyBecauseFailed && currentStep?.state === 'blocked' ? STEP_BLOCK_HINTS[a.activeTab] : undefined;
   const canManage = a.hasPermission('attendance:manage');
 
   const handleAnalyze = React.useCallback(async () => {
@@ -111,7 +117,7 @@ export default function Attendance() {
                 导入打卡记录
               </Button>
             )}
-            {a.activeTab === 'anomalies' && (
+            {a.activeTab === 'anomalies' && !emptyBecauseFailed && (
               <Permission code="attendance:manage">
                 <Button onClick={() => void handleAnalyze()}>
                   <AlertTriangle className="h-4 w-4" aria-hidden="true" />
@@ -179,6 +185,8 @@ export default function Attendance() {
                 onResetFilter={a.resetRecordFilter}
                 onImportClick={() => setImportOpen(true)}
                 isLoading={a.isLoading}
+                loadError={a.loadError}
+                onRetry={() => void a.fetchData()}
                 canManage={canManage}
                 canPurge={a.hasPermission('attendance:purge')}
                 clearRecords={a.clearRecords}
@@ -197,6 +205,8 @@ export default function Attendance() {
                 canAnalyze={canManage}
                 hasAnalysis={!!analyzeCoverage}
                 isLoading={a.isLoading}
+                loadError={a.loadError}
+                onRetry={() => void a.fetchData()}
               />
             )}
           </div>

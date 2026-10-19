@@ -6,6 +6,7 @@ import { CheckCircle2, Clock, FileCheck2, Send, XCircle, CalendarClock, ShieldCh
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { FailedState } from '@/components/ui/FailedState';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -66,6 +67,12 @@ export default function Approvals() {
   const [comment, setComment] = useState('');
   const [deciding, setDeciding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  /**
+   * 三个页签共用一次 refresh：Promise.all 里任一条失败，另外两条可能仍是空数组。
+   * 没有这个字段时，屏幕上留下的是「暂无申请记录，在左侧提交你的第一条申请」——
+   * 而真实原因是服务没答话（2026-09-26 审查 M1，审批这一路当时漏做）。
+   */
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formType, setFormType] = useState<'leave' | 'makeup' | 'conversion' | 'resign' | 'overtime'>('leave');
   const [form, setForm] = useState({
@@ -96,7 +103,9 @@ export default function Approvals() {
         );
       }
       await Promise.all(jobs);
+      setLoadError(null);
     } catch (e) {
+      setLoadError(errText(e, '审批数据加载失败，请先刷新或检查后端是否在线'));
       toast.error(errText(e, '审批数据加载失败'));
     } finally {
       setIsLoading(false);
@@ -240,6 +249,15 @@ export default function Approvals() {
       return <div className="p-8 text-sm text-muted-foreground">加载中…</div>;
     }
     if (list.length === 0) {
+      if (loadError) {
+        return (
+          <FailedState
+            subject={tab === 'mine' ? '我的申请' : tab === 'pending' ? '待审批列表' : '审批台账'}
+            reason={loadError}
+            onRetry={() => void refresh()}
+          />
+        );
+      }
       return (
         <EmptyState
           icon={FileCheck2}

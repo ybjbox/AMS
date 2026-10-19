@@ -4,6 +4,7 @@ import { useTodoStore, todoUrgency } from '../store/useTodoStore';
 import { CheckCircle2, Circle, Clock, Plus, Trash2, Calendar, ListTodo } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { FailedState } from '@/components/ui/FailedState';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDateTime, formatDate } from '@/utils/dateUtils';
@@ -14,6 +15,7 @@ type Filter = 'all' | 'pending' | 'overdue' | 'today';
 export default function Todos() {
   const confirm = useConfirm();
   const todos = useTodoStore((state) => state.todos);
+  const loadError = useTodoStore((state) => state.loadError);
   const toggleTodo = useTodoStore((state) => state.toggleTodo);
   const deleteTodo = useTodoStore((state) => state.deleteTodo);
   const addTodo = useTodoStore((state) => state.addTodo);
@@ -195,7 +197,9 @@ export default function Todos() {
       </AnimatePresence>
 
       <div className="card-base overflow-hidden">
-        {sortedTodos.length === 0 ? (
+        {todos.length === 0 && loadError ? (
+          <FailedState subject="待办清单" reason={loadError} onRetry={() => void fetchTodos()} />
+        ) : sortedTodos.length === 0 ? (
           <EmptyState
             title={only === 'all' ? '暂无待办事项' : `没有「${chips.find((c) => c.id === only)?.label ?? ''}」的待办`}
             description={

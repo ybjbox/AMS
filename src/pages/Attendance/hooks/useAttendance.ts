@@ -47,6 +47,11 @@ export interface UseAttendanceReturn {
   anomalies: Anomaly[];
   shiftRuleCount: number;
   isLoading: boolean;
+  /**
+   * 最近一次读/写失败的原因（store 的 `error`，与员工/合同/文档页同一个口径）。
+   * 列表为空时它决定界面说「加载失败」还是「你还没有数据」——审查 M1 漏掉的三个视图之一。
+   */
+  loadError: string | null;
 
   // 打卡记录筛选
   recordFilter: RecordFilter;
@@ -126,6 +131,7 @@ export function useAttendance(): UseAttendanceReturn {
   const anomalies = useAttendanceStore((state) => state.anomalies);
   const shiftRuleCount = useAttendanceStore((state) => state.shiftRules.length);
   const isLoading = useAttendanceStore((state) => state.isLoading);
+  const loadError = useAttendanceStore((state) => state.error);
 
   const setRecords = useAttendanceStore((state) => state.setRecords);
   const removeRecord = useAttendanceStore((state) => state.removeRecord);
@@ -211,6 +217,7 @@ export function useAttendance(): UseAttendanceReturn {
     anomalies,
     shiftRuleCount,
     isLoading,
+    loadError,
 
     recordFilter,
     setRecordFilter,

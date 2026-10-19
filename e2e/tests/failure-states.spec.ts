@@ -45,4 +45,50 @@ test.describe('后端失败时的界面', () => {
     await expect(page.getByText('员工名单加载失败')).toBeVisible({ timeout: 20000 });
     await expect(page.getByText('没有找到符合条件的员工记录')).toHaveCount(0);
   });
+
+  // 下面五个是 2026-09-26 审查里剩下的三个视图（考勤 / 待办 / 审批），2026-10-19 补做。
+  // 考勤占三个标签，各自的空态文案不一样，所以逐个钉。
+
+  test('考勤·打卡记录：拉取失败不说"还没有打卡记录"，也不把工作流条的"去导入"递上来', async ({ page }) => {
+    await failNonAuthApi(page);
+    await page.goto('/attendance', { timeout: 60000 });
+    await expect(page.getByText('打卡记录加载失败')).toBeVisible({ timeout: 20000 });
+    await expect(page.getByRole('button', { name: /重试/ }).first()).toBeVisible();
+    await expect(page.getByText('还没有打卡记录')).toHaveCount(0);
+    // 列表为空是"没拉到"的结果，不是"你还没导入"。这条提示会把人支去重导一遍数据。
+    await expect(page.getByText('需要先配置部门时段，否则导入的记录无法对班判定。')).toHaveCount(0);
+  });
+
+  test('考勤·异常分析：拉取失败不说"还没有进行过异常分析"', async ({ page }) => {
+    await failNonAuthApi(page);
+    await page.goto('/attendance?tab=anomalies', { timeout: 60000 });
+    await expect(page.getByText('异常清单加载失败')).toBeVisible({ timeout: 20000 });
+    await expect(page.getByText('还没有进行过异常分析')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /一键分析异常/ })).toHaveCount(0);
+  });
+
+  test('考勤·月度报表：月报端点挂了不说"某月暂无打卡数据"', async ({ page }) => {
+    await failNonAuthApi(page);
+    await page.goto('/attendance?tab=monthly', { timeout: 60000 });
+    await expect(page.getByText('月度汇总加载失败')).toBeVisible({ timeout: 20000 });
+    await expect(page.getByText(/暂无打卡数据/)).toHaveCount(0);
+    await expect(page.getByText('需要先导入打卡记录，月度报表才有数据来源。')).toHaveCount(0);
+  });
+
+  test('待办：拉取失败不说"暂无待办事项"，也不递上"立即创建"', async ({ page }) => {
+    await failNonAuthApi(page);
+    await page.goto('/todos', { timeout: 60000 });
+    await expect(page.getByText('待办清单加载失败')).toBeVisible({ timeout: 20000 });
+    await expect(page.getByText('暂无待办事项')).toHaveCount(0);
+    await expect(page.getByText('点击右上角按钮添加您的第一个任务')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /立即创建/ })).toHaveCount(0);
+  });
+
+  test('审批：拉取失败不说"暂无申请记录"', async ({ page }) => {
+    await failNonAuthApi(page);
+    await page.goto('/approvals', { timeout: 60000 });
+    await expect(page.getByText('我的申请加载失败')).toBeVisible({ timeout: 20000 });
+    await expect(page.getByText('暂无申请记录')).toHaveCount(0);
+    await expect(page.getByText('在左侧提交你的第一条申请')).toHaveCount(0);
+  });
 });

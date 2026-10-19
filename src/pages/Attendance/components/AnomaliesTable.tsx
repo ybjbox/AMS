@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { FailedState } from '@/components/ui/FailedState';
 import { AlertTriangle, ArrowUpDown, ChevronDown, ChevronUp, SearchX, ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import type { BadgeVariant } from '@/components/ui/Badge';
@@ -20,6 +21,9 @@ export interface AnomaliesTableProps {
   /** 上一次分析的覆盖统计（null = 从没分析过） */
   hasAnalysis: boolean;
   isLoading: boolean;
+  /** 全库异常为 0 且最近一次读取失败时说「加载失败」，不说「还没有进行过异常分析」（审查 M1） */
+  loadError?: string | null;
+  onRetry?: () => void;
 }
 
 const TONE_TO_VARIANT: Record<AnomalyTone, BadgeVariant> = {
@@ -39,6 +43,8 @@ export default function AnomaliesTable({
   canAnalyze,
   hasAnalysis,
   isLoading,
+  loadError,
+  onRetry,
 }: AnomaliesTableProps) {
   /**
    * 「判定依据」取自服务端同一份判定装配（与月报、校对表一致）。
@@ -84,6 +90,10 @@ export default function AnomaliesTable({
 
       {isLoading ? (
         <TableSkeleton columns={5} rows={5} />
+      ) : loadError && totalCount === 0 ? (
+        <div className="flex-1 flex items-center justify-center py-8">
+          <FailedState subject="异常清单" reason={loadError} onRetry={onRetry} />
+        </div>
       ) : anomalies.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center py-8">
           <EmptyState
