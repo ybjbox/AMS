@@ -1,4 +1,14 @@
 @import 'tailwindcss';
+
+/* Tailwind v4 默认扫描整个项目，包括 .md 与 .css 里的字符串。结果是"禁止这么写"的
+   说明文字本身会被当成类名提取出来：设计文档和下面的 transitions-tokens.css 都写过一句
+   「禁止 ease- 后面用方括号塞 var(…)」（两个全角省略号），构建时反而多出一个无效工具类
+   + 两条 `Unexpected token Ident` 警告。文档与令牌定义不是模板，从类名扫描里排掉。
+   注意：@source not 只决定"从哪些文件提取类名"，不影响 @import 进来的 CSS 内容本身。
+   在这里再举一次那个反例的完整写法 = 重新触发它，所以只描述、不复现。 */
+@source not "../**/*.md";
+@source not "./styles/transitions-tokens.css";
+
 @import 'tw-animate-css';
 @import './styles/transitions-tokens.css';
 @import 'shadcn/tailwind.css';
