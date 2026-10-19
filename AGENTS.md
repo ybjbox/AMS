@@ -46,7 +46,9 @@ Tailwind v4 默认扫描整个项目，**包括 `.md` 和 `.css` 里的字符串
 
 ## 红线
 
-- `data/`、`data-test/`、`.env*`（除 `.env.example`）不进提交；`data/ams.db` 是真实员工数据。
+- `data/`、`data-test/`、`.env*`（除 `.env.example`）不进提交；`data/ams.db` 是员工档案数据。
+- `spark-output/`、`.workbuddy/`、`.design-qa/` 是设计与排查工作区，**只留本地**：仓库是公开的，
+  而里面有从本地库量出来的组织事实（部门人数、数据滞后天数、哪些是测试数据）。
 - 服务器地址、口令、密钥、公钥一律不进仓库。文档里用 `<服务器地址>` 占位。
 - `AMS_ADMIN_PASSWORD` 不要写进会被备份/日志带走的文件；留空时应用会生成随机口令并写入
   `ADMIN_CREDENTIALS.txt`，用完删掉该文件。
