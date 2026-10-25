@@ -150,7 +150,7 @@ test.describe.serial('员工门户', () => {
 
   test('认领进度：批准后本人可查已开通，页面给出登录入口', async ({ page, request }) => {
     const api = await request.post('/api/auth/claims/lookup', {
-      data: { employeeId, phoneTail: PHONE.slice(-4) },
+      data: { displayName: EMPLOYEE_NAME, phoneTail: PHONE.slice(-4) },
     });
     expect(api.status(), '查询认领进度').toBe(200);
     const body = await api.json();
@@ -159,7 +159,7 @@ test.describe.serial('员工门户', () => {
 
     await page.goto('/claim');
     await page.getByRole('button', { name: /查询进度/ }).click();
-    await page.getByLabel('工号').fill(employeeId);
+    await page.getByLabel('姓名').fill(EMPLOYEE_NAME);
     await page.getByLabel('手机号后 4 位').fill(PHONE.slice(-4));
     await page.getByRole('button', { name: '查询', exact: true }).click();
     await expect(page.getByText('账号已开通')).toBeVisible();
@@ -197,7 +197,7 @@ test.describe.serial('员工门户', () => {
     const claimId = (await claimRes.json()).id;
 
     const pending = await request.post('/api/auth/claims/lookup', {
-      data: { employeeId: rejectedEmployeeId, phoneTail: REJECT_PHONE.slice(-4) },
+      data: { displayName: 'E2E驳回员工', phoneTail: REJECT_PHONE.slice(-4) },
     });
     expect(pending.status()).toBe(200);
     expect((await pending.json()).status).toBe('pending');
@@ -209,7 +209,7 @@ test.describe.serial('员工门户', () => {
     expect(rejected.status(), '驳回认领').toBe(200);
 
     const after = await request.post('/api/auth/claims/lookup', {
-      data: { employeeId: rejectedEmployeeId, phoneTail: REJECT_PHONE.slice(-4) },
+      data: { displayName: 'E2E驳回员工', phoneTail: REJECT_PHONE.slice(-4) },
     });
     expect(after.status()).toBe(200);
     expect(await after.json()).toMatchObject({
@@ -218,7 +218,7 @@ test.describe.serial('员工门户', () => {
     });
 
     const wrongTail = await request.post('/api/auth/claims/lookup', {
-      data: { employeeId: rejectedEmployeeId, phoneTail: '0001' },
+      data: { displayName: 'E2E驳回员工', phoneTail: '0001' },
     });
     expect(wrongTail.status(), '尾号不对不区分原因').toBe(404);
     expect((await wrongTail.json()).error).toContain('没有查到');

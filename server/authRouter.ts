@@ -448,7 +448,7 @@ authRouter.post("/claims", (req, res) => {
 
 /**
  * 申请人自助查进度（公开）。只回状态与驳回原因，不回口令、不回审批人；
- * 查不到时与"尾号填错"使用同一句提示。
+ * 凭姓名 + 手机尾号匹配，查不到时与"尾号填错"使用同一句提示。
  */
 authRouter.post("/claims/lookup", (req, res) => {
   const ip = clientIp(req);
@@ -458,14 +458,14 @@ authRouter.post("/claims/lookup", (req, res) => {
   }
 
   const body = req.body ?? {};
-  const employeeId = asString(body.employeeId).trim();
+  const displayName = asString(body.displayName).trim();
   const phoneTail = asString(body.phoneTail).trim();
-  if (!employeeId || employeeId.length > 32) return res.status(400).json({ error: "请填写工号" });
+  if (!displayName || displayName.length > 32) return res.status(400).json({ error: "请填写姓名" });
   if (!/^\d{4}$/.test(phoneTail)) return res.status(400).json({ error: "请填写手机号后 4 位" });
 
-  const claim = findLatestClaimForApplicant(employeeId, phoneTail);
+  const claim = findLatestClaimForApplicant(displayName, phoneTail);
   if (!claim) {
-    return res.status(404).json({ error: "没有查到对应的申请，请核对工号和手机号后 4 位" });
+    return res.status(404).json({ error: "没有查到对应的申请，请核对姓名和手机号后 4 位" });
   }
 
   const accountOpened = claim.status === "approved" && !!getAccount(claim.desiredUsername);

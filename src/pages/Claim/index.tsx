@@ -87,8 +87,8 @@ export default function ClaimAccount() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [mode, setMode] = useState<'form' | 'lookup'>('form');
-  const [lookupForm, setLookupForm] = useState({ employeeId: '', phoneTail: '' });
-  const [lookupErrors, setLookupErrors] = useState<Partial<Record<'employeeId' | 'phoneTail', string>>>({});
+  const [lookupForm, setLookupForm] = useState({ displayName: '', phoneTail: '' });
+  const [lookupErrors, setLookupErrors] = useState<Partial<Record<'displayName' | 'phoneTail', string>>>({});
   const [looking, setLooking] = useState(false);
   const [lookupResult, setLookupResult] = useState<ClaimLookupResult | null>(null);
   const [lookupProblem, setLookupProblem] = useState('');
@@ -97,7 +97,7 @@ export default function ClaimAccount() {
   const employeeRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
   const usernameRef = useRef<HTMLInputElement>(null);
-  const lookupEmployeeRef = useRef<HTMLInputElement>(null);
+  const lookupNameRef = useRef<HTMLInputElement>(null);
   const lookupPhoneRef = useRef<HTMLInputElement>(null);
 
   const update = (key: keyof typeof form, value: string) => {
@@ -154,7 +154,7 @@ export default function ClaimAccount() {
   const openLookup = () => {
     setMode('lookup');
     setLookupForm({
-      employeeId: form.employeeId.trim(),
+      displayName: form.displayName.trim(),
       phoneTail: form.phoneTail.trim(),
     });
     setLookupErrors({});
@@ -170,7 +170,7 @@ export default function ClaimAccount() {
     if (lookupResult?.status === 'rejected') {
       setForm((f) => ({
         ...f,
-        employeeId: lookupForm.employeeId.trim(),
+        displayName: lookupForm.displayName.trim(),
         phoneTail: lookupForm.phoneTail.trim(),
         desiredUsername: lookupResult.desiredUsername,
       }));
@@ -179,12 +179,12 @@ export default function ClaimAccount() {
 
   const runLookup = async (e: React.FormEvent) => {
     e.preventDefault();
-    const next: Partial<Record<'employeeId' | 'phoneTail', string>> = {};
-    if (!lookupForm.employeeId.trim()) next.employeeId = '请填工号，例如 EMP0012';
+    const next: Partial<Record<'displayName' | 'phoneTail', string>> = {};
+    if (!lookupForm.displayName.trim()) next.displayName = '请填姓名';
     if (!/^\d{4}$/.test(lookupForm.phoneTail)) next.phoneTail = '手机号后 4 位要填 4 位数字';
     if (Object.keys(next).length) {
       setLookupErrors(next);
-      (next.employeeId ? lookupEmployeeRef : lookupPhoneRef).current?.focus();
+      (next.displayName ? lookupNameRef : lookupPhoneRef).current?.focus();
       return;
     }
 
@@ -193,7 +193,7 @@ export default function ClaimAccount() {
     setLooking(true);
     try {
       const result = await claimApi.lookup({
-        employeeId: lookupForm.employeeId.trim(),
+        displayName: lookupForm.displayName.trim(),
         phoneTail: lookupForm.phoneTail.trim(),
       });
       setLookupResult(result);
@@ -241,7 +241,7 @@ export default function ClaimAccount() {
             </div>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground lg:mt-4 lg:max-w-lg lg:text-base">
               {mode === 'lookup'
-                ? '输入申请时填的工号和手机尾号，查看现在到了哪一步。'
+                ? '输入申请时填的姓名和手机尾号，查看现在到了哪一步。'
                 : done
                   ? '管理员核对后会当面把一次性口令交给你。'
                   : '填好后由管理员当面核对。核对通过后账号即刻开通，第一次登录需要改成自己的口令。'}
@@ -303,20 +303,20 @@ export default function ClaimAccount() {
                 {!lookupResult ? (
                   <form onSubmit={runLookup} noValidate>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <Field id="lookup-employee-id" label="工号" required error={lookupErrors.employeeId}>
+                      <Field id="lookup-display-name" label="姓名" required error={lookupErrors.displayName}>
                         <Input
-                          id="lookup-employee-id"
-                          ref={lookupEmployeeRef}
-                          value={lookupForm.employeeId}
+                          id="lookup-display-name"
+                          ref={lookupNameRef}
+                          value={lookupForm.displayName}
                           onChange={(e) => {
-                            setLookupForm((f) => ({ ...f, employeeId: e.target.value }));
-                            setLookupErrors((v) => ({ ...v, employeeId: undefined }));
+                            setLookupForm((f) => ({ ...f, displayName: e.target.value }));
+                            setLookupErrors((v) => ({ ...v, displayName: undefined }));
                             setLookupProblem('');
                           }}
-                          placeholder="例如 EMP0012"
-                          spellCheck={false}
-                          aria-invalid={!!lookupErrors.employeeId}
-                          aria-describedby={lookupErrors.employeeId ? 'lookup-employee-id-error' : undefined}
+                          autoComplete="name"
+                          placeholder="与申请时填的一致"
+                          aria-invalid={!!lookupErrors.displayName}
+                          aria-describedby={lookupErrors.displayName ? 'lookup-display-name-error' : undefined}
                           className="min-h-11"
                         />
                       </Field>
@@ -359,7 +359,7 @@ export default function ClaimAccount() {
                       {looking ? '查询中…' : '查询'}
                     </Button>
                     <p className="mt-3 text-2xs leading-relaxed text-muted-foreground">
-                      查到的是用同一工号和尾号提交的最近一条申请；不会显示一次性口令。
+                      查到的是用同一姓名和尾号提交的最近一条申请；不会显示一次性口令。
                     </p>
                   </form>
                 ) : (

@@ -126,20 +126,31 @@ export function listClaims(status?: ClaimStatus): ClaimRow[] {
 }
 
 /**
- * 申请人自助查询：工号 + 手机尾号取**最近一条**申请。
+ * 申请人自助查询：姓名 + 手机尾号取**最近一条**申请。
  *
- * 查不到一律返回 null（不区分"工号不存在"与"尾号不对"），路由层对两者给同一句
- * 提示，避免这个免登录接口变成员工/申请枚举器。
+ * 姓名按去掉空白后的全等匹配（企业微信/手输常带空格）；同名同尾号如果对应
+ * 多个档案，宁可当作查不到，也不把别人的状态返回出去。
+ * 查不到一律返回 null（不区分"没有这条申请"与"尾号不对"），路由层给同一句提示。
  */
-export function findLatestClaimForApplicant(employeeId: string, phoneTail: string): ClaimRow | null {
-  const row = db
+export function findLatestClaimForApplicant(displayName: string, phoneTail: string): ClaimRow | null {
+  const target = normalizeNameForLookup(displayName);
+  if (!target) return null;
+  const rows = db
     .prepare(
       `SELECT * FROM account_claims
-        WHERE employeeId = ? AND phoneTail = ?
-        ORDER BY createdAt DESC LIMIT 1`
+        WHERE phoneTail = ?
+        ORDER BY createdAt DESC`
     )
-    .get(employeeId, phoneTail);
-  return row ? toRow(row as Record<string, unknown>) : null;
+    .all(phoneTail)
+    .map((r) => toRow(r as Record<string, unknown>));
+  const hits = rows.filter((r) => normalizeNameForLookup(r.displayName) === target);
+  if (hits.length === 0) return null;
+  if (new Set(hits.map((r) => r.employeeId)).size > 1) return null;
+  return hits[0]!;
+}
+
+function normalizeNameForLookup(name: string): string {
+  return name.replace(/\s+/gu, "").trim();
 }
 
 /**

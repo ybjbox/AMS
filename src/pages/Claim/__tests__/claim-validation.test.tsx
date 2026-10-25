@@ -96,10 +96,10 @@ describe('认领表单行内校验', () => {
 });
 
 describe('认领进度查询（qa-3）', () => {
-  const openAndQuery = (employeeId: string, phoneTail: string) => {
+  const openAndQuery = (displayName: string, phoneTail: string) => {
     render(<MemoryRouter><ClaimAccount /></MemoryRouter>);
     fireEvent.click(screen.getByRole('button', { name: /查询进度/ }));
-    fill('工号', employeeId);
+    fill('姓名', displayName);
     fill('手机号后 4 位', phoneTail);
     fireEvent.click(screen.getByRole('button', { name: '查询' }));
   };
@@ -113,14 +113,14 @@ describe('认领进度查询（qa-3）', () => {
       rejectReason: '',
       accountOpened: false,
     });
-    openAndQuery('EMP0027', '1234');
+    openAndQuery('何斌', '1234');
 
     expect(await screen.findByText('还在等管理员核对')).toBeInTheDocument();
-    expect(lookup).toHaveBeenCalledWith({ employeeId: 'EMP0027', phoneTail: '1234' });
+    expect(lookup).toHaveBeenCalledWith({ displayName: '何斌', phoneTail: '1234' });
     expect(screen.queryByText(/^一次性口令/)).not.toBeInTheDocument();
   });
 
-  it('未通过：显示驳回原因，可带着原工号回到表单重提', async () => {
+  it('未通过：显示驳回原因，可带着原姓名回到表单重提', async () => {
     lookup.mockResolvedValue({
       status: 'rejected',
       desiredUsername: 'hebing',
@@ -129,20 +129,21 @@ describe('认领进度查询（qa-3）', () => {
       rejectReason: '工号与手机尾号对不上',
       accountOpened: false,
     });
-    openAndQuery('EMP0027', '1234');
+    openAndQuery('何斌', '1234');
 
     expect(await screen.findByText('申请未通过')).toBeInTheDocument();
     expect(screen.getByText('工号与手机尾号对不上')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '重新提交申请' }));
 
     expect(screen.getByRole('button', { name: '提交，等管理员核对' })).toBeInTheDocument();
-    expect(screen.getByLabelText('工号')).toHaveValue('EMP0027');
+    expect(screen.getByLabelText('姓名')).toHaveValue('何斌');
+    expect(screen.getByLabelText('手机号后 4 位')).toHaveValue('1234');
     expect(screen.getByLabelText('想用的用户名')).toHaveValue('hebing');
   });
 
-  it('查不到：给同一条提示，不区分工号错还是尾号错', async () => {
-    lookup.mockRejectedValue({ error: '没有查到对应的申请，请核对工号和手机号后 4 位' });
-    openAndQuery('EMP9999', '0000');
+  it('查不到：给同一条提示，不区分姓名错还是尾号错', async () => {
+    lookup.mockRejectedValue({ error: '没有查到对应的申请，请核对姓名和手机号后 4 位' });
+    openAndQuery('何斌', '0000');
 
     expect(await screen.findByRole('alert')).toHaveTextContent('没有查到对应的申请');
   });
@@ -156,7 +157,7 @@ describe('认领进度查询（qa-3）', () => {
       rejectReason: '',
       accountOpened: true,
     });
-    openAndQuery('EMP0027', '1234');
+    openAndQuery('何斌', '1234');
 
     expect(await screen.findByText('账号已开通')).toBeInTheDocument();
     expect(screen.getByText('hebing')).toBeInTheDocument();

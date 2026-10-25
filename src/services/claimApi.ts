@@ -60,8 +60,8 @@ export const claimApi = {
     phoneTail: string;
     note?: string;
   }) => http.post<{ id: string; status: ClaimStatus }>('/auth/claims', data),
-  /** 员工端查进度（公开）：按工号 + 手机尾号取最近一条申请 */
-  lookup: (data: { employeeId: string; phoneTail: string }) =>
+  /** 员工端查进度（公开）：按姓名 + 手机尾号取最近一条申请 */
+  lookup: (data: { displayName: string; phoneTail: string }) =>
     http.post<ClaimLookupResult>('/auth/claims/lookup', data),
   list: (status?: ClaimStatus) =>
     http.get<Claim[]>(`/auth/claims${status ? `?status=${status}` : ''}`),
