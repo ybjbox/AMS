@@ -20,19 +20,22 @@ import { detectLayout, parsePunchWorkbook } from '../attendanceImportDb.ts';
 
 /**
  * 按企业微信原表的真实布局造一张横排表。
- * 表头 4 行；第 5 列起是「日 + 星期」；数据行从第 5 行开始。
+ * 表头 4 行；第 2 行写「统计时间:起始 ～ 结束」；第 5 列起是「日 + 星期」；数据行从第 5 行开始。
  */
 async function buildWideSheet(opts: {
-  dates: string[]; // 列头日数，如 ["31","1","2"]
+  start: string; // 统计时间起始日，如 "2026-10-01"
+  dates: string[]; // 列头日数，如 ["30","1","2"]
   rows: { name: string; acct: string; dept?: string; job?: string; cells: string[] }[];
 }): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet("打卡时间记录");
   const last = opts.dates.length + 4;
+  const endDate = new Date(`${opts.start}T00:00:00Z`);
+  endDate.setUTCDate(endDate.getUTCDate() + opts.dates.length - 1);
   ws.mergeCells(1, 1, 1, last);
   ws.getCell(1, 1).value = "打卡时间记录";
   ws.mergeCells(2, 1, 2, last);
-  ws.getCell(2, 1).value = `统计时间:${opts.dates[0]} ～ ${opts.dates[opts.dates.length - 1]}`;
+  ws.getCell(2, 1).value = `统计时间:${opts.start} ～ ${endDate.toISOString().slice(0, 10)}`;
   ws.getCell(3, 1).value = "姓名";
   ws.getCell(3, 2).value = "账号";
   ws.getCell(3, 3).value = "基础信息";
@@ -64,6 +67,7 @@ describe("横排表识别", () => {
   let buf: Buffer;
   beforeAll(async () => {
     buf = await buildWideSheet({
+      start: "2026-09-01",
       dates: ["1", "2"],
       rows: [{ name: "陆宏", acct: "LuHong", cells: ["08:13、16:39", "--"] }],
     });
@@ -85,6 +89,7 @@ describe("横排表识别", () => {
 describe("横排表拆成竖排行", () => {
   it("一天多卡 → 一行一条打卡；`--` 当天不产生行", async () => {
     const buf = await buildWideSheet({
+      start: "2026-09-01",
       dates: ["1", "2", "3"],
       rows: [
         {
@@ -104,8 +109,9 @@ describe("横排表拆成竖排行", () => {
     ]);
   });
 
-  it("列头没有月份：日数递减即换月（8/31 接 9/1，接 10/1）", async () => {
+  it("列头没有月份：日数递减即换月（8/31 接 9/1）", async () => {
     const buf = await buildWideSheet({
+      start: "2026-08-31",
       dates: ["31", "1", "2"],
       rows: [{ name: "何海", acct: "HeHai", cells: ["01:00", "01:00、17:27", "01:00、17:01"] }],
     });
@@ -114,8 +120,65 @@ describe("横排表拆成竖排行", () => {
     expect(dates).toEqual(["2026-08-31", "2026-09-01", "2026-09-02"]);
   });
 
+  it("十月整月表（9/30 起）：10/1 不会被读成 9/1", async () => {
+    const buf = await buildWideSheet({
+      start: "2026-09-30",
+      dates: ["30", "1", "2"],
+      rows: [{ name: "何海", acct: "HeHai", cells: ["09:00", "08:55", "08:58"] }],
+    });
+    const rows = await parsePunchWorkbook(buf);
+    const dates = [...new Set(rows.map((r) => r.cells.date))];
+    expect(dates).toEqual(["2026-09-30", "2026-10-01", "2026-10-02"]);
+  });
+
+  it("十月部分表（10/1 起）：只导 1～25 日就只落这 25 天", async () => {
+    const days = Array.from({ length: 25 }, (_, i) => String(i + 1));
+    const buf = await buildWideSheet({
+      start: "2026-10-01",
+      dates: days,
+      rows: [{ name: "何海", acct: "HeHai", cells: days.map(() => "09:00") }],
+    });
+    const rows = await parsePunchWorkbook(buf);
+    const dates = [...new Set(rows.map((r) => r.cells.date))];
+    expect(dates[0]).toBe("2026-10-01");
+    expect(dates[dates.length - 1]).toBe("2026-10-25");
+    expect(dates).toHaveLength(25);
+  });
+
+  it("跨年：12/31 之后是次年 1/1", async () => {
+    const buf = await buildWideSheet({
+      start: "2026-12-30",
+      dates: ["30", "31", "1"],
+      rows: [{ name: "何海", acct: "HeHai", cells: ["09:00", "09:00", "09:00"] }],
+    });
+    const rows = await parsePunchWorkbook(buf);
+    const dates = [...new Set(rows.map((r) => r.cells.date))];
+    expect(dates).toEqual(["2026-12-30", "2026-12-31", "2027-01-01"]);
+  });
+
+  it("统计时间缺失或与首列不一致时拒绝解析，不猜月份", async () => {
+    const noStats = await buildWideSheet({
+      start: "2026-10-01",
+      dates: ["1", "2"],
+      rows: [{ name: "何海", acct: "HeHai", cells: ["09:00", "09:00"] }],
+    });
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(noStats as unknown as ArrayBuffer);
+    wb.worksheets[0]!.getCell(2, 1).value = "";
+    const blankTitle = Buffer.from((await wb.xlsx.writeBuffer()) as ArrayBuffer);
+    await expect(detectLayout(blankTitle)).rejects.toThrow(/统计时间/);
+
+    const mismatched = await buildWideSheet({
+      start: "2026-10-01",
+      dates: ["2", "3"],
+      rows: [{ name: "何海", acct: "HeHai", cells: ["09:00", "09:00"] }],
+    });
+    await expect(detectLayout(mismatched)).rejects.toThrow(/第一列是 2 日/);
+  });
+
   it("整行都是 `--` 的占位行不产生任何行（表里真有一个「测试号-市场部」）", async () => {
     const buf = await buildWideSheet({
+      start: "2026-09-01",
       dates: ["1", "2"],
       rows: [
         { name: "测试号-市场部", acct: "bb", cells: ["--", "--"] },
@@ -129,6 +192,7 @@ describe("横排表拆成竖排行", () => {
 
   it("「管理员校准」与相邻打卡合并，不把 1 次打卡算成 2 次", async () => {
     const buf = await buildWideSheet({
+      start: "2026-09-01",
       dates: ["1"],
       rows: [{ name: "梁华", acct: "LiangHua", cells: ["08:02(管理员校准)、23:50"] }],
     });
@@ -138,6 +202,7 @@ describe("横排表拆成竖排行", () => {
 
   it("校准记录离得远时不合并（那是真的另一次打卡）", async () => {
     const buf = await buildWideSheet({
+      start: "2026-09-01",
       dates: ["1"],
       rows: [{ name: "何斌", acct: "HeBin", cells: ["00:03、00:04(管理员校准)、15:35"] }],
     });
@@ -148,6 +213,7 @@ describe("横排表拆成竖排行", () => {
 
   it("账号与姓名都带出去，供认人用", async () => {
     const buf = await buildWideSheet({
+      start: "2026-09-01",
       dates: ["1"],
       rows: [{ name: "林英娜", acct: "LinYingNa", cells: ["08:05"] }],
     });

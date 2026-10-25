@@ -34,8 +34,8 @@ export const MAX_PUNCH_IMPORT_ROWS = 5000;
  *  - 表头占 4 行：R1 标题「打卡时间记录」、R2「统计时间:08-31 ～ 10-01」、R3 分组标题
  *    （姓名/账号/基础信息/打卡时间记录）、R4 真正的列头（前 4 列是 姓名/账号/部门/职务，
  *    从第 5 列起是「日 + 星期」，如 `31 星期一`）；
- *  - 列头**只有日号没有月份**，靠「日数递减即换月」推出月份，所以 8/31 起头的表
- *    和 9/1 起头的表都能读；
+ *  - 列头**只有日号没有月份**，月份取 R2「统计时间」的起始日期，再按「日数递减
+ *    即换月」推进（9/30 接 10/1），所以任意月份、跨年的表都能读；
  *  - 一格里多个时间用「、」分隔，还可能带「(管理员校准)」后缀 —— 打卡机补的修正记录，
  *    与相邻那一次打卡其实是同一张卡（间隔 ≤5 分钟即合并，否则 1 次打卡会算成 2 次）。
  */
@@ -162,27 +162,76 @@ function looksLikeWideSheet(ws: ExcelJS.Worksheet): boolean {
 }
 
 /**
+ * 从第 2 行「统计时间:09-30 ～ 11-01」取起始日期。
+ *
+ * 之前这里用 `day > 20 ? 8 : 9` 猜月份、年份写死 2026 —— 只对 8/31 起头的
+ * 九月表成立。十月表（10/01 起）会被读成九月，整月表（9/30 起）还会整体
+ * 错位一个月。统计时间行本来就有年月，直接读它，读不到就报错，不猜。
+ */
+function parseStatsStart(ws: ExcelJS.Worksheet): { year: number; month: number; day: number } | null {
+  const text = toText(ws.getRow(2).getCell(1).value);
+  // 兼容 08-31 / 2026-08-31 / 2026/8/31 / 2026年8月31日
+  const m = /(?:(\d{4})\s*[-/.年]\s*)?(\d{1,2})\s*[-/.月]\s*(\d{1,2})\s*日?/.exec(text);
+  if (!m) return null;
+  const month = Number(m[2]);
+  const day = Number(m[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  let year = m[1] ? Number(m[1]) : new Date().getFullYear();
+  // 无年份时：起始月晚于当前月，只可能是去年的表（12 月的表在次年 1 月导入）
+  if (!m[1] && month > new Date().getMonth() + 1) year -= 1;
+  return { year, month, day };
+}
+
+/**
  * 横排表的日期列 → YYYY-MM-DD。
  *
- * 列头只有「日 + 星期」没有月份，所以按「日数递减即换月」推：
- * `31 星期一` 之后是 `1 星期二` → 8 月 31 日接 9 月 1 日。
- * 首列月份由首列日数判断（>20 视为上月末 = 8 月，否则 9 月）—— 覆盖
- * 8/31 起头与 9/1 起头两种表。
+ * 列头只有「日 + 星期」，月份从统计时间的起始日期起算，遇到日数递减即换月
+ * （`30` 之后是 `1` → 9/30 接 10/1），跨年时年份 +1。
+ *
+ * 首列日数必须与统计时间起始日一致：不一致说明标题行与列头不是同一张表，
+ * 继续算只会把整月数据落到错误月份，所以直接报错让用户换原表。
  */
 function wideDateColumns(ws: ExcelJS.Worksheet): { col: number; date: string }[] {
+  const start = parseStatsStart(ws);
+  if (!start) {
+    throw new Error(
+      "读不到第 2 行「统计时间」里的起始日期（如 统计时间:2026-10-01 ～ 2026-10-25）。" +
+        "请上传企业微信原表，保留统计时间行",
+    );
+  }
+
   const out: { col: number; date: string }[] = [];
-  let month = 0;
+  let year = start.year;
+  let month = start.month;
   let prevDay = 0;
+  let first = true;
   const upper = Math.max(ws.columnCount, ws.actualColumnCount || 0, 8);
   for (let c = 5; c <= upper; c++) {
     const m = toText(ws.getRow(4).getCell(c).value).match(/(\d{1,2})/);
     if (!m) continue;
     const day = Number(m[1]);
-    if (month === 0) month = day > 20 ? 8 : 9;
-    else if (day < prevDay) month += 1;
+    if (first && day !== start.day) {
+      throw new Error(
+        `统计时间从 ${pad(start.month)}-${pad(start.day)} 开始，但第一列是 ${day} 日，无法确定月份`,
+      );
+    }
+    if (!first && day < prevDay) {
+      month += 1;
+      if (month > 12) {
+        month = 1;
+        year += 1;
+      }
+    }
+    // 9 月没有 31 日这类情况：宁可报错，也不让 Date 悄悄滚到下个月
+    const d = new Date(Date.UTC(year, month - 1, day));
+    if (d.getUTCDate() !== day) {
+      throw new Error(`列头 ${day} 日在 ${year}-${pad(month)} 不存在，无法确定日期`);
+    }
+    out.push({ col: c, date: `${year}-${pad(month)}-${pad(day)}` });
     prevDay = day;
-    out.push({ col: c, date: `2026-${pad(month)}-${pad(day)}` });
+    first = false;
   }
+  if (out.length === 0) throw new Error("第 4 行列头没有识别到任何日期列");
   return out;
 }
 
