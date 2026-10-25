@@ -129,7 +129,7 @@ motion:
 ---
 
 **Project:** AMS（行政管理系统）
-**Generated:** 2026-09-16 ｜ **v2:** 2026-09-17（品牌主色改定 Logo 蓝 #005BA8）｜ **v3:** 2026-09-19（扁平风格 + 标准节 + 组件边界）｜ **v4:** 2026-09-23（Design QA2 回写：实测值校正 + 三条冲突裁定 + 四条新硬规则）
+**Generated:** 2026-09-16 ｜ **v2:** 2026-09-17（品牌主色改定 Logo 蓝 #005BA8）｜ **v3:** 2026-09-19（扁平风格 + 标准节 + 组件边界）｜ **v4:** 2026-09-23（Design QA2 回写：实测值校正 + 三条冲突裁定 + 四条新硬规则）｜ **v5:** 2026-10-25（响应式三档 + 三类页面骨架 + 表格冻结列；A4/画布类补 min-w-0）
 **Category:** Enterprise Admin Console
 
 ---
@@ -205,8 +205,43 @@ AMS 是单人自用的企业后台（员工/部门/考勤/合同/审批/文档/�
 - **侧栏定宽列：** banner 内层 / 导航块 / 账户区共用 `w-[124px] mx-auto`（实测 124px），行内容在胶囊内居中，角标绝对定位于图标（`-top-1.5 -right-2`）。这些 arbitrary 宽度**是契约的一部分**，不是待清理的魔法数。
 - **栅格：** 内容区 12 列语义 —— 主列表 lg:col-span-8/9，侧栏卡 lg:col-span-4/3；卡片间距 gap-6，卡内 gap-3/4。
 - **间距节奏：** 用 spacing token（4/8/16/24/32/48/64）；页边到卡片边缘尽量贴边（密排优先）。
-- 断点：375 / 768 / 1024 / 1440；移动端侧栏折叠为抽屉（Sheet 同宽 w-48）。
+- 断点：以 Tailwind 为准 —— `sm 640` / `md 768` / `lg 1024` / `xl 1280` / `2xl 1536`；375 是设计稿基准宽、1440 归入 xl 以上，不新增断点。移动端侧栏折叠为抽屉（Sheet 同宽 w-48），桌面侧栏 192 / 折叠 80。
 - **页头构成唯一：** `.page-header` + `.page-title` + `.page-subtitle`。禁止在标题左侧加图标胶囊（2026-09-23 已把最后两页收回来）。
+
+## Responsive（v5 新增）
+
+**三档骨架。** 验收口径固定为：`document.documentElement.scrollWidth === innerWidth`；横向滚动只允许发生在 `overflow-x-auto` 的表格/预览容器里。
+
+| 档位 | 宽度 | 页面外边距 | 内容上限 | 导航 | 典型布局 |
+|------|------|-----------|----------|------|----------|
+| 手机 | <640 | 16px | 448px | 顶部栏 + Sheet 抽屉；门户用底部 Tab | 单列 |
+| 平板 | 640–1023 | 24px | 672px | 侧栏可见（可折叠） | 摘要/列表从 `md` 起并排；表单字段从 `sm` 起两列 |
+| 桌面 | ≥1024 | 32px | 1152px | 侧栏 192 + 内容区 | 左栏 256 + 间隔 32 + 内容 800；或 `1fr + 520` |
+
+**三类页面骨架**
+
+1. **独立公开页**（登录、认领）：不套后台 Layout。手机单列卡片；桌面两栏——左栏放品牌/说明/步骤/信任信息，右栏放 520px 表单或结果卡。
+2. **员工门户**（`/my`）：手机单列 + 底部三 Tab；平板从 `md` 起「摘要 300 + 列表 1fr」并排；桌面左栏 256（身份 / 竖向导航 / 账号），右侧内容。
+3. **后台管理页**（控制台、员工、考勤、合同等）：桌面侧栏 + 移动抽屉，内容走 PageContainer。数据表桌面优先；移动端保留容器内横滑，不默认重排成卡片。
+
+**硬规则**
+
+- 页面级不得横滑；宽表只在自己的 `overflow-x-auto` 容器里滚。
+- grid/flex 子项里有固定宽度内容（A4 预览 794px、画布、宽表）时，给子项 `min-w-0`；否则 `min-width: auto` 会把整列撑出视口（2026-10-25 业务单据实测 390 档被撑到 824px）。
+- 宽表冻结身份与动作：首列 `sticky left-0`、操作列 `sticky right-0`；表头与表体同步 sticky，且 sticky 单元格必须自带背景（透明表头滚过去会叠字）。
+- 移动端可点元素 ≥44px（`min-h-11`）；桌面沿用 32/36px 控件。输入框在员工端至少 `min-h-11`。
+- 画布/拖拽类工具（排座）桌面优先；<1024 给一句桌面提示，不把画布缩成手机尺寸。
+- 导航不隐藏：移动端用 Sheet 抽屉或底部 Tab，桌面用侧栏或左栏。
+
+**参考实现**
+
+- 公开页：`src/pages/Claim/index.tsx`、`src/pages/Login.tsx`
+- 门户：`src/pages/MyPortal/index.tsx`（底部 Tab ↔ 左栏）
+- 后台外壳：`src/components/layout/Layout.tsx` + `Header`（Sheet）+ `Sidebar`
+- 宽内容：`BusinessForms`（`min-w-0`）、`ContractTable`（首末列冻结）、`EmployeeRollupTable`（首列冻结）
+- 桌面提示：`src/pages/Seating/index.tsx`（<1024）
+
+**验证方法**：390 / 768 / 1280 各截一次；宽表滚 200px 后检查首列 x 不变；`page.scrollWidth` 必须等于视口。
 
 ## Elevation & Depth
 
@@ -353,7 +388,10 @@ Before delivering any UI code, verify:
 - [ ] **双主题** text contrast ≥4.5:1（不是只量亮色；disabled 态豁免但需解释文案）
 - [ ] Focus indicator ≥3:1 且为品牌环（UA 默认环不算过）
 - [ ] `prefers-reduced-motion` respected（全局已兜底，勿在组件里另写）
-- [ ] Responsive: 375px, 768px, 1024px, 1440px 零横向溢出
+- [ ] Responsive: 390 / 768 / 1280 三档 `page.scrollWidth === innerWidth`；宽表只在容器内横滑
+- [ ] 固定宽度子项（A4 预览 / 画布）所在 grid item 有 `min-w-0`
+- [ ] 宽表首列与操作列冻结，表头与表体同步 sticky
+- [ ] <1024 不把画布类工具缩成手机尺寸；给桌面提示
 - [ ] 暗色主题同步验证（含原生控件 color-scheme、浅色表面都有 dark 变体）
 - [ ] 交互原语走 ui/* 组件，未新增组件库旁路；浮层有 dialog 语义与 Esc
 - [ ] 下拉触发器显示中文标签，无内部枚举值
@@ -371,6 +409,7 @@ Before delivering any UI code, verify:
 | 焦点环 6.80 / 5.53 | `.design-qa/probe-focus-color.mjs`（真键盘走焦后读 outline） |
 | 侧栏 192px / 定宽列 124px / h1 24-600 | 同 `probe-token-truth.mjs`（getBoundingClientRect + getComputedStyle） |
 | 静态规则 | `src/__tests__/design-contract.test.ts`（6 条，跑在 client project） |
+| 响应式三档 | `.design-qa/audit-responsive-live.mjs`（390/768 逐页 scrollWidth + 表格容器）；`.design-qa/verify-claim-responsive.mjs` / `verify-my-responsive.mjs`（三档截图 + 宽度） |
 | a11y 全量 | `.design-qa/probe-2026-09-22.mjs`（axe 4.13 注入，21 视图 × 双主题；2026-09-23 全 0） |
 
 > 测量陷阱（别再犯）：`getComputedStyle` 在本项目返回 `oklch(...)` 原样字符串，按 RGB 解析会得到垃圾比率；`@theme inline` 不把 `--color-*` 暴露到 :root，只能量生成的 utility 类。
