@@ -241,8 +241,13 @@ async function main() {
   ok("新账号完成初始改密", empChanged.status === 200, `-> ${empChanged.status}`);
 
   {
+    // 2026-10-25 安全收口：默认读从 EMPLOYEE 收到 HR。全员员工册带手机号、合同、
+    // 社保等字段，员工只保留自助面（/my、/todos、/notifications、/approvals/mine），
+    // 不再能拖走别人的档案。
     const r = await req("GET", "/api/users", { token: empToken });
-    ok("EMPLOYEE 可读员工列表", r.status === 200, `-> ${r.status}`);
+    ok("EMPLOYEE 读全员员工册 -> 403", r.status === 403, `-> ${r.status}`);
+    const self = await req("GET", "/api/todos", { token: empToken });
+    ok("EMPLOYEE 仍可使用自己的待办", self.status === 200, `-> ${self.status}`);
   }
   const FORBIDDEN_FOR_EMPLOYEE = [
     ["POST", "/api/users", { name: "越权创建" }],
