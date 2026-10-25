@@ -462,12 +462,19 @@ main,
 }
 .data-rise-in { animation: data-rise-in 200ms cubic-bezier(0.2, 0, 0, 1) both; }
 
-/* 登录 / 认领页背景光晕：一次性入场，不做持续漂浮（motion-plan 禁止循环背景动效） */
+/* 登录 / 认领页背景光晕：一次性入场，不做持续漂浮（motion-plan 禁止循环背景动效）。
+   延后到首帧可见之后才开始，否则慢设备上动画会在首次绘制前跑完、看起来完全没动。 */
 @keyframes glow-in {
-  from { opacity: 0; transform: scale(0.96); }
-  to { opacity: 1; transform: scale(1); }
+  0% { opacity: 0; transform: translateY(28px) scale(0.72); }
+  30% { opacity: 0.55; }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
-.glow-in { animation: glow-in var(--duration-very-slow) var(--ease-smooth-out) both; }
+.glow-in {
+  animation: glow-in var(--duration-ambient) var(--ease-in-out) var(--duration-quick) both;
+}
+.glow-in--late {
+  animation-delay: calc(var(--duration-quick) * 2);
+}
 
 @media (max-width: 767px) {
   .soft-rise-in { animation-duration: 140ms; }

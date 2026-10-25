@@ -208,11 +208,8 @@ export default function ClaimAccount() {
   return (
     <div className="relative min-h-dvh overflow-hidden bg-zinc-50 dark:bg-zinc-900">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        <div className="glow-in absolute -right-20 -top-24 size-64 rounded-full bg-brand-100/70 blur-3xl dark:bg-brand-900/20 lg:-right-32 lg:-top-32 lg:size-96" />
-        <div
-          className="glow-in absolute -left-24 top-1/3 size-64 rounded-full bg-emerald-100/50 blur-3xl dark:bg-emerald-900/10 lg:-left-32 lg:size-96"
-          style={{ animationDelay: '40ms' }}
-        />
+        <div className="glow-in absolute -right-20 -top-24 size-64 rounded-full bg-brand-200/60 blur-3xl dark:bg-brand-900/20 lg:-right-32 lg:-top-32 lg:size-96" />
+        <div className="glow-in glow-in--late absolute -left-24 top-1/3 size-64 rounded-full bg-emerald-200/50 blur-3xl dark:bg-emerald-900/10 lg:-left-32 lg:size-96" />
       </div>
 
       <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pb-10 pt-4 sm:max-w-xl sm:px-6 lg:max-w-6xl lg:px-8">

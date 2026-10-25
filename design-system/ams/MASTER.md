@@ -272,11 +272,12 @@ AMS 是单人自用的企业后台（员工/部门/考勤/合同/审批/文档/�
 | `--duration-medium` | 350ms | 面板关闭、toast 收起 |
 | `--duration-slow` | 400ms | 面板打开、骨架内容揭示 |
 | `--duration-very-slow` | 500ms | 强调时刻：徽章出现、成功勾选 |
+| `--duration-ambient` | 900ms | 一次性背景光晕入场（禁止循环） |
 
 - 开/关非对称是允许的（开 250 / 关 150 一类），别为"统一"把它抹平。
 - 缓动统一用 utility `ease-smooth-out`，禁止 `ease-[var(…)]` 任意值写法。
 - `prefers-reduced-motion: reduce` 已在 index.css 全局兜底（时长压到 0.01ms），新增动效不需要各自处理。
-- 登录 / 认领页背景光晕：一次性 500ms 淡入 + `scale 0.96→1`，两团错开 40ms；不做循环背景动效。
+- 登录 / 认领页背景光晕：一次性 900ms 淡入 + `translateY(18px) scale(0.82→1)`，首团延后 150ms、第二团延后 300ms；不做循环背景动效。
 
 ### hover 反馈（v4 裁定：改写禁令的理由）
 
