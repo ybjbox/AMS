@@ -87,8 +87,8 @@ export default function Login() {
       {/* 背景装饰 */}
       {!loginBackground && (
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-          <div className="glow-in absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-brand-200/60 dark:bg-brand-900/20 blur-3xl" />
-          <div className="glow-in glow-in--late absolute top-[60%] -right-[10%] w-[40%] h-[60%] rounded-full bg-emerald-200/50 dark:bg-emerald-900/10 blur-3xl" />
+          <div className="glow-in absolute -top-[18%] -left-[8%] size-72 rounded-full bg-brand-200/60 blur-3xl dark:bg-brand-900/20 lg:size-96" />
+          <div className="glow-in glow-in--late absolute top-[58%] -right-[8%] size-64 rounded-full bg-emerald-200/50 blur-3xl dark:bg-emerald-900/10 lg:size-80" />
         </div>
       )}
 
