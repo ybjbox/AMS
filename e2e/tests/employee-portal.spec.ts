@@ -140,6 +140,24 @@ test.describe.serial('员工门户', () => {
     await expect(mobileNav.getByRole('button', { name: '公告' })).toHaveAttribute('aria-current', 'page');
   });
 
+  test('断网时保留上次结果并标注，且不再重复弹全局网络错误', async ({ page }) => {
+    await loginUI(page, NEW_PASSWORD);
+    await page.waitForURL('**/my');
+    await expect(page.getByText('已核对', { exact: false }).first()).toBeVisible();
+
+    // 先在线加载一次上个月，让这个月有缓存
+    await page.getByRole('button', { name: '上个月' }).click();
+    await expect(page.getByText('已核对', { exact: false }).first()).toBeVisible();
+    await page.getByRole('button', { name: '下个月' }).click();
+
+    await page.route('**/api/my/summary**', (route) => route.abort());
+    await page.getByRole('button', { name: '上个月' }).click();
+
+    await expect(page.getByText(/当前离线，显示的是上次加载的结果/)).toBeVisible();
+    await expect(page.getByText('已核对', { exact: false }).first()).toBeVisible();
+    await expect(page.getByText('网络请求失败')).toHaveCount(0);
+  });
+
   test('员工直达 HR 页面会回 /my，接口返回 403', async ({ page }) => {
     await loginUI(page, NEW_PASSWORD);
     await page.waitForURL('**/my');

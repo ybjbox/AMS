@@ -44,6 +44,9 @@ const item: Approval = {
   punchKind: '上班卡',
   requiredRole: 'HR',
   hours: 0,
+  recomputeOk: null,
+  recomputeError: '',
+  recomputedAt: null,
 };
 
 beforeEach(() => {

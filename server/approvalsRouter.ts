@@ -22,6 +22,8 @@ import {
   withdrawApproval,
   getCompBalance,
   getPendingCompUsedHours,
+  getApproval,
+  recordApprovalRecompute,
 } from "./approvalsDb.ts";
 import { APPROVAL_TYPES, approvalKindOf, type ApplicantContext, type ApprovalInput } from "./approvalTypes.ts";
 import { analyzeAnomalies } from "./attendanceDb.ts";
@@ -177,7 +179,25 @@ approvalsRouter.put("/batch-decide", requireRole("HR"), validateBody(batchDecide
       else if (result.row) decided.push(id);
       else failed.push({ id, error: result.reason ?? "未处理" });
     }
-    res.json({ decided, failed });
+
+    // 批量通过里若含补卡，必须重算一次并把回执写到每张补卡单上。
+    // 原先批量路径完全跳过重算，员工会看到"已通过"但异常还在。
+    const makeupIds =
+      status === "approved" ? decided.filter((id) => getApproval(id)?.type === "makeup") : [];
+    let recomputed: { ok: boolean; anomalies?: number; error?: string } | undefined;
+    if (makeupIds.length > 0) {
+      try {
+        const anomalies = analyzeAnomalies();
+        for (const id of makeupIds) recordApprovalRecompute(id, true);
+        recomputed = { ok: true, anomalies: anomalies.length };
+      } catch (e) {
+        const message = e instanceof Error ? e.message : "重算失败";
+        for (const id of makeupIds) recordApprovalRecompute(id, false, message);
+        recomputed = { ok: false, error: message };
+      }
+    }
+
+    res.json({ decided, failed, ...(recomputed ? { recomputed } : {}) });
   } catch (e) {
     next(e);
   }
@@ -210,12 +230,18 @@ approvalsRouter.put("/:id/decide", requireRole("HR"), validateBody(decideSchema)
     if (row.status === "approved" && row.type === "makeup") {
       try {
         const anomalies = analyzeAnomalies();
-        return res.json({ ...row, recomputed: { ok: true, anomalies: anomalies.length } });
-      } catch (recomputeError) {
-        console.error("[approvals] 补卡通过后重算失败", recomputeError);
+        recordApprovalRecompute(row.id, true);
         return res.json({
-          ...row,
-          recomputed: { ok: false, error: recomputeError instanceof Error ? recomputeError.message : "重算失败" },
+          ...(getApproval(row.id) ?? row),
+          recomputed: { ok: true, anomalies: anomalies.length },
+        });
+      } catch (recomputeError) {
+        const message = recomputeError instanceof Error ? recomputeError.message : "重算失败";
+        console.error("[approvals] 补卡通过后重算失败", recomputeError);
+        recordApprovalRecompute(row.id, false, message);
+        return res.json({
+          ...(getApproval(row.id) ?? row),
+          recomputed: { ok: false, error: message },
         });
       }
     }

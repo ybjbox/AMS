@@ -134,6 +134,12 @@ test.describe.serial('P0 功能闭环', () => {
       data: { status: 'approved', comment: 'E2E 审批通过' },
     });
     expect(decideRes.status(), '审批通过').toBe(200);
+    const decided = await decideRes.json();
+    expect(decided.recomputed?.ok, '补卡通过后应重算').toBe(true);
+    // 回执要落到单据上：员工之后在「我的」看到「结论已更新」
+    const mineReceiptRes = await request.get('/api/approvals/mine', { headers: empAuth });
+    const mineReceipt: { id: string; recomputeOk: number | null }[] = await mineReceiptRes.json();
+    expect(mineReceipt.find((m) => m.id === approval.id)?.recomputeOk, '重算回执应写回单据').toBe(1);
 
     // 3) 打卡记录已自动写入（闭环验证）
     const recRes = await request.get(

@@ -79,6 +79,8 @@ describe('员工端文案', () => {
     expect(copy.why).toContain('只有 16:03 这一张卡');
     expect(copy.why).toContain('按 16:00-24:00 的班算');
     expect(JSON.stringify(copy)).not.toMatch(BANNED);
+    // 缺下班卡没有"原时刻"，不预填、不拿上班卡时间冒充
+    expect(employeeAnomalies(row)[0].suggestedTime).toBe('');
   });
 
   it('迟到用「比 16:00 晚了 N 分钟」，异常描述不带引擎词', () => {
@@ -98,6 +100,8 @@ describe('员工端文案', () => {
     const anomalies = employeeAnomalies(row);
     expect(anomalies).toHaveLength(1);
     expect(anomalies[0].description).toBe('迟到 23 分钟 · 按 16:00-24:00 的班');
+    // 迟到能确定原卡时刻 → 异议表单直接预填；缺卡不能猜
+    expect(anomalies[0].suggestedTime).toBe('16:23');
     expect(JSON.stringify({ copy, anomalies })).not.toMatch(BANNED);
     expect(countEmployeeAnomalies(anomalies)).toEqual({ late: 1, missing: 0 });
   });

@@ -149,6 +149,9 @@ main,
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  /* 门户卡片按 Board 的 16 / 12 档落地；不改全局 --radius，避免整个后台跟着变 */
+  --radius-card: 1rem;
+  --radius-panel: 0.75rem;
   --shadow-sm: 0 2px 8px rgba(0,0,0,0.1);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
 }
@@ -451,6 +454,18 @@ main,
   to { opacity: 1; transform: none; }
 }
 .soft-rise-in { animation: soft-rise-in 180ms cubic-bezier(0.2, 0, 0, 1) both; }
+
+/* 数据截止日横幅（spec-7）：单独一拍出现，不与列表同帧 */
+@keyframes data-rise-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+.data-rise-in { animation: data-rise-in 200ms cubic-bezier(0.2, 0, 0, 1) both; }
+
+@media (max-width: 767px) {
+  .soft-rise-in { animation-duration: 140ms; }
+  .data-rise-in { animation-duration: 160ms; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

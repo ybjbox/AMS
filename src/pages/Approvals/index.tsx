@@ -195,18 +195,34 @@ export default function Approvals() {
       setDeciding(true);
       try {
         if (items.length === 1) {
-          await approvalApi.decide(items[0].id, status, comment.trim());
-          toast.success(status === 'approved' ? '已通过' : '已驳回');
+          const res = await approvalApi.decide(items[0].id, status, comment.trim());
+          if (res.recomputed && !res.recomputed.ok) {
+            toast.error('已通过，但结论重算失败', {
+              description: '请到考勤页重新分析；员工会看到「结论还没更新」。',
+            });
+          } else if (res.recomputed?.ok) {
+            toast.success('已通过，结论已更新');
+          } else {
+            toast.success(status === 'approved' ? '已通过' : '已驳回');
+          }
         } else {
           const res = await approvalApi.batchDecide(
             items.map((i) => i.id),
             status,
             comment.trim()
           );
-          toast.success(
-            `已${status === 'approved' ? '通过' : '驳回'} ${res.decided.length} 条` +
-              (res.failed.length > 0 ? `；${res.failed.length} 条未处理（${res.failed[0].error}）` : '')
-          );
+          if (res.recomputed && !res.recomputed.ok) {
+            toast.error(
+              `已${status === 'approved' ? '通过' : '驳回'} ${res.decided.length} 条，但结论重算失败`,
+              { description: '请到考勤页重新分析。' }
+            );
+          } else {
+            toast.success(
+              `已${status === 'approved' ? '通过' : '驳回'} ${res.decided.length} 条` +
+                (res.recomputed?.ok ? '，结论已更新' : '') +
+                (res.failed.length > 0 ? `；${res.failed.length} 条未处理（${res.failed[0].error}）` : '')
+            );
+          }
         }
         setDecideTarget(null);
         setSelectedIds([]);

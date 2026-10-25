@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import Badge from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { FailedState } from '@/components/ui/FailedState';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { Textarea } from '@/components/ui/textarea';
 import { useConfirm } from '@/hooks/useConfirm';
 import { claimApi, type Claim } from '@/services/claimApi';
 
@@ -22,6 +24,8 @@ export default function ClaimsPanel({ onDecided }: { onDecided?: () => void }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [deciding, setDeciding] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  const [conflictNotice, setConflictNotice] = useState('');
+  const [noteOpen, setNoteOpen] = useState(false);
   const [issued, setIssued] = useState<{ username: string; password: string } | null>(null);
 
   const load = useCallback(async () => {
@@ -41,6 +45,10 @@ export default function ClaimsPanel({ onDecided }: { onDecided?: () => void }) {
   useEffect(() => {
     void load();
   }, [load]);
+  useEffect(() => {
+    setConflictNotice('');
+    setNoteOpen(false);
+  }, [selectedId]);
 
   const selected = items.find((r) => r.id === selectedId) ?? null;
   const pendingCount = items.filter((r) => r.status === 'pending').length;
@@ -73,14 +81,35 @@ export default function ClaimsPanel({ onDecided }: { onDecided?: () => void }) {
       await load();
       onDecided?.();
     } catch (e) {
-      toast.error((e as { error?: string })?.error || '核对失败，请稍后再试');
+      const message = (e as { error?: string })?.error || '核对失败，请稍后再试';
+      // 用户名冲突不是一次性报错：服务端已把申请退回待核对，面板要一直说清下一步
+      if (message.includes('已被占用')) {
+        setConflictNotice(message);
+        setRejectReason('');
+        await load();
+        onDecided?.();
+      } else {
+        toast.error(message);
+      }
     } finally {
       setDeciding(false);
     }
   };
 
   if (isLoading) {
-    return <div className="p-8 text-sm text-muted-foreground">加载中…</div>;
+    return (
+      <div className="grid gap-4 p-4 md:grid-cols-5" aria-busy="true">
+        <span className="sr-only">加载中…</span>
+        <div className="space-y-2 md:col-span-2">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-16 rounded-panel" />
+          ))}
+        </div>
+        <div className="md:col-span-3">
+          <Skeleton className="h-64 rounded-panel" />
+        </div>
+      </div>
+    );
   }
   if (loadError) {
     return <FailedState subject="认领申请" reason={loadError} onRetry={() => void load()} />;
@@ -101,17 +130,23 @@ export default function ClaimsPanel({ onDecided }: { onDecided?: () => void }) {
         <p className="px-1 pb-1 text-2xs text-muted-foreground">
           共 {items.length} 条 · 待核对 {pendingCount} 条
         </p>
-        <ul className="divide-y divide-zinc-100 dark:divide-zinc-700/60 rounded-xl border border-zinc-100 dark:border-zinc-700/60 overflow-hidden">
+        <ul className="divide-y divide-zinc-100 dark:divide-zinc-700/60 rounded-panel border border-zinc-100 dark:border-zinc-700/60 overflow-hidden">
           {items.map((r) => (
             <li key={r.id}>
               <button
                 type="button"
                 onClick={() => setSelectedId(r.id)}
-                className={`w-full text-left px-3 py-2.5 transition-colors ${
+                className={`relative w-full text-left px-3 py-2.5 transition-colors duration-200 ${
                   r.id === selectedId ? 'bg-brand-50 dark:bg-brand-500/10' : 'hover:bg-zinc-50 dark:hover:bg-zinc-700/30'
                 }`}
                 aria-pressed={r.id === selectedId}
               >
+                <span
+                  aria-hidden="true"
+                  className={`absolute inset-y-2 left-0 w-0.5 origin-center rounded-full bg-brand-600 transition-transform duration-200 dark:bg-brand-400 ${
+                    r.id === selectedId ? 'scale-y-100' : 'scale-y-0'
+                  }`}
+                />
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-medium text-zinc-900 dark:text-white">
                     {r.displayName || r.desiredUsername}
@@ -142,7 +177,7 @@ export default function ClaimsPanel({ onDecided }: { onDecided?: () => void }) {
               </Button>
             </div>
 
-            <div className="rounded-xl border border-zinc-200/60 dark:border-zinc-700/60 overflow-hidden">
+            <div className="rounded-panel border border-zinc-200/60 dark:border-zinc-700/60 overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="bg-zinc-50/60 dark:bg-zinc-800/60 text-xs text-muted-foreground">
                   <tr>
@@ -182,21 +217,43 @@ export default function ClaimsPanel({ onDecided }: { onDecided?: () => void }) {
             </div>
 
             {selected.note && (
-              <p className="rounded-lg bg-zinc-50 dark:bg-zinc-700/30 px-3 py-2 text-xs text-muted-foreground">
-                申请人备注：{selected.note}
+              <div className="rounded-lg bg-zinc-50 dark:bg-zinc-700/30 px-3 py-2">
+                <p
+                  className={`whitespace-pre-line text-xs text-muted-foreground ${noteOpen ? '' : 'line-clamp-2'}`}
+                >
+                  申请人备注：{selected.note}
+                </p>
+                {selected.note.length > 60 && (
+                  <button
+                    type="button"
+                    onClick={() => setNoteOpen((v) => !v)}
+                    className="mt-1 inline-flex min-h-11 items-center text-xs font-medium text-brand-700 hover:underline dark:text-brand-300"
+                  >
+                    {noteOpen ? '收起' : '展开完整备注'}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {conflictNotice && (
+              <p
+                role="alert"
+                className="rounded-lg border border-amber-200/80 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
+              >
+                {conflictNotice}。这条申请已退回待核对，让对方换一个用户名重新提交即可。
               </p>
             )}
 
             {selected.status === 'pending' ? (
               <div className="space-y-2">
-                <textarea
+                <Textarea
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
                   rows={2}
                   maxLength={200}
                   placeholder="驳回原因（驳回时必填，比如：工号与姓名对不上）"
                   aria-label="驳回原因"
-                  className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm"
+                  className="min-h-11"
                 />
                 <div className="flex gap-2">
                   <Button onClick={() => void decide('approved')} disabled={deciding}>
@@ -220,7 +277,7 @@ export default function ClaimsPanel({ onDecided }: { onDecided?: () => void }) {
             )}
 
             {issued && (
-              <div className="rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 p-3 space-y-2">
+              <div className="rounded-panel border border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 p-3 space-y-2">
                 <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
                   账号 {issued.username} 已开通 · 一次性口令（只显示这一次）
                 </p>

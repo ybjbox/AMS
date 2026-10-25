@@ -273,7 +273,7 @@ export default function ClaimAccount() {
               </ol>
             )}
 
-            <div className="mt-8 hidden items-start gap-3 rounded-2xl border border-zinc-200/70 bg-white/70 p-4 dark:border-zinc-700/60 dark:bg-zinc-800/60 lg:flex">
+            <div className="mt-8 hidden items-start gap-3 rounded-card border border-zinc-200/70 bg-white/70 p-4 dark:border-zinc-700/60 dark:bg-zinc-800/60 lg:flex">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-500/10">
                 <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
               </span>
@@ -288,7 +288,7 @@ export default function ClaimAccount() {
 
           <section className="mt-4 lg:mt-0">
             {mode === 'lookup' ? (
-              <div className="rounded-2xl border border-zinc-200/70 bg-white p-5 shadow-sm dark:border-zinc-700/60 dark:bg-zinc-800 lg:p-8">
+              <div className="rounded-card border border-zinc-200/70 bg-white p-5 shadow-sm dark:border-zinc-700/60 dark:bg-zinc-800 lg:p-8">
                 <div className="mb-4 flex items-baseline justify-between gap-2 sm:mb-5">
                   <h2 className="text-base font-semibold text-zinc-900 dark:text-white">申请进度</h2>
                   <button
@@ -430,7 +430,7 @@ export default function ClaimAccount() {
                 )}
               </div>
             ) : done ? (
-              <div className="rounded-2xl border border-zinc-200/70 bg-white p-6 shadow-sm dark:border-zinc-700/60 dark:bg-zinc-800 lg:p-8">
+              <div className="rounded-card border border-zinc-200/70 bg-white p-6 shadow-sm dark:border-zinc-700/60 dark:bg-zinc-800 lg:p-8">
                 <div className="flex flex-col items-center text-center">
                   <div className="flex size-14 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-500/10">
                     <CheckCircle2 className="size-7 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
@@ -477,7 +477,7 @@ export default function ClaimAccount() {
               <form
                 onSubmit={submit}
                 noValidate
-                className="rounded-2xl border border-zinc-200/70 bg-white p-5 shadow-sm dark:border-zinc-700/60 dark:bg-zinc-800 lg:p-8"
+                className="rounded-card border border-zinc-200/70 bg-white p-5 shadow-sm dark:border-zinc-700/60 dark:bg-zinc-800 lg:p-8"
               >
                 <div className="mb-4 flex items-baseline justify-between gap-2 sm:mb-5">
                   <h2 className="text-base font-semibold text-zinc-900 dark:text-white">填写认领信息</h2>

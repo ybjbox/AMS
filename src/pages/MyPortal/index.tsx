@@ -6,12 +6,16 @@ import { Button } from '@/components/ui/button';
 import Badge from '@/components/ui/Badge';
 import { FailedState } from '@/components/ui/FailedState';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { DEFAULT_USER_AVATAR } from '@/config/constants';
 import { useUserStore } from '@/store/useUserStore';
 import { useMotionPrefs } from '@/lib/motionTokens';
 import { myApi, type MyAnomaly, type MySummary } from '@/services/myApi';
 import { approvalApi, type Approval } from '@/services/approvalApi';
 import { announcementApi, type Announcement } from '@/services/announcementApi';
+import { readSummaryCache, writeSummaryCache } from './summaryCache';
 
 /**
  * 员工门户。
@@ -47,6 +51,18 @@ const STATUS_LABEL: Record<string, string> = {
   withdrawn: '已撤回',
 };
 
+const formatCachedAt = (iso: string) => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '上次加载';
+  return d.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
 export default function MyPortal() {
   const user = useUserStore((s) => s.userInfo);
   const logout = useUserStore((s) => s.logout);
@@ -57,6 +73,7 @@ export default function MyPortal() {
   const [data, setData] = useState<MySummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [cachedAt, setCachedAt] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [disputes, setDisputes] = useState<Approval[]>([]);
   const [disputesError, setDisputesError] = useState<string | null>(null);
@@ -73,15 +90,28 @@ export default function MyPortal() {
 
   const load = useCallback(async () => {
     setIsLoading(true);
+    const owner = user?.username ?? '';
     try {
-      setData(await myApi.summary(month));
+      const fresh = await myApi.summary(month);
+      setData(fresh);
       setLoadError(null);
+      setCachedAt(null);
+      if (owner) writeSummaryCache(owner, month, fresh);
     } catch (e) {
-      setLoadError((e as { error?: string })?.error || '数据没取到，请稍后重试');
+      // 只有网络层失败才回退缓存：403/409/500 是服务端明确回答，不能被旧数据盖住
+      const networkFailure = (e as { isAxiosError?: boolean })?.isAxiosError === true;
+      const cached = owner ? readSummaryCache(owner, month) : null;
+      if (networkFailure && cached) {
+        setData(cached.data);
+        setLoadError(null);
+        setCachedAt(cached.at);
+      } else {
+        setLoadError((e as { error?: string })?.error || '数据没取到，请稍后重试');
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [month]);
+  }, [month, user?.username]);
 
   const loadDisputes = useCallback(async () => {
     try {
@@ -124,6 +154,16 @@ export default function MyPortal() {
   const anomalyCount = anomalies.length;
   // 矩阵把「审批中心（我的申请）」关掉时，门户里的异议入口也要一起收起来，避免点了必 403
   const canDispute = user?.permissions?.includes('approvals:view') ?? false;
+  // 同一天已有一条待审补卡时，按钮直接变成「已提交」，不让人重复点、等服务端 409
+  const pendingDisputeDates = useMemo(
+    () =>
+      new Set(
+        disputes
+          .filter((d) => d.type === 'makeup' && d.status === 'pending')
+          .map((d) => d.punchDate || d.startDate)
+      ),
+    [disputes]
+  );
 
   const handleLogout = () => {
     logout();
@@ -173,7 +213,7 @@ export default function MyPortal() {
 
       <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col sm:max-w-2xl lg:max-w-6xl lg:flex-row lg:items-start lg:gap-8 lg:px-8 lg:py-8">
         <aside className="hidden lg:sticky lg:top-8 lg:flex lg:w-64 lg:shrink-0 lg:flex-col lg:gap-4 lg:self-start">
-          <div className="rounded-2xl border border-zinc-200/60 bg-white p-5 shadow-sm dark:border-zinc-700/60 dark:bg-zinc-800">
+          <div className="rounded-card border border-zinc-200/60 bg-white p-5 shadow-sm dark:border-zinc-700/60 dark:bg-zinc-800">
             <div className="flex items-center gap-3">
               <img
                 src={user?.avatar || DEFAULT_USER_AVATAR}
@@ -190,25 +230,25 @@ export default function MyPortal() {
             <dl className="mt-4 space-y-1.5 text-2xs">
               <div className="flex items-baseline justify-between gap-2 text-muted-foreground">
                 <dt>工号</dt>
-                <dd className="tabular-nums text-zinc-700 dark:text-zinc-200">{data?.employeeId ?? '—'}</dd>
+                <dd className="font-mono tabular-nums text-zinc-700 dark:text-zinc-200">{data?.employeeId ?? '—'}</dd>
               </div>
               <div className="flex items-baseline justify-between gap-2 text-muted-foreground">
                 <dt>数据截止</dt>
-                <dd className="tabular-nums text-zinc-700 dark:text-zinc-200">
+                <dd className="font-mono tabular-nums text-zinc-700 dark:text-zinc-200">
                   {data?.coverage.latestDate ?? '—'}
                 </dd>
               </div>
               {data && data.coverage.uncoveredDays > 0 && (
                 <div className="flex items-baseline justify-between gap-2 text-amber-700 dark:text-amber-400">
                   <dt>没算进来</dt>
-                  <dd className="tabular-nums">{data.coverage.uncoveredDays} 天</dd>
+                  <dd className="font-mono tabular-nums">{data.coverage.uncoveredDays} 天</dd>
                 </div>
               )}
             </dl>
           </div>
 
           <nav
-            className="rounded-2xl border border-zinc-200/60 bg-white p-2 shadow-sm dark:border-zinc-700/60 dark:bg-zinc-800"
+            className="rounded-card border border-zinc-200/60 bg-white p-2 shadow-sm dark:border-zinc-700/60 dark:bg-zinc-800"
             aria-label="员工门户导航"
           >
             {TAB_LABEL.map((item) => {
@@ -238,7 +278,7 @@ export default function MyPortal() {
             })}
           </nav>
 
-          <div className="rounded-2xl border border-zinc-200/60 bg-white p-4 shadow-sm dark:border-zinc-700/60 dark:bg-zinc-800">
+          <div className="rounded-card border border-zinc-200/60 bg-white p-4 shadow-sm dark:border-zinc-700/60 dark:bg-zinc-800">
             <p className="text-2xs text-muted-foreground">当前账号</p>
             <p className="mt-1 truncate text-sm font-medium text-zinc-900 dark:text-white">{user?.username}</p>
             <Button
@@ -258,7 +298,7 @@ export default function MyPortal() {
               {user?.displayName || user?.username || '我'}
             </h1>
             {data && (
-              <p className="mt-0.5 text-2xs text-muted-foreground tabular-nums">
+              <p className="data-rise-in mt-0.5 text-2xs text-muted-foreground font-mono tabular-nums">
                 数据截止 {data.coverage.latestDate ?? '—'}
                 {data.coverage.uncoveredDays > 0 && ` · 本月还有 ${data.coverage.uncoveredDays} 天没算进来`}
               </p>
@@ -266,6 +306,14 @@ export default function MyPortal() {
           </header>
 
           <main className="flex-1 px-4 py-4 sm:px-6 lg:px-0 lg:py-0">
+            {cachedAt && !isLoading && !loadError && (
+              <p
+                role="status"
+                className="mb-3 rounded-xl border border-amber-200/80 bg-amber-50 px-3 py-2 text-2xs leading-relaxed text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"
+              >
+                当前离线，显示的是上次加载的结果（{formatCachedAt(cachedAt)}）。
+              </p>
+            )}
             {/* Tab 切换：交叉淡入 120ms，不做方向转场（四个 Tab 是并列的，横滑会暗示顺序） */}
             <motion.div
               key={tab}
@@ -275,7 +323,17 @@ export default function MyPortal() {
               className="space-y-4"
             >
               {isLoading ? (
-                <p className="py-12 text-center text-sm text-muted-foreground">加载中…</p>
+                <div className="space-y-4" aria-busy="true">
+                  <span className="sr-only">加载中…</span>
+                  <div className="grid gap-4 md:grid-cols-[minmax(0,300px)_minmax(0,1fr)] md:items-start">
+                    <Skeleton className="h-40 rounded-card" />
+                    <div className="space-y-2">
+                      {[0, 1, 2].map((i) => (
+                        <Skeleton key={i} className="h-14 rounded-card" />
+                      ))}
+                    </div>
+                  </div>
+                </div>
               ) : loadError ? (
                 <FailedState subject="我的考勤" reason={loadError} onRetry={() => void load()} retryClassName="min-h-11" />
               ) : tab === 'month' ? (
@@ -285,7 +343,7 @@ export default function MyPortal() {
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={t(0.22)}
-                      className="rounded-2xl border border-zinc-200/60 bg-white p-4 dark:border-zinc-700/60 dark:bg-zinc-800 lg:p-5"
+                      className="rounded-card border border-zinc-200/60 bg-white p-4 dark:border-zinc-700/60 dark:bg-zinc-800 lg:p-5"
                     >
                       <div className="flex items-center justify-between">
                         <Button
@@ -297,7 +355,7 @@ export default function MyPortal() {
                         >
                           <ChevronLeft className="size-4" />
                         </Button>
-                        <span className="text-sm font-semibold tabular-nums text-zinc-900 dark:text-white">{month}</span>
+                        <span className="text-sm font-semibold font-mono tabular-nums text-zinc-900 dark:text-white">{month}</span>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -313,14 +371,14 @@ export default function MyPortal() {
                       <div className="mt-4 grid grid-cols-2 gap-4">
                         <div>
                           <p className="text-2xs text-muted-foreground">迟到</p>
-                          <p className="mt-1 text-2xl font-semibold tabular-nums text-zinc-900 dark:text-white lg:text-3xl">
+                          <p className="mt-1 text-2xl font-semibold font-mono tabular-nums text-zinc-900 dark:text-white lg:text-3xl">
                             {data?.counts.late ?? 0}
                             <span className="ml-1 text-xs font-normal text-muted-foreground">次</span>
                           </p>
                         </div>
                         <div>
                           <p className="text-2xs text-muted-foreground">缺卡</p>
-                          <p className="mt-1 text-2xl font-semibold tabular-nums text-zinc-900 dark:text-white lg:text-3xl">
+                          <p className="mt-1 text-2xl font-semibold font-mono tabular-nums text-zinc-900 dark:text-white lg:text-3xl">
                             {data?.counts.missing ?? 0}
                             <span className="ml-1 text-xs font-normal text-muted-foreground">次</span>
                           </p>
@@ -340,7 +398,7 @@ export default function MyPortal() {
                   <div>
                     <div className="mb-3 hidden items-baseline justify-between md:flex">
                       <h2 className="text-base font-semibold text-zinc-900 dark:text-white">需要处理的日子</h2>
-                      <span className="text-2xs text-muted-foreground tabular-nums">{abnormalDays.length} 天</span>
+                      <span className="text-2xs text-muted-foreground font-mono tabular-nums">{abnormalDays.length} 天</span>
                     </div>
 
                     {abnormalDays.length === 0 ? (
@@ -353,7 +411,7 @@ export default function MyPortal() {
                             initial={{ opacity: 0, y: 6 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ ...t(0.2), delay: staggerDelay(i) }}
-                            className="rounded-2xl border border-zinc-200/60 bg-white dark:border-zinc-700/60 dark:bg-zinc-800"
+                            className="rounded-card border border-zinc-200/60 bg-white dark:border-zinc-700/60 dark:bg-zinc-800"
                           >
                             <button
                               type="button"
@@ -361,7 +419,7 @@ export default function MyPortal() {
                               onClick={() => setExpanded((prev) => (prev === v.date ? null : v.date))}
                               className="flex min-h-11 w-full items-center justify-between gap-2 px-4 py-3 text-left"
                             >
-                              <span className="text-sm font-medium tabular-nums text-zinc-900 dark:text-white">{v.date}</span>
+                              <span className="text-sm font-medium font-mono tabular-nums text-zinc-900 dark:text-white">{v.date}</span>
                               <span className="flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400">
                                 {v.verdict}
                                 <ChevronDown
@@ -385,7 +443,7 @@ export default function MyPortal() {
                 <>
                   <div className="hidden items-baseline justify-between md:flex">
                     <h2 className="text-base font-semibold text-zinc-900 dark:text-white">我的异常</h2>
-                    <span className="text-2xs text-muted-foreground tabular-nums">{anomalyCount} 条</span>
+                    <span className="text-2xs text-muted-foreground font-mono tabular-nums">{anomalyCount} 条</span>
                   </div>
 
                   {anomalyCount === 0 ? (
@@ -399,10 +457,10 @@ export default function MyPortal() {
                       {anomalies.map((a) => (
                         <li
                           key={a.id}
-                          className="rounded-2xl border border-zinc-200/60 bg-white p-4 dark:border-zinc-700/60 dark:bg-zinc-800"
+                          className="rounded-card border border-zinc-200/60 bg-white p-4 dark:border-zinc-700/60 dark:bg-zinc-800"
                         >
                           <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                            <span className="whitespace-nowrap text-sm font-medium tabular-nums">{a.date}</span>
+                            <span className="whitespace-nowrap text-sm font-medium font-mono tabular-nums">{a.date}</span>
                             <Badge variant="warning" className="max-w-full text-left">
                               {a.description}
                             </Badge>
@@ -410,7 +468,7 @@ export default function MyPortal() {
                           {disputeFor?.id === a.id ? (
                             <div className="mt-3 space-y-2">
                               <div>
-                                <input
+                                <Input
                                   ref={timeRef}
                                   value={form.time}
                                   onChange={(e) => {
@@ -422,11 +480,7 @@ export default function MyPortal() {
                                   aria-label="打卡时间"
                                   aria-invalid={!!formErrors.time}
                                   aria-describedby={formErrors.time ? 'dispute-time-error' : undefined}
-                                  className={`min-h-11 w-full rounded-lg border bg-transparent px-3 py-2 text-sm ${
-                                    formErrors.time
-                                      ? 'border-red-500 focus-visible:outline-red-500'
-                                      : 'border-zinc-200 dark:border-zinc-700'
-                                  }`}
+                                  className="min-h-11"
                                 />
                                 {formErrors.time && (
                                   <p id="dispute-time-error" role="alert" className="mt-1 text-2xs text-red-600 dark:text-red-400">
@@ -435,7 +489,7 @@ export default function MyPortal() {
                                 )}
                               </div>
                               <div>
-                                <textarea
+                                <Textarea
                                   ref={reasonRef}
                                   value={form.reason}
                                   onChange={(e) => {
@@ -447,11 +501,7 @@ export default function MyPortal() {
                                   aria-label="原因"
                                   aria-invalid={!!formErrors.reason}
                                   aria-describedby={formErrors.reason ? 'dispute-reason-error' : undefined}
-                                  className={`min-h-11 w-full rounded-lg border bg-transparent px-3 py-2 text-sm ${
-                                    formErrors.reason
-                                      ? 'border-red-500 focus-visible:outline-red-500'
-                                      : 'border-zinc-200 dark:border-zinc-700'
-                                  }`}
+                                  className="min-h-11"
                                 />
                                 {formErrors.reason && (
                                   <p id="dispute-reason-error" role="alert" className="mt-1 text-2xs text-red-600 dark:text-red-400">
@@ -476,17 +526,21 @@ export default function MyPortal() {
                               </div>
                             </div>
                           ) : canDispute ? (
-                            <Button
-                              variant="secondary"
-                              className="mt-3 min-h-11 w-full"
-                              onClick={() => {
-                                setDisputeFor(a);
-                                setForm({ time: '', reason: '' });
-                                setFormErrors({});
-                              }}
-                            >
-                              对此提异议
-                            </Button>
+                            pendingDisputeDates.has(a.date) ? (
+                              <p className="mt-3 text-2xs text-muted-foreground">已提交，等 HR 处理。</p>
+                            ) : (
+                              <Button
+                                variant="secondary"
+                                className="mt-3 min-h-11 w-full"
+                                onClick={() => {
+                                  setDisputeFor(a);
+                                  setForm({ time: a.suggestedTime ?? '', reason: '' });
+                                  setFormErrors({});
+                                }}
+                              >
+                                对此提异议
+                              </Button>
+                            )
                           ) : (
                             <p className="mt-3 text-2xs text-muted-foreground">管理员暂未开放异议提交。</p>
                           )}
@@ -499,7 +553,7 @@ export default function MyPortal() {
                 <>
                   <div className="hidden items-baseline justify-between md:flex">
                     <h2 className="text-base font-semibold text-zinc-900 dark:text-white">公告</h2>
-                    <span className="text-2xs text-muted-foreground tabular-nums">{notices.length} 条</span>
+                    <span className="text-2xs text-muted-foreground font-mono tabular-nums">{notices.length} 条</span>
                   </div>
 
                   {noticesLoading ? (
@@ -525,13 +579,13 @@ export default function MyPortal() {
                         return (
                           <li
                             key={n.id}
-                            className="rounded-2xl border border-zinc-200/60 bg-white p-4 dark:border-zinc-700/60 dark:bg-zinc-800 lg:p-5"
+                            className="rounded-card border border-zinc-200/60 bg-white p-4 dark:border-zinc-700/60 dark:bg-zinc-800 lg:p-5"
                           >
                             <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
                               <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">{n.title}</h3>
                               {n.priority === 'important' && <Badge variant="warning">重要</Badge>}
                             </div>
-                            <p className="mt-1 text-2xs text-muted-foreground tabular-nums">
+                            <p className="mt-1 text-2xs text-muted-foreground font-mono tabular-nums">
                               {n.createdAt.slice(0, 10)}
                               {n.expiresAt && ` · 有效至 ${n.expiresAt}`}
                             </p>
@@ -565,10 +619,10 @@ export default function MyPortal() {
                 <>
                   <div className="hidden items-baseline justify-between md:flex">
                     <h2 className="text-base font-semibold text-zinc-900 dark:text-white">我的异议</h2>
-                    <span className="text-2xs text-muted-foreground tabular-nums">{disputes.length} 条</span>
+                    <span className="text-2xs text-muted-foreground font-mono tabular-nums">{disputes.length} 条</span>
                   </div>
 
-                  <section className="space-y-2 rounded-2xl border border-zinc-200/60 bg-white p-4 dark:border-zinc-700/60 dark:bg-zinc-800 lg:p-5">
+                  <section className="space-y-2 rounded-card border border-zinc-200/60 bg-white p-4 dark:border-zinc-700/60 dark:bg-zinc-800 lg:p-5">
                     <p className="text-sm font-medium text-zinc-900 dark:text-white lg:hidden">我提过的异议</p>
                     {disputesError ? (
                       <FailedState
@@ -584,7 +638,7 @@ export default function MyPortal() {
                         {disputes.map((d) => (
                           <li key={d.id} className="py-2">
                             <div className="flex items-center justify-between gap-2">
-                              <span className="text-sm tabular-nums">{d.startDate}</span>
+                              <span className="text-sm font-mono tabular-nums">{d.startDate}</span>
                               <Badge
                                 variant={
                                   d.status === 'approved' ? 'success' : d.status === 'rejected' ? 'destructive' : 'warning'
@@ -597,6 +651,16 @@ export default function MyPortal() {
                             {d.status === 'rejected' && d.comment && (
                               <p className="mt-0.5 text-2xs text-muted-foreground">HR 回复：{d.comment}</p>
                             )}
+                            {d.type === 'makeup' && d.status === 'approved' && d.recomputeOk === 1 && (
+                              <p className="mt-1 text-2xs text-emerald-700 dark:text-emerald-400">
+                                补卡已通过，结论已更新。
+                              </p>
+                            )}
+                            {d.type === 'makeup' && d.status === 'approved' && d.recomputeOk === 0 && (
+                              <p className="mt-1 text-2xs text-amber-700 dark:text-amber-400">
+                                补卡已通过，但结论还没更新；HR 会再核对一次。
+                              </p>
+                            )}
                           </li>
                         ))}
                       </ul>
@@ -604,10 +668,10 @@ export default function MyPortal() {
                   </section>
 
                   <div className="space-y-4 lg:hidden">
-                    <section className="space-y-1 rounded-2xl border border-zinc-200/60 bg-white p-4 dark:border-zinc-700/60 dark:bg-zinc-800">
+                    <section className="space-y-1 rounded-card border border-zinc-200/60 bg-white p-4 dark:border-zinc-700/60 dark:bg-zinc-800">
                       <p className="text-sm font-medium text-zinc-900 dark:text-white">账号</p>
                       <p className="text-xs text-muted-foreground">用户名 {user?.username}</p>
-                      <p className="text-xs text-muted-foreground tabular-nums">工号 {data?.employeeId ?? '未绑定'}</p>
+                      <p className="text-xs text-muted-foreground font-mono tabular-nums">工号 {data?.employeeId ?? '未绑定'}</p>
                     </section>
 
                     <Button variant="secondary" className="min-h-11 w-full" onClick={handleLogout}>

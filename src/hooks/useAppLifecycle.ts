@@ -76,6 +76,10 @@ export function useAppLifecycle() {
       const customEvent = event as CustomEvent;
       if (customEvent.detail) {
         const { title, message, type } = customEvent.detail;
+        // /my 每个区块都有自己的失败态；再弹全局网络错误会同屏说两遍，且第一处不能重试
+        const inEmployeePortal =
+          window.location.pathname === '/my' || window.location.pathname.startsWith('/my/');
+        if (inEmployeePortal && title === '网络请求失败') return;
         addNotification({ title, message, type });
 
         // Also show toast

@@ -17,6 +17,11 @@ export interface EmployeeAnomaly {
   type: string;
   description: string;
   minutes: number | null;
+  /**
+   * 能确定原卡时刻时给异议表单预填（迟到→上班卡，早退→下班卡）。
+   * 缺卡没有"原时刻"可依，留空，不拿班次时间冒充员工实际打卡。
+   */
+  suggestedTime: string;
 }
 
 export interface EmployeeDayCopy {
@@ -153,12 +158,15 @@ export function employeeAnomalies(row: DayVerdictRow): EmployeeAnomaly[] {
   const list: EmployeeAnomaly[] = [];
   for (const inst of row.instances) {
     for (const f of inst.findings) {
+      // 迟到/早退的原卡就在这个班次里，可以直接预填；缺卡不猜时刻
+      const suggestedTime = isLate(f.type) ? firstTime(inst) : f.type === EARLY ? lastTime(inst) : "";
       list.push({
         id: `${row.date}|${inst.shiftLabel}|${f.type}|${list.length}`,
         date: row.date,
         type: f.type,
         description: findingDescription(f, inst),
         minutes: f.minutes ?? null,
+        suggestedTime,
       });
     }
   }

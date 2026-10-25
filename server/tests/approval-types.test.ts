@@ -47,6 +47,9 @@ function row(overrides: Partial<ApprovalRow>): ApprovalRow {
     punchKind: '',
     requiredRole: 'HR',
     hours: 0,
+    recomputeOk: null,
+    recomputeError: '',
+    recomputedAt: null,
     ...overrides,
   };
 }

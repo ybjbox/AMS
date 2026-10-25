@@ -7,8 +7,8 @@
  *  - 决定即落库，并通过通知中心告知申请人（复用 notificationsDb 的幂等去重）。
  *
  * 领域动作（审批通过后自动执行，P0 闭环）：
- *  - 补卡（type='makeup'）：通过后自动补写打卡记录并刷新异常分析，
- *    打通「异常发现 → 补卡申请 → 审批 → 异常消除」链路。
+ *  - 补卡（type='makeup'）：通过后自动补写打卡记录；异常重算在路由层执行，
+ *    结果写回单据（recomputeOk），打通「异常发现 → 补卡申请 → 审批 → 异常消除」链路。
  *
  * P2 增强：
  *  - 多级审批：leave ≥3 天 requiredRole 升 ADMIN（HR 决定被拦截，提示须 ADMIN 终审）；
@@ -20,7 +20,7 @@ import { db, transact } from "./db.ts";
 import { type DbRow, asString, asNullableString, asNumber } from "./sqliteUtil.ts";
 import { randomUUID } from "node:crypto";
 import { createNotification } from "./notificationsDb.ts";
-import { upsertRecord, analyzeAnomalies } from "./attendanceDb.ts";
+import { upsertRecord } from "./attendanceDb.ts";
 import { ROLE_LEVEL, type SystemRole } from "./authDb.ts";
 import { APPROVAL_TYPES, approvalKindOf, leaveDaysBetween, type ApprovalKind } from "./approvalTypes.ts";
 import { formatLocalDateTime } from "./localDate.ts";
@@ -52,6 +52,10 @@ export interface ApprovalRow {
   requiredRole: SystemRole;
   /** 加班时长（小时，type='overtime' 时有效） */
   hours: number;
+  /** 补卡通过后的重算回执：null=未触发/老数据，1=成功，0=失败 */
+  recomputeOk: number | null;
+  recomputeError: string;
+  recomputedAt: string | null;
 }
 
 /** 幂等建表，供模块加载时调用。 */
@@ -96,6 +100,16 @@ export function ensureApprovalsTable(): void {
   if (!cols.includes("hours")) {
     db.exec("ALTER TABLE approvals ADD COLUMN hours REAL DEFAULT 0");
   }
+  // 补卡通过后的重算回执：员工要能知道「通过」是否真的变成「结论已更新」
+  if (!cols.includes("recomputeOk")) {
+    db.exec("ALTER TABLE approvals ADD COLUMN recomputeOk INTEGER");
+  }
+  if (!cols.includes("recomputeError")) {
+    db.exec("ALTER TABLE approvals ADD COLUMN recomputeError TEXT DEFAULT ''");
+  }
+  if (!cols.includes("recomputedAt")) {
+    db.exec("ALTER TABLE approvals ADD COLUMN recomputedAt TEXT");
+  }
 
   // P2：加班调休台账（审批通过的小时数按员工累计）
   db.exec(`
@@ -128,12 +142,27 @@ function rowToApproval(row: DbRow): ApprovalRow {
     punchKind: asString(row.punchKind),
     requiredRole: (asString(row.requiredRole) || "HR") as SystemRole,
     hours: asNumber(row.hours),
+    recomputeOk: row.recomputeOk == null ? null : asNumber(row.recomputeOk) ? 1 : 0,
+    recomputeError: asString(row.recomputeError),
+    recomputedAt: asNullableString(row.recomputedAt),
   };
 }
 
 export function getApproval(id: string): ApprovalRow | undefined {
   const row = db.prepare("SELECT * FROM approvals WHERE id = ?").get(id);
   return row ? rowToApproval(row) : undefined;
+}
+
+/**
+ * 记下补卡通过后的重算结果。审批动作与重算不是同一个事务：重算失败不能让审批回滚，
+ * 但必须在单据上留下"通过但结论未更新"，否则员工以为已经生效。
+ */
+export function recordApprovalRecompute(id: string, ok: boolean, error = ""): void {
+  db.prepare(
+    `UPDATE approvals
+        SET recomputeOk = ?, recomputeError = ?, recomputedAt = ?
+      WHERE id = ?`
+  ).run(ok ? 1 : 0, ok ? "" : error, formatLocalDateTime(), id);
 }
 
 /** 请假天数（含首尾两天）的口径见 approvalTypes.leaveDaysBetween —— 校验、门槛、额度扣减共用一份 */
@@ -442,9 +471,8 @@ function applyMakeupPunch(approval: ApprovalRow): void {
     date: approval.punchDate,
     time: approval.punchTime,
   });
-
-  // 刷新异常分析：新增打卡后，相应缺卡异常自动消除
-  analyzeAnomalies();
+  // 重算刻意留到路由层：打卡已落库，重算失败不能让审批回滚，
+  // 结果要记在单据上（recomputeOk），员工才知道"通过"有没有变成"结论已更新"。
 }
 
 /**

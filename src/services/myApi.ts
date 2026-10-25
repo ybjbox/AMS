@@ -25,6 +25,8 @@ export interface MyAnomaly {
   type: string;
   description: string;
   minutes: number | null;
+  /** 迟到/早退的原卡时刻，异议表单可直接预填；缺卡为空 */
+  suggestedTime: string;
 }
 
 export interface MySummary {

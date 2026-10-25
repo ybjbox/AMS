@@ -24,6 +24,14 @@ export interface Approval {
   requiredRole: 'EMPLOYEE' | 'HR' | 'ADMIN' | 'SUPER_ADMIN';
   /** P2 加班时长（小时，type='overtime' 时有效） */
   hours: number;
+  /** 补卡通过后的重算回执：null=未触发/老数据，1=成功，0=失败 */
+  recomputeOk: number | null;
+  recomputeError: string;
+  recomputedAt: string | null;
+}
+
+export interface ApprovalDecisionResult extends Approval {
+  recomputed?: { ok: boolean; anomalies?: number; error?: string };
 }
 
 export interface LeaveCreateInput {
@@ -110,15 +118,23 @@ export const approvalApi = {
     id: string,
     status: 'approved' | 'rejected',
     comment?: string
-  ): Promise<Approval> => http.put<Approval>(`/approvals/${id}/decide`, { status, comment }),
+  ): Promise<ApprovalDecisionResult> => http.put<ApprovalDecisionResult>(`/approvals/${id}/decide`, { status, comment }),
 
   /** 批量决定：单条失败不影响其余，返回已办与失败明细 */
   batchDecide: (
     ids: string[],
     status: 'approved' | 'rejected',
     comment?: string
-  ): Promise<{ decided: string[]; failed: { id: string; error: string }[] }> =>
-    http.put<{ decided: string[]; failed: { id: string; error: string }[] }>('/approvals/batch-decide', {
+  ): Promise<{
+    decided: string[];
+    failed: { id: string; error: string }[];
+    recomputed?: { ok: boolean; anomalies?: number; error?: string };
+  }> =>
+    http.put<{
+      decided: string[];
+      failed: { id: string; error: string }[];
+      recomputed?: { ok: boolean; anomalies?: number; error?: string };
+    }>('/approvals/batch-decide', {
       ids,
       status,
       comment,

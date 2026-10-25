@@ -22,6 +22,8 @@ import {
   listApprovals,
   listPending,
   withdrawApproval,
+  getApproval,
+  recordApprovalRecompute,
 } from "../approvalsDb.ts";
 import {
   listShifts,
@@ -337,5 +339,31 @@ describe("PUT /approvals/batch-decide 结果分类（HTTP）", () => {
       body: JSON.stringify({ ids: ["x"], status: "pending" }),
     });
     expect(bad.status).toBe(400);
+  });
+});
+
+describe("补卡重算回执（qa-4）", () => {
+  it("成功与失败都写回单据，供员工端展示", () => {
+    const row = createApproval({
+      applicant: "recompute-receipt-test",
+      type: "makeup",
+      startDate: "2026-10-09",
+      punchDate: "2026-10-09",
+      punchTime: "09:01",
+      punchKind: "上班卡",
+      reason: "回执回归",
+    });
+    expect(getApproval(row.id)?.recomputeOk).toBeNull();
+
+    recordApprovalRecompute(row.id, false, "分析超时");
+    const failed = getApproval(row.id)!;
+    expect(failed.recomputeOk).toBe(0);
+    expect(failed.recomputeError).toBe("分析超时");
+    expect(failed.recomputedAt).toBeTruthy();
+
+    recordApprovalRecompute(row.id, true);
+    const ok = getApproval(row.id)!;
+    expect(ok.recomputeOk).toBe(1);
+    expect(ok.recomputeError).toBe("");
   });
 });
