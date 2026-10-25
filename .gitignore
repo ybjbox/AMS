@@ -24,3 +24,6 @@ test-results/
 # （部门人数分布、最新打卡日距今多久、库内是开发测试数据），这些不适合公开
 spark-output/
 .workbuddy/
+
+# 情绪板/海报的 AI 原图（几十 MB，用缩略图或重生成即可，不进仓库）
+vibe_images/
