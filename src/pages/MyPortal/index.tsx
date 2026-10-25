@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, LogOut, Send, User } from 'lucide-react';
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, LogOut, Megaphone, Send, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import Badge from '@/components/ui/Badge';
@@ -11,20 +11,22 @@ import { useUserStore } from '@/store/useUserStore';
 import { useMotionPrefs } from '@/lib/motionTokens';
 import { myApi, type MyAnomaly, type MySummary } from '@/services/myApi';
 import { approvalApi, type Approval } from '@/services/approvalApi';
+import { announcementApi, type Announcement } from '@/services/announcementApi';
 
 /**
  * 员工门户。
  *
- * 只回答三件事：这个月判了我什么、哪条不对我要提异议、我提的单到哪了。
- * 与 HR 后台完全分开：路由 /my、底部三 Tab、文案不带任何引擎词汇。
+ * 回答四件事：这个月判了我什么、哪条不对我要提异议、我提的单到哪了、公司发了什么公告。
+ * 与 HR 后台完全分开：路由 /my、底部四 Tab、文案不带任何引擎词汇。
  *
  * 布局：手机单列 + 底部 Tab；平板把结论与列表并排；桌面左侧身份/导航，右侧内容。
  */
-type Tab = 'month' | 'anomalies' | 'me';
+type Tab = 'month' | 'anomalies' | 'notices' | 'me';
 
 const TAB_LABEL: Array<{ id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }> = [
   { id: 'month', label: '本月', icon: CalendarDays },
   { id: 'anomalies', label: '异常', icon: Send },
+  { id: 'notices', label: '公告', icon: Megaphone },
   { id: 'me', label: '我的', icon: User },
 ];
 
@@ -58,6 +60,10 @@ export default function MyPortal() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [disputes, setDisputes] = useState<Approval[]>([]);
   const [disputesError, setDisputesError] = useState<string | null>(null);
+  const [notices, setNotices] = useState<Announcement[]>([]);
+  const [noticesError, setNoticesError] = useState<string | null>(null);
+  const [noticesLoading, setNoticesLoading] = useState(true);
+  const [expandedNotice, setExpandedNotice] = useState<string | null>(null);
   const [disputeFor, setDisputeFor] = useState<MyAnomaly | null>(null);
   const [form, setForm] = useState({ time: '', reason: '' });
   const [formErrors, setFormErrors] = useState<{ time?: string; reason?: string }>({});
@@ -87,12 +93,28 @@ export default function MyPortal() {
     }
   }, []);
 
+  const loadNotices = useCallback(async () => {
+    setNoticesLoading(true);
+    try {
+      setNotices(await announcementApi.list());
+      setNoticesError(null);
+    } catch (e) {
+      // 公告没取到只能说没取到，不能显示成"还没有公告"
+      setNoticesError((e as { error?: string })?.error || '公告没取到');
+    } finally {
+      setNoticesLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void load();
   }, [load]);
   useEffect(() => {
     void loadDisputes();
   }, [loadDisputes]);
+  useEffect(() => {
+    void loadNotices();
+  }, [loadNotices]);
 
   const abnormalDays = useMemo(
     () => (data?.verdicts ?? []).filter((v) => v.hasIssue && !v.isLeave),
@@ -244,7 +266,7 @@ export default function MyPortal() {
           </header>
 
           <main className="flex-1 px-4 py-4 sm:px-6 lg:px-0 lg:py-0">
-            {/* Tab 切换：交叉淡入 120ms，不做方向转场（三个 Tab 是并列的，横滑会暗示顺序） */}
+            {/* Tab 切换：交叉淡入 120ms，不做方向转场（四个 Tab 是并列的，横滑会暗示顺序） */}
             <motion.div
               key={tab}
               initial={{ opacity: 0, y: 4 }}
@@ -470,6 +492,72 @@ export default function MyPortal() {
                           )}
                         </li>
                       ))}
+                    </ul>
+                  )}
+                </>
+              ) : tab === 'notices' ? (
+                <>
+                  <div className="hidden items-baseline justify-between md:flex">
+                    <h2 className="text-base font-semibold text-zinc-900 dark:text-white">公告</h2>
+                    <span className="text-2xs text-muted-foreground tabular-nums">{notices.length} 条</span>
+                  </div>
+
+                  {noticesLoading ? (
+                    <p className="py-12 text-center text-sm text-muted-foreground">加载中…</p>
+                  ) : noticesError ? (
+                    <FailedState
+                      subject="公告"
+                      reason={noticesError}
+                      onRetry={() => void loadNotices()}
+                      retryClassName="min-h-11"
+                    />
+                  ) : notices.length === 0 ? (
+                    <EmptyState
+                      title="还没有公告"
+                      description="公司发布的通知会出现在这里。"
+                      icon={Megaphone}
+                    />
+                  ) : (
+                    <ul className="space-y-3">
+                      {notices.map((n) => {
+                        const open = expandedNotice === n.id;
+                        const long = n.content.length > 120;
+                        return (
+                          <li
+                            key={n.id}
+                            className="rounded-2xl border border-zinc-200/60 bg-white p-4 dark:border-zinc-700/60 dark:bg-zinc-800 lg:p-5"
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+                              <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">{n.title}</h3>
+                              {n.priority === 'important' && <Badge variant="warning">重要</Badge>}
+                            </div>
+                            <p className="mt-1 text-2xs text-muted-foreground tabular-nums">
+                              {n.createdAt.slice(0, 10)}
+                              {n.expiresAt && ` · 有效至 ${n.expiresAt}`}
+                            </p>
+                            {n.content && (
+                              <>
+                                <p
+                                  className={`mt-2 whitespace-pre-line text-xs leading-relaxed text-zinc-700 dark:text-zinc-300 ${
+                                    open ? '' : 'line-clamp-3'
+                                  }`}
+                                >
+                                  {n.content}
+                                </p>
+                                {long && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedNotice(open ? null : n.id)}
+                                    className="mt-2 inline-flex min-h-11 items-center text-xs font-medium text-brand-700 hover:underline dark:text-brand-300"
+                                  >
+                                    {open ? '收起' : '展开全文'}
+                                  </button>
+                                )}
+                              </>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </>

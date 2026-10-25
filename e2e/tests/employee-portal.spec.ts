@@ -23,6 +23,7 @@ let employeeId = '';
 let rejectedEmployeeId = '';
 let tempPassword = '';
 let approvalId = '';
+let announcementId = '';
 
 async function adminLogin(request: import('@playwright/test').APIRequestContext) {
   const res = await request.post('/api/auth/login', { data: { username: 'admin', password: ADMIN_PASSWORD } });
@@ -78,6 +79,17 @@ test.describe.serial('员工门户', () => {
     expect(decideRes.status(), '批准认领').toBe(200);
     tempPassword = (await decideRes.json()).tempPassword;
     expect(tempPassword, '批准后应返回一次性口令').toBeTruthy();
+
+    const noticeRes = await request.post('/api/announcements', {
+      headers: auth,
+      data: {
+        title: 'E2E 门户公告',
+        content: '本周五前完成考勤确认；有异议请在「异常」里提出。',
+        priority: 'important',
+      },
+    });
+    expect(noticeRes.status(), '发布测试公告').toBe(201);
+    announcementId = (await noticeRes.json()).id;
   });
 
   test.afterAll(async ({ request }) => {
@@ -92,6 +104,7 @@ test.describe.serial('员工门户', () => {
         .catch(() => undefined);
     }
     await request.delete(`/api/auth/accounts/${USERNAME}`, { headers: auth });
+    if (announcementId) await request.delete(`/api/announcements/${announcementId}`, { headers: auth });
     if (employeeId) await request.delete(`/api/users/${employeeId}`, { headers: auth });
     if (rejectedEmployeeId) await request.delete(`/api/users/${rejectedEmployeeId}`, { headers: auth });
   });
@@ -109,6 +122,22 @@ test.describe.serial('员工门户', () => {
     await page.waitForURL('**/my', { timeout: 15000 });
     await expect(page.getByText('我的考勤').first()).toBeVisible();
     await expect(page.locator('h1').first()).toContainText(EMPLOYEE_NAME);
+  });
+
+  test('员工在门户「公告」看到公司通知与重要标记', async ({ page }) => {
+    await loginUI(page, NEW_PASSWORD);
+    await page.waitForURL('**/my');
+
+    await page.getByRole('button', { name: '公告', exact: true }).click();
+    await expect(page.getByRole('heading', { name: '公告', exact: true })).toBeVisible();
+    await expect(page.getByText('E2E 门户公告')).toBeVisible();
+    await expect(page.getByText('本周五前完成考勤确认')).toBeVisible();
+    await expect(page.getByText('重要', { exact: true })).toBeVisible();
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    const mobileNav = page.getByRole('navigation', { name: '员工门户导航' });
+    await expect(mobileNav.getByRole('button')).toHaveCount(4);
+    await expect(mobileNav.getByRole('button', { name: '公告' })).toHaveAttribute('aria-current', 'page');
   });
 
   test('员工直达 HR 页面会回 /my，接口返回 403', async ({ page }) => {
