@@ -176,9 +176,10 @@ const POLICIES: Policy[] = [
   // ---- 控制台：聚合数据 ----
   { pattern: /^\/stats\b/, methods: ["GET"], minRole: "HR", capability: "dashboard:view" },
 
-  // ---- 公告：有效公告给控制台读；管理列表与写操作 ADMIN ----
+  // ---- 公告：有效公告全员可读（面向全员的通知面，不随 HR 数据面收口）；
+  // 管理列表与写操作 ADMIN ----
   { pattern: /^\/announcements\/all\b/, methods: "*", minRole: "ADMIN" },
-  { pattern: /^\/announcements\b/, methods: ["GET"], minRole: "HR", capability: "dashboard:view" },
+  { pattern: /^\/announcements\b/, methods: ["GET"], minRole: "EMPLOYEE" },
   { pattern: /^\/announcements\b/, methods: ["POST", "PUT", "PATCH", "DELETE"], minRole: "ADMIN" },
 
   // ---- 导出模板 / 主题写入 ----

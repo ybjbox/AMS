@@ -248,6 +248,9 @@ async function main() {
     ok("EMPLOYEE 读全员员工册 -> 403", r.status === 403, `-> ${r.status}`);
     const self = await req("GET", "/api/todos", { token: empToken });
     ok("EMPLOYEE 仍可使用自己的待办", self.status === 200, `-> ${self.status}`);
+    // 有效公告是全员通知面。默认读收口曾把它一起收到 HR，e2e 的公告闭环因此变红。
+    const notices = await req("GET", "/api/announcements", { token: empToken });
+    ok("EMPLOYEE 仍可读有效公告", notices.status === 200, `-> ${notices.status}`);
   }
   const FORBIDDEN_FOR_EMPLOYEE = [
     ["POST", "/api/users", { name: "越权创建" }],

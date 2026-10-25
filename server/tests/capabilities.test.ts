@@ -73,7 +73,6 @@ describe("能力码与策略表同源", () => {
       "/departments",
       "/stats/workforce",
       "/saved-items",
-      "/announcements",
       "/form/records",
     ]) {
       expect(requiredRoleFor("GET", path), path).toBe("HR");
@@ -85,6 +84,8 @@ describe("能力码与策略表同源", () => {
       "/approvals/comp-balance",
       "/todos",
       "/notifications",
+      // 有效公告是全员通知面，收口时不能跟着 HR 数据面一起收
+      "/announcements",
       "/auth/me",
     ]) {
       expect(requiredRoleFor("GET", path), path).toBe("EMPLOYEE");
