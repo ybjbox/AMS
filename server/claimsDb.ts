@@ -126,6 +126,23 @@ export function listClaims(status?: ClaimStatus): ClaimRow[] {
 }
 
 /**
+ * 申请人自助查询：工号 + 手机尾号取**最近一条**申请。
+ *
+ * 查不到一律返回 null（不区分"工号不存在"与"尾号不对"），路由层对两者给同一句
+ * 提示，避免这个免登录接口变成员工/申请枚举器。
+ */
+export function findLatestClaimForApplicant(employeeId: string, phoneTail: string): ClaimRow | null {
+  const row = db
+    .prepare(
+      `SELECT * FROM account_claims
+        WHERE employeeId = ? AND phoneTail = ?
+        ORDER BY createdAt DESC LIMIT 1`
+    )
+    .get(employeeId, phoneTail);
+  return row ? toRow(row as Record<string, unknown>) : null;
+}
+
+/**
  * 批准/驳回。只改状态，不建账号——建账号要用 authDb，放在路由层，
  * 避免 claimsDb 与 authDb 互相 import 形成环。
  * 返回 conflict=true 表示这条申请已经被处理过（并发下防双批）。

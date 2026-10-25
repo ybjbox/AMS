@@ -8,7 +8,7 @@ import express from "express";
 import type { Request, Response } from "express";
 import crypto from "node:crypto";
 import { permissionsForRole } from "./capabilities.ts";
-import { ClaimError, createClaim, decideClaim, getClaimEmployee, listClaims, type ClaimStatus } from "./claimsDb.ts";
+import { ClaimError, createClaim, decideClaim, findLatestClaimForApplicant, getClaimEmployee, listClaims, type ClaimStatus } from "./claimsDb.ts";
 import {
   AuthError,
   ROLE_LEVEL,
@@ -394,6 +394,23 @@ function tooManyClaimsFromIp(ip: string): boolean {
   return list.length > CLAIM_MAX_PER_IP;
 }
 
+/**
+ * 进度查询是免登录读入口，但尾号只有 4 位，必须比提交更宽松的额度、同时仍
+ * 挡住逐工号试探。10 分钟 20 次足够本人反复查看，也不至于让枚举变得可行。
+ */
+const CLAIM_LOOKUP_WINDOW_MS = 10 * 60 * 1000;
+const CLAIM_LOOKUP_MAX_PER_IP = 20;
+const claimLookups = new Map<string, number[]>();
+
+function tooManyClaimLookupsFromIp(ip: string): boolean {
+  const now = Date.now();
+  const list = (claimLookups.get(ip) ?? []).filter((t) => now - t < CLAIM_LOOKUP_WINDOW_MS);
+  list.push(now);
+  claimLookups.set(ip, list);
+  if (claimLookups.size > 5000) claimLookups.clear();
+  return list.length > CLAIM_LOOKUP_MAX_PER_IP;
+}
+
 const USERNAME_RE = /^[a-zA-Z0-9._-]{3,32}$/;
 
 authRouter.post("/claims", (req, res) => {
@@ -429,8 +446,40 @@ authRouter.post("/claims", (req, res) => {
   }
 });
 
-authRouter.get("/claims", requireRole("ADMIN"), (req, res) => {
-  const status = typeof req.query.status === "string" ? req.query.status.trim() : "";
+/**
+ * 申请人自助查进度（公开）。只回状态与驳回原因，不回口令、不回审批人；
+ * 查不到时与"尾号填错"使用同一句提示。
+ */
+authRouter.post("/claims/lookup", (req, res) => {
+  const ip = clientIp(req);
+  if (tooManyClaimLookupsFromIp(ip)) {
+    logSecurityEvent("auth.rate_limited", "", ip, "认领进度查询过于频繁");
+    return res.status(429).json({ error: "查询过于频繁，请稍后再试" });
+  }
+
+  const body = req.body ?? {};
+  const employeeId = asString(body.employeeId).trim();
+  const phoneTail = asString(body.phoneTail).trim();
+  if (!employeeId || employeeId.length > 32) return res.status(400).json({ error: "请填写工号" });
+  if (!/^\d{4}$/.test(phoneTail)) return res.status(400).json({ error: "请填写手机号后 4 位" });
+
+  const claim = findLatestClaimForApplicant(employeeId, phoneTail);
+  if (!claim) {
+    return res.status(404).json({ error: "没有查到对应的申请，请核对工号和手机号后 4 位" });
+  }
+
+  const accountOpened = claim.status === "approved" && !!getAccount(claim.desiredUsername);
+  return res.json({
+    status: claim.status,
+    desiredUsername: claim.desiredUsername,
+    createdAt: claim.createdAt,
+    reviewedAt: claim.reviewedAt,
+    rejectReason: claim.status === "rejected" ? claim.rejectReason : "",
+    accountOpened,
+  });
+});
+
+authRouter.get("/claims", requireRole("ADMIN"), (req, res) => {  const status = typeof req.query.status === "string" ? req.query.status.trim() : "";
   const filter = status === "pending" || status === "approved" || status === "rejected" ? (status as ClaimStatus) : undefined;
   const items = listClaims(filter).map((c) => ({ ...c, employee: getClaimEmployee(c.id) }));
   res.json(items);

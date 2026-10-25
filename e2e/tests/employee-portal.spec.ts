@@ -12,12 +12,15 @@ import { resolveAdminPassword } from '../adminCredentials';
  */
 const ADMIN_PASSWORD = resolveAdminPassword();
 const USERNAME = acct('e2e-portal');
+const REJECT_USERNAME = acct('e2e-reject');
 const NEW_PASSWORD = 'E2ePortal#2026a';
 const EMPLOYEE_NAME = 'E2E门户员工';
 const PHONE = '13300008888';
+const REJECT_PHONE = '13300006666';
 
 let adminToken = '';
 let employeeId = '';
+let rejectedEmployeeId = '';
 let tempPassword = '';
 let approvalId = '';
 
@@ -90,6 +93,7 @@ test.describe.serial('员工门户', () => {
     }
     await request.delete(`/api/auth/accounts/${USERNAME}`, { headers: auth });
     if (employeeId) await request.delete(`/api/users/${employeeId}`, { headers: auth });
+    if (rejectedEmployeeId) await request.delete(`/api/users/${rejectedEmployeeId}`, { headers: auth });
   });
 
   test('认领批准后首登改密，改完直接进 /my', async ({ page }) => {
@@ -142,5 +146,81 @@ test.describe.serial('员工门户', () => {
     await page.getByRole('button', { name: /^我的/ }).click();
     await expect(page.getByText('等 HR 处理').first()).toBeVisible();
     await expect(page.getByText('E2E 门户：那天替人顶班').first()).toBeVisible();
+  });
+
+  test('认领进度：批准后本人可查已开通，页面给出登录入口', async ({ page, request }) => {
+    const api = await request.post('/api/auth/claims/lookup', {
+      data: { employeeId, phoneTail: PHONE.slice(-4) },
+    });
+    expect(api.status(), '查询认领进度').toBe(200);
+    const body = await api.json();
+    expect(body).toMatchObject({ status: 'approved', desiredUsername: USERNAME, accountOpened: true });
+    expect(JSON.stringify(body), '进度接口不回显口令').not.toContain('tempPassword');
+
+    await page.goto('/claim');
+    await page.getByRole('button', { name: /查询进度/ }).click();
+    await page.getByLabel('工号').fill(employeeId);
+    await page.getByLabel('手机号后 4 位').fill(PHONE.slice(-4));
+    await page.getByRole('button', { name: '查询', exact: true }).click();
+    await expect(page.getByText('账号已开通')).toBeVisible();
+    await expect(page.getByRole('link', { name: '去登录' })).toBeVisible();
+  });
+
+  test('认领进度：待核对可查，驳回后能看到原因', async ({ request }) => {
+    const auth = { Authorization: `Bearer ${adminToken}` };
+    const empRes = await request.post('/api/users', {
+      headers: auth,
+      data: {
+        name: 'E2E驳回员工',
+        idCard: '110101199205066789',
+        gender: '男',
+        age: 34,
+        phone: REJECT_PHONE,
+        department: '研发部',
+        status: '在职',
+        joinDate: '2026-01-01',
+        employmentType: '正式',
+      },
+    });
+    expect(empRes.status(), '创建驳回用例员工').toBe(201);
+    rejectedEmployeeId = (await empRes.json()).id;
+
+    const claimRes = await request.post('/api/auth/claims', {
+      data: {
+        desiredUsername: REJECT_USERNAME,
+        employeeId: rejectedEmployeeId,
+        displayName: 'E2E驳回员工',
+        phoneTail: REJECT_PHONE.slice(-4),
+      },
+    });
+    expect(claimRes.status(), '提交驳回用例申请').toBe(201);
+    const claimId = (await claimRes.json()).id;
+
+    const pending = await request.post('/api/auth/claims/lookup', {
+      data: { employeeId: rejectedEmployeeId, phoneTail: REJECT_PHONE.slice(-4) },
+    });
+    expect(pending.status()).toBe(200);
+    expect((await pending.json()).status).toBe('pending');
+
+    const rejected = await request.put(`/api/auth/claims/${claimId}/decide`, {
+      headers: auth,
+      data: { decision: 'rejected', reason: '工号与手机尾号对不上' },
+    });
+    expect(rejected.status(), '驳回认领').toBe(200);
+
+    const after = await request.post('/api/auth/claims/lookup', {
+      data: { employeeId: rejectedEmployeeId, phoneTail: REJECT_PHONE.slice(-4) },
+    });
+    expect(after.status()).toBe(200);
+    expect(await after.json()).toMatchObject({
+      status: 'rejected',
+      rejectReason: '工号与手机尾号对不上',
+    });
+
+    const wrongTail = await request.post('/api/auth/claims/lookup', {
+      data: { employeeId: rejectedEmployeeId, phoneTail: '0001' },
+    });
+    expect(wrongTail.status(), '尾号不对不区分原因').toBe(404);
+    expect((await wrongTail.json()).error).toContain('没有查到');
   });
 });

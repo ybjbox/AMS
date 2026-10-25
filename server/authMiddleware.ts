@@ -120,6 +120,8 @@ const PUBLIC_PATHS: Array<{ method: string; pattern: RegExp }> = [
   // 账号认领申请：这是系统里唯一一个免登录写入口。它不收敏感字段（姓名/工号/手机尾号），
   // 真正的校验发生在 HR 当面核对那一步；限流在 authRouter 里单独做。
   { method: "POST", pattern: /^\/auth\/claims\/?$/ },
+  // 申请人查自己的认领进度：同样免登录；限流与"查不到"口径都在 authRouter 里收口。
+  { method: "POST", pattern: /^\/auth\/claims\/lookup\/?$/ },
   // 登录页在拿到 token 之前就要渲染背景与图标，因此这两个固定槽位免鉴权可读。
   // 只放开 background / icon 两个字面量（路径由服务端拼、按字节头白名单校验），
   // 其余 /branding/* 仍需登录；写入另说一律超管。

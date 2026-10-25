@@ -1,12 +1,12 @@
 import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Clock3, KeyRound, ShieldCheck, UserRoundCheck } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle2, Clock3, KeyRound, Search, ShieldCheck, UserRoundCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { DEFAULT_SYSTEM_ICON } from '@/config/constants';
-import { claimApi } from '@/services/claimApi';
+import { claimApi, type ClaimLookupResult } from '@/services/claimApi';
 
 /**
  * 认领账号（公开页，不需要登录）。
@@ -86,11 +86,19 @@ export default function ClaimAccount() {
   const [errors, setErrors] = useState<Partial<Record<ErrorKey, string>>>({});
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [mode, setMode] = useState<'form' | 'lookup'>('form');
+  const [lookupForm, setLookupForm] = useState({ employeeId: '', phoneTail: '' });
+  const [lookupErrors, setLookupErrors] = useState<Partial<Record<'employeeId' | 'phoneTail', string>>>({});
+  const [looking, setLooking] = useState(false);
+  const [lookupResult, setLookupResult] = useState<ClaimLookupResult | null>(null);
+  const [lookupProblem, setLookupProblem] = useState('');
 
   const nameRef = useRef<HTMLInputElement>(null);
   const employeeRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
   const usernameRef = useRef<HTMLInputElement>(null);
+  const lookupEmployeeRef = useRef<HTMLInputElement>(null);
+  const lookupPhoneRef = useRef<HTMLInputElement>(null);
 
   const update = (key: keyof typeof form, value: string) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -143,6 +151,60 @@ export default function ClaimAccount() {
     }
   };
 
+  const openLookup = () => {
+    setMode('lookup');
+    setLookupForm({
+      employeeId: form.employeeId.trim(),
+      phoneTail: form.phoneTail.trim(),
+    });
+    setLookupErrors({});
+    setLookupResult(null);
+    setLookupProblem('');
+  };
+
+  const backToForm = () => {
+    setMode('form');
+    setLookupResult(null);
+    setLookupProblem('');
+    setLookupErrors({});
+    if (lookupResult?.status === 'rejected') {
+      setForm((f) => ({
+        ...f,
+        employeeId: lookupForm.employeeId.trim(),
+        phoneTail: lookupForm.phoneTail.trim(),
+        desiredUsername: lookupResult.desiredUsername,
+      }));
+    }
+  };
+
+  const runLookup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const next: Partial<Record<'employeeId' | 'phoneTail', string>> = {};
+    if (!lookupForm.employeeId.trim()) next.employeeId = '请填工号，例如 EMP0012';
+    if (!/^\d{4}$/.test(lookupForm.phoneTail)) next.phoneTail = '手机号后 4 位要填 4 位数字';
+    if (Object.keys(next).length) {
+      setLookupErrors(next);
+      (next.employeeId ? lookupEmployeeRef : lookupPhoneRef).current?.focus();
+      return;
+    }
+
+    setLookupErrors({});
+    setLookupProblem('');
+    setLooking(true);
+    try {
+      const result = await claimApi.lookup({
+        employeeId: lookupForm.employeeId.trim(),
+        phoneTail: lookupForm.phoneTail.trim(),
+      });
+      setLookupResult(result);
+    } catch (err) {
+      setLookupResult(null);
+      setLookupProblem((err as { error?: string })?.error || '查询失败，请稍后重试');
+    } finally {
+      setLooking(false);
+    }
+  };
+
   return (
     <div className="relative min-h-dvh overflow-hidden bg-zinc-50 dark:bg-zinc-900">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
@@ -173,17 +235,19 @@ export default function ClaimAccount() {
               <div className="min-w-0">
                 <p className="text-3xs tracking-[0.14em] text-muted-foreground lg:text-2xs">AMS · 员工门户</p>
                 <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-white lg:text-3xl">
-                  认领我的账号
+                  {mode === 'lookup' ? '查询认领进度' : '认领我的账号'}
                 </h1>
               </div>
             </div>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground lg:mt-4 lg:max-w-lg lg:text-base">
-              {done
-                ? '管理员核对后会当面把一次性口令交给你。'
-                : '填好后由管理员当面核对。核对通过后账号即刻开通，第一次登录需要改成自己的口令。'}
+              {mode === 'lookup'
+                ? '输入申请时填的工号和手机尾号，查看现在到了哪一步。'
+                : done
+                  ? '管理员核对后会当面把一次性口令交给你。'
+                  : '填好后由管理员当面核对。核对通过后账号即刻开通，第一次登录需要改成自己的口令。'}
             </p>
 
-            {!done && (
+            {!done && mode === 'form' && (
               <ol
                 className="mt-5 grid grid-cols-3 gap-2 lg:mt-8 lg:flex lg:flex-col lg:gap-5"
                 aria-label="办理步骤"
@@ -223,7 +287,149 @@ export default function ClaimAccount() {
           </section>
 
           <section className="mt-4 lg:mt-0">
-            {done ? (
+            {mode === 'lookup' ? (
+              <div className="rounded-2xl border border-zinc-200/70 bg-white p-5 shadow-sm dark:border-zinc-700/60 dark:bg-zinc-800 lg:p-8">
+                <div className="mb-4 flex items-baseline justify-between gap-2 sm:mb-5">
+                  <h2 className="text-base font-semibold text-zinc-900 dark:text-white">申请进度</h2>
+                  <button
+                    type="button"
+                    onClick={backToForm}
+                    className="text-2xs font-medium text-brand-700 hover:underline dark:text-brand-300"
+                  >
+                    返回填写
+                  </button>
+                </div>
+
+                {!lookupResult ? (
+                  <form onSubmit={runLookup} noValidate>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field id="lookup-employee-id" label="工号" required error={lookupErrors.employeeId}>
+                        <Input
+                          id="lookup-employee-id"
+                          ref={lookupEmployeeRef}
+                          value={lookupForm.employeeId}
+                          onChange={(e) => {
+                            setLookupForm((f) => ({ ...f, employeeId: e.target.value }));
+                            setLookupErrors((v) => ({ ...v, employeeId: undefined }));
+                            setLookupProblem('');
+                          }}
+                          placeholder="例如 EMP0012"
+                          spellCheck={false}
+                          aria-invalid={!!lookupErrors.employeeId}
+                          aria-describedby={lookupErrors.employeeId ? 'lookup-employee-id-error' : undefined}
+                          className="min-h-11"
+                        />
+                      </Field>
+
+                      <Field
+                        id="lookup-phone-tail"
+                        label="手机号后 4 位"
+                        hint="4 位数字"
+                        required
+                        error={lookupErrors.phoneTail}
+                      >
+                        <Input
+                          id="lookup-phone-tail"
+                          ref={lookupPhoneRef}
+                          inputMode="numeric"
+                          maxLength={4}
+                          value={lookupForm.phoneTail}
+                          onChange={(e) => {
+                            setLookupForm((f) => ({ ...f, phoneTail: e.target.value.replace(/\D/g, '') }));
+                            setLookupErrors((v) => ({ ...v, phoneTail: undefined }));
+                            setLookupProblem('');
+                          }}
+                          aria-invalid={!!lookupErrors.phoneTail}
+                          aria-describedby={lookupErrors.phoneTail ? 'lookup-phone-tail-error' : undefined}
+                          className="min-h-11 tabular-nums"
+                        />
+                      </Field>
+                    </div>
+
+                    {lookupProblem && (
+                      <p
+                        role="alert"
+                        className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-300"
+                      >
+                        {lookupProblem}
+                      </p>
+                    )}
+
+                    <Button type="submit" disabled={looking} className="mt-5 min-h-11 w-full">
+                      {looking ? '查询中…' : '查询'}
+                    </Button>
+                    <p className="mt-3 text-2xs leading-relaxed text-muted-foreground">
+                      查到的是用同一工号和尾号提交的最近一条申请；不会显示一次性口令。
+                    </p>
+                  </form>
+                ) : (
+                  <div role="status" aria-live="polite">
+                    {lookupResult.status === 'pending' && (
+                      <div className="flex items-start gap-3 rounded-xl bg-zinc-50 p-4 dark:bg-zinc-900/40">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white text-amber-600 ring-1 ring-zinc-200/80 dark:bg-zinc-800 dark:text-amber-400 dark:ring-zinc-700">
+                          <Clock3 className="size-4" aria-hidden="true" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-zinc-900 dark:text-white">还在等管理员核对</p>
+                          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                            申请时间 {lookupResult.createdAt}。核对通过后会当面给一次性口令，不用重复提交。
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {lookupResult.status === 'approved' && (
+                      <>
+                        <div className="flex items-start gap-3 rounded-xl bg-emerald-50/70 p-4 dark:bg-emerald-500/10">
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white text-emerald-600 dark:bg-zinc-800 dark:text-emerald-400">
+                            <CheckCircle2 className="size-4" aria-hidden="true" />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-zinc-900 dark:text-white">
+                              {lookupResult.accountOpened ? '账号已开通' : '申请已通过，账号暂不可用'}
+                            </p>
+                            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                              用户名：<span className="font-medium text-zinc-700 dark:text-zinc-200">{lookupResult.desiredUsername}</span>。
+                              {lookupResult.accountOpened
+                                ? '首次登录需要改成自己的口令；忘记口令请让管理员重置。'
+                                : '请联系管理员核对账号状态。'}
+                            </p>
+                          </div>
+                        </div>
+                        <Link
+                          to="/login"
+                          className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-brand-600 text-sm font-medium text-white transition-colors hover:bg-brand-700"
+                        >
+                          去登录
+                        </Link>
+                      </>
+                    )}
+
+                    {lookupResult.status === 'rejected' && (
+                      <>
+                        <div className="flex items-start gap-3 rounded-xl bg-red-50/80 p-4 dark:bg-red-500/10">
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white text-red-600 dark:bg-zinc-800 dark:text-red-400">
+                            <AlertCircle className="size-4" aria-hidden="true" />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-zinc-900 dark:text-white">申请未通过</p>
+                            <p className="mt-1 text-xs leading-relaxed text-zinc-700 dark:text-zinc-300">
+                              {lookupResult.rejectReason || '管理员未填写原因，请当面询问。'}
+                            </p>
+                            {lookupResult.reviewedAt && (
+                              <p className="mt-1 text-2xs text-muted-foreground">处理时间 {lookupResult.reviewedAt}</p>
+                            )}
+                          </div>
+                        </div>
+                        <Button type="button" onClick={backToForm} className="mt-5 min-h-11 w-full">
+                          重新提交申请
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : done ? (
               <div className="rounded-2xl border border-zinc-200/70 bg-white p-6 shadow-sm dark:border-zinc-700/60 dark:bg-zinc-800 lg:p-8">
                 <div className="flex flex-col items-center text-center">
                   <div className="flex size-14 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-500/10">
@@ -251,9 +457,18 @@ export default function ClaimAccount() {
                   ))}
                 </ol>
 
+                <button
+                  type="button"
+                  onClick={openLookup}
+                  className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-zinc-200 bg-white text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                >
+                  <Search className="size-4" aria-hidden="true" />
+                  查询进度
+                </button>
+
                 <Link
                   to="/login"
-                  className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-zinc-200 bg-white text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                  className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-zinc-200 bg-white text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
                 >
                   返回登录页
                 </Link>
@@ -353,6 +568,15 @@ export default function ClaimAccount() {
                 <Button type="submit" disabled={submitting} className="mt-5 min-h-11 w-full lg:mt-6">
                   {submitting ? '提交中…' : '提交，等管理员核对'}
                 </Button>
+
+                <button
+                  type="button"
+                  onClick={openLookup}
+                  className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-900/20"
+                >
+                  <Search className="size-4" aria-hidden="true" />
+                  已经提交过？查询进度
+                </button>
 
                 <p className="mt-3 flex items-start gap-1.5 text-2xs leading-relaxed text-muted-foreground lg:hidden">
                   <ShieldCheck className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />

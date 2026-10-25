@@ -41,6 +41,16 @@ export interface ClaimDecisionResult {
   error?: string;
 }
 
+export interface ClaimLookupResult {
+  status: ClaimStatus;
+  desiredUsername: string;
+  createdAt: string;
+  reviewedAt: string | null;
+  rejectReason: string;
+  /** 批准且账号确实存在；账号被删时会是 false */
+  accountOpened: boolean;
+}
+
 export const claimApi = {
   /** 员工端提交（公开，不需登录） */
   submit: (data: {
@@ -50,6 +60,9 @@ export const claimApi = {
     phoneTail: string;
     note?: string;
   }) => http.post<{ id: string; status: ClaimStatus }>('/auth/claims', data),
+  /** 员工端查进度（公开）：按工号 + 手机尾号取最近一条申请 */
+  lookup: (data: { employeeId: string; phoneTail: string }) =>
+    http.post<ClaimLookupResult>('/auth/claims/lookup', data),
   list: (status?: ClaimStatus) =>
     http.get<Claim[]>(`/auth/claims${status ? `?status=${status}` : ''}`),
   decide: (id: string, decision: 'approved' | 'rejected', reason = '') =>
