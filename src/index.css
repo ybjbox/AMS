@@ -462,6 +462,13 @@ main,
 }
 .data-rise-in { animation: data-rise-in 200ms cubic-bezier(0.2, 0, 0, 1) both; }
 
+/* 登录 / 认领页背景光晕：一次性入场，不做持续漂浮（motion-plan 禁止循环背景动效） */
+@keyframes glow-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+.glow-in { animation: glow-in var(--duration-very-slow) var(--ease-smooth-out) both; }
+
 @media (max-width: 767px) {
   .soft-rise-in { animation-duration: 140ms; }
   .data-rise-in { animation-duration: 160ms; }
@@ -473,5 +480,10 @@ main,
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  .glow-in {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
   }
 }
