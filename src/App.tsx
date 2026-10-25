@@ -17,6 +17,8 @@ import { useAppLifecycle } from './hooks/useAppLifecycle';
 
 const Login = lazy(() => import('./pages/Login'));
 const Forbidden403 = lazy(() => import('./pages/403'));
+const MyPortal = lazy(() => import('./pages/MyPortal'));
+const ClaimAccount = lazy(() => import('./pages/Claim'));
 
 function AppLifecycleManager() {
   useAppLifecycle();
@@ -59,6 +61,17 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/403" element={<Forbidden403 />} />
+            {/* 员工门户：独立前缀 /my，不套 HR 后台的 Layout（底部 TabBar 是它自己的导航） */}
+            <Route
+              path="/my"
+              element={
+                <ProtectedRoute>
+                  <MyPortal />
+                </ProtectedRoute>
+              }
+            />
+            {/* 认领账号：公开页，未登录也能打开（真正校验在 HR 当面核对那一步） */}
+            <Route path="/claim" element={<ClaimAccount />} />
             <Route
               element={
                 <Layout>

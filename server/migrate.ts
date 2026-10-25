@@ -26,6 +26,8 @@
  *     否则「删除仍被职位引用的部门」会让部门树整树替换事务失败（500）。
  * v7（第二梯队 #11）：清洗 audit_logs 存量里的 apiKey 明文——SECRET_KEYS 此前缺
  *     apikey/api_key，/api/ai/config 的 PATCH 审计把 LLM 密钥原文写进了 afterJson。
+ * v15：新增 account_claims（账号认领申请）。员工不"注册"而是"认领"：提交 → HR 当面核对 →
+ *     批准后把 username 与 employeeId 绑定。表里只有申请与审批人，不存口令。
  *
  * 健壮性（修复「全新部署启动崩溃」latent bug）：
  *   `current < 1` 分支要先把全部带 FK 的表建好。但有两个不同前提：
@@ -42,9 +44,10 @@ import { ensureOrgTables } from "./departmentsDb.ts";
 import { ensurePunchSourceColumns } from "./attendanceDb.ts";
 import { ensureShiftRuleOptionColumns } from "./shiftRulesDb.ts";
 import { DEPT_SHIFT_RULE_COLUMNS, ensureShiftRulesTable } from "./shiftRulesDb.ts";
+import { ensureClaimsTable } from "./claimsDb.ts";
 
 /** 当前 schema 版本。导出供回归脚本断言（不要再硬编码数字）。 */
-export const SCHEMA_VERSION = 14;
+export const SCHEMA_VERSION = 15;
 
 /** 判断某张表当前是否已存在（用于区分「全新库」与「旧库已有表」两种迁移前提）。 */
 function tableExists(name: string): boolean {
@@ -74,6 +77,9 @@ export function runMigrations(): void {
     // user_version 已经被某次启动抬到 14、但当时步骤还没写全 —— 真发生过，靠版本号兜不住。
     alignDataConsistency();
     syncDisplaySnapshots();
+    // v15：账号认领申请表。同样放常驻——恢复旧备份时 user_version 可能已经是 15、
+    // 但包里没有这张表，靠版本号会漏。
+    ensureClaimsTable();
   };
 
   if (current >= SCHEMA_VERSION) {

@@ -5,10 +5,12 @@ import Header from './Header';
 import ErrorBoundary from './ErrorBoundary';
 import AiAssistant from '@/components/AiAssistant';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { useUserStore } from '@/store/useUserStore';
 import { routeConfig } from '@/config/routes';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const canUseAi = useUserStore((s) => s.userInfo?.permissions?.includes('ai:use') ?? false);
   const location = useLocation();
 
   // 全局统一管理 document.title，根据当前路由自动更新
@@ -56,8 +58,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </ErrorBoundary>
           </main>
 
-          {/* AI 助手（自带悬浮按钮）。后端连通性状态已移入侧边栏底部（原固定左下角胶囊会与分页/内容抢位）。 */}
-          <AiAssistant />
+          {/* AI 助手（自带悬浮按钮）。员工门户不展示：它是 HR 后台工具，且后端 /ai/* 已收到 HR。 */}
+          {canUseAi && <AiAssistant />}
         </div>
       </div>
     </div>

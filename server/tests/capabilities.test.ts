@@ -41,8 +41,8 @@ describe("能力码与策略表同源", () => {
     }
   });
 
-  it("考勤整表清空只给 ADMIN+（路由内 requireRole 比默认写策略更严，界面必须同样收口）", () => {
-    expect(requiredRoleFor("DELETE", "/attendance/records")).toBe("HR"); // 策略表派生 = 默认写
+  it("考勤整表清空只给 ADMIN+（能力矩阵与路由内 requireRole 同源）", () => {
+    expect(requiredRoleFor("DELETE", "/attendance/records")).toBe("ADMIN");
     expect(requiredRoleForCapability("attendance:purge")).toBe("ADMIN");
     expect(permissionsForRole("HR")).not.toContain("attendance:purge");
     expect(permissionsForRole("ADMIN")).toContain("attendance:purge");
@@ -61,15 +61,36 @@ describe("能力码与策略表同源", () => {
     }
   });
 
-  it("普通员工拿到自助面：待办 / 业务单 / 微信通知 / 设置入口", () => {
-    const emp = permissionsForRole("EMPLOYEE");
-    for (const code of ["todos:view", "forms:view", "notice:view", "settings:view", "approvals:view"]) {
-      expect(emp).toContain(code);
+  it("普通员工只拿到自助面：待办 / 审批 / 设置（2026-10-25 权限收口）", () => {
+    expect(permissionsForRole("EMPLOYEE")).toEqual(["approvals:view", "settings:view", "todos:view"]);
+  });
+
+  it("员工读 HR 数据面一律 HR+；自己的接口仍显式放行", () => {
+    for (const path of [
+      "/users",
+      "/attendance/records",
+      "/documents",
+      "/departments",
+      "/stats/workforce",
+      "/saved-items",
+      "/announcements",
+      "/form/records",
+    ]) {
+      expect(requiredRoleFor("GET", path), path).toBe("HR");
     }
-    // 但看不到他人数据的管理面与合同 PII
-    for (const code of ["users:manage", "contracts:view", "attendance:manage", "documents:manage"]) {
-      expect(emp).not.toContain(code);
+    for (const path of [
+      "/my/summary",
+      "/my/disputes",
+      "/approvals/mine",
+      "/approvals/comp-balance",
+      "/todos",
+      "/notifications",
+      "/auth/me",
+    ]) {
+      expect(requiredRoleFor("GET", path), path).toBe("EMPLOYEE");
     }
+    expect(requiredRoleFor("POST", "/approvals")).toBe("EMPLOYEE");
+    expect(requiredRoleFor("PUT", "/approvals/A/withdraw")).toBe("EMPLOYEE");
   });
 
   it("含凭据的整库副本只给超管；员工自助的两条动作不再要 HR（批次 1）", () => {
@@ -86,7 +107,8 @@ describe("能力码与策略表同源", () => {
   });
 
   it("三个打印面收敛成一个入口码（同源重复码不再各留一份）", () => {
-    expect(permissionsForRole("EMPLOYEE")).toContain("print-tools:view");
+    expect(permissionsForRole("HR")).toContain("print-tools:view");
+    expect(permissionsForRole("EMPLOYEE")).not.toContain("print-tools:view");
     for (const gone of ["seating:view", "name-cards:view", "meal-vouchers:view"]) {
       expect(ALL_CAPABILITY_CODES).not.toContain(gone);
     }

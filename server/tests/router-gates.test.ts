@@ -135,12 +135,13 @@ describe("系统诊断：进程与环境信息只给管理员", () => {
   });
 });
 
-describe("看板聚合：员工可读，但只能拿到聚合", () => {
-  // /stats 不在策略表里 ⇒ 默认读 = EMPLOYEE。这是有意的：控制台对员工开放并要画这些图。
+describe("看板聚合：HR+ 可读，员工 403（2026-10-25 收口）", () => {
+  // /stats 不在策略表里 ⇒ 默认读 = HR。员工门户不含控制台，读聚合一律 403。
   // 真风险是"哪天有人往聚合里塞按人明细"，所以钉的是字段集合而不是状态码而已。
   for (const path of ["/stats/workforce", "/stats/attendance"]) {
-    it(`${path} 员工可读且响应里没有任何按人身份字段`, async () => {
-      const res = await call(path, "emp");
+    it(`${path} 员工 403、HR 可读且响应里没有任何按人身份字段`, async () => {
+      expect((await call(path, "emp")).status).toBe(403);
+      const res = await call(path, "hr");
       expect(res.status).toBe(200);
       const blob = JSON.stringify(res.json);
       for (const leak of ["employeeId", "employeeName", "idCard", "phone", "passwordHash"]) {

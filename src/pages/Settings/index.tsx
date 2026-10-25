@@ -20,11 +20,13 @@ import {
   BellRing,
   KeyRound,
   Fingerprint,
+  ShieldCheck,
 } from 'lucide-react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useUserStore } from '@/store/useUserStore';
 import { SystemRole } from '@/types';
 import ProfilePanel from './panels/ProfilePanel';
+import RolePermissionsPanel from './panels/RolePermissionsPanel';
 import AppearancePanel from './panels/AppearancePanel';
 import PreferencesPanel from './panels/PreferencesPanel';
 import NotifyPanel from './panels/NotifyPanel';
@@ -44,9 +46,8 @@ import WeComPanel from './panels/WeComPanel';
 /**
  * 设置页信息架构：按域分组 + 按角色门槛过滤。
  *
- * 注意：这里刻意不走 hasPermission()——严格权限开关关闭时它恒为 true，且权限矩阵
- * 存在浏览器 localStorage 可被篡改；设置页的多数面板对应高危后端接口，
- * 前端入口按角色秩（role rank）直接隐藏，后端 authGate / requireRole 才是硬约束。
+ * 注意：多数高危面板按角色秩（role rank）直接隐藏，后端 authGate / requireRole 才是硬约束。
+ * 已登记能力码的面板（导出模板/主题、备份）额外按能力过滤，保证矩阵改动后入口与接口同源。
  * 部门管理不在此列：顶层 /departments 页面已有独立入口与路由权限（departments:view）。
  */
 interface SettingsTab {
@@ -54,6 +55,8 @@ interface SettingsTab {
   label: string;
   icon: React.ElementType;
   minRole: SystemRole;
+  /** 已登记能力码的面板：矩阵改动后入口随之隐藏 */
+  permission?: string;
 }
 
 const TAB_GROUPS: { title: string; tabs: SettingsTab[] }[] = [
@@ -83,9 +86,9 @@ const TAB_GROUPS: { title: string; tabs: SettingsTab[] }[] = [
   {
     title: '数据与导出',
     tabs: [
-      { id: 'themes', label: '导出主题管理', icon: Palette, minRole: SystemRole.ADMIN },
-      { id: 'scripts', label: '导出脚本模板', icon: Code2, minRole: SystemRole.ADMIN },
-      { id: 'backup', label: '数据库备份', icon: DatabaseBackup, minRole: SystemRole.ADMIN },
+      { id: 'themes', label: '导出主题管理', icon: Palette, minRole: SystemRole.ADMIN, permission: 'export-templates:manage' },
+      { id: 'scripts', label: '导出脚本模板', icon: Code2, minRole: SystemRole.ADMIN, permission: 'export-templates:manage' },
+      { id: 'backup', label: '数据库备份', icon: DatabaseBackup, minRole: SystemRole.ADMIN, permission: 'backup:export' },
     ],
   },
   {
@@ -96,6 +99,7 @@ const TAB_GROUPS: { title: string; tabs: SettingsTab[] }[] = [
       { id: 'accounts', label: '账号管理', icon: KeyRound, minRole: SystemRole.ADMIN },
       { id: 'diagnostics', label: '运行诊断', icon: Activity, minRole: SystemRole.ADMIN },
       { id: 'logs', label: '系统日志', icon: TerminalSquare, minRole: SystemRole.ADMIN },
+      { id: 'role-permissions', label: '权限矩阵', icon: ShieldCheck, minRole: SystemRole.SUPER_ADMIN },
     ],
   },
 ];
@@ -111,15 +115,20 @@ export default function Settings() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const role = (useUserStore((state) => state.userInfo?.role) ?? '').toUpperCase();
+  const hasPermission = useUserStore((state) => state.hasPermission);
   const rank = ROLE_RANK[role] ?? 0;
 
   const groups = useMemo(
     () =>
       TAB_GROUPS.map((group) => ({
         ...group,
-        tabs: group.tabs.filter((tab) => (ROLE_RANK[tab.minRole] ?? 4) <= rank),
+        tabs: group.tabs.filter(
+          (tab) =>
+            (ROLE_RANK[tab.minRole] ?? 4) <= rank &&
+            (!tab.permission || hasPermission(tab.permission))
+        ),
       })).filter((group) => group.tabs.length > 0),
-    [rank]
+    [rank, hasPermission]
   );
   const visibleTabs = useMemo(() => groups.flatMap((group) => group.tabs), [groups]);
 
@@ -170,6 +179,7 @@ export default function Settings() {
       case 'announcements': return <AnnouncementsPanel />;
       case 'diagnostics': return <DiagnosticsPanel />;
       case 'logs': return <LogsPanel />;
+      case 'role-permissions': return <RolePermissionsPanel />;
       default: return null;
     }
   };

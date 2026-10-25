@@ -21,7 +21,7 @@ import {
   listRecords, upsertRecords,
   upsertRecord, deleteRecord, clearRecords,
   listAnomalies, analyzeAnomalies, analyzeAttendance, getAttendanceAnalysisStatus,
-  PunchFormatError, VersionConflictError, monthlySummary, punchMonthStats } from "./attendanceDb.ts";
+  PunchFormatError, VersionConflictError, monthlySummary, punchMonthStats, punchCoverage } from "./attendanceDb.ts";
 import {
   createDeptShiftRule,
   deleteDeptShiftRule,
@@ -148,6 +148,11 @@ function ruleErrorResponse(res: import("express").Response, e: unknown) {
   if (e instanceof ShiftRuleError) return res.status(400).json({ error: e.message });
   throw e;
 }
+
+/** 数据截止到哪天、本月覆盖几天 —— 判定表头那句"数据截止 X"的来源（audit-7） */
+attendanceRouter.get("/coverage", (_req, res) => {
+  res.json(punchCoverage());
+});
 
 attendanceRouter.get("/shift-rules", (_req, res) => {
   res.json(listDeptShiftRules());

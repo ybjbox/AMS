@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -44,6 +44,7 @@ type ChangePasswordForm = z.infer<typeof changePasswordSchema>;
 
 export default function ProfilePanel() {
   const location = useLocation();
+  const navigate = useNavigate();
   const setUser = useUserStore((s) => s.setUser);
   const userInfo = useUserStore((s) => s.userInfo);
   const token = useUserStore((s) => s.token);
@@ -172,6 +173,10 @@ export default function ProfilePanel() {
       setUser(toUserInfo(res.user), res.token);
       toast.success('密码修改成功');
       reset();
+      // 首次登录强制改密的员工：改完直接进门户，不要在设置页再找一次路
+      if (mustChangePassword && (res.user.systemRole ?? '').toUpperCase() === 'EMPLOYEE') {
+        navigate('/my', { replace: true });
+      }
     } catch (err) {
       toast.error((err as { error?: string })?.error || '密码修改失败，请稍后重试');
     } finally {

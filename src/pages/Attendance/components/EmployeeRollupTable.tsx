@@ -187,7 +187,7 @@ export default function EmployeeRollupTable({
           <table className="min-w-[720px] w-full divide-y divide-zinc-100 dark:divide-zinc-800">
             <thead className="bg-zinc-50/50 dark:bg-zinc-800/50">
               <tr>
-                {COLUMNS.map((c) => {
+                {COLUMNS.map((c, i) => {
                   const sortable = c.key !== null;
                   const isActive = sortable && sortKey === c.key;
                   return (
@@ -197,7 +197,8 @@ export default function EmployeeRollupTable({
                       aria-sort={isActive ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
                       className={cn(
                         'px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider',
-                        c.align === 'right' ? 'text-right' : 'text-left'
+                        c.align === 'right' ? 'text-right' : 'text-left',
+                        i === 0 && 'sticky left-0 z-20 bg-zinc-50/50 shadow-sticky-left dark:bg-zinc-800/50'
                       )}
                     >
                       {sortable && c.key ? (
@@ -229,7 +230,7 @@ export default function EmployeeRollupTable({
             </tbody>
             <tfoot className="bg-zinc-50/50 dark:bg-zinc-800/50">
               <tr className="text-xs font-medium text-zinc-700 dark:text-zinc-200">
-                <td className="px-4 py-2">合计 {totals.employees} 人</td>
+                <td className="sticky left-0 z-10 bg-zinc-50/50 px-4 py-2 shadow-sticky-left dark:bg-zinc-800/50">合计 {totals.employees} 人</td>
                 <td className="px-4 py-2 text-muted-foreground">—</td>
                 <td className="px-4 py-2 text-right tabular-nums">{totals.records}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{totals.days}</td>
@@ -278,7 +279,7 @@ function Row({
   const stale = idle !== null && idle > 7;
   return (
     <tr className="hover:bg-zinc-50/80 dark:hover:bg-zinc-700/30 transition-colors">
-      <td className="px-4 py-2 whitespace-nowrap">
+      <td className="sticky left-0 z-10 whitespace-nowrap bg-white px-4 py-2 shadow-sticky-left transition-colors hover:bg-zinc-50/80 dark:bg-zinc-800 dark:hover:bg-zinc-700/30">
         <button
           type="button"
           onClick={onOpen}

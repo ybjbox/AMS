@@ -248,7 +248,8 @@ export function AnomalyFilterBar({ query, onQueryChange, group, onGroupChange, c
                   ].join(' ')}
                 >
                   {g.label}
-                  <span className="tabular-nums opacity-70">{counts[g.id]}</span>
+                  {/* 计数是信息，不靠透明度弱化：opacity-70 实测对比度不足 4.5:1（access-2） */}
+                  <span className="tabular-nums">{counts[g.id]}</span>
                 </button>
               );
             })}

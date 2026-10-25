@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AnomaliesTable from '@/pages/Attendance/components/AnomaliesTable';
 import { attendanceApi, type DayVerdict } from '@/services/attendanceApi';
@@ -76,15 +76,20 @@ beforeEach(() => {
 });
 
 describe('异常表的「需确认」列', () => {
-  it('把描述里没说的标记（单卡 / ★）补上，完整依据挂在悬停提示', async () => {
+  it('把描述里没说的标记（单卡 / ★）补上，点开能看到完整依据', async () => {
     fetchMock.mockResolvedValue({
       month: '2026-09',
       days: [verdict({ flag: '单卡', why: '常规班次 08:00-18:00：缺下班卡（单卡）' })],
     });
     open();
 
-    const cell = await screen.findByText('单卡');
-    expect(cell.closest('td')).toHaveAttribute('title', '常规班次 08:00-18:00：缺下班卡（单卡）');
+    // 原先是 title 悬停提示；触屏与键盘都取不到，改成可聚焦的展开（audit-2）
+    const trigger = await screen.findByRole('button', { name: /单卡/ });
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(trigger);
+    expect(await screen.findByText('常规班次 08:00-18:00：缺下班卡（单卡）')).toBeInTheDocument();
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('没有要确认的事就留一个破折号，不重念一遍描述', async () => {

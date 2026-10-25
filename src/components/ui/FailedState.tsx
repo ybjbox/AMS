@@ -19,9 +19,11 @@ interface FailedStateProps {
   /** 重新拉取；不传则不显示重试按钮 */
   onRetry?: () => void;
   className?: string;
+  /** 重试按钮的附加样式：员工端触屏用 min-h-11，桌面不需要 */
+  retryClassName?: string;
 }
 
-export function FailedState({ reason, subject = '数据', onRetry, className }: FailedStateProps) {
+export function FailedState({ reason, subject = '数据', onRetry, className, retryClassName }: FailedStateProps) {
   return (
     <div
       role="alert"
@@ -35,7 +37,7 @@ export function FailedState({ reason, subject = '数据', onRetry, className }: 
         {reason || '服务未响应或返回了错误。数据仍在服务器上，请重试；持续失败请检查后端状态。'}
       </p>
       {onRetry && (
-        <Button variant="outline" className="mt-5" onClick={onRetry}>
+        <Button variant="outline" className={cn('mt-5', retryClassName)} onClick={onRetry}>
           <RefreshCw className="size-4" />
           重试
         </Button>

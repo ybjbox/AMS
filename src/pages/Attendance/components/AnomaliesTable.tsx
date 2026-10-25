@@ -53,8 +53,15 @@ export default function AnomaliesTable({
   const verdictsByMonth = useAttendanceStore((s) => s.verdictsByMonth);
   const loadVerdicts = useAttendanceStore((s) => s.loadVerdicts);
   const months = useMemo(() => [...new Set(anomalies.map((a) => a.date.slice(0, 7)))].sort(), [anomalies]);
+  /** 判定依据取数失败的月份：必须与"确实没有要确认的"区分开（audit-1） */
+  const [verdictFailed, setVerdictFailed] = useState<Set<string>>(new Set());
   useEffect(() => {
-    for (const m of months) void loadVerdicts(m);
+    for (const m of months) {
+      void loadVerdicts(m).then((err) => {
+        if (!err) return;
+        setVerdictFailed((prev) => new Set(prev).add(m));
+      });
+    }
   }, [months, loadVerdicts]);
 
   const whyByKey = useMemo(() => {
@@ -70,6 +77,11 @@ export default function AnomaliesTable({
    * 正序时本月那几条永远沉在最底下，要滚到列表末端才看见。
    */
   const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' }>({ key: 'date', dir: 'desc' });
+  /**
+   * 展开完整判定依据的行。原先整句只挂在 title 悬停上——触屏取不到、键盘也到不了，
+   * 而"凭哪张卡"恰恰是员工最需要看的一句话（audit-2）。
+   */
+  const [expandedWhy, setExpandedWhy] = useState<Set<string>>(new Set());
   const rows = useMemo(() => {
     const sign = sort.dir === 'asc' ? 1 : -1;
     return [...anomalies].sort((a, b) => {
@@ -187,17 +199,54 @@ export default function AnomaliesTable({
                     {/* 描述里已经写了"迟到几分钟、对的是哪个班"，这一格只补它没说的：
                         单卡 / 跨零点归前一日 / ★ 那几类要人看一眼的情况。完整依据挂在这格的
                         悬停提示里，与「打卡记录」弹窗和导出表同一串字。 */}
-                    <td className="max-w-[14rem] px-4 py-2 text-2xs" title={v?.why}>
-                      {v?.flag ? (
-                        <span
-                          className={
-                            v.flag.startsWith('★')
-                              ? 'font-medium text-amber-800 dark:text-amber-300'
-                              : 'text-muted-foreground'
-                          }
+                    <td className="max-w-[16rem] px-4 py-2 text-2xs">
+                      {v ? (
+                        <div>
+                          <button
+                            type="button"
+                            aria-expanded={expandedWhy.has(anomaly.id)}
+                            onClick={() =>
+                              setExpandedWhy((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(anomaly.id)) next.delete(anomaly.id);
+                                else next.add(anomaly.id);
+                                return next;
+                              })
+                            }
+                            className={`inline-flex items-center gap-1 text-left ${
+                              v.flag.startsWith('★')
+                                ? 'font-medium text-amber-800 dark:text-amber-300'
+                                : 'text-muted-foreground'
+                            }`}
+                          >
+                            {v.flag || '看依据'}
+                            <ChevronDown
+                              className={`size-3 transition-transform ${expandedWhy.has(anomaly.id) ? 'rotate-180' : ''}`}
+                              aria-hidden="true"
+                            />
+                          </button>
+                          {expandedWhy.has(anomaly.id) && (
+                            <p className="soft-rise-in mt-1 text-muted-foreground">{v.why}</p>
+                          )}
+                        </div>
+                      ) : verdictFailed.has(anomaly.date.slice(0, 7)) ? (
+                        <button
+                          type="button"
+                          className="text-left text-amber-700 underline underline-offset-2 dark:text-amber-400"
+                          onClick={() => {
+                            const m = anomaly.date.slice(0, 7);
+                            void loadVerdicts(m).then((err) => {
+                              if (err) return;
+                              setVerdictFailed((prev) => {
+                                const next = new Set(prev);
+                                next.delete(m);
+                                return next;
+                              });
+                            });
+                          }}
                         >
-                          {v.flag}
-                        </span>
+                          依据未取到 · 重试
+                        </button>
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}

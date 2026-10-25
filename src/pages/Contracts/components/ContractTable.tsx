@@ -33,7 +33,7 @@ export const ContractTable = ({ filteredUsers, loadError, onRetry, onPreview, on
             <tr>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider relative z-30 shadow-sticky-left bg-zinc-50 dark:bg-zinc-900/50"
+                className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider sticky left-0 z-30 shadow-sticky-left bg-zinc-50 dark:bg-zinc-900/50"
               >
                 工号
               </th>
@@ -69,7 +69,7 @@ export const ContractTable = ({ filteredUsers, loadError, onRetry, onPreview, on
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider relative z-30 shadow-sticky-right bg-zinc-50 dark:bg-zinc-900/50"
+                className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider sticky right-0 z-30 shadow-sticky-right bg-zinc-50 dark:bg-zinc-900/50"
               >
                 操作
               </th>

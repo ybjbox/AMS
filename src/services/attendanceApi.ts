@@ -186,6 +186,14 @@ export const attendanceApi = {
 
   // ---- 异常 ----
   fetchAnomalies: (): Promise<Anomaly[]> => http.get<Anomaly[]>('/attendance/anomalies'),
+  /** 数据截止日与本月覆盖天数（audit-7：判定表不说数据来历，等于让人猜） */
+  fetchCoverage: (): Promise<{
+    latestDate: string | null;
+    month: string;
+    coveredDays: number;
+    elapsedDays: number;
+    uncoveredDays: number;
+  }> => http.get('/attendance/coverage'),
   /** 上一次分析的覆盖率（服务端留档） */
   fetchAnalysisStatus: (): Promise<{ at: string | null; coverage: AnalyzeCoverage | null }> =>
     http.get('/attendance/anomalies/status'),

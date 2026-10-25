@@ -292,7 +292,7 @@ export default function BusinessForms() {
         {/* 左列自己滚 + 吸顶：条目会越加越多，不能让它把整页撑出画面（2026-09-27 反馈）。
             上限按"视口减去标题区与容器内边距"给，比预览框的 70vh 略高一点，
             两列都在自己那格里滚，整页始终不出现滚动条。 */}
-        <section className="self-start space-y-3 lg:sticky lg:top-6 lg:max-h-[calc(100vh-9rem)] lg:overflow-y-auto lg:pr-1">
+        <section className="min-w-0 self-start space-y-3 lg:sticky lg:top-6 lg:max-h-[calc(100vh-9rem)] lg:overflow-y-auto lg:pr-1">
           {items.map((item, i) => {
             const tpl = templateOf(item.kind);
             const upper = item.amount > 0 ? rmbUpper(item.amount) : '';
@@ -557,7 +557,7 @@ export default function BusinessForms() {
           )}
         </section>
 
-        <section className="space-y-3">
+        <section className="min-w-0 space-y-3">
           <div className="flex items-center justify-between">
             {/* 张数在「打印 N 张」按钮上已经有了，标题再写一次就是三份同数（审查 B1） */}
             <h2 className="section-title">A4 预览</h2>

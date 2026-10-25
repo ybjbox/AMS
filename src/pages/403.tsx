@@ -1,13 +1,17 @@
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldAlert, ArrowLeft } from 'lucide-react';
+import { useUserStore } from '@/store/useUserStore';
 
 const Forbidden403 = React.memo(function Forbidden403() {
   const navigate = useNavigate();
+  const role = useUserStore((s) => s.userInfo?.role ?? '');
+  const isEmployee = role.toUpperCase() === 'EMPLOYEE';
+  const home = isEmployee ? '/my' : '/';
 
   const handleGoBack = useCallback(() => {
-    navigate('/', { replace: true });
-  }, [navigate]);
+    navigate(home, { replace: true });
+  }, [navigate, home]);
 
   return (
     <main className="min-h-screen bg-zinc-50 dark:bg-zinc-900 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
@@ -32,7 +36,7 @@ const Forbidden403 = React.memo(function Forbidden403() {
             className="btn-primary"
           >
             <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
-            返回首页
+            {isEmployee ? '返回我的考勤' : '返回首页'}
           </button>
         </div>
       </div>

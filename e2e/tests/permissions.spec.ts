@@ -6,7 +6,9 @@ import { resolveAdminPassword } from '../adminCredentials';
  * 角色权限矩阵 E2E（API 层）—— 对齐 server/authMiddleware.ts 的 POLICIES 表：
  *
  * 角色层级：EMPLOYEE(1) < HR(2) < ADMIN(3) < SUPER_ADMIN(4)
- * 默认策略：读 = EMPLOYEE+，写 = HR+
+ * 默认策略：读 = HR+，写 = HR+（2026-10-25 从「读 = EMPLOYEE+」收紧）
+ * 员工例外（显式放行）：/my、/todos、/notifications、/approvals/mine、
+ *   /approvals/comp-balance、POST /approvals、撤回、/auth/{me,logout,change-password,profile}
  * 特例：
  *   POST /approvals                → EMPLOYEE+（自助提交）
  *   /auth/accounts、/auth/security-events、/audit-logs → ADMIN+
@@ -171,11 +173,26 @@ test.describe.serial('角色权限矩阵', () => {
     }
   });
 
-  // ---- 读操作：EMPLOYEE+ 全部可读 ----
-  test('读操作：EMPLOYEE / HR / ADMIN 均可读员工列表', async ({ request }) => {
-    for (const acc of Object.values(ACCOUNTS)) {
+  // ---- 读操作：默认 HR+，员工不得读员工列表 ----
+  test('读操作：EMPLOYEE 403；HR / ADMIN 可读员工列表', async ({ request }) => {
+    await expectStatus(request, tokens[EMP].token, 'GET', '/api/users', 403,
+      'GET /users as EMPLOYEE 应 403');
+    for (const acc of [ACCOUNTS.hr]) {
       await expectStatus(request, tokens[acc.username].token, 'GET', '/api/users', 200,
         `GET /users as ${acc.systemRole} 应 200`);
+    }
+    await expectStatus(request, adminToken, 'GET', '/api/users', 200,
+      'GET /users as ADMIN 应 200');
+  });
+
+  test('员工自助面仍放行，HR 数据面一律 403', async ({ request }) => {
+    for (const path of ['/api/todos', '/api/approvals/mine', '/api/notifications', '/api/auth/me']) {
+      await expectStatus(request, tokens[EMP].token, 'GET', path, 200,
+        `GET ${path} as EMPLOYEE 应 200`);
+    }
+    for (const path of ['/api/attendance/records', '/api/documents', '/api/departments', '/api/stats/workforce']) {
+      await expectStatus(request, tokens[EMP].token, 'GET', path, 403,
+        `GET ${path} as EMPLOYEE 应 403`);
     }
   });
 

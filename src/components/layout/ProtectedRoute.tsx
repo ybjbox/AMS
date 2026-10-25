@@ -22,6 +22,10 @@ export default function ProtectedRoute({ children, requiredPermission }: Protect
 
   // 2. 如果配置了权限要求，则判断权限
   if (requiredPermission && !hasPermission(requiredPermission)) {
+    // 员工没有后台权限时回自己的门户：403 页的「返回首页」会再撞一次无权限，形成循环
+    if ((userInfo.role ?? '').toUpperCase() === 'EMPLOYEE') {
+      return <Navigate to="/my" replace />;
+    }
     return <Navigate to="/403" replace />;
   }
 

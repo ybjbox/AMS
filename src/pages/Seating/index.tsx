@@ -4,7 +4,7 @@ import { printReactTree } from '@/utils/printWindow';
 import { useBodyOverflow } from '@/hooks/useBodyOverflow';
 import { useEmployeeStore } from '@/store/useEmployeeStore';
 import { useDepartments } from '@/store/useDepartmentStore';
-import { Armchair, RefreshCw } from 'lucide-react';
+import { Armchair, Monitor, RefreshCw } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { User } from '@/types';
 
@@ -231,6 +231,10 @@ export default function Seating() {
               <span className="hidden sm:inline">自动排座</span>
             </button>
           </div>
+        </div>
+        <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-50/80 px-3 py-2 text-xs leading-relaxed text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300 lg:hidden">
+          <Monitor className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <span>排座画布需要拖拽操作，建议在电脑上使用；手机上可以先查看或载入已保存的方案。</span>
         </div>
         <SeatingToolbar
           viewMode={viewMode}

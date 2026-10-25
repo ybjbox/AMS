@@ -9,6 +9,7 @@ import { deriveWorkflowSteps, STEP_BLOCK_HINTS } from './lib/workflow';
 import { RecordsFilterBar, AnomalyFilterBar } from './components/FilterBar';
 import EmployeeRollupTable from './components/EmployeeRollupTable';
 import AnomaliesTable from './components/AnomaliesTable';
+import DataCutoffBanner from './components/DataCutoffBanner';
 import { ImportDialogHost } from './components/ImportPanel';
 import { Button } from '@/components/ui/button';
 import { Permission } from '@/components/Permission';
@@ -172,6 +173,9 @@ export default function Attendance() {
         </div>
 
         <div className="flex-1 card-base overflow-hidden flex flex-col min-h-0">
+          <div className="shrink-0 border-b border-zinc-100 dark:border-zinc-700/60 px-4 py-2">
+            <DataCutoffBanner />
+          </div>
           <div className="flex-1 overflow-auto" tabIndex={0} role="region" aria-label="考勤数据表">
             {a.activeTab === 'monthly' ? (
               <MonthlyReport />

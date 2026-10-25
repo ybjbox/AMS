@@ -28,6 +28,7 @@ export default function UserMenu({
 }) {
   const userInfo = useUserStore((s) => s.userInfo);
   const logout = useUserStore((s) => s.logout);
+  const hasPermission = useUserStore((s) => s.hasPermission);
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -125,7 +126,6 @@ export default function UserMenu({
           <button
             onClick={toggleMenu}
             aria-expanded={isOpen}
-            aria-label={unreadCount > 0 ? `账户菜单，${unreadCount} 条未读通知` : '账户菜单'}
             className="w-[124px] mx-auto flex items-center gap-1.5 px-2.5 py-2 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer group text-left"
           >
             {avatar('w-7 h-7')}
@@ -137,6 +137,10 @@ export default function UserMenu({
                 {getRoleDisplayName(userInfo?.role)}
               </p>
             </div>
+            {/* 用可见文本 + sr-only 追加，而不是 aria-label 覆盖：2.5.3 要求可访问名称包含全部可见文本 */}
+            <span className="sr-only">
+              账户菜单{unreadCount > 0 ? `，${unreadCount} 条未读通知` : ''}
+            </span>
           </button>
           <div className="w-[124px] mx-auto pt-1.5 flex items-center justify-center">
             <BackendStatusIndicator variant="bare" className="scale-90" />
@@ -166,16 +170,30 @@ export default function UserMenu({
                 </div>
               )}
               <ThemeToggle />
-              <Link
-                to="/settings"
-                onClick={() => {
-                  setIsOpen(false);
-                  onNavigate?.();
-                }}
-                className="block px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100/70 dark:hover:bg-zinc-700/50 transition-colors duration-200"
-              >
-                {settingsLabel}
-              </Link>
+              {role === 'EMPLOYEE' && (
+                <Link
+                  to="/my"
+                  onClick={() => {
+                    setIsOpen(false);
+                    onNavigate?.();
+                  }}
+                  className="block px-4 py-2 text-sm font-medium text-brand-700 dark:text-brand-300 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors duration-200"
+                >
+                  我的考勤
+                </Link>
+              )}
+              {hasPermission('settings:view') && (
+                <Link
+                  to="/settings"
+                  onClick={() => {
+                    setIsOpen(false);
+                    onNavigate?.();
+                  }}
+                  className="block px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100/70 dark:hover:bg-zinc-700/50 transition-colors duration-200"
+                >
+                  {settingsLabel}
+                </Link>
+              )}
               <button
                 onClick={handleLogout}
                 className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-t border-zinc-100 dark:border-zinc-700 transition-colors duration-200"

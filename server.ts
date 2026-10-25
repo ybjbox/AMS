@@ -37,9 +37,11 @@ import { startImportJobSweeper } from "./server/importJobsDb.ts";
 import { pruneAuditLogs } from "./server/auditDb.ts";
 import { startOrphanUploadScan } from "./server/uploadsCleanup.ts";
 import { authRouter } from "./server/authRouter.ts";
+import { rolePermissionsRouter } from "./server/rolePermissionsRouter.ts";
 import { employeesRouter } from "./server/employeesRouter.ts";
 import { departmentsRouter } from "./server/departmentsRouter.ts";
 import { attendanceRouter } from "./server/attendanceRouter.ts";
+import { myRouter } from "./server/myRouter.ts";
 import {
   foldersRouter,
   documentsRouter,
@@ -157,9 +159,11 @@ async function startServer() {
   //    auditMiddleware 的路径映射表、前端 userApi 的调用路径三方一致（作者原始约定）；
   //    folders/documents/document-sets/files 尚无前端调用方，挂载路径为按命名约定推定，可调整。
   app.use("/api/auth", authRouter);
+  app.use("/api/role-permissions", rolePermissionsRouter);
   app.use("/api/users", employeesRouter);
   app.use("/api/departments", departmentsRouter);
   app.use("/api/attendance", attendanceRouter);
+  app.use("/api/my", myRouter);
   app.use("/api/folders", foldersRouter);
   app.use("/api/documents", documentsRouter);
   app.use("/api/document-sets", documentSetsRouter);

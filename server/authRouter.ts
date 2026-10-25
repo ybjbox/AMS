@@ -6,7 +6,9 @@
  */
 import express from "express";
 import type { Request, Response } from "express";
+import crypto from "node:crypto";
 import { permissionsForRole } from "./capabilities.ts";
+import { ClaimError, createClaim, decideClaim, getClaimEmployee, listClaims, type ClaimStatus } from "./claimsDb.ts";
 import {
   AuthError,
   ROLE_LEVEL,
@@ -372,3 +374,107 @@ export function peekSession(authorizationHeader: string) {
 
 /** 供 accounts 列表联查使用，避免暴露 passwordHash */
 export { toPublicAccount };
+
+// ---------------------------------------------------------------- 账号认领申请（v15）
+
+/**
+ * 这是全站唯一一个免登录写入口，所以限流比登录更严：同一个 IP 10 分钟最多 5 次。
+ * 它不收身份证/住址这类敏感字段，真正的校验是 HR 当面核对那一步。
+ */
+const CLAIM_WINDOW_MS = 10 * 60 * 1000;
+const CLAIM_MAX_PER_IP = 5;
+const claimAttempts = new Map<string, number[]>();
+
+function tooManyClaimsFromIp(ip: string): boolean {
+  const now = Date.now();
+  const list = (claimAttempts.get(ip) ?? []).filter((t) => now - t < CLAIM_WINDOW_MS);
+  list.push(now);
+  claimAttempts.set(ip, list);
+  if (claimAttempts.size > 5000) claimAttempts.clear();
+  return list.length > CLAIM_MAX_PER_IP;
+}
+
+const USERNAME_RE = /^[a-zA-Z0-9._-]{3,32}$/;
+
+authRouter.post("/claims", (req, res) => {
+  const ip = clientIp(req);
+  if (tooManyClaimsFromIp(ip)) {
+    logSecurityEvent("auth.rate_limited", "", ip, "认领申请提交过于频繁");
+    return res.status(429).json({ error: "提交过于频繁，请稍后再试" });
+  }
+
+  const body = req.body ?? {};
+  const desiredUsername = asString(body.desiredUsername).trim();
+  const employeeId = asString(body.employeeId).trim();
+  const displayName = asString(body.displayName).trim();
+  const phoneTail = asString(body.phoneTail).trim();
+  const note = asString(body.note).trim();
+
+  if (!USERNAME_RE.test(desiredUsername)) {
+    return res.status(400).json({ error: "用户名只能包含字母、数字、点、下划线、连字符，长度 3-32" });
+  }
+  if (!employeeId) return res.status(400).json({ error: "请填写工号" });
+  if (!/^\d{4}$/.test(phoneTail)) return res.status(400).json({ error: "请填写手机号后 4 位" });
+  if (displayName.length > 32) return res.status(400).json({ error: "姓名过长" });
+  if (note.length > 200) return res.status(400).json({ error: "说明最多 200 字" });
+
+  try {
+    const claim = createClaim({ desiredUsername, employeeId, displayName, phoneTail, note });
+    logSecurityEvent("auth.claim_submitted", desiredUsername, ip, `工号 ${employeeId} 提交认领申请`, 202);
+    return res.status(201).json({ id: claim.id, status: claim.status });
+  } catch (error) {
+    if (error instanceof ClaimError) return res.status(error.status).json({ error: error.message });
+    console.error("[claims] 提交失败", error);
+    return res.status(500).json({ error: "提交失败，请稍后再试" });
+  }
+});
+
+authRouter.get("/claims", requireRole("ADMIN"), (req, res) => {
+  const status = typeof req.query.status === "string" ? req.query.status.trim() : "";
+  const filter = status === "pending" || status === "approved" || status === "rejected" ? (status as ClaimStatus) : undefined;
+  const items = listClaims(filter).map((c) => ({ ...c, employee: getClaimEmployee(c.id) }));
+  res.json(items);
+});
+
+authRouter.put("/claims/:id/decide", requireRole("ADMIN"), (req, res) => {
+  const decision = asString(req.body?.decision);
+  const reason = asString(req.body?.reason).trim();
+  if (decision !== "approved" && decision !== "rejected") {
+    return res.status(400).json({ error: "decision 只能是 approved 或 rejected" });
+  }
+
+  try {
+    const { claim, conflict } = decideClaim(req.params.id, decision, req.auth!.username, reason);
+    if (conflict) return res.status(409).json({ error: "这条申请已经被处理过了", claim });
+
+    if (decision === "rejected") {
+      logSecurityEvent("auth.claim_rejected", claim.desiredUsername, clientIp(req), `工号 ${claim.employeeId}：${reason}`, 200);
+      return res.json({ claim });
+    }
+
+    // 批准 = 发身份。账号与一次性口令只在这次响应里出现，服务端不存明文。
+    if (getAccount(claim.desiredUsername)) {
+      db.prepare("UPDATE account_claims SET status = 'pending', reviewedBy = NULL, reviewedAt = NULL WHERE id = ?").run(claim.id);
+      return res.status(409).json({ error: `用户名 ${claim.desiredUsername} 已被占用，请驳回并让对方换一个` });
+    }
+    const tempPassword = `${crypto.randomBytes(6).toString("hex")}Aa1`;
+    try {
+      const account = createAccount({
+        username: claim.desiredUsername,
+        password: tempPassword,
+        systemRole: "EMPLOYEE",
+        employeeId: claim.employeeId,
+        displayName: claim.displayName || claim.desiredUsername,
+        mustChangePassword: true,
+      });
+      logSecurityEvent("auth.claim_approved", claim.desiredUsername, clientIp(req), `绑定工号 ${claim.employeeId}`, 201);
+      return res.json({ claim, account, tempPassword });
+    } catch (error) {
+      // 建号失败（墓碑用户名、档案已绑定等）→ 把申请退回待核对，别留下"批了但没人"
+      db.prepare("UPDATE account_claims SET status = 'pending', reviewedBy = NULL, reviewedAt = NULL WHERE id = ?").run(claim.id);
+      throw error;
+    }
+  } catch (error) {
+    return handleError(res, error, "核对失败，请稍后再试");
+  }
+});

@@ -14,6 +14,7 @@ import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { approvalApi, Approval, ApprovalStatus, type CompBalance } from '@/services/approvalApi';
 import { APPROVAL_TABS, approvalSummary, approvalTitle } from './lib/approvalMeta';
+import ClaimsPanel from './components/ClaimsPanel';
 
 const LEAVE_TYPES = ['事假', '病假', '年假', '调休'] as const;
 const PUNCH_KINDS = ['上班卡', '下班卡'] as const;
@@ -53,8 +54,10 @@ export default function Approvals() {
   const confirm = useConfirm();
   const hasPermission = useUserStore((state) => state.hasPermission);
   const canApprove = hasPermission('approvals:approve');
+  /** 认领核对：批准等于发身份，能力码在服务端定的是 ADMIN */
+  const canReviewClaims = hasPermission('claims:review');
 
-  const [tab, setTab] = useState<'mine' | 'pending' | 'ledger'>('mine');
+  const [tab, setTab] = useState<'mine' | 'pending' | 'ledger' | 'claims'>('mine');
   const [mine, setMine] = useState<Approval[]>([]);
   const [pending, setPending] = useState<Approval[]>([]);
   const [ledger, setLedger] = useState<Approval[]>([]);
@@ -349,11 +352,11 @@ export default function Approvals() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-5 items-start">
+      <div className={tab === 'claims' ? 'grid gap-6' : 'grid gap-6 lg:grid-cols-5 items-start'}>
         {/* 自助提交表单 */}
         <form
           onSubmit={handleSubmit}
-          className="lg:col-span-2 bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60 shadow-sm p-5 space-y-4"
+          className={`${tab === 'claims' ? 'hidden' : 'lg:col-span-2'} bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60 shadow-sm p-5 space-y-4`}
         >
           <h2 className="text-sm font-medium text-zinc-900 dark:text-white flex items-center gap-2">
             <Send className="w-4 h-4 text-zinc-400" /> 提交申请
@@ -558,14 +561,15 @@ export default function Approvals() {
         </form>
 
         {/* 列表 */}
-        <div className="lg:col-span-3 bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60 shadow-sm overflow-hidden flex flex-col min-h-[320px]">
+        <div className={`${tab === 'claims' ? 'lg:col-span-5' : 'lg:col-span-3'} bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60 shadow-sm overflow-hidden flex flex-col min-h-[320px]`}>
           <div className="flex border-b border-zinc-100 dark:border-zinc-700/60">
             {(
               [
                 { id: 'mine', label: '我的申请' },
                 ...(canApprove ? [{ id: 'pending', label: '待我审批' }] : []),
                 ...(canApprove ? [{ id: 'ledger', label: '审批记录' }] : []),
-              ] as Array<{ id: 'mine' | 'pending' | 'ledger'; label: string }>
+                ...(canReviewClaims ? [{ id: 'claims', label: '待核对' }] : []),
+              ] as Array<{ id: 'mine' | 'pending' | 'ledger' | 'claims'; label: string }>
             ).map((t) => (
               <button
                 key={t.id}
@@ -667,7 +671,7 @@ export default function Approvals() {
             </div>
           )}
 
-          <div className="flex-1 overflow-y-auto">{renderList()}</div>
+          <div className="flex-1 overflow-y-auto">{tab === 'claims' ? <ClaimsPanel onDecided={refresh} /> : renderList()}</div>
         </div>
       </div>
 

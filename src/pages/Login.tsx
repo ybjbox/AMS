@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { User, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { DEFAULT_SYSTEM_ICON } from '@/config/constants';
 import { useForm } from 'react-hook-form';
@@ -50,11 +50,13 @@ export default function Login() {
       try {
         const res = await authService.login(data.username, data.password);
         setUser(toUserInfo(res.user), res.token);
+        // 员工登录后直接进门户：HR 控制台对一线员工没有可用信息，落在这里只会多一层找路
+        const isEmployee = (res.user.systemRole ?? '').toUpperCase() === 'EMPLOYEE';
         if (res.user.mustChangePassword) {
           // 强制改密：引导到个人设置的安全页（改密前业务接口会被后端 403 拦截）
           navigate('/settings', { state: { tab: 'profile', mustChangePassword: true } });
         } else {
-          navigate('/');
+          navigate(isEmployee ? '/my' : '/');
         }
       } catch (err) {
         const message = (err as { error?: string })?.error || '登录失败，请检查用户名和密码';
@@ -219,6 +221,15 @@ export default function Login() {
               </button>
             </div>
           </form>
+
+          <div className="mt-6 border-t border-zinc-100 dark:border-zinc-700 pt-4 text-center">
+            <Link
+              to="/claim"
+              className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-brand-600 dark:hover:text-brand-400"
+            >
+              还没有账号？<span className="font-medium text-brand-600 dark:text-brand-400">认领账号</span>
+            </Link>
+          </div>
 
           {import.meta.env.DEV && (
             <div className="mt-6">

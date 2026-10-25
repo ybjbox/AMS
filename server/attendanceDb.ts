@@ -1169,3 +1169,41 @@ export function analyzeAnomalies(): AnomalyRow[] {
   );
   console.log("[db] Seeded default shift into SQLite");
 })();
+
+/**
+ * 数据覆盖度：给「判定结果表」用的一句话——数据截止到哪天、本月覆盖了几天。
+ *
+ * 为什么单独一个端点：判定表本身只说"我判了什么"，不说"我依据的数据到哪天"。
+ * 实测数据曾滞后 19 天，员工在月底打开看到空结论时，分不清"没问题"和"没导数据"。
+ */
+export interface PunchCoverage {
+  /** 库里最新一条打卡日期；null = 一条都没有 */
+  latestDate: string | null;
+  /** 当前自然月（YYYY-MM） */
+  month: string;
+  /** 当前月里有打卡的不同日期数 */
+  coveredDays: number;
+  /** 当前月已经过去的天数（今天几号） */
+  elapsedDays: number;
+  /** elapsedDays - coveredDays，最小 0 */
+  uncoveredDays: number;
+}
+
+export function punchCoverage(): PunchCoverage {
+  const latest = db.prepare("SELECT MAX(date) AS d FROM punch_records").get() as { d: string | null };
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const month = `${now.getFullYear()}-${pad(now.getMonth() + 1)}`;
+  const elapsedDays = now.getDate();
+  const covered = db
+    .prepare("SELECT COUNT(DISTINCT date) AS c FROM punch_records WHERE substr(date, 1, 7) = ?")
+    .get(month) as { c: number };
+  const coveredDays = Number(covered.c) || 0;
+  return {
+    latestDate: latest.d ? String(latest.d) : null,
+    month,
+    coveredDays,
+    elapsedDays,
+    uncoveredDays: Math.max(0, elapsedDays - coveredDays),
+  };
+}

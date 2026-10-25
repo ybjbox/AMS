@@ -24,6 +24,7 @@ import {
   getPendingCompUsedHours,
 } from "./approvalsDb.ts";
 import { APPROVAL_TYPES, approvalKindOf, type ApplicantContext, type ApprovalInput } from "./approvalTypes.ts";
+import { analyzeAnomalies } from "./attendanceDb.ts";
 
 export const approvalsRouter = Router();
 approvalsRouter.use(json());
@@ -202,7 +203,23 @@ approvalsRouter.put("/:id/decide", requireRole("HR"), validateBody(decideSchema)
         .status(409)
         .json({ error: "该申请已被处理", code: "ALREADY_DECIDED" });
     }
-    res.json(result.row);
+    // 补卡通过后必须重算：判定是「一键分析」才算出来的，只写回打卡不重算的话，
+    // 员工再打开看到的仍是旧结论（钉钉官方专门列过 6 条"通过后仍显示异常"的原因）。
+    const row = result.row;
+    if (!row) return res.status(404).json({ error: "申请不存在" });
+    if (row.status === "approved" && row.type === "makeup") {
+      try {
+        const anomalies = analyzeAnomalies();
+        return res.json({ ...row, recomputed: { ok: true, anomalies: anomalies.length } });
+      } catch (recomputeError) {
+        console.error("[approvals] 补卡通过后重算失败", recomputeError);
+        return res.json({
+          ...row,
+          recomputed: { ok: false, error: recomputeError instanceof Error ? recomputeError.message : "重算失败" },
+        });
+      }
+    }
+    res.json(row);
   } catch (e) {
     next(e);
   }
