@@ -142,7 +142,8 @@ export default function Documents() {
               <input type="file" multiple className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="btn-primary"
+                aria-label="上传文件"
+                className="btn-primary max-sm:min-h-11"
                 disabled={isUploading}
               >
                 <Upload className="w-4 h-4 sm:mr-2" />
@@ -152,7 +153,8 @@ export default function Documents() {
           ) : (
             <button
               onClick={handleCreateSetClick}
-              className="btn-primary"
+              aria-label="新建套件"
+              className="btn-primary max-sm:min-h-11"
             >
               <Plus className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">新建套件</span>

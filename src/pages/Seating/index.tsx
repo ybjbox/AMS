@@ -225,7 +225,8 @@ export default function Seating() {
           <div>
             <button
               onClick={runAutoArrange}
-              className="btn-primary"
+              aria-label="自动排座"
+              className="btn-primary max-sm:min-h-11"
             >
               <RefreshCw className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">自动排座</span>

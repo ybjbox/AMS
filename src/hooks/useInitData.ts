@@ -29,10 +29,10 @@ export function useInitData() {
   }, []);
 
   useEffect(() => {
-    if (userInfo) {
-      fetchUsers();
-      // 全局拉取待办：侧边栏未完成角标需要在任何页面都可用（不仅 Todos 页）
-      fetchTodos();
-    }
+    if (!userInfo) return;
+    // 员工名单只有 HR+ 能读；权限收口后员工进 /my 也会走到这里，不能再无条件拉
+    if (userInfo.permissions?.includes('users:view')) fetchUsers();
+    // 全局拉取待办：侧边栏未完成角标需要在任何页面都可用（不仅 Todos 页）
+    fetchTodos();
   }, [userInfo, fetchUsers, fetchTodos]);
 }

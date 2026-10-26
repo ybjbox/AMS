@@ -13,7 +13,7 @@ import { User } from '@/types';
 import { useUserStore } from '@/store/useUserStore';
 import { Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Users, Phone, Briefcase, Building2 } from 'lucide-react';
 import { maskPhone } from '@/utils/dateUtils';
-import { TableSkeleton } from '../ui/Skeleton';
+import { ListSkeleton } from '../ui/Skeleton';
 import { EmptyState } from '../ui/EmptyState';
 import { FailedState } from '../ui/FailedState';
 import { Button } from '../ui/button';
@@ -290,7 +290,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
       {isLoading ? (
-        <TableSkeleton columns={8} />
+        <ListSkeleton rows={8} className="p-4" />
       ) : data.length === 0 ? (
         loadError ? (
           <FailedState subject="员工名单" reason={loadError} onRetry={onRetry} />

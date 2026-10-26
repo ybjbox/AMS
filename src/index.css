@@ -494,3 +494,49 @@ main,
     transform: none;
   }
 }
+
+/* 移动端触控契约（MASTER v5）：可点控件至少 44px。
+   只放宽移动端；桌面仍保留 32/36 的密度。 */
+@media (max-width: 639px) {
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger,
+  .btn-primary-danger {
+    min-height: 44px;
+  }
+  .btn-icon {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .tab-item,
+  .tab-item-active {
+    min-height: 44px;
+  }
+  [data-slot="button"] {
+    min-height: 44px;
+  }
+  [data-slot="button"][class*="size-"] {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    min-height: 44px;
+  }
+  nav a[href] {
+    min-height: 44px;
+  }
+  /* 表格排序、状态 chips、行内图标操作等零散 button 也统一到 44；
+     图标按钮同时补足宽度，避免只有 28×44 的窄条。 */
+  button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  button:has(> svg:only-child) {
+    min-width: 44px;
+  }
+  label:has(input[type="checkbox"], input[type="radio"]) {
+    min-height: 44px;
+  }
+}

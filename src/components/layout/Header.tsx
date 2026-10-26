@@ -21,7 +21,10 @@ const Header = memo(function Header() {
     <header className="relative z-40 md:hidden h-16 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-700/50 transition-colors duration-300 flex items-center justify-between px-4 print:hidden shrink-0">
       {/* 抽屉导航 */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetTrigger className="p-2 -ml-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 rounded-xl transition-colors duration-150">
+        <SheetTrigger
+          aria-label="打开导航菜单"
+          className="flex size-11 -ml-2 items-center justify-center rounded-xl text-zinc-400 transition-colors duration-150 hover:bg-zinc-100/50 hover:text-zinc-600 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-300"
+        >
           <Menu className="h-5 w-5" />
         </SheetTrigger>
         <SheetContent

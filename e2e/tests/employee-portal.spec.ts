@@ -159,11 +159,25 @@ test.describe.serial('员工门户', () => {
   });
 
   test('员工直达 HR 页面会回 /my，接口返回 403', async ({ page }) => {
+    const userListCalls: Array<{ status: number; auth: string }> = [];
+    page.on('response', (r) => {
+      if (new URL(r.url()).pathname === '/api/users') {
+        userListCalls.push({ status: r.status(), auth: r.request().headers()['authorization'] || '' });
+      }
+    });
     await loginUI(page, NEW_PASSWORD);
     await page.waitForURL('**/my');
+    await page.waitForTimeout(1000);
 
     const token = await page.evaluate(() => localStorage.getItem('app_auth_token'));
     expect(token).toBeTruthy();
+    // 门户进门时不能再无条件拉全员员工册（2026-10-26 Design QA）。
+    // 登录前上下文可能还带着 admin 的 storageState，所以只查「用员工 token 发出的」请求。
+    expect(
+      userListCalls.filter((c) => c.auth === `Bearer ${token}`),
+      '员工门户不应请求 /api/users'
+    ).toEqual([]);
+
     const forbidden = await page.request.get('/api/users', { headers: { Authorization: `Bearer ${token}` } });
     expect(forbidden.status(), '员工读员工列表应 403').toBe(403);
 

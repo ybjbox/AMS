@@ -139,7 +139,7 @@ export default function Users() {
             <div className="toolbar">
               {/* 导出入口合并：通讯录 / 花名册收进一个下拉，减少顶部按钮数量 */}
               <DropdownMenu>
-                <DropdownMenuTrigger className="btn-secondary">
+                <DropdownMenuTrigger aria-label="导出" className="btn-secondary max-sm:min-h-11">
                   <Download className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">导出</span>
                   <ChevronDown className="h-4 w-4 ml-1 hidden sm:block" />
@@ -158,7 +158,8 @@ export default function Users() {
               <Permission code="users:manage">
                 <button
                   onClick={() => setIsImportModalOpen(true)}
-                  className="btn-secondary"
+                  aria-label="批量导入"
+                  className="btn-secondary max-sm:min-h-11"
                 >
                   <Upload className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">批量导入</span>
@@ -167,7 +168,8 @@ export default function Users() {
               <Permission code="users:manage">
                 <button
                   onClick={handleAdd}
-                  className="btn-primary"
+                  aria-label="新增员工"
+                  className="btn-primary max-sm:min-h-11"
                 >
                   <Plus className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">新增员工</span>

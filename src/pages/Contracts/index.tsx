@@ -108,7 +108,8 @@ export default function ContractsPage() {
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => setIsTemplateEditorOpen(true)}
-              className="btn-secondary"
+              aria-label="模板设置"
+              className="btn-secondary max-sm:min-h-11"
             >
               <FileEdit className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">模板设置</span>

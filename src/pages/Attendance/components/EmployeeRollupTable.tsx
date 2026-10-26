@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { TableSkeleton } from '@/components/ui/Skeleton';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { FailedState } from '@/components/ui/FailedState';
 import { AlertTriangle, ArrowUpDown, ChevronUp, ChevronDown, FileSpreadsheet, SearchX } from 'lucide-react';
@@ -111,7 +111,7 @@ export default function EmployeeRollupTable({
   if (isLoading) {
     return (
       <div className="p-6">
-        <TableSkeleton columns={6} rows={8} />
+        <ListSkeleton rows={8} />
       </div>
     );
   }

@@ -567,6 +567,7 @@ export default function BusinessForms() {
             ref={previewRef}
             role="region"
             aria-label="业务单预览区"
+            tabIndex={0}
             className="max-h-[70vh] space-y-3 overflow-auto rounded-xl border bg-muted/30 p-2"
           >
             {plan.sheets.map((sheet, i) => (

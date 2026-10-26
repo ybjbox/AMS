@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { TableSkeleton } from '@/components/ui/Skeleton';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { FailedState } from '@/components/ui/FailedState';
 import { AlertTriangle, ArrowUpDown, ChevronDown, ChevronUp, SearchX, ShieldCheck } from 'lucide-react';
@@ -101,7 +101,7 @@ export default function AnomaliesTable({
       <CoverageBanner />
 
       {isLoading ? (
-        <TableSkeleton columns={5} rows={5} />
+        <ListSkeleton rows={5} />
       ) : loadError && totalCount === 0 ? (
         <div className="flex-1 flex items-center justify-center py-8">
           <FailedState subject="异常清单" reason={loadError} onRetry={onRetry} />

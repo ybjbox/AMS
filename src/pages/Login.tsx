@@ -119,7 +119,7 @@ export default function Login() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md animate-in fade-in slide-in-from-bottom-8 duration-500 delay-80 fill-mode-both">
-        <div className="bg-white dark:bg-zinc-800 py-8 px-4 shadow-xl shadow-zinc-200/40 dark:shadow-none border border-zinc-100 dark:border-zinc-700 sm:rounded-2xl sm:px-10">
+        <div className="mx-4 rounded-2xl bg-white px-4 py-8 shadow-xl shadow-zinc-200/40 dark:bg-zinc-800 dark:shadow-none border border-zinc-100 dark:border-zinc-700 sm:mx-0 sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
@@ -136,7 +136,7 @@ export default function Login() {
                   autoComplete="username"
                   spellCheck={false}
                   aria-invalid={Boolean(errors.username)}
-                  className="pl-10"
+                  className="min-h-11 pl-10"
                   placeholder="请输入用户名"
                 />
               </div>
@@ -157,7 +157,7 @@ export default function Login() {
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   aria-invalid={Boolean(errors.password)}
-                  className="pl-10 pr-10"
+                  className="min-h-11 pl-10 pr-10"
                   placeholder="请输入密码"
                 />
                 <button
@@ -197,7 +197,7 @@ export default function Login() {
                       toast.info('忘记密码功能暂未开放，请联系管理员重置');
                     });
                   }}
-                  className="inline-flex min-h-6 items-center font-medium text-sm text-brand-600 hover:text-brand-500 dark:text-brand-400 dark:hover:text-brand-300 transition-colors"
+                  className="inline-flex min-h-6 max-sm:min-h-11 items-center font-medium text-sm text-brand-600 hover:text-brand-500 dark:text-brand-400 dark:hover:text-brand-300 transition-colors"
                 >
                   忘记密码？
                 </button>

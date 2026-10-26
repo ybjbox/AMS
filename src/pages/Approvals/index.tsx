@@ -387,7 +387,7 @@ export default function Approvals() {
                 role="tab"
                 aria-selected={formType === t.id}
                 onClick={() => setFormType(t.id)}
-                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors max-sm:min-h-11 ${
                   formType === t.id
                     ? 'bg-white dark:bg-zinc-800 text-brand-600 dark:text-brand-400 shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'

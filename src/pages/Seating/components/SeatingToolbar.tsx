@@ -53,13 +53,18 @@ export function SeatingToolbar({
         {hasTables && (
           <button
             onClick={handleClear}
-            className="btn-danger"
+            aria-label="重置排座"
+            className="btn-danger max-sm:min-h-11"
           >
             <Trash2 className="w-4 h-4 sm:mr-2" />
             <span className="hidden sm:inline">重置</span>
           </button>
         )}
-        <button onClick={() => setIsPlansModalOpen(true)} className="btn-secondary relative">
+        <button
+          onClick={() => setIsPlansModalOpen(true)}
+          aria-label="排座方案"
+          className="btn-secondary relative max-sm:min-h-11"
+        >
           <FolderClock className="w-4 h-4 sm:mr-2" />
           <span className="hidden sm:inline">方案</span>
           {unsaved && (
@@ -71,7 +76,8 @@ export function SeatingToolbar({
         </button>
         <button
           onClick={() => setIsParticipantModalOpen(true)}
-          className="btn-secondary"
+          aria-label={`选择人员，已选 ${selectedCount} 人`}
+          className="btn-secondary max-sm:min-h-11"
         >
           <Users className="w-4 h-4 sm:mr-2" />
           <span className="hidden sm:inline">选择人员 ({selectedCount})</span>
@@ -81,7 +87,8 @@ export function SeatingToolbar({
         <button
           onClick={() => setIsPrintModalOpen(true)}
           disabled={!hasTables}
-          className="btn-secondary disabled:opacity-50"
+          aria-label="打印台卡"
+          className="btn-secondary disabled:opacity-50 max-sm:min-h-11"
         >
           <Printer className="w-4 h-4 sm:mr-2" />
           <span className="hidden sm:inline">打印台卡</span>

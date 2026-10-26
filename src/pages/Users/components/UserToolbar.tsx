@@ -49,7 +49,7 @@ export function UserToolbar({
           <div className="md:hidden w-full">
             <Sheet>
               <SheetTrigger
-                className={`w-full inline-flex justify-center items-center px-4 py-2.5 rounded-xl text-sm font-medium transition duration-300 ${
+                className={`w-full inline-flex min-h-11 justify-center items-center px-4 py-2.5 rounded-xl text-sm font-medium transition duration-300 ${
                   activeFilterCount > 0
                     ? 'text-brand-700 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/20 shadow-sm'
                     : 'text-zinc-700 dark:text-zinc-200 bg-zinc-100/50 dark:bg-zinc-800 hover:bg-zinc-200/50 dark:hover:bg-zinc-700'

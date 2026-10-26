@@ -56,7 +56,7 @@ export function RecordsFilterBar({
   const today = new Date();
   return (
     <div className="card-base p-4">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+      <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
         <div className="relative lg:w-64">
           <label htmlFor="att-q" className="mb-1.5 block text-xs font-medium text-muted-foreground">
             姓名或工号
@@ -106,7 +106,7 @@ export function RecordsFilterBar({
 
         {/* 快捷区间：手填日期框对"看上个月"这种最常见的诉求太慢。
             预设清单在 lib/datePresets.ts，增删区间只改那里。 */}
-        <div className="flex items-end gap-2">
+        <div className="flex flex-wrap items-end gap-2">
           <div>
             <span className="mb-1.5 block text-xs font-medium text-muted-foreground">快捷区间</span>
             <div
@@ -124,7 +124,7 @@ export function RecordsFilterBar({
                     onClick={() => onPreset(p.id)}
                     title={`${describeRange(presetRange(p.id, today, padDays).from, presetRange(p.id, today, padDays).to)}`}
                     className={[
-                      'rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors duration-200',
+                      'whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors duration-200 max-sm:min-h-11',
                       isActive
                         ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white'
                         : 'text-muted-foreground hover:text-zinc-900 dark:hover:text-zinc-100',
@@ -154,7 +154,7 @@ export function RecordsFilterBar({
         <div className="flex items-end gap-2">
           <div>
             <span className="mb-1.5 block text-xs font-medium text-muted-foreground">来源</span>
-            <div className="inline-flex rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800" role="group" aria-label="按来源筛选">
+            <div className="inline-flex flex-wrap rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800" role="group" aria-label="按来源筛选">
               {SOURCE_OPTIONS.map((opt) => {
                 const isActive = filter.source === opt.id;
                 return (
@@ -164,7 +164,7 @@ export function RecordsFilterBar({
                     aria-pressed={isActive}
                     onClick={() => onChange({ source: opt.id })}
                     className={[
-                      'rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors duration-200',
+                      'whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors duration-200 max-sm:min-h-11',
                       isActive
                         ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white'
                         : 'text-muted-foreground hover:text-zinc-900 dark:hover:text-zinc-100',
