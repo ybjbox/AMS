@@ -21,14 +21,14 @@ export default function NameCardToolbar({
   handlePrint,
 }: NameCardToolbarProps) {
   return (
-    <div className="bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700 px-6 py-4 flex items-center justify-between shrink-0 print:hidden">
-      <div className="page-header">
+    <div className="bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700 px-4 py-3 sm:px-6 sm:py-4 flex shrink-0 flex-col gap-3 md:flex-row md:items-center md:justify-between print:hidden">
+      <div className="page-header min-w-0">
         <div>
           <h1 className="page-title">会议台卡</h1>
           <p className="page-subtitle">自定义台卡尺寸、样式并批量打印</p>
         </div>
       </div>
-      <div className="flex items-center space-x-3">
+      <div className="flex flex-wrap items-center gap-2 md:justify-end md:gap-3">
         {uploadedUsers && (
           <Pressable
             onClick={() => setUploadedUsers(null)}

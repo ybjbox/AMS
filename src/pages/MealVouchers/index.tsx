@@ -123,10 +123,10 @@ export default function MealVouchers() {
         </div>
       </div>
 
-      <div className="flex flex-1 min-h-0 gap-4 overflow-hidden">
+      <div className="flex flex-1 min-h-0 flex-col gap-4 overflow-y-auto overflow-x-hidden lg:flex-row lg:overflow-hidden">
         <aside
           aria-label="餐券参数"
-          className="w-80 flex-shrink-0 overflow-y-auto rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800"
+          className="w-full flex-shrink-0 overflow-y-auto rounded-xl border border-zinc-200 bg-white p-4 lg:w-80 dark:border-zinc-700 dark:bg-zinc-800"
         >
           <h2 className="mb-3 text-sm font-semibold text-zinc-900 dark:text-white">券面信息</h2>
           <div className="space-y-3">
@@ -295,7 +295,7 @@ export default function MealVouchers() {
         <section
           role="region"
           aria-label="餐券预览区"
-          className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900"
+          className="flex min-h-96 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 lg:min-h-0 lg:flex-1 dark:border-zinc-700 dark:bg-zinc-900"
         >
           <div className="flex shrink-0 items-center justify-between border-b border-zinc-200/70 bg-white/70 px-3 py-1.5 dark:border-zinc-700/60 dark:bg-zinc-800/60">
             <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">

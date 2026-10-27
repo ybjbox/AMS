@@ -275,7 +275,7 @@ main,
     /* 品牌 CTA：实色 Logo 蓝 #005BA8（brand-600），白字对比 6.9:1（MASTER v3 扁平契约）
        border-transparent：与 .btn-secondary/.btn-danger 同高 —— 那两条各带 1px 实边框，
        实测同一工具条里 36 vs 38 差 2px（border-box 下边框计入高度）。 */
-    @apply inline-flex items-center justify-center px-4 py-2 text-sm
+    @apply inline-flex items-center justify-center whitespace-nowrap px-4 py-2 text-sm
     border border-transparent
     bg-brand-600 dark:bg-brand-500
     text-white font-medium rounded-lg
@@ -284,7 +284,7 @@ main,
   }
   
   .btn-secondary {
-    @apply inline-flex items-center justify-center px-4 py-2 shadow-sm
+    @apply inline-flex items-center justify-center whitespace-nowrap px-4 py-2 shadow-sm
     text-sm font-semibold text-zinc-700 bg-white border border-zinc-200/80 
     rounded-lg hover:bg-zinc-50 hover:border-brand-500/40
     dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-600 dark:hover:bg-zinc-700 
@@ -292,7 +292,7 @@ main,
   }
 
   .btn-danger {
-    @apply inline-flex items-center justify-center px-4 py-2 
+    @apply inline-flex items-center justify-center whitespace-nowrap px-4 py-2 
     text-sm font-medium text-red-600 bg-white border border-zinc-200/80 
     rounded-lg hover:bg-red-50 shadow-sm
     dark:bg-zinc-800 dark:text-red-400 dark:border-zinc-600 dark:hover:bg-red-900/20 
@@ -300,7 +300,7 @@ main,
   }
 
   .btn-primary-danger {
-    @apply inline-flex items-center justify-center px-4 py-2 text-sm
+    @apply inline-flex items-center justify-center whitespace-nowrap px-4 py-2 text-sm
     border border-transparent
     bg-red-600 text-white font-medium rounded-lg
     hover:bg-red-700
@@ -519,10 +519,12 @@ main,
     min-width: 44px;
     min-height: 44px;
   }
+  /* iOS Safari 在字号 <16px 的输入框聚焦时会放大整页；移动端统一 16px，桌面仍 14px */
   input:not([type="checkbox"]):not([type="radio"]),
   textarea,
   select {
     min-height: 44px;
+    font-size: 16px;
   }
   nav a[href] {
     min-height: 44px;
@@ -538,6 +540,25 @@ main,
   }
   label:has(input[type="checkbox"], input[type="radio"]) {
     min-height: 44px;
+  }
+}
+
+/* 触屏设备与宽度无关：横屏手机 / 平板同样要防 iOS 聚焦放大 */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* 通知面板：桌面 320，窄屏最多留 12px 边距，避免 320 档左侧被裁 */
+.notification-panel {
+  width: min(20rem, calc(100vw - 1.5rem));
+}
+@media (min-width: 640px) {
+  .notification-panel {
+    width: 24rem;
   }
 }
 

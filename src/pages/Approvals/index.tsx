@@ -401,7 +401,7 @@ export default function Approvals() {
           </div>
 
                     {formType === 'leave' && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="block">
                 <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">类型 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
                 <Select
@@ -430,7 +430,7 @@ export default function Approvals() {
                   onChange={(e) => setForm({ ...form, startDate: e.target.value })}
                 />
               </label>
-              <label className="block col-span-2">
+              <label className="block sm:col-span-2">
                 <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">结束日期（可选）</span>
                 <Input
                   type="date"
@@ -443,7 +443,7 @@ export default function Approvals() {
           )}
 
           {formType === 'makeup' && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="block">
                 <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">补卡日期 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
                 <Input
@@ -462,7 +462,7 @@ export default function Approvals() {
                   onChange={(e) => setForm({ ...form, punchTime: e.target.value })}
                 />
               </label>
-              <label className="block col-span-2">
+              <label className="block sm:col-span-2">
                 <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">卡类型 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
                 <Select
                   value={form.punchKind}
@@ -481,7 +481,7 @@ export default function Approvals() {
                   </SelectContent>
                 </Select>
               </label>
-              <p className="col-span-2 text-2xs text-muted-foreground leading-relaxed">
+              <p className="sm:col-span-2 text-2xs text-muted-foreground leading-relaxed">
                 补卡审批通过后，将自动补写对应打卡记录并更新考勤异常分析。
               </p>
             </div>
@@ -497,8 +497,8 @@ export default function Approvals() {
           )}
 
           {formType === 'resign' && (
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block col-span-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <label className="block sm:col-span-2">
                 <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">最后工作日 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
                 <Input
                   type="date"
@@ -507,14 +507,14 @@ export default function Approvals() {
                   onChange={(e) => setForm({ ...form, resignDate: e.target.value })}
                 />
               </label>
-              <p className="col-span-2 text-2xs text-muted-foreground leading-relaxed">
+              <p className="sm:col-span-2 text-2xs text-muted-foreground leading-relaxed">
                 离职审批通过后：员工状态变更为「离职」，登录账号将被停用（此操作不可逆，请谨慎提交）。
               </p>
             </div>
           )}
 
           {formType === 'overtime' && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="block">
                 <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">加班日期 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
                 <Input
@@ -536,7 +536,7 @@ export default function Approvals() {
                   onChange={(e) => setForm({ ...form, overtimeHours: e.target.value })}
                 />
               </label>
-              <p className="col-span-2 text-2xs text-muted-foreground leading-relaxed">
+              <p className="sm:col-span-2 text-2xs text-muted-foreground leading-relaxed">
                 加班审批通过后，时长将自动计入你的调休额度（8 小时 = 1 天）；申请「调休」假时将校验余额。
               </p>
             </div>
@@ -573,7 +573,7 @@ export default function Approvals() {
 
         {/* 列表 */}
         <div className={`${tab === 'claims' ? 'lg:col-span-5' : 'lg:col-span-3'} bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60 shadow-sm overflow-hidden flex flex-col min-h-80`}>
-          <div className="flex border-b border-zinc-100 dark:border-zinc-700/60">
+          <div className="no-scrollbar flex overflow-x-auto border-b border-zinc-100 dark:border-zinc-700/60">
             {(
               [
                 { id: 'mine', label: '我的申请' },
@@ -585,13 +585,13 @@ export default function Approvals() {
               <Pressable
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors ${
+                className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-3 text-sm font-medium transition-colors sm:px-4 ${
                   tab === t.id
                     ? 'text-brand-600 dark:text-brand-400 border-b-2 border-brand-600 dark:border-brand-400'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <Clock className="w-4 h-4" /> {t.label}
+                <Clock className="hidden h-4 w-4 sm:block" /> {t.label}
                 {t.id === 'pending' && pending.length > 0 && (
                   <span className="rounded-full bg-red-500 text-white text-3xs px-1.5 leading-4">
                     {pending.length}

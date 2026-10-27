@@ -50,6 +50,53 @@ test.describe('移动端无障碍与触控', () => {
     expect((await tab.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   });
 
+  test('审批页签单行、≥44px 且不出视口', async ({ page }) => {
+    await page.goto('/approvals');
+    await expect(page.locator('h1').first()).toBeVisible({ timeout: 30000 });
+
+    for (const name of ['我的申请', '待我审批', '审批记录', '待核对']) {
+      const tab = page.getByRole('button', { name, exact: true });
+      await expect(tab).toBeVisible();
+      const box = (await tab.boundingBox())!;
+      expect(box.height, name).toBeGreaterThanOrEqual(44);
+      expect(box.height, name).toBeLessThanOrEqual(56);
+      expect(box.x + box.width, `${name} 不应伸出视口`).toBeLessThanOrEqual(390.5);
+      const wrapped = await tab.evaluate((el) => el.scrollHeight > el.clientHeight + 2);
+      expect(wrapped, `${name} 不应折行`).toBe(false);
+    }
+  });
+
+  test('打印工具的手机工具栏与餐券预览不被压扁', async ({ page }) => {
+    await page.goto('/print-tools?tab=name-cards');
+    await expect(page.getByRole('heading', { name: '会议台卡' })).toBeVisible({ timeout: 30000 });
+    for (const name of [/粘贴名单/, /选择人员/, /打印台卡/]) {
+      const btn = page.getByRole('button', { name }).first();
+      await expect(btn).toBeVisible();
+      const box = (await btn.boundingBox())!;
+      expect(box.width, String(name)).toBeGreaterThanOrEqual(44);
+      expect(box.height, String(name)).toBeLessThanOrEqual(60);
+      const wrapped = await btn.evaluate((el) => el.scrollHeight > el.clientHeight + 2);
+      expect(wrapped, `${name} 不应折行`).toBe(false);
+    }
+
+    await page.goto('/print-tools?tab=meal-vouchers');
+    const preview = page.getByRole('region', { name: '餐券预览区' });
+    await expect(preview).toBeVisible({ timeout: 30000 });
+    expect((await preview.boundingBox())!.width).toBeGreaterThanOrEqual(300);
+  });
+
+  test('320 档通知面板不超出视口', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await page.goto('/');
+    await expect(page.locator('h1').first()).toBeVisible({ timeout: 30000 });
+    await page.getByRole('button', { name: /通知/ }).first().click();
+    const panel = page.locator('.notification-panel');
+    await expect(panel).toBeVisible();
+    const box = (await panel.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(320.5);
+  });
+
   test('业务单据预览区可 Tab 聚焦', async ({ page }) => {
     await page.goto('/business-forms');
     await expect(page.locator('h1').first()).toBeVisible({ timeout: 30000 });
@@ -64,6 +111,20 @@ test.describe('移动端无障碍与触控', () => {
     await expect(page.getByRole('button', { name: '查看已保存方案' })).toBeVisible();
     await expect(page.getByRole('button', { name: '自动排座' })).toHaveCount(0);
     await expect(page.getByText('各桌人数设置')).toBeHidden();
+  });
+});
+
+test.describe('触屏设备', () => {
+  test.use({ isMobile: true, hasTouch: true });
+
+  test('AI 入口在触屏上完整可见，不贴边收起', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('h1').first()).toBeVisible({ timeout: 30000 });
+    const ai = page.getByRole('button', { name: '打开 AI 助手' });
+    await expect(ai).toBeVisible();
+    const box = (await ai.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(390.5);
   });
 });
 
@@ -82,6 +143,9 @@ test.describe('未登录公开页', () => {
     for (const label of ['用户名', '密码']) {
       const input = page.getByLabel(label, { exact: true });
       expect((await input.boundingBox())!.height, label).toBeGreaterThanOrEqual(44);
+      // iOS Safari 在 <16px 时聚焦会放大整页
+      const fontSize = await input.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+      expect(fontSize, `${label} 字号`).toBeGreaterThanOrEqual(16);
     }
     const submit = page.getByRole('button', { name: /登录系统/ });
     expect((await submit.boundingBox())!.height).toBeGreaterThanOrEqual(44);

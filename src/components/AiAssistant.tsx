@@ -135,6 +135,16 @@ export default function AiAssistant() {
   // —— 默认贴边收纳：仅悬停/键盘聚焦/拖动/面板打开时弹出；鼠标移开延迟 600ms 自动缩回 ——
   const [focused, setFocused] = useState(false);
   const [pinned, setPinned] = useState(false);
+  // 触屏没有 hover，收起的半边入口没法自己露出来：只在能悬停的设备上贴边收纳
+  const [canHover, setCanHover] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(hover: hover)');
+    const onChange = () => setCanHover(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
   const pinTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pin = (next: boolean) => {
     if (pinTimer.current) clearTimeout(pinTimer.current);
@@ -148,7 +158,7 @@ export default function AiAssistant() {
   useEffect(() => () => {
     if (pinTimer.current) clearTimeout(pinTimer.current);
   }, []);
-  const tucked = !(pinned || focused || open || dragging);
+  const tucked = canHover && !(pinned || focused || open || dragging);
 
   /** 入口图标：若配置了自定义 Logo 则显示图片，否则用内置图标。 */
   const renderGlyph = (sizeClass: string) =>
