@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useRef, useCallback, useState } from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Textarea } from '@/components/ui/textarea';
@@ -68,22 +69,22 @@ export const ContractTemplateEditor = ({ isOpen, onClose }: ContractTemplateEdit
               ref={fileInputRef}
               onChange={handleFileUpload}
             />
-            <button
+            <Pressable
               onClick={() => fileInputRef.current?.click()}
               className="btn-secondary"
             >
               <Upload className="w-4 h-4 mr-1" />
               上传模板
-            </button>
+            </Pressable>
           </div>
           <div className="flex items-center gap-3">
-            <button
+            <Pressable
               onClick={onClose}
               className="btn-secondary"
             >
               取消
-            </button>
-            <button
+            </Pressable>
+            <Pressable
               onClick={() => {
                 setTemplate(editingTemplate);
                 onClose();
@@ -92,23 +93,23 @@ export const ContractTemplateEditor = ({ isOpen, onClose }: ContractTemplateEdit
             >
               <Save className="w-4 h-4 mr-2" />
               保存
-            </button>
+            </Pressable>
           </div>
         </div>
       }
     >
-      <div className="flex-1 overflow-hidden flex flex-col md:flex-row w-full h-[70vh]">
+      <div className="flex-1 overflow-hidden flex flex-col md:flex-row w-full preview-height-70">
         <div className="w-full md:w-2/3 p-4 flex flex-col border-r border-zinc-200 dark:border-zinc-700">
           <div className="mb-2 flex justify-between items-center">
             <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">HTML 模板源码</span>
             {/* -my-1 + py-1：实测 72×16 低于 WCAG 2.2 AA 的 24px 命中区（2.5.8）。
                 用负外边距抵掉 padding，视觉位置与原来完全一致，只把命中区撑到 24px。 */}
-            <button
+            <Pressable
               onClick={() => setEditingTemplate(defaultTemplate)}
               className="-my-1 py-1 text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400"
             >
               恢复默认模板
-            </button>
+            </Pressable>
           </div>
           <Textarea
             value={editingTemplate}

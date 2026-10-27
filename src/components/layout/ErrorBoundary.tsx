@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 
@@ -35,7 +36,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center h-full min-h-[400px] p-8 text-center animate-in fade-in duration-300">
+        <div className="flex flex-col items-center justify-center h-full min-h-100 p-8 text-center animate-in fade-in duration-300">
           <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-full mb-4">
             <AlertTriangle className="h-12 w-12 text-red-500 dark:text-red-400" />
           </div>
@@ -44,20 +45,20 @@ export default class ErrorBoundary extends React.Component<Props, State> {
             {this.state.error?.message || '抱歉，我们在加载此页面时遇到了一些问题。请尝试刷新页面或返回控制台。'}
           </p>
           <div className="flex space-x-4">
-            <button
+            <Pressable
               onClick={this.handleRetry}
               className="btn-secondary"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               重试
-            </button>
-            <button
+            </Pressable>
+            <Pressable
               onClick={this.handleGoHome}
               className="btn-primary"
             >
               <Home className="h-4 w-4 mr-2" />
               返回控制台
-            </button>
+            </Pressable>
           </div>
         </div>
       );

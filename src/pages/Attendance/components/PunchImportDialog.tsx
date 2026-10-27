@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, CheckCircle2, Download, RotateCcw, UploadCloud } from 'lucide-react';
 import { toast } from 'sonner';
@@ -176,7 +177,7 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
             </div>
           </div>
 
-          <button
+          <Pressable
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={parsing}
@@ -198,7 +199,7 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
                 </span>
               </>
             )}
-          </button>
+          </Pressable>
           <input
             ref={fileRef}
             type="file"
@@ -275,7 +276,7 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
                         ? preview.duplicates
                         : preview.valid;
                 return (
-                  <button
+                  <Pressable
                     key={f.id}
                     type="button"
                     aria-pressed={isActive}
@@ -289,7 +290,7 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
                   >
                     {f.label}
                     <span className="tabular-nums opacity-70">{n}</span>
-                  </button>
+                  </Pressable>
                 );
               })}
             </div>
@@ -315,7 +316,7 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
             )}
           </div>
 
-          <div className="max-h-[45vh] overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
+          <div className="modal-scroll-45 overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
             <table className="w-full text-left text-sm" aria-label="导入预览">
               <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs text-muted-foreground">
                 <tr>
@@ -329,7 +330,7 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
                           if (el) el.indeterminate = counts.someVisibleSelected;
                         }}
                         onChange={() => bulk(counts.allVisibleSelected ? 'none' : 'all')}
-                        className="h-4 w-4 accent-[var(--primary)]"
+                        className="h-4 w-4 accent-brand-600"
                       />
                     ) : (
                       <span className="block h-4" />
@@ -374,7 +375,7 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
                             disabled={!selectable}
                             onChange={() => toggleRow(row.rowNumber)}
                             aria-label={`导入第 ${row.rowNumber} 行${row.data.employeeId || ''}`}
-                            className="h-4 w-4 accent-[var(--primary)] disabled:opacity-40"
+                            className="h-4 w-4 accent-brand-600 disabled:opacity-40"
                           />
                         </td>
                         <td className="px-3 py-2 text-zinc-400 tabular-nums">{row.rowNumber}</td>

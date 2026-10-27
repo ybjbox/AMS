@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Ban,
@@ -84,9 +85,9 @@ function EmployeePicker({
           />
         </div>
         {value && (
-          <button type="button" className="btn-secondary shrink-0" onClick={() => onChange(null)}>
+          <Pressable type="button" className="btn-secondary shrink-0" onClick={() => onChange(null)}>
             清除
-          </button>
+          </Pressable>
         )}
       </div>
       {selected && (
@@ -101,7 +102,7 @@ function EmployeePicker({
           const taken = holder && holder !== selfUsername && holder !== editingUsername;
           const isCurrent = e.id === value;
           return (
-            <button
+            <Pressable
               key={e.id}
               type="button"
               disabled={!!taken}
@@ -118,7 +119,7 @@ function EmployeePicker({
               <span className="text-xs text-muted-foreground shrink-0 ml-3">
                 {taken ? `已绑 ${holder}` : e.id}
               </span>
-            </button>
+            </Pressable>
           );
         })}
         {matched.length === 0 && <p className="px-3 py-3 text-sm text-muted-foreground">没有匹配的员工</p>}
@@ -263,14 +264,14 @@ export default function AccountManager() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => void load()} className="btn-secondary flex items-center px-3 py-2" title="重新拉取账号列表">
+          <Pressable onClick={() => void load()} className="btn-secondary flex items-center px-3 py-2" title="重新拉取账号列表">
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             刷新
-          </button>
-          <button onClick={() => setCreating(true)} className="btn-primary flex items-center px-3 py-2">
+          </Pressable>
+          <Pressable onClick={() => setCreating(true)} className="btn-primary flex items-center px-3 py-2">
             <UserPlus className="w-4 h-4 mr-2" />
             新建账号
-          </button>
+          </Pressable>
         </div>
       </div>
 
@@ -288,7 +289,7 @@ export default function AccountManager() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Select value={bindingFilter} onValueChange={(v) => setBindingFilter((v ?? 'ALL') as BindingFilter)}>
-              <SelectTrigger className="w-[130px]" aria-label="按绑定状态筛选">
+              <SelectTrigger className="w-32" aria-label="按绑定状态筛选">
                 <SelectValue placeholder="绑定状态" />
               </SelectTrigger>
               <SelectContent>
@@ -299,7 +300,7 @@ export default function AccountManager() {
               </SelectContent>
             </Select>
             <Select value={roleFilter} onValueChange={(v) => setRoleFilter((v ?? 'ALL') as typeof roleFilter)}>
-              <SelectTrigger className="w-[130px]" aria-label="按系统角色筛选">
+              <SelectTrigger className="w-32" aria-label="按系统角色筛选">
                 <SelectValue placeholder="系统角色" />
               </SelectTrigger>
               <SelectContent>
@@ -312,7 +313,7 @@ export default function AccountManager() {
               </SelectContent>
             </Select>
             <Select value={stateFilter} onValueChange={(v) => setStateFilter((v ?? 'ALL') as StateFilter)}>
-              <SelectTrigger className="w-[120px]" aria-label="按账号状态筛选">
+              <SelectTrigger className="w-30" aria-label="按账号状态筛选">
                 <SelectValue placeholder="账号状态" />
               </SelectTrigger>
               <SelectContent>
@@ -326,7 +327,7 @@ export default function AccountManager() {
         </div>
 
         <div className="flex-1 overflow-auto">
-          <table className="w-full min-w-[860px] text-left border-collapse">
+          <table className="w-full min-w-215 text-left border-collapse">
             <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 font-medium">账号</th>
@@ -486,7 +487,7 @@ function IconAction({
   danger?: boolean;
 }) {
   return (
-    <button
+    <Pressable
       type="button"
       title={title}
       aria-label={title}
@@ -499,7 +500,7 @@ function IconAction({
       }`}
     >
       <Icon className="w-4 h-4" />
-    </button>
+    </Pressable>
   );
 }
 
@@ -558,13 +559,13 @@ function CreateAccountDialog({
       size="lg"
       footer={
         <>
-          <button type="button" onClick={onClose} className="btn-secondary">
+          <Pressable type="button" onClick={onClose} className="btn-secondary">
             关闭
-          </button>
-          <button type="button" onClick={() => void submit()} disabled={saving} className="btn-primary disabled:opacity-70">
+          </Pressable>
+          <Pressable type="button" onClick={() => void submit()} disabled={saving} className="btn-primary disabled:opacity-70">
             {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
             创建
-          </button>
+          </Pressable>
         </>
       }
     >
@@ -621,14 +622,14 @@ function CreateAccountDialog({
               <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">初始密码</label>
               {/* -my-1 + py-1：实测 54×16 低于 WCAG 2.2 AA 的 24px 命中区（2.5.8）。
                 负外边距抵掉 padding，视觉位置不变，只把命中区撑到 24px。 */}
-              <button
+              <Pressable
                 type="button"
                 onClick={() => setPassword(randomInitialPassword())}
                 className="-my-1 py-1 text-xs text-brand-600 dark:text-brand-400 flex items-center"
               >
                 <RefreshCw className="w-3.5 h-3.5 mr-1" />
                 换一批
-              </button>
+              </Pressable>
             </div>
             <p className="mt-1 select-all font-mono text-sm bg-zinc-100 dark:bg-zinc-700 rounded-lg px-3 py-2">{password}</p>
             <p className="mt-1 text-xs text-muted-foreground">首次登录会要求改密。</p>
@@ -690,13 +691,13 @@ function EditAccountDialog({
       size="lg"
       footer={
         <>
-          <button type="button" onClick={onClose} className="btn-secondary">
+          <Pressable type="button" onClick={onClose} className="btn-secondary">
             取消
-          </button>
-          <button type="button" onClick={() => void submit()} disabled={saving} className="btn-primary disabled:opacity-70">
+          </Pressable>
+          <Pressable type="button" onClick={() => void submit()} disabled={saving} className="btn-primary disabled:opacity-70">
             {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             保存
-          </button>
+          </Pressable>
         </>
       }
     >

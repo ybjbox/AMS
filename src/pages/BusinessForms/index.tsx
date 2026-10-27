@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Copy, Download, FolderArchive, Loader2, Plus, Printer, Sparkles, Trash2 } from 'lucide-react';
@@ -342,7 +343,7 @@ export default function BusinessForms() {
                     aria-label={`第 ${i + 1} 条的业务类型`}
                   >
                     {KINDS.map((o) => (
-                      <button
+                      <Pressable
                         key={o.value}
                         type="button"
                         role="radio"
@@ -356,7 +357,7 @@ export default function BusinessForms() {
                         }`}
                       >
                         {o.label}
-                      </button>
+                      </Pressable>
                     ))}
                   </div>
                 </div>
@@ -456,13 +457,13 @@ export default function BusinessForms() {
                       需办理的业务（正文）
                     </label>
                     {tpl && item.bodyEdited && (
-                      <button
+                      <Pressable
                         type="button"
                         className="text-xs text-brand-600 dark:text-brand-400 hover:underline"
                         onClick={() => restoreTemplate(item.id)}
                       >
                         恢复模板原文
-                      </button>
+                      </Pressable>
                     )}
                   </div>
                   <Textarea

@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useMemo, useState } from 'react';
 import { ListSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -144,7 +145,7 @@ export default function EmployeeRollupTable({
               type="checkbox"
               checked={onlyWithAnomaly}
               onChange={(e) => setOnlyWithAnomaly(e.target.checked)}
-              className="h-4 w-4 accent-[var(--primary)]"
+              className="h-4 w-4 accent-brand-600"
             />
             只看有异常
           </label>
@@ -184,7 +185,7 @@ export default function EmployeeRollupTable({
         />
       ) : (
         <div className="overflow-x-auto">
-          <table className="min-w-[720px] w-full divide-y divide-zinc-100 dark:divide-zinc-800">
+          <table className="min-w-180 w-full divide-y divide-zinc-100 dark:divide-zinc-800">
             <thead className="bg-zinc-50/50 dark:bg-zinc-800/50">
               <tr>
                 {COLUMNS.map((c, i) => {
@@ -202,7 +203,7 @@ export default function EmployeeRollupTable({
                       )}
                     >
                       {sortable && c.key ? (
-                        <button
+                        <Pressable
                           type="button"
                           onClick={() => toggleSort(c.key!)}
                           className={cn(
@@ -214,7 +215,7 @@ export default function EmployeeRollupTable({
                           {c.label}
                           {!isActive && <ArrowUpDown className="h-3 w-3 opacity-40" aria-hidden="true" />}
                           {c.align !== 'right' && isActive && <SortIcon dir={sortDir} />}
-                        </button>
+                        </Pressable>
                       ) : (
                         c.label
                       )}
@@ -280,7 +281,7 @@ function Row({
   return (
     <tr className="hover:bg-zinc-50/80 dark:hover:bg-zinc-700/30 transition-colors">
       <td className="sticky left-0 z-10 whitespace-nowrap bg-white px-4 py-2 shadow-sticky-left transition-colors hover:bg-zinc-50/80 dark:bg-zinc-800 dark:hover:bg-zinc-700/30">
-        <button
+        <Pressable
           type="button"
           onClick={onOpen}
           aria-label={`查看 ${row.employeeName}（${row.employeeId}）的全部打卡记录`}
@@ -288,7 +289,7 @@ function Row({
           className="rounded text-sm font-medium text-brand-700 underline-offset-2 hover:underline focus-visible:underline dark:text-brand-300"
         >
           {row.employeeName}
-        </button>
+        </Pressable>
       </td>
       <td className="px-4 py-2 whitespace-nowrap text-sm text-muted-foreground tabular-nums">{row.employeeId}</td>
       <td className="px-4 py-2 whitespace-nowrap text-right text-sm text-zinc-900 tabular-nums dark:text-zinc-100">
@@ -302,7 +303,7 @@ function Row({
       </td>
       <td className="px-4 py-2 whitespace-nowrap text-right">
         {row.anomalies > 0 ? (
-          <button
+          <Pressable
             type="button"
             onClick={onOpen}
             aria-label={`查看 ${row.employeeName} 的 ${row.anomalies} 条异常对应打卡`}
@@ -312,7 +313,7 @@ function Row({
               <AlertTriangle className="h-3 w-3" aria-hidden="true" />
               {row.anomalies}
             </Badge>
-          </button>
+          </Pressable>
         ) : (
           <span className="text-sm text-muted-foreground tabular-nums">0</span>
         )}

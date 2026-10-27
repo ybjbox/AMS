@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback } from 'react';
 import { Printer, Check, GripVertical } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
@@ -62,7 +63,7 @@ const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: Sor
         <GripVertical className="h-4 w-4" />
       </div>
 
-      <button onClick={onToggle} className="flex-1 flex items-center text-left">
+      <Pressable onClick={onToggle} className="flex-1 flex items-center text-left">
         <div
           className={`w-4 h-4 rounded border mr-3 flex items-center justify-center transition-colors ${
             col.selected
@@ -73,7 +74,7 @@ const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: Sor
           {col.selected && <Check className="h-3 w-3 text-white" />}
         </div>
         <span className="text-sm font-medium">{col.label}</span>
-      </button>
+      </Pressable>
     </div>
   );
 });
@@ -201,20 +202,20 @@ export function AddressBookModal({
       size="full"
       footer={
         <>
-          <button
+          <Pressable
             onClick={onClose}
             className="btn-secondary w-full sm:w-auto"
           >
             取消
-          </button>
-          <button
+          </Pressable>
+          <Pressable
             onClick={handlePrintAddressBook}
             disabled={addressBookConfig.columns.filter((c: ExportColumn) => c.selected).length === 0}
             className="btn-primary w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Printer className="h-4 w-4 mr-2" />
             打印通讯录
-          </button>
+          </Pressable>
         </>
       }
     >
@@ -334,7 +335,7 @@ export function AddressBookModal({
                 items={addressBookConfig.columns.map((c: ExportColumn) => c.key as string)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                <div className="space-y-2 max-h-75 overflow-y-auto pr-2">
                   {addressBookConfig.columns.map((col: ExportColumn, idx: number) => {
                     return (
                       <SortableColumn
@@ -354,7 +355,7 @@ export function AddressBookModal({
           </div>
         </div>
 
-        <div className="w-full md:w-2/3 flex flex-col items-center bg-zinc-100 dark:bg-zinc-900 px-6 pb-6 overflow-auto relative min-h-[400px] h-full">
+        <div className="w-full md:w-2/3 flex flex-col items-center bg-zinc-100 dark:bg-zinc-900 px-6 pb-6 overflow-auto relative min-h-100 h-full">
           <div className="sticky top-0 z-10 -mx-6 mb-4 flex self-stretch items-center justify-between gap-3 bg-white/90 py-1.5 pl-3 pr-2 text-xs font-medium uppercase tracking-wider text-zinc-500 shadow-sm backdrop-blur dark:bg-zinc-800/90 dark:text-zinc-400">
             <span>打印预览</span>
             <PreviewZoomControl zoom={zoom} onChange={change} onReset={reset} />

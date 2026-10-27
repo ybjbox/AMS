@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -226,13 +227,13 @@ export default function ProfilePanel() {
                   上传头像
                 </Button>
                 {avatar && (
-                  <button
+                  <Pressable
                     type="button"
                     onClick={() => profileForm.setValue('avatar', '', { shouldDirty: true })}
                     className="text-sm text-muted-foreground hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
                   >
                     恢复默认
-                  </button>
+                  </Pressable>
                 )}
               </div>
               <p className="text-xs text-muted-foreground mt-1.5">

@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useState } from 'react';
 import { Download, Loader2, Save, Trash2 } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
@@ -57,7 +58,7 @@ export function PlansModal({
               placeholder="如：年会第一轮 / 婚宴主桌方案"
               className="flex-1"
             />
-            <button
+            <Pressable
               type="button"
               onClick={() => void submit()}
               disabled={saving}
@@ -65,7 +66,7 @@ export function PlansModal({
             >
               {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
               保存
-            </button>
+            </Pressable>
           </div>
           <p className="mt-1.5 text-xs text-zinc-400">同名会覆盖；方案只存工号，载入时按最新员工档案还原。</p>
         </div>
@@ -94,7 +95,7 @@ export function PlansModal({
                     </p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <button
+                    <Pressable
                       type="button"
                       onClick={() => onRestore(p)}
                       className="btn-secondary flex items-center px-2.5 py-1.5 text-xs"
@@ -102,8 +103,8 @@ export function PlansModal({
                     >
                       <Download className="w-3.5 h-3.5 sm:mr-1" />
                       <span className="hidden sm:inline">载入</span>
-                    </button>
-                    <button
+                    </Pressable>
+                    <Pressable
                       type="button"
                       onClick={() => onRemove(p.id)}
                       aria-label={`删除方案 ${p.name}`}
@@ -111,7 +112,7 @@ export function PlansModal({
                       className="p-1.5 rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                     >
                       <Trash2 className="w-4 h-4" />
-                    </button>
+                    </Pressable>
                   </div>
                 </li>
               ))}

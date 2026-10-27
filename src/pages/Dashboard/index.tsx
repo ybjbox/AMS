@@ -57,7 +57,7 @@ export default function Dashboard() {
         return (
           <Suspense
             fallback={
-              <div className="card-base p-6 min-h-[300px] flex items-center justify-center text-sm text-muted-foreground">
+              <div className="card-base p-6 min-h-75 flex items-center justify-center text-sm text-muted-foreground">
                 图表加载中…
               </div>
             }

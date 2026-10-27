@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import PageContainer from "@/components/PageContainer";
 import React from 'react';
 import { Building2, Briefcase, Plus } from 'lucide-react';
@@ -46,13 +47,13 @@ export default function Departments() {
               </h2>
             </div>
             {canManage && (
-              <button
+              <Pressable
                 onClick={logic.handleAddRoot}
                 className="btn-primary whitespace-nowrap shrink-0"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 新增一级部门
-              </button>
+              </Pressable>
             )}
           </div>
           <div className="p-6 flex-1 overflow-y-auto">
@@ -86,13 +87,13 @@ export default function Departments() {
                     /* 空态不能承诺做不到的事：写操作要 departments:manage，
                        没有该能力的人点「立即创建」只会吃一次 403（2026-09-26 审查 M7） */
                     canManage ? (
-                      <button
+                      <Pressable
                         onClick={logic.handleAddRoot}
                         className="btn-primary"
                       >
                         <Plus className="w-4 h-4 sm:mr-2" />
                         <span className="hidden sm:inline">立即创建</span>
-                      </button>
+                      </Pressable>
                     ) : undefined
                   }
                 />
@@ -109,12 +110,12 @@ export default function Departments() {
               <h2 className="text-base font-medium text-zinc-800 dark:text-zinc-200">职位设置 ({logic.roles.length})</h2>
             </div>
             {logic.departments.length > 0 && (
-              <button
+              <Pressable
                 onClick={logic.isAllRoleDeptsExpanded ? logic.collapseAllRoleDepts : logic.expandAllRoleDepts}
                 className="text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 font-medium transition-colors"
               >
                 {logic.isAllRoleDeptsExpanded ? '一键收起' : '一键展开'}
-              </button>
+              </Pressable>
             )}
           </div>
           <div className="p-4 flex-1 overflow-y-auto space-y-3">

@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, ChevronDown, ClipboardCheck, Download, FileSpreadsheet, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
@@ -163,7 +164,7 @@ export default function MonthlyReport() {
             className="w-auto"
           />
         </label>
-        <button
+        <Pressable
           onClick={() => void load(month)}
           disabled={isLoading}
           className="btn-secondary"
@@ -171,7 +172,7 @@ export default function MonthlyReport() {
         >
           <RefreshCw className={`h-4 w-4 sm:mr-2 ${isLoading ? 'animate-spin' : ''}`} />
           <span className="hidden sm:inline">刷新</span>
-        </button>
+        </Pressable>
         <div className="flex-1" />
         {rows.length > 0 && (
           <>
@@ -207,7 +208,7 @@ export default function MonthlyReport() {
         <div className="px-4 py-2 border-b border-zinc-200/80 dark:border-zinc-700 flex flex-wrap items-center gap-2 shrink-0">
           <span className="text-xs text-muted-foreground">有打卡的月份</span>
           {stats.map((s) => (
-            <button
+            <Pressable
               key={s.month}
               type="button"
               aria-pressed={s.month === month}
@@ -219,7 +220,7 @@ export default function MonthlyReport() {
               }`}
             >
               {s.month} · {s.days} 天
-            </button>
+            </Pressable>
           ))}
           {fullerMonth && currentStat && (
             <span className="text-xs text-muted-foreground">

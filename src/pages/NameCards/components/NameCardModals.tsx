@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback } from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -77,32 +78,32 @@ export default function NameCardModals({
         title={
           <div className="flex items-center space-x-4">
             <span className="text-lg leading-6 font-medium text-zinc-900 dark:text-white">选择参与人员</span>
-            <button
+            <Pressable
               onClick={toggleAllDeptsExpand}
               className="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 font-medium"
             >
               {expandedDepts.size === Object.keys(groupedUsers).length ? '全部收起' : '全部展开'}
-            </button>
+            </Pressable>
           </div>
         }
         size="2xl"
-        bodyClassName="p-4 sm:p-6 max-h-[60vh] overflow-y-auto"
+        bodyClassName="p-4 sm:p-6 modal-scroll-60 overflow-y-auto"
         footer={
           <>
-            <button
+            <Pressable
               type="button"
               onClick={() => setIsParticipantModalOpen(false)}
               className="btn-secondary w-full sm:w-auto"
             >
               取消
-            </button>
-            <button
+            </Pressable>
+            <Pressable
               type="button"
               onClick={() => setIsParticipantModalOpen(false)}
               className="btn-primary w-full sm:w-auto"
             >
               完成
-            </button>
+            </Pressable>
           </>
         }
       >
@@ -134,7 +135,7 @@ export default function NameCardModals({
                       ({deptUsers.filter((u) => selectedUserIds.has(u.id)).length}/{deptUsers.length})
                     </span>
                   </div>
-                  <button
+                  <Pressable
                     data-dept={dept}
                     onClick={onToggleDeptExpandClick}
                     className="p-1 text-muted-foreground hover:text-zinc-600 dark:hover:text-zinc-300 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
@@ -142,7 +143,7 @@ export default function NameCardModals({
                     aria-expanded={isExpanded}
                   >
                     <ChevronRight className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                  </button>
+                  </Pressable>
                 </div>
                 {isExpanded && (
                   <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 bg-white dark:bg-zinc-800 border-t border-zinc-200 dark:border-zinc-700">
@@ -180,20 +181,20 @@ export default function NameCardModals({
         size="2xl"
         footer={
           <>
-            <button
+            <Pressable
               type="button"
               onClick={() => setIsManualInputOpen(false)}
               className="btn-secondary w-full sm:w-auto"
             >
               取消
-            </button>
-            <button
+            </Pressable>
+            <Pressable
               type="button"
               onClick={handleManualInputSubmit}
               className="btn-primary w-full sm:w-auto"
             >
               确认导入
-            </button>
+            </Pressable>
           </>
         }
       >

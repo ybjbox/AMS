@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Activity, Database, RefreshCw, Server, AlertTriangle, Clock } from 'lucide-react';
 import { notifySaveFailure } from '@/store/saveFailure';
@@ -72,7 +73,7 @@ export default function DiagnosticsPanel() {
             进程健康与访问日志汇总（内存窗口，最近 {(data?.accessLog.capacity ?? 200)} 条；重启后清空属预期）
           </p>
         </div>
-        <button
+        <Pressable
           onClick={() => void load()}
           disabled={loading}
           className="btn-secondary"
@@ -80,7 +81,7 @@ export default function DiagnosticsPanel() {
         >
           <RefreshCw className={`h-4 w-4 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
           <span className="hidden sm:inline">刷新</span>
-        </button>
+        </Pressable>
       </div>
 
       {/* 健康卡片 */}

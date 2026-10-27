@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 /**
  * 可排序的卡片外壳（编辑态才出现拖拽手柄）。
  *
@@ -40,7 +41,7 @@ export default function SortableCard({ id, label, spanClass, editing, children }
   return (
     <div ref={setNodeRef} style={style} className={`relative ${spanClass}`}>
       {editing && (
-        <button
+        <Pressable
           type="button"
           ref={setActivatorNodeRef}
           {...attributes}
@@ -49,7 +50,7 @@ export default function SortableCard({ id, label, spanClass, editing, children }
           className="absolute -top-2 -right-2 z-10 cursor-grab touch-none rounded-full border border-zinc-200 bg-white p-1.5 text-muted-foreground shadow-sm hover:bg-zinc-50 active:cursor-grabbing dark:border-zinc-600 dark:bg-zinc-800 dark:hover:bg-zinc-700"
         >
           <GripVertical className="h-4 w-4" />
-        </button>
+        </Pressable>
       )}
       {children}
     </div>

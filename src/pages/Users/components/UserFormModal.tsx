@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -169,21 +170,21 @@ export function UserFormModal({
       size="4xl"
       footer={
         <>
-          <button
+          <Pressable
             type="button"
             onClick={onClose}
             className="btn-secondary w-full sm:w-auto"
           >
             取消
-          </button>
-          <button
+          </Pressable>
+          <Pressable
             type="submit"
             form="employee-form"
             disabled={isSubmitting}
             className="btn-primary w-full sm:w-auto disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isSubmitting ? '保存中…' : '保存'}
-          </button>
+          </Pressable>
         </>
       }
     >

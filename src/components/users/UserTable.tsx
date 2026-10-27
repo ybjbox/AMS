@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useState, useMemo, useRef, memo } from 'react';
 import {
   useReactTable,
@@ -41,7 +42,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
         accessorKey: 'name',
         header: ({ column }) => {
           return (
-            <button
+            <Pressable
               type="button"
               className="flex w-full items-center cursor-pointer select-none rounded text-left"
               onClick={column.getToggleSortingHandler()}
@@ -53,7 +54,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
               }[column.getIsSorted() as string] ?? (
                 <ArrowUpDown className="ml-2 h-4 w-4 text-zinc-400 opacity-0 group-hover:opacity-100" />
               )}
-            </button>
+            </Pressable>
           );
         },
         cell: ({ row }) => (
@@ -69,7 +70,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
         accessorKey: 'department',
         header: ({ column }) => {
           return (
-            <button
+            <Pressable
               type="button"
               className="flex w-full items-center cursor-pointer select-none rounded text-left"
               onClick={column.getToggleSortingHandler()}
@@ -81,7 +82,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
               }[column.getIsSorted() as string] ?? (
                 <ArrowUpDown className="ml-2 h-4 w-4 text-zinc-400 opacity-0 group-hover:opacity-100" />
               )}
-            </button>
+            </Pressable>
           );
         },
         cell: ({ row }) => (
@@ -97,7 +98,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
         accessorKey: 'status',
         header: ({ column }) => {
           return (
-            <button
+            <Pressable
               type="button"
               className="flex w-full items-center cursor-pointer select-none rounded text-left"
               onClick={column.getToggleSortingHandler()}
@@ -109,7 +110,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
               }[column.getIsSorted() as string] ?? (
                 <ArrowUpDown className="ml-2 h-4 w-4 text-zinc-400 opacity-0 group-hover:opacity-100" />
               )}
-            </button>
+            </Pressable>
           );
         },
         cell: ({ row }) => {
@@ -183,7 +184,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
         accessorKey: 'contractExpiry',
         header: ({ column }) => {
           return (
-            <button
+            <Pressable
               type="button"
               className="flex w-full items-center cursor-pointer select-none rounded text-left"
               onClick={column.getToggleSortingHandler()}
@@ -195,7 +196,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
               }[column.getIsSorted() as string] ?? (
                 <ArrowUpDown className="ml-2 h-4 w-4 text-zinc-400 opacity-0 group-hover:opacity-100" />
               )}
-            </button>
+            </Pressable>
           );
         },
         cell: ({ row }) => {
@@ -225,7 +226,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
         header: '操作',
         cell: ({ row }) => (
           <div className="flex items-center justify-end space-x-3">
-            <button
+            <Pressable
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit(row.original);
@@ -235,8 +236,8 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
               aria-label={`编辑：${row.original.name}`}
             >
               <Edit className="h-4 w-4" />
-            </button>
-            <button
+            </Pressable>
+            <Pressable
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete(row.original);
@@ -246,7 +247,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
               aria-label={`删除：${row.original.name}`}
             >
               <Trash2 className="h-4 w-4" />
-            </button>
+            </Pressable>
           </div>
         ),
         size: 80,
@@ -366,7 +367,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
           {/* 桌面端虚拟化表格（>= md），原有代码保持不变 */}
           <div className="hidden md:flex flex-1 flex-col min-h-0">
             <div ref={parentRef} className="w-full h-full overflow-x-auto overflow-y-auto relative">
-              <table className="w-full min-w-[800px] text-left border-collapse relative [&_th]:whitespace-nowrap" style={{ width: table.getTotalSize() }} aria-label="员工列表">
+              <table className="w-full min-w-200 text-left border-collapse relative [&_th]:whitespace-nowrap" style={{ width: table.getTotalSize() }} aria-label="员工列表">
                 <caption className="sr-only">员工列表</caption>
                 <thead>
                   {table.getHeaderGroups().map((headerGroup) => (

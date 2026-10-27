@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Bell } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
@@ -36,7 +37,7 @@ export default function NotificationTrigger() {
 
   return (
     <div className="relative" ref={panelRef}>
-      <button
+      <Pressable
         onClick={toggleOpen}
         className="relative flex size-11 items-center justify-center rounded-full text-zinc-400 transition-colors duration-200 hover:bg-zinc-100 hover:text-zinc-500 dark:hover:bg-zinc-700 dark:hover:text-zinc-300"
         aria-label={unreadCount > 0 ? `通知，${unreadCount}条未读` : '通知'}
@@ -45,11 +46,11 @@ export default function NotificationTrigger() {
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-0.5 items-center justify-center rounded-full bg-red-500 ring-2 ring-white dark:ring-zinc-800 text-3xs font-bold text-white">
+          <span className="absolute -top-1 -right-1 flex h-4 min-w-4 px-0.5 items-center justify-center rounded-full bg-red-500 ring-2 ring-white dark:ring-zinc-800 text-3xs font-bold text-white">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
-      </button>
+      </Pressable>
 
       <AnimatePresence>{isOpen && <NotificationPanel onClose={handleClose} />}</AnimatePresence>
     </div>

@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, Copy, FileUp, Loader2, Sparkles, Wand2, ChevronLeft, ChevronRight, History } from 'lucide-react';
 import { toast } from 'sonner';
@@ -324,7 +325,7 @@ export default function WeChatNotice() {
               aria-valuenow={progress?.percent ?? 0}
             >
               <div
-                className="h-full rounded-full bg-brand-500 transition-[width] duration-300 ease-out"
+                className="h-full rounded-full bg-brand-500 progress-fill"
                 style={{ width: `${progress?.percent ?? 5}%` }}
               />
             </div>
@@ -399,7 +400,7 @@ export default function WeChatNotice() {
             aria-label="详细程度"
           >
             {DETAIL_OPTIONS.map((o) => (
-              <button
+              <Pressable
                 key={o.value}
                 type="button"
                 role="radio"
@@ -413,7 +414,7 @@ export default function WeChatNotice() {
                 }`}
               >
                 {o.label}
-              </button>
+              </Pressable>
             ))}
           </div>
         </div>
@@ -448,7 +449,7 @@ export default function WeChatNotice() {
             <div className="flex items-center gap-2">
               {versions.length > 1 && (
                 <div className="flex items-center gap-1 rounded-lg border bg-muted/40 px-1 py-0.5">
-                  <button
+                  <Pressable
                     type="button"
                     className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
                     title="查看更早的版本"
@@ -456,12 +457,12 @@ export default function WeChatNotice() {
                     onClick={() => setViewIdx((i) => Math.min(versions.length - 1, i + 1))}
                   >
                     <ChevronLeft className="h-4 w-4" />
-                  </button>
+                  </Pressable>
                   <span className="flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
                     <History className="h-3.5 w-3.5" />
                     第 {versions.length - viewIdx} / {versions.length} 版
                   </span>
-                  <button
+                  <Pressable
                     type="button"
                     className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
                     title="查看更新的版本"
@@ -469,7 +470,7 @@ export default function WeChatNotice() {
                     onClick={() => setViewIdx((i) => Math.max(0, i - 1))}
                   >
                     <ChevronRight className="h-4 w-4" />
-                  </button>
+                  </Pressable>
                 </div>
               )}
               <Button variant="outline" size="sm" disabled={generating} onClick={() => void onGenerate()}>
@@ -491,16 +492,16 @@ export default function WeChatNotice() {
             {' · '}
             {DETAIL_OPTIONS.find((o) => o.value === current.detail)?.label ?? '标准'}
             {viewIdx !== 0 && (
-              <button
+              <Pressable
                 type="button"
                 className="ml-2 text-primary hover:underline"
                 onClick={() => setViewIdx(0)}
               >
                 回到最新版
-              </button>
+              </Pressable>
             )}
           </p>
-          <div className="rounded-xl border bg-muted/40 p-4 max-h-[28rem] overflow-y-auto">
+          <div className="rounded-xl border bg-muted/40 p-4 max-h-112 overflow-y-auto">
             <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed text-foreground">
               {current.notice}
             </pre>

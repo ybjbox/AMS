@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, Clock, AlertTriangle, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
@@ -198,7 +199,7 @@ export default function EmployeePunchDialog({
             value={from}
             max={to || undefined}
             onChange={(e) => setFrom(e.target.value)}
-            className="h-8 w-[9rem] text-xs dark:[color-scheme:dark]"
+            className="h-8 w-36 text-xs dark:[color-scheme:dark]"
           />
         </div>
         <span className="pb-1.5 text-xs text-muted-foreground" aria-hidden="true">
@@ -214,11 +215,11 @@ export default function EmployeePunchDialog({
             value={to}
             min={from || undefined}
             onChange={(e) => setTo(e.target.value)}
-            className="h-8 w-[9rem] text-xs dark:[color-scheme:dark]"
+            className="h-8 w-36 text-xs dark:[color-scheme:dark]"
           />
         </div>
         {(from || to) && (
-          <button
+          <Pressable
             type="button"
             onClick={() => {
               setFrom('');
@@ -227,7 +228,7 @@ export default function EmployeePunchDialog({
             className="pb-1.5 text-2xs text-brand-700 underline underline-offset-2 hover:text-brand-800 dark:text-brand-300"
           >
             清除
-          </button>
+          </Pressable>
         )}
         <div className="flex-1" />
         <span className="pb-1.5 text-2xs text-muted-foreground tabular-nums">
@@ -262,7 +263,7 @@ export default function EmployeePunchDialog({
           }
         />
       ) : (
-        <div className="max-h-[52vh] overflow-y-auto">
+        <div className="modal-scroll-52 overflow-y-auto">
           <table className="w-full text-left text-sm">
             <caption className="sr-only">{employee.employeeName}的每日打卡记录</caption>
             <tbody>
@@ -277,7 +278,7 @@ export default function EmployeePunchDialog({
                     {/* 日期列：定宽 + sticky，横向滚表格时不会跟着滑走 */}
                     <th
                       scope="row"
-                      className="sticky left-0 w-[9.5rem] whitespace-nowrap border-r border-zinc-100 bg-white px-4 py-2.5 align-top font-normal dark:border-zinc-700/60 dark:bg-zinc-800"
+                      className="sticky left-0 w-38 whitespace-nowrap border-r border-zinc-100 bg-white px-4 py-2.5 align-top font-normal dark:border-zinc-700/60 dark:bg-zinc-800"
                     >
                       <span className="flex items-center gap-1.5">
                         <span className="text-sm font-medium text-zinc-900 tabular-nums dark:text-zinc-100">
@@ -308,7 +309,7 @@ export default function EmployeePunchDialog({
                             {/* 逐条删除从主表收进这里：主表现在是员工维度，
                                 "删掉某人的某一次打卡"只有一个自然的落点 */}
                             {canManage && (
-                              <button
+                              <Pressable
                                 type="button"
                                 onClick={() => void onDelete(r)}
                                 aria-label={`删除打卡记录：${r.employeeName} ${r.date} ${r.time}`}
@@ -316,7 +317,7 @@ export default function EmployeePunchDialog({
                                 className="rounded text-zinc-400 opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover/p:opacity-100 dark:text-zinc-500"
                               >
                                 <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                              </button>
+                              </Pressable>
                             )}
                           </span>
                         ))}
@@ -342,7 +343,7 @@ export default function EmployeePunchDialog({
                               <span className="text-2xs text-muted-foreground">对上班次 {v.shiftSummary}</span>
                             )}
                             {(v.why.length > 44 || v.orphan.length > 0) && (
-                              <button
+                              <Pressable
                                 type="button"
                                 onClick={() => toggleWhy(g.date)}
                                 className="inline-flex items-center gap-0.5 rounded text-2xs text-brand-700 underline-offset-2 hover:underline dark:text-brand-300"
@@ -353,7 +354,7 @@ export default function EmployeePunchDialog({
                                   <ChevronRight className="h-3 w-3" aria-hidden="true" />
                                 )}
                                 {openWhy.has(g.date) ? '收起' : '全文'}
-                              </button>
+                              </Pressable>
                             )}
                           </div>
                           {/* 依据只在它**多说了一点东西**时才占一行：正常且没有边界情况时，

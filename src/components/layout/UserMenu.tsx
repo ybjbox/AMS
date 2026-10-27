@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
@@ -84,7 +85,7 @@ export default function UserMenu({
   );
 
   const unreadBadge = unreadCount > 0 && (
-    <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-0.5 items-center justify-center rounded-full bg-red-500 ring-2 ring-white dark:ring-zinc-800 text-3xs font-bold text-white">
+    <span className="absolute -top-1 -right-1 flex h-4 min-w-4 px-0.5 items-center justify-center rounded-full bg-red-500 ring-2 ring-white dark:ring-zinc-800 text-3xs font-bold text-white">
       {unreadCount > 99 ? '99+' : unreadCount}
     </span>
   );
@@ -110,7 +111,7 @@ export default function UserMenu({
   return (
     <div ref={rootRef} className="relative">
       {isCollapsed ? (
-        <button
+        <Pressable
           onClick={toggleMenu}
           aria-expanded={isOpen}
           aria-label={unreadCount > 0 ? `账户菜单，${unreadCount} 条未读通知` : '账户菜单'}
@@ -119,14 +120,14 @@ export default function UserMenu({
         >
           {avatarCircle('w-9 h-9')}
           {unreadBadge}
-        </button>
+        </Pressable>
       ) : (
         <>
           {/* 账户区与侧栏 banner/导航共用 124px 内容列（左缘同线），头像与导航图标同轴 */}
-          <button
+          <Pressable
             onClick={toggleMenu}
             aria-expanded={isOpen}
-            className="w-[124px] mx-auto flex items-center gap-1.5 px-2.5 py-2 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer group text-left"
+            className="w-31 mx-auto flex items-center gap-1.5 px-2.5 py-2 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer group text-left"
           >
             {avatar('w-7 h-7')}
             <div className="min-w-0">
@@ -141,8 +142,8 @@ export default function UserMenu({
             <span className="sr-only">
               账户菜单{unreadCount > 0 ? `，${unreadCount} 条未读通知` : ''}
             </span>
-          </button>
-          <div className="w-[124px] mx-auto pt-1.5 flex items-center justify-center">
+          </Pressable>
+          <div className="w-31 mx-auto pt-1.5 flex items-center justify-center">
             <BackendStatusIndicator variant="bare" className="scale-90" />
           </div>
         </>
@@ -194,13 +195,13 @@ export default function UserMenu({
                   {settingsLabel}
                 </Link>
               )}
-              <button
+              <Pressable
                 onClick={handleLogout}
                 className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-t border-zinc-100 dark:border-zinc-700 transition-colors duration-200"
               >
                 <LogOut className="h-4 w-4" />
                 退出登录
-              </button>
+              </Pressable>
             </div>
           </motion.div>
         )}

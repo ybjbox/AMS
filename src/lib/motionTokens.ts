@@ -18,7 +18,7 @@ export const MOTION = {
   staggerMax: 5,
 } as const;
 
-const MOBILE_QUERY = '(max-width: 767px)';
+const MOBILE_QUERY = '(width < 48rem)';
 
 function useCompactViewport() {
   const [compact, setCompact] = useState(

@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Image as ImageIcon, Loader2, Monitor, Moon, Palette, Sun, Upload } from 'lucide-react';
@@ -180,7 +181,7 @@ export default function AppearancePanel() {
               { id: 'dark', label: '深色模式', Icon: Moon },
               { id: 'system', label: '跟随系统', Icon: Monitor },
             ].map((t) => (
-              <button
+              <Pressable
                 key={t.id}
                 data-themeid={t.id}
                 onClick={onThemeClick}
@@ -196,7 +197,7 @@ export default function AppearancePanel() {
                 >
                   {t.label}
                 </span>
-              </button>
+              </Pressable>
             ))}
           </div>
         </div>

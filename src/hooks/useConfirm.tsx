@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
@@ -50,14 +51,14 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         size="md"
         footer={
           <div className="flex space-x-3 w-full sm:w-auto">
-            <button
+            <Pressable
               type="button"
               onClick={handleClose}
               className="btn-secondary flex-1 sm:flex-none"
             >
               {options?.cancelText || '取消'}
-            </button>
-            <button
+            </Pressable>
+            <Pressable
               type="button"
               onClick={handleConfirm}
               className={`flex-1 sm:flex-none ${
@@ -67,7 +68,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
               }`}
             >
               {options?.confirmText || '确认'}
-            </button>
+            </Pressable>
           </div>
         }
       >

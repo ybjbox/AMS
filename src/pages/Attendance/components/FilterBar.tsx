@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React from 'react';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -61,7 +62,7 @@ export function RecordsFilterBar({
           <label htmlFor="att-q" className="mb-1.5 block text-xs font-medium text-muted-foreground">
             姓名或工号
           </label>
-          <Search className="pointer-events-none absolute left-3 top-[34px] h-4 w-4 text-zinc-400" aria-hidden="true" />
+          <Search className="pointer-events-none absolute left-3 top-9 h-4 w-4 text-zinc-400" aria-hidden="true" />
           <Input
             id="att-q"
             type="text"
@@ -83,7 +84,7 @@ export function RecordsFilterBar({
               value={filter.dateFrom}
               max={filter.dateTo || undefined}
               onChange={(e) => onChange({ dateFrom: e.target.value })}
-              className="w-[9.5rem] dark:[color-scheme:dark]"
+              className="w-38 dark:[color-scheme:dark]"
             />
           </div>
           <span className="pb-2.5 text-sm text-muted-foreground" aria-hidden="true">
@@ -99,7 +100,7 @@ export function RecordsFilterBar({
               value={filter.dateTo}
               min={filter.dateFrom || undefined}
               onChange={(e) => onChange({ dateTo: e.target.value })}
-              className="w-[9.5rem] dark:[color-scheme:dark]"
+              className="w-38 dark:[color-scheme:dark]"
             />
           </div>
         </div>
@@ -117,7 +118,7 @@ export function RecordsFilterBar({
               {DATE_PRESETS.map((p) => {
                 const isActive = activePreset === p.id;
                 return (
-                  <button
+                  <Pressable
                     key={p.id}
                     type="button"
                     aria-pressed={isActive}
@@ -131,7 +132,7 @@ export function RecordsFilterBar({
                     ].join(' ')}
                   >
                     {p.label}
-                  </button>
+                  </Pressable>
                 );
               })}
             </div>
@@ -143,7 +144,7 @@ export function RecordsFilterBar({
               type="checkbox"
               checked={padDays}
               onChange={(e) => onPadDaysChange(e.target.checked)}
-              className="h-4 w-4 accent-[var(--primary)]"
+              className="h-4 w-4 accent-brand-600"
             />
             边界多留一天
           </label>
@@ -158,7 +159,7 @@ export function RecordsFilterBar({
               {SOURCE_OPTIONS.map((opt) => {
                 const isActive = filter.source === opt.id;
                 return (
-                  <button
+                  <Pressable
                     key={opt.id}
                     type="button"
                     aria-pressed={isActive}
@@ -171,7 +172,7 @@ export function RecordsFilterBar({
                     ].join(' ')}
                   >
                     {opt.label}
-                  </button>
+                  </Pressable>
                 );
               })}
             </div>
@@ -218,7 +219,7 @@ export function AnomalyFilterBar({ query, onQueryChange, group, onGroupChange, c
           <label htmlFor="anom-q" className="mb-1.5 block text-xs font-medium text-muted-foreground">
             姓名或工号
           </label>
-          <Search className="pointer-events-none absolute left-3 top-[34px] h-4 w-4 text-zinc-400" aria-hidden="true" />
+          <Search className="pointer-events-none absolute left-3 top-9 h-4 w-4 text-zinc-400" aria-hidden="true" />
           <Input
             id="anom-q"
             type="text"
@@ -235,7 +236,7 @@ export function AnomalyFilterBar({ query, onQueryChange, group, onGroupChange, c
             {ANOMALY_GROUPS.map((g) => {
               const isActive = group === g.id;
               return (
-                <button
+                <Pressable
                   key={g.id}
                   type="button"
                   aria-pressed={isActive}
@@ -250,7 +251,7 @@ export function AnomalyFilterBar({ query, onQueryChange, group, onGroupChange, c
                   {g.label}
                   {/* 计数是信息，不靠透明度弱化：opacity-70 实测对比度不足 4.5:1（access-2） */}
                   <span className="tabular-nums">{counts[g.id]}</span>
-                </button>
+                </Pressable>
               );
             })}
           </div>

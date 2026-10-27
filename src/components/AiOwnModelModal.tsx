@@ -52,7 +52,7 @@ export default function AiOwnModelModal({ onClose, onChanged }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Esc 关闭 + 焦点落到第一个输入框。刻意不迁 BaseModal：它固定 z-50，
-  // 会被唤起本弹窗的 AI 助手面板盖住，这里必须压在 z-[60] 之上。
+  // 会被唤起本弹窗的 AI 助手面板盖住，这里必须压在 z-modal-top 之上。
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -107,7 +107,7 @@ export default function AiOwnModelModal({ onClose, onChanged }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-modal-top flex items-center justify-center bg-black/40 p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"

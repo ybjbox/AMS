@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback } from 'react';
 import { ChevronDown, ChevronRight, Check } from 'lucide-react';
 import { useTreeExpand, TreeNode } from '@/hooks/useTreeExpand';
@@ -51,7 +52,7 @@ export function TreeFilter({ nodes, selectedValues, onToggle, getDisplayName = (
               >
                 {/* 契约复选框：16px / 圆角 4px / 选中实色 brand（MASTER v3 扁平，禁渐变） */}
                 <div
-                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border ${isSelected ? 'border-brand-600 bg-brand-600 text-white dark:border-brand-400 dark:bg-brand-400' : 'border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-900'}`}
+                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${isSelected ? 'border-brand-600 bg-brand-600 text-white dark:border-brand-400 dark:bg-brand-400' : 'border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-900'}`}
                   aria-hidden="true"
                 >
                   {isSelected && <Check className="w-3 h-3" />}
@@ -70,12 +71,12 @@ export function TreeFilter({ nodes, selectedValues, onToggle, getDisplayName = (
   return (
     <div className="border border-zinc-200 dark:border-zinc-700 rounded-md">
       <div className="flex justify-end p-1 border-b border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-t-md">
-        <button
+        <Pressable
           onClick={isAllExpanded() ? collapseAll : expandAll}
           className="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 px-2 py-1 rounded hover:bg-brand-50 dark:hover:bg-zinc-700 transition-colors"
         >
           {isAllExpanded() ? '一键收起' : '一键展开'}
-        </button>
+        </Pressable>
       </div>
       <div className="max-h-60 overflow-y-auto p-2">
         {nodes.length > 0 ? (

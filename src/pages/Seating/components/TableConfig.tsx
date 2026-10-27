@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React from 'react';
 import { X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -43,12 +44,12 @@ export function TableConfig({
         <div className="flex-1">
           <div className="flex items-center justify-between mb-3">
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">各桌人数设置</label>
-            <button
+            <Pressable
               onClick={addTableCapacity}
               className="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 font-medium flex items-center"
             >
               + 添加一桌
-            </button>
+            </Pressable>
           </div>
           <div className="flex flex-wrap gap-3">
             {tableCapacities.map((tc) => (
@@ -69,12 +70,12 @@ export function TableConfig({
                   className="w-14 px-1 text-center"
                 />
                 {tableCapacities.length > 1 && (
-                  <button
+                  <Pressable
                     onClick={() => removeTableCapacity(tc.id)}
                     className="ml-1 p-1 text-muted-foreground hover:text-red-500 dark:hover:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                   >
                     <X className="w-4 h-4" />
-                  </button>
+                  </Pressable>
                 )}
               </div>
             ))}

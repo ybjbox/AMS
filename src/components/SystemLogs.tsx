@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   AlertCircle,
@@ -151,14 +152,14 @@ export default function SystemLogs() {
             记录所有写操作与登录事件，只增不删{data ? `，保留期 ${data.retentionDays} 天` : ''}
           </p>
         </div>
-        <button
+        <Pressable
           onClick={handleExport}
           className="btn-secondary flex items-center px-3 py-2"
           title="按当前筛选条件导出 CSV（最多 10000 条）"
         >
           <Download className="w-4 h-4 mr-2" />
           导出 CSV
-        </button>
+        </Pressable>
       </div>
 
       <div className="bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl overflow-hidden flex flex-col flex-1 min-h-0">
@@ -178,7 +179,7 @@ export default function SystemLogs() {
             <div className="flex items-center space-x-2">
               <Filter className="w-4 h-4 text-zinc-400 shrink-0" />
               <Select value={filters.level} onValueChange={(v) => patchFilters({ level: v ?? "ALL" })}>
-                <SelectTrigger className="w-[130px]" aria-label="按等级筛选">
+                <SelectTrigger className="w-32" aria-label="按等级筛选">
                   <SelectValue placeholder="所有等级" />
                 </SelectTrigger>
                 <SelectContent>
@@ -189,7 +190,7 @@ export default function SystemLogs() {
                 </SelectContent>
               </Select>
               <Select value={filters.result} onValueChange={(v) => patchFilters({ result: v ?? "ALL" })}>
-                <SelectTrigger className="w-[120px]" aria-label="按结果筛选">
+                <SelectTrigger className="w-30" aria-label="按结果筛选">
                   <SelectValue placeholder="所有结果" />
                 </SelectTrigger>
                 <SelectContent>
@@ -202,7 +203,7 @@ export default function SystemLogs() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Select value={filters.category} onValueChange={(v) => patchFilters({ category: v ?? "ALL" })}>
-              <SelectTrigger className="w-[150px]" aria-label="按分类筛选">
+              <SelectTrigger className="w-38" aria-label="按分类筛选">
                 <SelectValue placeholder="全部分类" />
               </SelectTrigger>
               <SelectContent>
@@ -215,7 +216,7 @@ export default function SystemLogs() {
               </SelectContent>
             </Select>
             <Select value={filters.action} onValueChange={(v) => patchFilters({ action: v ?? "ALL" })}>
-              <SelectTrigger className="w-[160px]" aria-label="按操作筛选">
+              <SelectTrigger className="w-40" aria-label="按操作筛选">
                 <SelectValue placeholder="全部操作" />
               </SelectTrigger>
               <SelectContent>
@@ -228,7 +229,7 @@ export default function SystemLogs() {
               </SelectContent>
             </Select>
             <Select value={filters.actor} onValueChange={(v) => patchFilters({ actor: v ?? "ALL" })}>
-              <SelectTrigger className="w-[150px]" aria-label="按操作人筛选">
+              <SelectTrigger className="w-38" aria-label="按操作人筛选">
                 <SelectValue placeholder="全部操作人" />
               </SelectTrigger>
               <SelectContent>
@@ -244,7 +245,7 @@ export default function SystemLogs() {
               type="date"
               value={filters.from}
               onChange={(e) => patchFilters({ from: e.target.value })}
-              className="w-[150px]"
+              className="w-38"
               aria-label="起始日期"
             />
             <span className="text-sm text-muted-foreground">至</span>
@@ -252,10 +253,10 @@ export default function SystemLogs() {
               type="date"
               value={filters.to}
               onChange={(e) => patchFilters({ to: e.target.value })}
-              className="w-[150px]"
+              className="w-38"
               aria-label="结束日期"
             />
-            <button
+            <Pressable
               onClick={() => {
                 setFilters(INITIAL_FILTERS);
                 setSearchQuery('');
@@ -264,7 +265,7 @@ export default function SystemLogs() {
               className="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 px-2"
             >
               重置
-            </button>
+            </Pressable>
           </div>
         </div>
 
@@ -273,9 +274,9 @@ export default function SystemLogs() {
             <div className="flex flex-col items-center justify-center h-64 gap-2 px-6 text-center">
               <AlertCircle className="w-8 h-8 text-red-500" />
               <p className="text-sm text-zinc-600 dark:text-zinc-300">{error}</p>
-              <button onClick={() => setReloadToken((t) => t + 1)} className="text-sm text-brand-600 dark:text-brand-400">
+              <Pressable onClick={() => setReloadToken((t) => t + 1)} className="text-sm text-brand-600 dark:text-brand-400">
                 重试
-              </button>
+              </Pressable>
             </div>
           ) : loading ? (
             <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
@@ -323,7 +324,7 @@ export default function SystemLogs() {
                       <div className="text-zinc-900 dark:text-zinc-200">{log.actor || '-'}</div>
                       <div className="text-muted-foreground text-xs">{log.actorRole}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm max-w-[220px]">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm max-w-55">
                       <div className="text-muted-foreground text-xs">{log.targetType || '-'}</div>
                       <div className="text-zinc-900 dark:text-zinc-200 truncate" title={log.targetName || log.targetId}>
                         {log.targetName || log.targetId || '-'}
@@ -341,10 +342,10 @@ export default function SystemLogs() {
                       </span>
                       <div className="text-muted-foreground text-xs mt-1">{log.durationMs} ms</div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-zinc-900 dark:text-zinc-200 min-w-[200px]">
+                    <td className="px-6 py-4 text-sm text-zinc-900 dark:text-zinc-200 min-w-50">
                       <div className="flex items-start justify-between gap-4">
                         <div className="text-muted-foreground text-xs break-all">{log.detail || `${log.method} ${log.path}`}</div>
-                        <button
+                        <Pressable
                           onClick={() => toggleExpand(log.id)}
                           className="flex items-center text-xs text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 whitespace-nowrap transition-colors"
                         >
@@ -359,7 +360,7 @@ export default function SystemLogs() {
                               <ChevronRight className="w-3 h-3 ml-1" />
                             </>
                           )}
-                        </button>
+                        </Pressable>
                       </div>
                       {expandedIds.has(log.id) && (
                         <div className="mt-2 text-xs text-muted-foreground font-mono bg-zinc-50 dark:bg-zinc-900 p-3 rounded border border-zinc-100 dark:border-zinc-700 overflow-x-auto whitespace-pre-wrap break-all space-y-1">

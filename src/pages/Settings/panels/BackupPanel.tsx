@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Database, Download, History, RotateCcw, Trash2, Plus, Upload } from 'lucide-react';
 import { toast } from 'sonner';
@@ -244,7 +245,7 @@ export default function BackupPanel() {
                 if (file) void handleImportFile(file);
               }}
             />
-            <button
+            <Pressable
               type="button"
               className="btn-secondary flex items-center gap-1.5"
               onClick={() => fileInputRef.current?.click()}
@@ -252,10 +253,10 @@ export default function BackupPanel() {
             >
               <Upload className="size-4" />
               {importPct === null ? '导入备份' : importPct < 100 ? `导入中 ${importPct}%` : '校验中…'}
-            </button>
+            </Pressable>
           </>
         )}
-        <button
+        <Pressable
           type="button"
           className="btn-primary flex items-center gap-1.5"
           onClick={() => void handleCreate()}
@@ -263,7 +264,7 @@ export default function BackupPanel() {
         >
           <Plus className="size-4" />
           立即备份
-        </button>
+        </Pressable>
       </div>
 
       <div className="flex-1 overflow-auto rounded-lg border border-border">

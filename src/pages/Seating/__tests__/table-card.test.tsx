@@ -89,8 +89,8 @@ describe('TableCard 拖拽落点提示', () => {
     const { container } = setup();
     const second = container.querySelector('[data-member-id="EMP0002"]') as HTMLElement;
     fireEvent.dragOver(second);
-    expect(second.className).toContain('before:bg-brand-500');
-    expect((container.querySelector('[data-member-id="EMP0001"]') as HTMLElement).className).not.toContain('before:bg-brand-500');
+    expect(second.className).toContain('insert-before');
+    expect((container.querySelector('[data-member-id="EMP0001"]') as HTMLElement).className).not.toContain('insert-before');
   });
 
   it('悬停在桌面空白处时，桌尾出现「松手落座」占位', () => {

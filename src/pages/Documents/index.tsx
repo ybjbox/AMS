@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import PageContainer from "@/components/PageContainer";
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Plus, Upload } from 'lucide-react';
@@ -120,27 +121,27 @@ export default function Documents() {
         </div>
         <div className="toolbar">
           <div className="tab-group" role="tablist" aria-label="文件管理">
-            <button
+            <Pressable
               role="tab"
               aria-selected={activeTab === 'sets'}
               onClick={() => handleTabChange('sets')}
               className={activeTab === 'sets' ? 'tab-item-active' : 'tab-item'}
             >
               文件套件
-            </button>
-            <button
+            </Pressable>
+            <Pressable
               role="tab"
               aria-selected={activeTab === 'files'}
               onClick={() => handleTabChange('files')}
               className={activeTab === 'files' ? 'tab-item-active' : 'tab-item'}
             >
               文件库
-            </button>
+            </Pressable>
           </div>
           {canManageDocs && (activeTab === 'files' ? (
             <>
               <input type="file" multiple className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
-              <button
+              <Pressable
                 onClick={() => fileInputRef.current?.click()}
                 aria-label="上传文件"
                 className="btn-primary max-sm:min-h-11"
@@ -148,23 +149,23 @@ export default function Documents() {
               >
                 <Upload className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">{isUploading ? '上传中…' : '上传文件'}</span>
-              </button>
+              </Pressable>
             </>
           ) : (
-            <button
+            <Pressable
               onClick={handleCreateSetClick}
               aria-label="新建套件"
               className="btn-primary max-sm:min-h-11"
             >
               <Plus className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">新建套件</span>
-            </button>
+            </Pressable>
           ))}
         </div>
       </div>
 
       {activeTab === 'files' && (
-        <div className="flex flex-col md:flex-row gap-6 flex-1 min-h-[400px] md:min-h-[500px]">
+        <div className="flex flex-col md:flex-row gap-6 flex-1 min-h-100 md:min-h-125">
           <FolderTree
             folders={folders}
             currentFolderId={currentFolderId}

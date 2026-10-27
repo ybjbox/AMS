@@ -10,7 +10,7 @@ export default function StatCards({ stats, isLoading }: StatCardsProps) {
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="card-base p-6 min-h-[120px] sm:min-h-[140px] flex flex-col justify-between animate-pulse"
+            className="card-base p-6 min-h-30 sm:min-h-35 flex flex-col justify-between animate-pulse"
           >
             <div className="flex justify-between items-start">
               <div className="w-12 h-12 rounded-2xl bg-zinc-200 dark:bg-zinc-700"></div>
@@ -33,7 +33,7 @@ export default function StatCards({ stats, isLoading }: StatCardsProps) {
           <div
             key={item.name}
             /* 数字卡入场：40ms 级联（低频汇总页的 group entrance，总量 <160ms） */
-            className="card-base card-lift cursor-default flex flex-col justify-between p-6 min-h-[120px] sm:min-h-[140px] animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out fill-mode-both"
+            className="card-base card-lift cursor-default flex flex-col justify-between p-6 min-h-30 sm:min-h-35 animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out fill-mode-both"
             style={{ animationDelay: `${i * 40}ms` }}
           >
             <div className="flex justify-between items-start">

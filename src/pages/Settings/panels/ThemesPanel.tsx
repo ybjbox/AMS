@@ -153,7 +153,7 @@ export default function ThemesPanel() {
                     style={{ backgroundColor: `#${theme.headerFill.substring(2)}` }}
                   ></div>
                   {editingId === theme.id ? (
-                    <input
+                    <Input
                       type="text"
                       value={theme.name}
                       onChange={(e) => handleUpdateTheme(theme.id, 'name', e.target.value)}

@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { User } from '@/types';
@@ -28,7 +29,7 @@ export const ContractTable = ({ filteredUsers, loadError, onRetry, onPreview, on
   return (
     <div className="relative flex-1 rounded-b-xl border-t border-zinc-200 dark:border-zinc-700 h-full min-h-0">
       <div ref={parentRef} className="h-full overflow-x-auto overflow-y-auto">
-        <table className="w-full min-w-[800px] text-left border-collapse relative [&_th]:whitespace-nowrap" aria-label="合同列表">
+        <table className="w-full min-w-200 text-left border-collapse relative [&_th]:whitespace-nowrap" aria-label="合同列表">
           <thead className="bg-zinc-50 dark:bg-zinc-900/50 sticky top-0 z-20">
             <tr>
               <th
@@ -119,22 +120,22 @@ export const ContractTable = ({ filteredUsers, loadError, onRetry, onPreview, on
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium sticky right-0 z-10 bg-white dark:bg-zinc-800 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-700/50 shadow-sticky-right">
                         <div className="flex items-center justify-end space-x-3">
-                          <button
+                          <Pressable
                             data-userid={user.id}
                             onClick={() => onPreview(user)}
                             className="text-brand-600 hover:text-brand-900 dark:text-brand-400 dark:hover:text-brand-300 flex items-center px-1.5 py-1 -my-1 rounded hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors"
                           >
                             <Eye className="w-4 h-4 mr-1" />
                             预览
-                          </button>
-                          <button
+                          </Pressable>
+                          <Pressable
                             data-userid={user.id}
                             onClick={() => onDirectPrint(user)}
                             className="text-brand-700 hover:text-brand-900 dark:text-brand-400 dark:hover:text-brand-300 flex items-center px-1.5 py-1 -my-1 rounded hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors"
                           >
                             <Printer className="w-4 h-4 mr-1" />
                             打印
-                          </button>
+                          </Pressable>
                         </div>
                       </td>
                     </tr>

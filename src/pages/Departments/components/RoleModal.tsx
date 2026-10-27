@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Input } from '@/components/ui/input';
@@ -18,20 +19,20 @@ export function RoleModal({ modal, onClose, onSubmit }: RoleModalProps) {
       size="md"
       footer={
         <>
-          <button
+          <Pressable
             type="button"
             onClick={onClose}
             className="btn-secondary w-full sm:w-auto"
           >
             取消
-          </button>
-          <button
+          </Pressable>
+          <Pressable
             type="submit"
             form="role-form"
             className="btn-primary w-full sm:w-auto"
           >
             保存
-          </button>
+          </Pressable>
         </>
       }
     >

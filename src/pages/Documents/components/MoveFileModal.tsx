@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React from 'react';
 import { FolderOpen, Folder } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
@@ -28,19 +29,19 @@ export function MoveFileModal({
       size="md"
       footer={
         <>
-          <button
+          <Pressable
             type="button"
             onClick={onClose}
             className="btn-secondary w-full sm:w-auto"
           >
             取消
-          </button>
-          <button
+          </Pressable>
+          <Pressable
             onClick={handleMoveFile}
             className="btn-primary w-full sm:w-auto"
           >
             确认移动
-          </button>
+          </Pressable>
         </>
       }
     >

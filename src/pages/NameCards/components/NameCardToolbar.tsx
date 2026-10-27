@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React from 'react';
 import { X, FileText, Users, Printer } from 'lucide-react';
 import { User } from '@/types';
@@ -29,41 +30,41 @@ export default function NameCardToolbar({
       </div>
       <div className="flex items-center space-x-3">
         {uploadedUsers && (
-          <button
+          <Pressable
             onClick={() => setUploadedUsers(null)}
             className="btn-secondary text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20"
             title="清除上传的名单，恢复系统人员"
           >
             <X className="h-4 w-4 mr-2" />
             清除名单
-          </button>
+          </Pressable>
         )}
-        <button
+        <Pressable
           onClick={() => setIsManualInputOpen(true)}
           className="btn-secondary"
           title="粘贴一份「姓名 部门 职位」名单，只为这次做台卡"
         >
           <FileText className="h-4 w-4 mr-2" />
           粘贴名单
-        </button>
+        </Pressable>
         {uploadedUsers && (
           <span className="text-xs text-zinc-400">当前名单为粘贴内容，非员工档案</span>
         )}
-        <button
+        <Pressable
           onClick={() => setIsParticipantModalOpen(true)}
           className="btn-secondary"
         >
           <Users className="h-4 w-4 mr-2" />
           选择人员 ({selectedUserIds.size})
-        </button>
-        <button
+        </Pressable>
+        <Pressable
           onClick={handlePrint}
           disabled={selectedUserIds.size === 0}
           className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Printer className="h-4 w-4 mr-2" />
           打印台卡
-        </button>
+        </Pressable>
       </div>
     </div>
   );

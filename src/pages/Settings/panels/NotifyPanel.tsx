@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Webhook, Mail, Send, Save } from 'lucide-react';
 import { toast } from 'sonner';
@@ -173,21 +174,21 @@ export default function NotifyPanel() {
                 onChange={(e) => patchWebhook({ url: e.target.value })}
               />
               {config.webhook.url === CLEAR_SENTINEL ? (
-                <button
+                <Pressable
                   type="button"
                   onClick={() => patchWebhook({ url: prevMaskedUrl.current })}
                   className="shrink-0 text-xs font-medium text-muted-foreground hover:text-zinc-800 dark:hover:text-zinc-200"
                 >
                   撤销
-                </button>
+                </Pressable>
               ) : config.webhook.url ? (
-                <button
+                <Pressable
                   type="button"
                   onClick={requestClearUrl}
                   className="shrink-0 text-xs font-medium text-red-500 hover:text-red-600"
                 >
                   清除
-                </button>
+                </Pressable>
               ) : null}
             </div>
           </Field>
@@ -259,21 +260,21 @@ export default function NotifyPanel() {
                 onChange={(e) => patchEmail({ password: e.target.value })}
               />
               {config.email.password === CLEAR_SENTINEL ? (
-                <button
+                <Pressable
                   type="button"
                   onClick={() => patchEmail({ password: prevMaskedPass.current })}
                   className="shrink-0 text-xs font-medium text-muted-foreground hover:text-zinc-800 dark:hover:text-zinc-200"
                 >
                   撤销
-                </button>
+                </Pressable>
               ) : config.email.password ? (
-                <button
+                <Pressable
                   type="button"
                   onClick={requestClearPass}
                   className="shrink-0 text-xs font-medium text-red-500 hover:text-red-600"
                 >
                   清除
-                </button>
+                </Pressable>
               ) : null}
             </div>
           </Field>

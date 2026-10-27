@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback, useRef, useState } from 'react';
 import { Download, FileSpreadsheet, UploadCloud, CheckCircle2, AlertCircle, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
@@ -131,7 +132,7 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
             </div>
           </div>
 
-          <button
+          <Pressable
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={isParsing}
@@ -153,7 +154,7 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
                 </span>
               </>
             )}
-          </button>
+          </Pressable>
           <input
             ref={fileRef}
             type="file"
@@ -195,7 +196,7 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
             </Button>
           </div>
 
-          <div className="max-h-[45vh] overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
+          <div className="modal-scroll-45 overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
             <table className="w-full text-left text-sm" aria-label="导入预览">
               <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs text-muted-foreground">
                 <tr>
@@ -242,17 +243,17 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
           </div>
 
           <div className="flex items-center justify-end gap-3">
-            <button type="button" onClick={handleClose} className="btn-secondary">
+            <Pressable type="button" onClick={handleClose} className="btn-secondary">
               取消
-            </button>
-            <button
+            </Pressable>
+            <Pressable
               type="button"
               onClick={() => void handleCommit()}
               disabled={isCommitting || validRows.length === 0}
               className="btn-primary disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isCommitting ? '导入中…' : `确认导入 ${validRows.length} 条`}
-            </button>
+            </Pressable>
           </div>
         </div>
       )}
@@ -298,12 +299,12 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
             {result.skipped > 0 && <span>（{result.skipped} 条被跳过）</span>}
           </p>
           <div className="mt-6 flex gap-3">
-            <button type="button" onClick={reset} className="btn-secondary">
+            <Pressable type="button" onClick={reset} className="btn-secondary">
               <FileSpreadsheet className="w-4 h-4 mr-1.5" /> 继续导入
-            </button>
-            <button type="button" onClick={handleClose} className="btn-primary">
+            </Pressable>
+            <Pressable type="button" onClick={handleClose} className="btn-primary">
               完成
-            </button>
+            </Pressable>
           </div>
         </div>
       )}

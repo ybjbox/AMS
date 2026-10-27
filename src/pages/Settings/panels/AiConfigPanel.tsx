@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import { useState, useEffect, useRef, type ChangeEvent, type ReactNode } from 'react';
 import { Save, Bot, RotateCcw, RefreshCw, Upload, X, ChevronDown, PlugZap, CircleCheck, CircleX } from 'lucide-react';
 import { STORAGE_KEYS } from '@/config/constants';
@@ -444,7 +445,7 @@ export default function AiConfigPanel() {
               const Icon = resolveAiIcon(o.key);
               const selected = !form.assistantLogo && (form.assistantIcon || 'bot') === o.key;
               return (
-                <button
+                <Pressable
                   key={o.key}
                   type="button"
                   title={o.label}
@@ -458,12 +459,12 @@ export default function AiConfigPanel() {
                 >
                   <Icon className="size-5" />
                   <span className="text-2xs leading-none">{o.label}</span>
-                </button>
+                </Pressable>
               );
             })}
             {/* 第 10 格：上传自定义 Logo（有 Logo 时优先于图标显示，角标 × 移除） */}
             <div className="relative">
-              <button
+              <Pressable
                 type="button"
                 title="上传自定义 Logo（PNG / JPEG / WebP / GIF / SVG，≤1.5MB）"
                 aria-pressed={!!form.assistantLogo}
@@ -480,9 +481,9 @@ export default function AiConfigPanel() {
                   <Upload className="size-5" />
                 )}
                 <span className="text-2xs leading-none">{form.assistantLogo ? '更换 Logo' : '上传 Logo'}</span>
-              </button>
+              </Pressable>
               {form.assistantLogo && (
-                <button
+                <Pressable
                   type="button"
                   aria-label="移除自定义 Logo"
                   title="移除自定义 Logo，恢复上方选中的图标"
@@ -490,7 +491,7 @@ export default function AiConfigPanel() {
                   className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-zinc-700 text-white shadow transition-colors hover:bg-red-600 dark:bg-zinc-600"
                 >
                   <X className="size-3" />
-                </button>
+                </Pressable>
               )}
             </div>
           </div>
@@ -732,7 +733,7 @@ function Section({
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="bg-card rounded-xl border border-border shadow-sm">
-      <button
+      <Pressable
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
@@ -751,10 +752,10 @@ function Section({
             open ? 'rotate-180' : ''
           }`}
         />
-      </button>
+      </Pressable>
       <div
-        className={`grid transition-[grid-template-rows] duration-250 ease-smooth-out ${
-          open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+        className={`grid collapse-grid ${
+          open ? 'collapse-grid-open' : ''
         }`}
       >
         <div className="overflow-hidden">
@@ -775,7 +776,7 @@ function Switch({
   label: string;
 }) {
   return (
-    <button
+    <Pressable
       type="button"
       role="switch"
       aria-checked={checked}
@@ -790,7 +791,7 @@ function Switch({
           checked ? 'translate-x-4' : 'translate-x-0.5'
         }`}
       />
-    </button>
+    </Pressable>
   );
 }
 

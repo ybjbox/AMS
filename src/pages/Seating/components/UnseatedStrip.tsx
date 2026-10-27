@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useState } from 'react';
 import { Armchair } from 'lucide-react';
 import type { User } from '@/types';
@@ -54,7 +55,7 @@ export function UnseatedStrip({ users, pickedUserId, onPick, onMove }: UnseatedS
           aria-label={`未入座人员列表，共 ${users.length} 人`}
         >
         {users.map((u) => (
-          <button
+          <Pressable
             key={u.id}
             type="button"
             draggable
@@ -73,7 +74,7 @@ export function UnseatedStrip({ users, pickedUserId, onPick, onMove }: UnseatedS
             ].join(' ')}
           >
             {u.name}
-          </button>
+          </Pressable>
         ))}
         </div>
         {/* 底部渐隐＝"下面还有"，与侧栏/设置导航的滚动提示同一做法 */}

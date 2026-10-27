@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import PageContainer from "@/components/PageContainer";
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTodoStore, todoUrgency } from '../store/useTodoStore';
@@ -101,13 +102,13 @@ export default function Todos() {
             <h1 className="page-title">待办事项</h1>
             <p className="page-subtitle">管理您的日常任务及系统自动生成的提醒事项</p>
           </div>
-          <button
+          <Pressable
             onClick={() => setIsAdding(true)}
             className="btn-primary"
           >
             <Plus className="w-4 h-4 mr-2" />
             新建待办
-          </button>
+          </Pressable>
         </div>
 
       {/*
@@ -116,7 +117,7 @@ export default function Todos() {
       */}
       <div className="shrink-0 flex flex-wrap items-center gap-2 text-xs">
         {chips.map((c) => (
-          <button
+          <Pressable
             key={c.id}
             type="button"
             aria-pressed={only === c.id}
@@ -130,7 +131,7 @@ export default function Todos() {
             }
           >
             {c.label} <span className="font-semibold tabular-nums">{c.n}</span>
-          </button>
+          </Pressable>
         ))}
       </div>
 
@@ -177,19 +178,19 @@ export default function Todos() {
                 />
               </div>
               <div className="flex justify-end space-x-3 pt-2">
-                <button
+                <Pressable
                   type="button"
                   onClick={() => setIsAdding(false)}
                   className="btn-secondary"
                 >
                   取消
-                </button>
-                <button
+                </Pressable>
+                <Pressable
                   type="submit"
                   className="btn-primary"
                 >
                   保存待办
-                </button>
+                </Pressable>
               </div>
             </form>
           </motion.div>
@@ -208,17 +209,17 @@ export default function Todos() {
             icon={ListTodo}
             action={
               only === 'all' ? (
-                <button
+                <Pressable
                   onClick={() => setIsAdding(true)}
                   className="btn-primary"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   立即创建
-                </button>
+                </Pressable>
               ) : (
-                <button onClick={() => setOnly('all')} className="btn-secondary">
+                <Pressable onClick={() => setOnly('all')} className="btn-secondary">
                   看全部
-                </button>
+                </Pressable>
               )
             }
           />
@@ -237,7 +238,7 @@ export default function Todos() {
                     todo.completed ? 'opacity-60' : ''
                   }`}
                 >
-                  <button
+                  <Pressable
                     data-todoid={todo.id}
                     onClick={onToggleTodoClick}
                     aria-label={todo.completed ? `标记为未完成：${todo.title}` : `标记为完成：${todo.title}`}
@@ -249,7 +250,7 @@ export default function Todos() {
                     }`}
                   >
                     {todo.completed ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
-                  </button>
+                  </Pressable>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2">
                       <div
@@ -287,7 +288,7 @@ export default function Todos() {
                       </div>
                     </div>
                   </div>
-                  <button
+                  <Pressable
                     data-todoid={todo.id}
                     data-todotitle={todo.title}
                     onClick={onDeleteTodoClick}
@@ -296,7 +297,7 @@ export default function Todos() {
                     title="删除"
                   >
                     <Trash2 className="w-4 h-4" />
-                  </button>
+                  </Pressable>
                 </motion.div>
               ))}
             </AnimatePresence>

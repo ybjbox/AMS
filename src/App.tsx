@@ -51,7 +51,7 @@ function PageContentSkeleton() {
           <Skeleton key={i} className="h-9 rounded-lg sm:w-28" />
         ))}
       </div>
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
+      <div className="admin-skeleton-grid grid gap-4">
         <Skeleton className="hidden h-64 rounded-card lg:block" />
         <div className="space-y-3 rounded-card border border-zinc-200/60 p-4 dark:border-zinc-700/60">
           <Skeleton className="h-5 w-32" />
@@ -70,7 +70,7 @@ function GlobalLoadingOverlay() {
   if (!globalLoading) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-zinc-900/50 backdrop-blur-sm">
+    <div className="app-overlay-top fixed inset-0 flex flex-col items-center justify-center bg-zinc-900/50 backdrop-blur-sm">
       <div className="bg-white dark:bg-zinc-800 p-6 rounded-2xl shadow-xl flex flex-col items-center">
         <div className="animate-spin rounded-full h-10 w-10 border-4 border-zinc-200 border-t-brand-600 dark:border-zinc-700 dark:border-t-brand-500"></div>
         <p className="mt-4 text-sm font-medium text-zinc-700 dark:text-zinc-300">处理中，请稍候…</p>

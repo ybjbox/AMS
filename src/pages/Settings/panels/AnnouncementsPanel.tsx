@@ -185,7 +185,7 @@ export default function AnnouncementsPanel() {
       </form>
 
       {/* 公告列表 */}
-      <div className="card-base flex-1 min-h-[200px] flex flex-col">
+      <div className="card-base flex-1 min-h-50 flex flex-col">
         <div className="px-4 py-3 border-b border-zinc-200/80 dark:border-zinc-700 shrink-0">
           <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">全部公告（{items.length}）</h3>
         </div>

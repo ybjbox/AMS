@@ -41,7 +41,7 @@ export const ContractTemplate = ({ user }: { user: User }) => {
   return (
     <div
       id="contract-print-area"
-      className="bg-white dark:bg-zinc-800 max-w-3xl mx-auto p-12 shadow-sm border border-zinc-200 dark:border-zinc-700 min-h-[1056px] text-black"
+      className="bg-white dark:bg-zinc-800 max-w-3xl mx-auto p-12 shadow-sm border border-zinc-200 dark:border-zinc-700 min-h-264 text-black"
       style={CONTRACT_STYLE}
       dangerouslySetInnerHTML={{ __html: sanitizedHTML }}
     />

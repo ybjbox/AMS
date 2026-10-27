@@ -37,6 +37,8 @@ code:
     - node_modules/**
     - dist/**
     - .design-qa/**
+    - 'src/**/__tests__/**'
+    - 'src/**/*.test.tsx'
 
 components:
   libraryImportPatterns:
@@ -49,6 +51,15 @@ components:
     dialog: prefer-design-system
   allowedRawElementFiles:
     - '**/components/ui/**'
+    - src/pages/Settings/panels/ScriptsPanel.tsx  # 代码编辑器：等宽深色 textarea 是专用控件
+    - src/index.css  # 仅注释里提到 <button>，不是 JSX
+  # 契约类本身就是设计系统的一部分：.btn-* 与原生 file/hidden/checkbox/radio
+  # 不是「绕过组件」，不纳入 bypass 计数（2026-10-27 裁定）。
+  allowedRawElementPatterns:
+    button:
+      - 'className=[^>]*btn-(primary|secondary|danger|icon)'
+    input:
+      - 'type="(file|hidden|checkbox|radio|color)"'
 
 a11y:
   disabledRules: []
@@ -88,3 +99,32 @@ debt:
     - src/pages/NameCards/constants.ts
     - src/pages/Users/constants.ts
     - src/pages/Users/components/UserDetailModal.tsx
+    # 打印/导出 HTML：绝对 px 与硬编码色是正确实现（无 Tailwind 运行时）
+    - src/pages/Documents/lib/printHtml.ts
+    - src/pages/BusinessForms/lib/printHtml.ts
+    - src/pages/MealVouchers/voucher.ts
+    # 虚拟滚动定位、数据驱动柱高、用户自定义主题色：内联样式是唯一正确实现
+    - src/components/users/UserTable.tsx
+    - src/pages/Dashboard/components/WorkforceTrend.tsx
+    - src/pages/Settings/panels/ThemesPanel.tsx
+    # 组件尺寸集中配置、A4 预览、浮动助手拖拽几何：数值/内联是设计本身
+    - src/config/widgetSizes.ts
+    - src/pages/BusinessForms/index.tsx
+    - src/pages/Contracts/components/ContractTable.tsx
+    - src/pages/Dashboard/components/DepartmentAttendance.tsx
+    - src/components/AiAssistant.tsx
+    # 动态缩进/图表高度/进度宽度：数值由数据计算，内联是正确实现
+    - src/components/common/TreeFilter.tsx
+    - src/components/common/TreeSelect.tsx
+    - src/pages/Attendance/components/ShiftRulesDialog.tsx
+    - src/pages/Users/components/UserFormModal.tsx
+    - src/pages/Dashboard/components/DashboardChart.tsx
+    - src/pages/Dashboard/components/DepartmentDistribution.tsx
+    - src/pages/Dashboard/components/StatCards.tsx
+    - src/pages/WeChatNotice/index.tsx
+    - src/components/layout/Header.tsx  # data-[side=left] 是变体，不是任意值
+    - src/pages/Seating/index.tsx  # 预览宽度由字号计算
+    - src/pages/Users/components/ExportModal.tsx  # 用户主题色
+    - src/pages/Users/components/ImportModal.tsx  # 导入预览动态样式
+    - src/pages/Settings/panels/ScriptsPanel.tsx
+    - src/index.css

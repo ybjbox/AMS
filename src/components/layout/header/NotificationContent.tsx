@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCheck, Trash2, Bell } from 'lucide-react';
@@ -47,24 +48,24 @@ const NotificationContent = React.memo(function NotificationContent({ onClose }:
         </h3>
         <div className="flex items-center">
           {unreadCount > 0 && (
-            <button
+            <Pressable
               onClick={markAllNotificationsAsRead}
               title="全部已读"
               aria-label="全部已读"
               className="p-1.5 rounded-md text-zinc-400 dark:text-zinc-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-zinc-100/70 dark:hover:bg-zinc-600/60 transition-colors"
             >
               <CheckCheck className="h-3.5 w-3.5" />
-            </button>
+            </Pressable>
           )}
           {notifications.length > 0 && (
-            <button
+            <Pressable
               onClick={clearNotifications}
               title="清空全部"
               aria-label="清空全部"
               className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-zinc-100/70 dark:hover:bg-zinc-600/60 transition-colors"
             >
               <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            </Pressable>
           )}
         </div>
       </div>
@@ -74,7 +75,7 @@ const NotificationContent = React.memo(function NotificationContent({ onClose }:
           <EmptyState title="暂无通知" description="您目前没有新的通知" icon={Bell} className="p-4" />
         ) : (
           notifications.map((notification) => (
-            <button
+            <Pressable
               key={notification.id}
               onClick={() => handleMarkAsRead(notification.id)}
               className="w-full text-left px-3 py-2 border-b border-zinc-50 dark:border-zinc-600/40 last:border-b-0 hover:bg-zinc-50 dark:hover:bg-zinc-600/40 transition-colors"
@@ -100,14 +101,14 @@ const NotificationContent = React.memo(function NotificationContent({ onClose }:
               <p className={`mt-0.5 pl-3 text-2xs leading-snug truncate ${notification.read ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
                 {notification.message}
               </p>
-            </button>
+            </Pressable>
           ))
         )}
       </div>
 
       {notifications.length > 0 && (
         <div className="py-1.5 border-t border-zinc-100 dark:border-zinc-600/60 text-center">
-          <button
+          <Pressable
             onClick={() => {
               navigate('/settings?tab=logs');
               onClose?.();
@@ -115,7 +116,7 @@ const NotificationContent = React.memo(function NotificationContent({ onClose }:
             className="px-3 py-1 text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 font-medium transition-colors"
           >
             查看全部通知
-          </button>
+          </Pressable>
         </div>
       )}
     </div>

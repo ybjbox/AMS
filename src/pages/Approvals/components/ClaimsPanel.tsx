@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback, useEffect, useState } from 'react';
 import { UserCheck, Copy, RefreshCw, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
@@ -133,7 +134,7 @@ export default function ClaimsPanel({ onDecided }: { onDecided?: () => void }) {
         <ul className="divide-y divide-zinc-100 dark:divide-zinc-700/60 rounded-panel border border-zinc-100 dark:border-zinc-700/60 overflow-hidden">
           {items.map((r) => (
             <li key={r.id}>
-              <button
+              <Pressable
                 type="button"
                 onClick={() => setSelectedId(r.id)}
                 className={`relative w-full text-left px-3 py-2.5 transition-colors duration-200 ${
@@ -158,7 +159,7 @@ export default function ClaimsPanel({ onDecided }: { onDecided?: () => void }) {
                 <p className="mt-0.5 text-2xs text-muted-foreground tabular-nums">
                   {r.employeeId} · 尾号 {r.phoneTail} · {r.createdAt}
                 </p>
-              </button>
+              </Pressable>
             </li>
           ))}
         </ul>
@@ -224,13 +225,13 @@ export default function ClaimsPanel({ onDecided }: { onDecided?: () => void }) {
                   申请人备注：{selected.note}
                 </p>
                 {selected.note.length > 60 && (
-                  <button
+                  <Pressable
                     type="button"
                     onClick={() => setNoteOpen((v) => !v)}
                     className="mt-1 inline-flex min-h-11 items-center text-xs font-medium text-brand-700 hover:underline dark:text-brand-300"
                   >
                     {noteOpen ? '收起' : '展开完整备注'}
-                  </button>
+                  </Pressable>
                 )}
               </div>
             )}

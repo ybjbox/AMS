@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import { Permission } from "@/components/Permission";
 import PageContainer from "@/components/PageContainer";
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -156,24 +157,24 @@ export default function Users() {
                 </DropdownMenuContent>
               </DropdownMenu>
               <Permission code="users:manage">
-                <button
+                <Pressable
                   onClick={() => setIsImportModalOpen(true)}
                   aria-label="批量导入"
                   className="btn-secondary max-sm:min-h-11"
                 >
                   <Upload className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">批量导入</span>
-                </button>
+                </Pressable>
               </Permission>
               <Permission code="users:manage">
-                <button
+                <Pressable
                   onClick={handleAdd}
                   aria-label="新增员工"
                   className="btn-primary max-sm:min-h-11"
                 >
                   <Plus className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">新增员工</span>
-                </button>
+                </Pressable>
               </Permission>
             </div>
           </div>

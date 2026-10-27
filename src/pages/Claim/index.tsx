@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertCircle, ArrowLeft, CheckCircle2, Clock3, KeyRound, Search, ShieldCheck, UserRoundCheck } from 'lucide-react';
@@ -224,7 +225,7 @@ export default function ClaimAccount() {
           <span className="text-2xs text-muted-foreground">员工自助</span>
         </header>
 
-        <div className="flex-1 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)] lg:items-center lg:gap-16 lg:py-10">
+        <div className="claim-public-grid flex-1 lg:grid lg:items-center lg:gap-16 lg:py-10">
           <section className="mt-3 lg:mt-0">
             <div className="flex items-center gap-3 lg:gap-4">
               <img
@@ -233,7 +234,7 @@ export default function ClaimAccount() {
                 className="h-10 w-10 shrink-0 object-contain lg:h-14 lg:w-14"
               />
               <div className="min-w-0">
-                <p className="text-3xs tracking-[0.14em] text-muted-foreground lg:text-2xs">AMS · 员工门户</p>
+                <p className="text-3xs tracking-label text-muted-foreground lg:text-2xs">AMS · 员工门户</p>
                 <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-white lg:text-3xl">
                   {mode === 'lookup' ? '查询认领进度' : '认领我的账号'}
                 </h1>
@@ -291,13 +292,13 @@ export default function ClaimAccount() {
               <div className="rounded-card border border-zinc-200/70 bg-white p-5 shadow-sm dark:border-zinc-700/60 dark:bg-zinc-800 lg:p-8">
                 <div className="mb-4 flex items-baseline justify-between gap-2 sm:mb-5">
                   <h2 className="text-base font-semibold text-zinc-900 dark:text-white">申请进度</h2>
-                  <button
+                  <Pressable
                     type="button"
                     onClick={backToForm}
                     className="text-2xs font-medium text-brand-700 hover:underline dark:text-brand-300"
                   >
                     返回填写
-                  </button>
+                  </Pressable>
                 </div>
 
                 {!lookupResult ? (
@@ -457,14 +458,14 @@ export default function ClaimAccount() {
                   ))}
                 </ol>
 
-                <button
+                <Pressable
                   type="button"
                   onClick={openLookup}
                   className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-zinc-200 bg-white text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
                 >
                   <Search className="size-4" aria-hidden="true" />
                   查询进度
-                </button>
+                </Pressable>
 
                 <Link
                   to="/login"
@@ -569,14 +570,14 @@ export default function ClaimAccount() {
                   {submitting ? '提交中…' : '提交，等管理员核对'}
                 </Button>
 
-                <button
+                <Pressable
                   type="button"
                   onClick={openLookup}
                   className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-900/20"
                 >
                   <Search className="size-4" aria-hidden="true" />
                   已经提交过？查询进度
-                </button>
+                </Pressable>
 
                 <p className="mt-3 flex items-start gap-1.5 text-2xs leading-relaxed text-muted-foreground lg:hidden">
                   <ShieldCheck className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />

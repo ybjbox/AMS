@@ -70,7 +70,7 @@ export default function AttendanceHeatmap({ stats, isLoading, size, onSizeChange
       </div>
 
       {isLoading || !stats ? (
-        <div className="h-[76px] animate-pulse bg-zinc-100 dark:bg-zinc-800 rounded-lg" />
+        <div className="h-19 animate-pulse bg-zinc-100 dark:bg-zinc-800 rounded-lg" />
       ) : (
         <>
           <div className={`grid ${win.cols} gap-1`} role="img" aria-label={`近 ${days.length} 天考勤热力图`}>

@@ -130,7 +130,7 @@ export default async function applyTemplate(worksheet, data, config) {
               <textarea
                 value={editingScript.code}
                 onChange={(e) => setEditingScript({ ...editingScript, code: e.target.value })}
-                className="w-full h-[500px] p-4 font-mono text-sm bg-zinc-900 text-brand-400 outline-none resize-none"
+                className="w-full h-125 p-4 font-mono text-sm bg-zinc-900 text-brand-400 outline-none resize-none"
                 spellCheck={false}
               />
             </div>

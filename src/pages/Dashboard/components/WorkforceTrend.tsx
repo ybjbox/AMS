@@ -22,9 +22,9 @@ function monthLabel(m: string): string {
 const monthsOf = (size: WidgetSize, all: string[]) => (size === 'small' ? all.slice(-3) : all);
 
 const HEIGHT: Record<WidgetSize, string> = {
-  small: 'h-[100px]',
-  medium: 'h-[140px]',
-  large: 'h-[200px]',
+  small: 'h-25',
+  medium: 'h-35',
+  large: 'h-50',
 };
 
 /**

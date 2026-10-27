@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React from 'react';
 import { Folder, Edit2, Trash2, FileText, Printer, Plus } from 'lucide-react';
 import { DocumentSet, Document } from '@/store/useDocumentStore';
@@ -51,13 +52,13 @@ export function DocumentSetGrid({
             description={canManageDocs ? '点击右上角新建套件，将常用文件组合在一起' : '暂无文件套件'}
             icon={Folder}
             action={canManageDocs ? (
-              <button
+              <Pressable
                 onClick={handleCreateSetClick}
                 className="btn-primary"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 立即创建
-              </button>
+              </Pressable>
             ) : undefined}
           />
         </div>
@@ -80,24 +81,24 @@ export function DocumentSetGrid({
                 <div className="text-lg font-semibold text-zinc-900 dark:text-white">{set.name}</div>
                 {canManageDocs && (
                 <div className="flex space-x-1">
-                  <button
+                  <Pressable
                     onClick={() => onEditSetClick(set)}
                     className="p-1.5 text-zinc-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-md transition-colors"
                     title="编辑套件"
                   >
                     <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
+                  </Pressable>
+                  <Pressable
                     onClick={() => onDeleteSetClick(set.id)}
                     className="p-1.5 text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
                     title="删除套件"
                   >
                     <Trash2 className="w-4 h-4" />
-                  </button>
+                  </Pressable>
                 </div>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground line-clamp-2 min-h-[40px]">{set.description}</p>
+              <p className="text-sm text-muted-foreground line-clamp-2 min-h-10">{set.description}</p>
             </div>
             <div className="p-5 flex-1 bg-zinc-50/50 dark:bg-zinc-800/50">
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">

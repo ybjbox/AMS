@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import { Permission } from "@/components/Permission";
 import React from 'react';
 import { Printer, Edit, FileSignature } from 'lucide-react';
@@ -36,14 +37,14 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit, onR
       size="2xl"
       footer={
         <>
-          <button
+          <Pressable
             type="button"
             onClick={onClose}
             className="btn-secondary w-full sm:w-auto"
           >
             取消
-          </button>
-          <button
+          </Pressable>
+          <Pressable
             type="button"
             onClick={() => {
               if (!selectedUser) return;
@@ -55,8 +56,8 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit, onR
           >
             <Printer className="w-4 h-4 mr-2" />
             打印档案标签
-          </button>
-          <button
+          </Pressable>
+          <Pressable
             type="button"
             onClick={() => {
               const printContent = document.getElementById('printable-contact-card');
@@ -71,9 +72,9 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit, onR
           >
             <Printer className="w-4 h-4 mr-2" />
             打印联系卡
-          </button>
+          </Pressable>
           <Permission code="users:manage">
-            <button
+            <Pressable
               type="button"
               onClick={() => {
                 onClose();
@@ -83,7 +84,7 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit, onR
             >
               <Edit className="w-4 h-4 mr-2" />
               编辑信息
-            </button>
+            </Pressable>
           </Permission>
         </>
       }

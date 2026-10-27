@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, LogOut, Megaphone, Send, User } from 'lucide-react';
@@ -255,7 +256,7 @@ export default function MyPortal() {
               const Icon = item.icon;
               const active = tab === item.id;
               return (
-                <button
+                <Pressable
                   key={item.id}
                   type="button"
                   onClick={() => setTab(item.id)}
@@ -273,7 +274,7 @@ export default function MyPortal() {
                       {anomalyCount}
                     </span>
                   )}
-                </button>
+                </Pressable>
               );
             })}
           </nav>
@@ -325,7 +326,7 @@ export default function MyPortal() {
               {isLoading ? (
                 <div className="space-y-4" aria-busy="true">
                   <span className="sr-only">加载中…</span>
-                  <div className="grid gap-4 md:grid-cols-[minmax(0,300px)_minmax(0,1fr)] md:items-start">
+                  <div className="portal-summary-grid grid gap-4 md:items-start">
                     <Skeleton className="h-40 rounded-card" />
                     <div className="space-y-2">
                       {[0, 1, 2].map((i) => (
@@ -337,7 +338,7 @@ export default function MyPortal() {
               ) : loadError ? (
                 <FailedState subject="我的考勤" reason={loadError} onRetry={() => void load()} retryClassName="min-h-11" />
               ) : tab === 'month' ? (
-                <div className="grid gap-4 md:grid-cols-[minmax(0,300px)_minmax(0,1fr)] md:items-start">
+                <div className="portal-summary-grid grid gap-4 md:items-start">
                   <div className="space-y-4 lg:sticky lg:top-8">
                     <motion.section
                       initial={{ opacity: 0, y: 8 }}
@@ -413,7 +414,7 @@ export default function MyPortal() {
                             transition={{ ...t(0.2), delay: staggerDelay(i) }}
                             className="rounded-card border border-zinc-200/60 bg-white dark:border-zinc-700/60 dark:bg-zinc-800"
                           >
-                            <button
+                            <Pressable
                               type="button"
                               aria-expanded={expanded === v.date}
                               onClick={() => setExpanded((prev) => (prev === v.date ? null : v.date))}
@@ -427,7 +428,7 @@ export default function MyPortal() {
                                   aria-hidden="true"
                                 />
                               </span>
-                            </button>
+                            </Pressable>
                             {expanded === v.date && (
                               <p className="soft-rise-in px-4 pb-3 text-xs leading-relaxed text-muted-foreground">
                                 {v.why || '这条没有留下依据说明。'}
@@ -599,13 +600,13 @@ export default function MyPortal() {
                                   {n.content}
                                 </p>
                                 {long && (
-                                  <button
+                                  <Pressable
                                     type="button"
                                     onClick={() => setExpandedNotice(open ? null : n.id)}
                                     className="mt-2 inline-flex min-h-11 items-center text-xs font-medium text-brand-700 hover:underline dark:text-brand-300"
                                   >
                                     {open ? '收起' : '展开全文'}
-                                  </button>
+                                  </Pressable>
                                 )}
                               </>
                             )}
@@ -692,7 +693,7 @@ export default function MyPortal() {
                 const Icon = item.icon;
                 const active = tab === item.id;
                 return (
-                  <button
+                  <Pressable
                     key={item.id}
                     type="button"
                     onClick={() => setTab(item.id)}
@@ -703,7 +704,7 @@ export default function MyPortal() {
                   >
                     <Icon className="size-5" />
                     {item.label}
-                  </button>
+                  </Pressable>
                 );
               })}
             </div>

@@ -540,3 +540,89 @@ main,
     min-height: 44px;
   }
 }
+
+/* AI 助手：动态视口宽度与气泡宽度用语义类，避免在 TSX 里散落任意值 */
+.ai-assistant-panel {
+  max-width: calc(100vw - 3rem);
+}
+.chat-bubble {
+  max-width: 85%;
+}
+
+/* 登录/认领光晕位置与后台骨架栅格：结构性常量放进语义类，避免 TSX 任意值 */
+.login-glow-a {
+  top: -18%;
+  left: -8%;
+}
+.login-glow-b {
+  top: 58%;
+  right: -8%;
+}
+.portal-summary-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+.admin-skeleton-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+.app-overlay-top {
+  z-index: 9999;
+}
+@media (min-width: 768px) {
+  .portal-summary-grid {
+    grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .admin-skeleton-grid {
+    grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+  }
+}
+
+.claim-public-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+.tracking-label {
+  letter-spacing: 0.14em;
+}
+.progress-fill {
+  transition: width 300ms ease-out;
+}
+.ai-assistant-panel {
+  max-height: 80vh;
+}
+@media (min-width: 1024px) {
+  .claim-public-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 520px);
+  }
+}
+
+.z-modal-top {
+  z-index: 60;
+}
+.collapse-grid {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 250ms var(--ease-smooth-out);
+}
+.collapse-grid-open {
+  grid-template-rows: 1fr;
+}
+.filters-popover {
+  width: calc(100vw - 2rem);
+}
+
+.modal-scroll-45 { max-height: 45vh; }
+.modal-scroll-52 { max-height: 52vh; }
+.modal-scroll-60 { max-height: 60vh; }
+.modal-scroll-70 { max-height: 70vh; }
+.preview-height-70 { height: 70vh; }
+.insert-before::before {
+  content: "";
+  position: absolute;
+  top: -0.5rem;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: 9999px;
+  background: var(--color-brand-500);
+}

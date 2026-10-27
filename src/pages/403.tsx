@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldAlert, ArrowLeft } from 'lucide-react';
@@ -31,13 +32,13 @@ const Forbidden403 = React.memo(function Forbidden403() {
         </div>
 
         <div className="mt-8">
-          <button
+          <Pressable
             onClick={handleGoBack}
             className="btn-primary"
           >
             <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
             {isEmployee ? '返回我的考勤' : '返回首页'}
-          </button>
+          </Pressable>
         </div>
       </div>
     </main>

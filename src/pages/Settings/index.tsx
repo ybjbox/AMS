@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import PageContainer from "@/components/PageContainer";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
@@ -189,7 +190,7 @@ export default function Settings() {
     const isActive = activeTab === tab.id;
     if (mobile) {
       return (
-        <button
+        <Pressable
           key={tab.id}
           role="tab"
           aria-selected={isActive}
@@ -198,11 +199,11 @@ export default function Settings() {
         >
           <Icon className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
           {tab.label}
-        </button>
+        </Pressable>
       );
     }
     return (
-      <button
+      <Pressable
         key={tab.id}
         role="tab"
         aria-selected={isActive}
@@ -217,7 +218,7 @@ export default function Settings() {
       >
         <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-brand-700 dark:text-brand-400' : 'text-zinc-400 dark:text-zinc-500'}`} />
         {tab.label}
-      </button>
+      </Pressable>
     );
   };
 

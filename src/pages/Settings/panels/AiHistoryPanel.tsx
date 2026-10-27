@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { http } from '@/services/api';
 import { describeSaveError } from '@/store/saveFailureCore';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 
 /**
@@ -129,9 +130,9 @@ export default function AiHistoryPanel() {
 
       {/* 搜索 + 统计 */}
       <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative flex-1 min-w-50">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <input
+          <Input
             aria-label="按用户名或对话标题筛选"
             value={query}
             onChange={(e) => setQuery(e.target.value)}

@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import PageContainer from "@/components/PageContainer";
 import React, { useState, useMemo, useCallback } from 'react';
 import { useUrlState } from '@/hooks/useUrlState';
@@ -106,14 +107,14 @@ export default function ContractsPage() {
             <p className="page-subtitle">劳动合同管理、生成与打印</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <button
+            <Pressable
               onClick={() => setIsTemplateEditorOpen(true)}
               aria-label="模板设置"
               className="btn-secondary max-sm:min-h-11"
             >
               <FileEdit className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">模板设置</span>
-            </button>
+            </Pressable>
           </div>
         </div>
 
@@ -141,7 +142,7 @@ export default function ContractsPage() {
                 }}
                 items={STATUS_OPTIONS}
               >
-                <SelectTrigger aria-label="筛选员工状态" className="w-[180px]">
+                <SelectTrigger aria-label="筛选员工状态" className="w-45">
                   <SelectValue placeholder="选择状态" />
                 </SelectTrigger>
                 <SelectContent>
@@ -171,7 +172,7 @@ export default function ContractsPage() {
                     ? 'text-amber-700 dark:text-amber-400'
                     : 'text-muted-foreground';
               return (
-                <button
+                <Pressable
                   key={b}
                   type="button"
                   aria-pressed={active}
@@ -187,13 +188,13 @@ export default function ContractsPage() {
                   )}
                 >
                   {EXPIRY_BUCKET_LABEL[b]} <span className="font-semibold tabular-nums">{n}</span>
-                </button>
+                </Pressable>
               );
             })}
             {filterBucket && (
-              <button type="button" onClick={() => setFilterBucket('ALL')} className="text-muted-foreground underline underline-offset-2">
+              <Pressable type="button" onClick={() => setFilterBucket('ALL')} className="text-muted-foreground underline underline-offset-2">
                 清除分档
-              </button>
+              </Pressable>
             )}
           </div>
 
@@ -205,7 +206,7 @@ export default function ContractsPage() {
             onDirectPrint={handleDirectPrint}
           />
           {/* 右侧渐变遮罩提示可横向滚动（仅移动端） */}
-          <div className="absolute right-0 top-[53px] bottom-0 w-8 bg-gradient-to-l from-white dark:from-zinc-800 to-transparent pointer-events-none md:hidden" />
+          <div className="absolute right-0 top-13 bottom-0 w-8 bg-gradient-to-l from-white dark:from-zinc-800 to-transparent pointer-events-none md:hidden" />
           
           <Pagination
             currentPage={safePage}

@@ -169,7 +169,7 @@ export default function RolePermissionsPanel() {
       )}
 
       <div className="overflow-x-auto rounded-xl border border-zinc-200/70 dark:border-zinc-700/60">
-        <table className="w-full min-w-[660px] text-sm" aria-label="角色能力矩阵">
+        <table className="w-full min-w-165 text-sm" aria-label="角色能力矩阵">
           <thead className="bg-zinc-50/80 dark:bg-zinc-800/60">
             <tr>
               <th scope="col" className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">

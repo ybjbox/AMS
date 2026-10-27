@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback } from 'react';
 import { ChevronRight, ChevronDown, Folder, FolderOpen, Plus, Edit2, Trash2, Building2 } from 'lucide-react';
 import { DepartmentNode } from '@/types';
@@ -75,7 +76,7 @@ const DepartmentTreeNode = React.memo(function DepartmentTreeNode({
         <div className="flex items-center space-x-1 shrink-0 ml-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity">
           {canManage && (
             <>
-              <button
+              <Pressable
                 data-id={node.id}
                 onClick={onAddChild}
                 className="p-1.5 text-zinc-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-md transition-colors"
@@ -83,23 +84,23 @@ const DepartmentTreeNode = React.memo(function DepartmentTreeNode({
                 aria-label={`添加子部门：${node.name}`}
               >
                 <Plus className="w-4 h-4" />
-              </button>
-              <button
+              </Pressable>
+              <Pressable
                 data-id={node.id}
                 onClick={onEdit}
                 className="p-1.5 text-zinc-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-md transition-colors"
                 title="编辑"
               >
                 <Edit2 className="w-4 h-4" />
-              </button>
-              <button
+              </Pressable>
+              <Pressable
                 data-id={node.id}
                 onClick={onDelete}
                 className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
                 title="删除"
               >
                 <Trash2 className="w-4 h-4" />
-              </button>
+              </Pressable>
             </>
           )}
         </div>

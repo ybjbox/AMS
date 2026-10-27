@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import { useState, useRef, useEffect, type PointerEvent as ReactPointerEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Send, Square, Plus, History, Trash2, MessageSquare, Loader2, SlidersHorizontal } from 'lucide-react';
@@ -183,7 +184,7 @@ export default function AiAssistant() {
   return (
     <>
       {/* 悬浮入口按钮 */}
-      <button
+      <Pressable
         type="button"
         onClick={onButtonClick}
         onPointerDown={isFloatable ? onPointerDown : undefined}
@@ -207,7 +208,7 @@ export default function AiAssistant() {
         }
       >
         {renderGlyph("h-6 w-6")}
-      </button>
+      </Pressable>
 
       <AnimatePresence>
         {open && (
@@ -217,7 +218,7 @@ export default function AiAssistant() {
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             style={isFloatable && effectiveY != null ? { bottom: `calc(100vh - ${effectiveY}px + 12px)` } : undefined}
-            className="fixed bottom-24 right-6 z-50 flex h-[560px] max-h-[80vh] w-[380px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl"
+            className="fixed bottom-24 right-6 z-50 flex h-140 w-95 ai-assistant-panel flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl"
           >
             {/* 头部 */}
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
@@ -290,7 +291,7 @@ export default function AiAssistant() {
                     transition={{ duration: 0.18, ease: 'easeOut' }}
                     className="shrink-0 overflow-hidden border-r border-border bg-muted/40"
                   >
-                    <div className="flex h-full w-[140px] flex-col">
+                    <div className="flex h-full w-35 flex-col">
                       <Button
                         type="button"
                         variant="ghost"
@@ -319,7 +320,7 @@ export default function AiAssistant() {
                                 : 'text-foreground hover:bg-muted'
                             }`}
                           >
-                            <button
+                            <Pressable
                               type="button"
                               onClick={() => {
                                 selectConversation(c.id);
@@ -329,15 +330,15 @@ export default function AiAssistant() {
                             >
                               <MessageSquare className="h-3.5 w-3.5 shrink-0 opacity-70" />
                               <span className="truncate">{c.title || '新对话'}</span>
-                            </button>
-                            <button
+                            </Pressable>
+                            <Pressable
                               type="button"
                               onClick={() => removeConversation(c.id)}
                               aria-label="删除对话"
                               className="shrink-0 rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 group-focus-within:opacity-100"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
-                            </button>
+                            </Pressable>
                           </div>
                         ))}
                       </div>
@@ -377,8 +378,8 @@ export default function AiAssistant() {
                       <div
                         className={
                           m.role === 'user'
-                            ? 'max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-primary-foreground'
-                            : 'max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-bl-sm bg-muted px-3 py-2 text-foreground'
+                            ? 'chat-bubble whitespace-pre-wrap rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-primary-foreground'
+                            : 'chat-bubble whitespace-pre-wrap rounded-2xl rounded-bl-sm bg-muted px-3 py-2 text-foreground'
                         }
                       >
                         {m.content ? (
@@ -434,19 +435,19 @@ export default function AiAssistant() {
                           ? 'AI 正在回复，请稍候…'
                           : '输入问题，Enter 发送…'
                       }
-                      className="min-h-[40px] max-h-24 flex-1 field-sizing-fixed resize-y"
+                      className="min-h-10 max-h-24 flex-1 field-sizing-fixed resize-y"
                     />
                     {streaming ? (
-                      <button
+                      <Pressable
                         type="button"
                         onClick={stop}
                         aria-label="停止"
                         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground transition-colors hover:bg-muted/70"
                       >
                         <Square className="h-4 w-4" />
-                      </button>
+                      </Pressable>
                     ) : (
-                      <button
+                      <Pressable
                         type="button"
                         onClick={handleSend}
                         disabled={!input.trim() || !aiEnabled}
@@ -454,7 +455,7 @@ export default function AiAssistant() {
                         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-opacity disabled:opacity-40"
                       >
                         <Send className="h-4 w-4" />
-                      </button>
+                      </Pressable>
                     )}
                   </div>
                 </div>

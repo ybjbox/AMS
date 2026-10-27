@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React from 'react';
 import { FileText, ChevronDown, ChevronRight, Folder } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -50,20 +51,20 @@ export function SetFormModal({
       size="lg"
       footer={
         <>
-          <button
+          <Pressable
             type="button"
             onClick={onClose}
             className="btn-secondary w-full sm:w-auto"
           >
             取消
-          </button>
-          <button
+          </Pressable>
+          <Pressable
             type="submit"
             form="set-form"
             className="btn-primary w-full sm:w-auto"
           >
             保存
-          </button>
+          </Pressable>
         </>
       }
     >
@@ -220,55 +221,55 @@ export function SetFormModal({
                     <div className="flex items-center space-x-3 shrink-0">
                       {/* 分段胶囊/步进器嵌在共享边框盒里，选中底色与圆角属于版面对象，换 Button 会破坏盒模型，故保留裸 button */}
                       <div className="flex items-center space-x-1 bg-white dark:bg-zinc-700 rounded border border-zinc-200 dark:border-zinc-600 p-0.5">
-                        <button
+                        <Pressable
                           type="button"
                           onClick={() => onSetColorClick(id, false)}
                           className={`px-2 py-1 text-xs rounded ${!settings.color ? 'bg-zinc-200 dark:bg-zinc-600 text-zinc-800 dark:text-white' : 'text-muted-foreground'}`}
                         >
                           黑白
-                        </button>
-                        <button
+                        </Pressable>
+                        <Pressable
                           type="button"
                           onClick={() => onSetColorClick(id, true)}
                           className={`px-2 py-1 text-xs rounded ${settings.color ? 'bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-300' : 'text-muted-foreground'}`}
                         >
                           彩色
-                        </button>
+                        </Pressable>
                       </div>
                       <div className="flex items-center space-x-1 bg-white dark:bg-zinc-700 rounded border border-zinc-200 dark:border-zinc-600 p-0.5">
-                        <button
+                        <Pressable
                           type="button"
                           onClick={() => onSetDuplexClick(id, false)}
                           className={`px-2 py-1 text-xs rounded ${!settings.duplex ? 'bg-zinc-200 dark:bg-zinc-600 text-zinc-800 dark:text-white' : 'text-muted-foreground'}`}
                         >
                           单面
-                        </button>
-                        <button
+                        </Pressable>
+                        <Pressable
                           type="button"
                           onClick={() => onSetDuplexClick(id, true)}
                           className={`px-2 py-1 text-xs rounded ${settings.duplex ? 'bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-300' : 'text-muted-foreground'}`}
                         >
                           双面
-                        </button>
+                        </Pressable>
                       </div>
                       <div className="flex items-center bg-white dark:bg-zinc-700 rounded border border-zinc-200 dark:border-zinc-600">
-                        <button
+                        <Pressable
                           type="button"
                           onClick={() => onSetCopiesClick(id, 'dec')}
                           className="px-2 py-1 text-muted-foreground hover:text-zinc-700 dark:text-zinc-300 dark:hover:text-zinc-300"
                         >
                           -
-                        </button>
+                        </Pressable>
                         <span className="text-xs w-6 text-center text-zinc-700 dark:text-zinc-300">
                           {settings.copies}
                         </span>
-                        <button
+                        <Pressable
                           type="button"
                           onClick={() => onSetCopiesClick(id, 'inc')}
                           className="px-2 py-1 text-muted-foreground hover:text-zinc-700 dark:text-zinc-300 dark:hover:text-zinc-300"
                         >
                           +
-                        </button>
+                        </Pressable>
                       </div>
                     </div>
                   </div>

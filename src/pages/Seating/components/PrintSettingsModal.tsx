@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useEffect, useRef } from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -53,14 +54,14 @@ export function PrintSettingsModal({
       bodyClassName="p-0 overflow-hidden"
       footer={
         <>
-          <button
+          <Pressable
             type="button"
             onClick={onClose}
             className="btn-secondary w-full sm:w-auto"
           >
             取消
-          </button>
-          <button
+          </Pressable>
+          <Pressable
             ref={printRef}
             type="button"
             onClick={handlePrint}
@@ -68,7 +69,7 @@ export function PrintSettingsModal({
             className="btn-primary w-full sm:w-auto"
           >
             打印
-          </button>
+          </Pressable>
         </>
       }
     >

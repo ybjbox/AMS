@@ -73,7 +73,7 @@ export function FileList({
                 variant="link"
                 size="xs"
                 onClick={() => onBreadcrumbClick(crumb.id)}
-                className="h-auto px-0 text-sm font-normal text-muted-foreground hover:text-brand-600 dark:hover:text-brand-400 transition-colors truncate max-w-[100px] sm:max-w-[200px]"
+                className="h-auto px-0 text-sm font-normal text-muted-foreground hover:text-brand-600 dark:hover:text-brand-400 transition-colors truncate max-w-25 sm:max-w-50"
               >
                 <span className="min-w-0 truncate">{crumb.name}</span>
               </Button>
@@ -150,7 +150,7 @@ export function FileList({
                             {getFileIcon(doc.type)}
                           </div>
                           <div className="ml-4 min-w-0">
-                            <div className="text-sm font-medium text-zinc-900 dark:text-zinc-200 truncate max-w-[180px] sm:max-w-[420px]">{doc.name}</div>
+                            <div className="text-sm font-medium text-zinc-900 dark:text-zinc-200 truncate max-w-45 sm:max-w-105">{doc.name}</div>
                             <div className="text-xs text-muted-foreground">{doc.type.toUpperCase()}</div>
                           </div>
                         </div>

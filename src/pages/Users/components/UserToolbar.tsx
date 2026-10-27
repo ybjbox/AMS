@@ -58,7 +58,7 @@ export function UserToolbar({
                 <Filter className={`h-4 w-4 mr-2 ${activeFilterCount > 0 ? 'text-brand-600 dark:text-brand-400' : 'text-zinc-400'}`} />
                 筛选 {activeFilterCount > 0 && `(${activeFilterCount})`}
               </SheetTrigger>
-              <SheetContent side="bottom" className="h-auto max-h-[70vh] rounded-t-2xl overflow-y-auto">
+              <SheetContent side="bottom" className="h-auto modal-scroll-70 rounded-t-2xl overflow-y-auto">
                 <div className="py-2">
                   <UserFilters
                     filters={filters}

@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback } from 'react';
 import { ChevronRight, ChevronDown, Plus, Edit2, Trash2 } from 'lucide-react';
 import { DepartmentNode, RoleNode } from '@/types';
@@ -49,7 +50,7 @@ const RoleTreeNode = React.memo(function RoleTreeNode({
             <span className="text-xs text-muted-foreground shrink-0">({deptRoles.length})</span>
           </div>
           {canManage && (
-            <button
+            <Pressable
               data-id={node.id}
               onClick={onAddRole}
               className="p-1 text-zinc-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-md transition-colors shrink-0"
@@ -57,7 +58,7 @@ const RoleTreeNode = React.memo(function RoleTreeNode({
               aria-label={`新增职位：${node.name}`}
             >
               <Plus className="w-4 h-4" />
-            </button>
+            </Pressable>
           )}
         </div>
 
@@ -73,22 +74,22 @@ const RoleTreeNode = React.memo(function RoleTreeNode({
                     <span className="text-sm text-zinc-600 dark:text-zinc-300">{role.name}</span>
                     {canManage && (
                       <div className="flex items-center space-x-1 shrink-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity">
-                        <button
+                        <Pressable
                           data-id={role.id}
                           onClick={onEditRole}
                           className="p-1.5 text-zinc-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-md transition-colors"
                           title="编辑"
                         >
                           <Edit2 className="w-3 h-3" />
-                        </button>
-                        <button
+                        </Pressable>
+                        <Pressable
                           data-id={role.id}
                           onClick={onDeleteRole}
                           className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
                           title="删除"
                         >
                           <Trash2 className="w-3 h-3" />
-                        </button>
+                        </Pressable>
                       </div>
                     )}
                   </li>

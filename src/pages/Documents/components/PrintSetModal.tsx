@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React from 'react';
 import { Printer, Check } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
@@ -28,15 +29,15 @@ export function PrintSetModal({
       size="md"
       footer={
         <>
-          <button
+          <Pressable
             type="button"
             onClick={onClose}
             disabled={isPrinting}
             className="btn-secondary w-full sm:w-auto disabled:opacity-50"
           >
             取消
-          </button>
-          <button
+          </Pressable>
+          <Pressable
             type="button"
             onClick={handlePrint}
             disabled={isPrinting}
@@ -53,7 +54,7 @@ export function PrintSetModal({
                 确认打印
               </>
             )}
-          </button>
+          </Pressable>
         </>
       }
     >

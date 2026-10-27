@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
@@ -87,8 +88,8 @@ export default function Login() {
       {/* 背景装饰 */}
       {!loginBackground && (
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-          <div className="glow-in absolute -top-[18%] -left-[8%] size-72 rounded-full bg-brand-200/60 blur-3xl dark:bg-brand-900/20 lg:size-96" />
-          <div className="glow-in glow-in--late absolute top-[58%] -right-[8%] size-64 rounded-full bg-emerald-200/50 blur-3xl dark:bg-emerald-900/10 lg:size-80" />
+          <div className="login-glow-a glow-in absolute size-72 rounded-full bg-brand-200/60 blur-3xl dark:bg-brand-900/20 lg:size-96" />
+          <div className="login-glow-b glow-in glow-in--late absolute size-64 rounded-full bg-emerald-200/50 blur-3xl dark:bg-emerald-900/10 lg:size-80" />
         </div>
       )}
 
@@ -160,14 +161,14 @@ export default function Login() {
                   className="min-h-11 pl-10 pr-10"
                   placeholder="请输入密码"
                 />
-                <button
+                <Pressable
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
                   aria-label={showPassword ? '隐藏密码' : '显示密码'}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+                </Pressable>
               </div>
               {errors.password && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.password.message}</p>}
             </div>
@@ -189,7 +190,7 @@ export default function Login() {
               </div>
 
               <div className="text-sm">
-                <button
+                <Pressable
                   type="button"
                   onClick={() => {
                     // 功能待接入后端，暂时提示
@@ -200,12 +201,12 @@ export default function Login() {
                   className="inline-flex min-h-6 max-sm:min-h-11 items-center font-medium text-sm text-brand-600 hover:text-brand-500 dark:text-brand-400 dark:hover:text-brand-300 transition-colors"
                 >
                   忘记密码？
-                </button>
+                </Pressable>
               </div>
             </div>
 
             <div>
-              <button
+              <Pressable
                 type="submit"
                 disabled={loading || isSubmitting}
                 className="btn-primary w-full py-2.5 sm:text-sm disabled:opacity-70 disabled:cursor-not-allowed group focus:ring-2 focus:ring-offset-2 focus:ring-brand-600"
@@ -218,7 +219,7 @@ export default function Login() {
                     <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </>
                 )}
-              </button>
+              </Pressable>
             </div>
           </form>
 

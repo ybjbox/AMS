@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback, useEffect, useState } from 'react';
 import { FileSignature, History } from 'lucide-react';
 import { toast } from 'sonner';
@@ -158,7 +159,7 @@ export default function RenewContractModal({ isOpen, onClose, user, onRenewed }:
             <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
               <History className="w-3.5 h-3.5" aria-hidden="true" /> 续签记录（{history.length}）
             </h4>
-            <ul className="space-y-1.5 max-h-[140px] overflow-auto">
+            <ul className="space-y-1.5 max-h-35 overflow-auto">
               {history.map((h) => (
                 <li key={h.id} className="text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900 rounded-md px-3 py-2 tabular-nums">
                   <span className="text-muted-foreground">{h.createdAt.slice(0, 10)}</span>
@@ -172,13 +173,13 @@ export default function RenewContractModal({ isOpen, onClose, user, onRenewed }:
         )}
 
         <div className="flex justify-end gap-3 pt-1">
-          <button type="button" onClick={onClose} className="btn-secondary">
+          <Pressable type="button" onClick={onClose} className="btn-secondary">
             取消
-          </button>
-          <button type="submit" disabled={submitting} className="btn-primary disabled:opacity-60">
+          </Pressable>
+          <Pressable type="submit" disabled={submitting} className="btn-primary disabled:opacity-60">
             <FileSignature className="w-4 h-4 mr-1.5" aria-hidden="true" />
             {submitting ? '提交中…' : '确认续签'}
-          </button>
+          </Pressable>
         </div>
       </form>
     </BaseModal>

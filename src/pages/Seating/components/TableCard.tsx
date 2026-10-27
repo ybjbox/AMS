@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useRef, useState } from 'react';
 import { ArrowDownToLine, ChevronRight, Pencil, Trash2 } from 'lucide-react';
 import { Table } from '../hooks/useSeatingArrange';
@@ -100,7 +101,7 @@ export function TableCard({ table, viewMode, capacity, pickedUserId, onPick, onM
               className="w-24 px-2 text-center"
             />
           ) : (
-            <button
+            <Pressable
               type="button"
               onClick={() => {
                 setDraftNumber(String(table.number));
@@ -113,7 +114,7 @@ export function TableCard({ table, viewMode, capacity, pickedUserId, onPick, onM
             >
               <h3 className="font-semibold text-zinc-900 dark:text-white truncate">{table.number}号桌</h3>
               <Pencil className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 opacity-0 group-hover/name:opacity-100 transition-opacity" />
-            </button>
+            </Pressable>
           )}
         </div>
         <div className="flex items-center space-x-2 shrink-0">
@@ -174,7 +175,7 @@ export function TableCard({ table, viewMode, capacity, pickedUserId, onPick, onM
           {hint === 'tail' && (
             <div
               data-drop-tail
-              className="h-[53px] rounded-lg border-2 border-dashed border-brand-300 dark:border-brand-700 bg-brand-50/60 dark:bg-brand-900/15 flex items-center justify-center text-xs text-brand-700 dark:text-brand-300"
+              className="h-13 rounded-lg border-2 border-dashed border-brand-300 dark:border-brand-700 bg-brand-50/60 dark:bg-brand-900/15 flex items-center justify-center text-xs text-brand-700 dark:text-brand-300"
             >
               松手落座桌尾
             </div>
@@ -234,7 +235,7 @@ function MemberChip({
       }}
       className={[
         'relative group flex items-center justify-between gap-2 p-2 rounded-lg border cursor-grab active:cursor-grabbing transition-colors',
-        insertBefore && 'before:absolute before:-top-2 before:left-0 before:right-0 before:h-0.5 before:rounded-full before:bg-brand-500 before:content-[""]',
+        insertBefore && 'insert-before',
         picked
           ? 'bg-brand-50 dark:bg-brand-900/25 border-brand-300 dark:border-brand-700 ring-2 ring-brand-200 dark:ring-brand-900/60'
           : 'bg-zinc-50 dark:bg-zinc-900/50 border-zinc-100 dark:border-zinc-700 hover:border-zinc-200 dark:hover:border-zinc-600',
@@ -251,7 +252,7 @@ function MemberChip({
         </div>
       </div>
       <div className="flex items-center gap-1 shrink-0">
-        <button
+        <Pressable
           type="button"
           onClick={(e) => {
             e.stopPropagation();
@@ -262,7 +263,7 @@ function MemberChip({
           className="p-1 rounded-md text-muted-foreground hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" />
-        </button>
+        </Pressable>
         {showChevron && (
           <ChevronRight className="w-4 h-4 text-zinc-300 dark:text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity" />
         )}

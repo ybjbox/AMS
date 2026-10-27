@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useTreeExpand, TreeNode } from '@/hooks/useTreeExpand';
@@ -244,13 +245,13 @@ export function TreeSelect({
           {nodes.length > 0 ? (
             <>
               <div className="flex justify-end p-1 border-b border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 rounded-t-md shrink-0">
-                <button
+                <Pressable
                   type="button"
                   onClick={isAllExpanded() ? collapseAll : expandAll}
                   className="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 px-2 py-1 rounded hover:bg-brand-50 dark:hover:bg-zinc-700 transition-colors"
                 >
                   {isAllExpanded() ? '一键收起' : '一键展开'}
-                </button>
+                </Pressable>
               </div>
               <div className="overflow-auto py-1">{renderTree(nodes)}</div>
             </>

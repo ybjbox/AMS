@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useMemo, useCallback, useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -88,7 +89,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
           />
           {showBadge && (
             <span
-              className="absolute -top-1.5 -right-2 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-red-500 ring-2 ring-white dark:ring-zinc-800 text-3xs font-bold text-white"
+              className="absolute -top-1.5 -right-2 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-red-500 ring-2 ring-white dark:ring-zinc-800 text-3xs font-bold text-white"
               aria-hidden="true"
             >
               {pendingTodoCount > 99 ? '99+' : pendingTodoCount}
@@ -96,7 +97,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
           )}
         </span>
         {!isCollapsed && (
-          <span className="w-[4em] shrink-0 whitespace-nowrap text-sm text-left animate-in fade-in duration-150">{item.label}</span>
+          <span className="w-14 shrink-0 whitespace-nowrap text-sm text-left animate-in fade-in duration-150">{item.label}</span>
         )}
       </Link>
     );
@@ -112,9 +113,9 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
       {/* Banner：Logo 与名称上下两行居中。折叠入口做成骑跨侧栏右边框的小圆钮（不占 banner 横向空间）；
           桌面端页眉已移除，此区承担品牌展示 */}
       <div
-        className="flex items-center justify-center h-[72px] shrink-0 border-b border-zinc-200/60 dark:border-white/10 transition duration-250"
+        className="flex items-center justify-center h-18 shrink-0 border-b border-zinc-200/60 dark:border-white/10 transition duration-250"
       >
-        <div className={`flex flex-col items-center justify-center min-w-0 ${isCollapsed ? '' : 'w-[124px]'}`}>
+        <div className={`flex flex-col items-center justify-center min-w-0 ${isCollapsed ? '' : 'w-31'}`}>
           <div className="w-9 h-9 flex items-center justify-center shrink-0 overflow-hidden">
             <img
               src={systemIcon || DEFAULT_SYSTEM_ICON}
@@ -132,20 +133,20 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
         </div>
       </div>
       {onToggleCollapse && (
-        <button
+        <Pressable
           onClick={onToggleCollapse}
-          className="absolute z-40 -right-3 top-[72px] -translate-y-1/2 h-6 w-6 rounded-full bg-white dark:bg-zinc-800 border border-zinc-300/80 dark:border-zinc-600 shadow-sm flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-brand-600 dark:hover:text-brand-400 hover:border-brand-400 dark:hover:border-brand-500 transition-colors duration-150"
+          className="absolute z-40 -right-3 top-18 -translate-y-1/2 h-6 w-6 rounded-full bg-white dark:bg-zinc-800 border border-zinc-300/80 dark:border-zinc-600 shadow-sm flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-brand-600 dark:hover:text-brand-400 hover:border-brand-400 dark:hover:border-brand-500 transition-colors duration-150"
           title={isCollapsed ? '展开菜单' : '收起菜单'}
           aria-label={isCollapsed ? '展开菜单' : '收起菜单'}
         >
           {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
-        </button>
+        </Pressable>
       )}
       {/* Nav（外层 relative 容器承载底部滚动提示箭头） */}
       <div className="relative flex-1 flex flex-col min-h-0">
         <nav ref={navRef} onScroll={updateScrollHint} aria-label="主导航" className="px-3 pt-3 pb-4 flex-1 overflow-y-auto overflow-x-hidden no-scrollbar">
           {/* 三区块共用 124px 内容列（banner/导航/账户区左缘同线），列整体居中；角标走绝对定位不撑宽 */}
-          <div className={`${isCollapsed ? 'w-max' : 'w-[124px]'} mx-auto space-y-1.5`}>
+          <div className={`${isCollapsed ? 'w-max' : 'w-31'} mx-auto space-y-1.5`}>
             {orderedNav.map(renderNavItem)}
           </div>
         </nav>

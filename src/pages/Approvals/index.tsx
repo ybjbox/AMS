@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import PageContainer from "@/components/PageContainer";
 import React, { useCallback, useEffect, useState } from 'react';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -5,6 +6,7 @@ import { useUserStore } from '@/store/useUserStore';
 import { CheckCircle2, Clock, FileCheck2, Send, XCircle, CalendarClock, ShieldCheck, Undo2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { FailedState } from '@/components/ui/FailedState';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -381,7 +383,7 @@ export default function Approvals() {
           {/* 类型切换：请假 / 补卡 / 转正 / 离职 / 加班（清单见 lib/approvalMeta.ts） */}
           <div className="flex rounded-lg bg-zinc-100 dark:bg-zinc-700/50 p-0.5 flex-wrap gap-y-1" role="tablist" aria-label="申请类型">
             {APPROVAL_TABS.map((t) => (
-              <button
+              <Pressable
                 key={t.id}
                 type="button"
                 role="tab"
@@ -394,7 +396,7 @@ export default function Approvals() {
                 }`}
               >
                 {t.label}
-              </button>
+              </Pressable>
             ))}
           </div>
 
@@ -421,22 +423,20 @@ export default function Approvals() {
               </label>
               <label className="block">
                 <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">开始日期 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
-                <input
+                <Input
                   type="date"
                   required
                   value={form.startDate}
                   onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-                  className="input-base"
                 />
               </label>
               <label className="block col-span-2">
                 <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">结束日期（可选）</span>
-                <input
+                <Input
                   type="date"
                   value={form.endDate}
                   min={form.startDate || undefined}
                   onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-                  className="input-base"
                 />
               </label>
             </div>
@@ -446,22 +446,20 @@ export default function Approvals() {
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
                 <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">补卡日期 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
-                <input
+                <Input
                   type="date"
                   required
                   value={form.punchDate}
                   onChange={(e) => setForm({ ...form, punchDate: e.target.value })}
-                  className="input-base"
                 />
               </label>
               <label className="block">
                 <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">补卡时间 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
-                <input
+                <Input
                   type="time"
                   required
                   value={form.punchTime}
                   onChange={(e) => setForm({ ...form, punchTime: e.target.value })}
-                  className="input-base"
                 />
               </label>
               <label className="block col-span-2">
@@ -502,12 +500,11 @@ export default function Approvals() {
             <div className="grid grid-cols-2 gap-3">
               <label className="block col-span-2">
                 <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">最后工作日 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
-                <input
+                <Input
                   type="date"
                   required
                   value={form.resignDate}
                   onChange={(e) => setForm({ ...form, resignDate: e.target.value })}
-                  className="input-base"
                 />
               </label>
               <p className="col-span-2 text-2xs text-muted-foreground leading-relaxed">
@@ -520,17 +517,16 @@ export default function Approvals() {
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
                 <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">加班日期 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
-                <input
+                <Input
                   type="date"
                   required
                   value={form.startDate}
                   onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-                  className="input-base"
                 />
               </label>
               <label className="block">
                 <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">时长（小时） <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
-                <input
+                <Input
                   type="number"
                   required
                   min={0.5}
@@ -538,7 +534,6 @@ export default function Approvals() {
                   step={0.5}
                   value={form.overtimeHours}
                   onChange={(e) => setForm({ ...form, overtimeHours: e.target.value })}
-                  className="input-base"
                 />
               </label>
               <p className="col-span-2 text-2xs text-muted-foreground leading-relaxed">
@@ -577,7 +572,7 @@ export default function Approvals() {
         </form>
 
         {/* 列表 */}
-        <div className={`${tab === 'claims' ? 'lg:col-span-5' : 'lg:col-span-3'} bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60 shadow-sm overflow-hidden flex flex-col min-h-[320px]`}>
+        <div className={`${tab === 'claims' ? 'lg:col-span-5' : 'lg:col-span-3'} bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60 shadow-sm overflow-hidden flex flex-col min-h-80`}>
           <div className="flex border-b border-zinc-100 dark:border-zinc-700/60">
             {(
               [
@@ -587,7 +582,7 @@ export default function Approvals() {
                 ...(canReviewClaims ? [{ id: 'claims', label: '待核对' }] : []),
               ] as Array<{ id: 'mine' | 'pending' | 'ledger' | 'claims'; label: string }>
             ).map((t) => (
-              <button
+              <Pressable
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors ${
@@ -602,7 +597,7 @@ export default function Approvals() {
                     {pending.length}
                   </span>
                 )}
-              </button>
+              </Pressable>
             ))}
           </div>
 
@@ -611,7 +606,7 @@ export default function Approvals() {
             <>
               <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-zinc-100 dark:border-zinc-700/60">
               {LEDGER_FILTERS.map((f) => (
-                <button
+                <Pressable
                   key={f.id || 'all'}
                   onClick={() => setLedgerStatus(f.id)}
                   className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
@@ -621,9 +616,9 @@ export default function Approvals() {
                   }`}
                 >
                   {f.label}
-                </button>
+                </Pressable>
               ))}
-              <input
+              <Input
                 type="month"
                 value={ledgerMonth}
                 onChange={(e) => setLedgerMonth(e.target.value)}

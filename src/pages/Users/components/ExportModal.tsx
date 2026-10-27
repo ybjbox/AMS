@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback } from 'react';
 import { Printer, Download, RefreshCw, Check, GripVertical, FileCode } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
@@ -64,7 +65,7 @@ const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: Sor
         <GripVertical className="h-4 w-4" />
       </div>
 
-      <button onClick={onToggle} className="flex-1 flex items-center text-left">
+      <Pressable onClick={onToggle} className="flex-1 flex items-center text-left">
         <div
           className={`w-4 h-4 rounded border mr-3 flex items-center justify-center transition-colors ${
             col.selected
@@ -75,7 +76,7 @@ const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: Sor
           {col.selected && <Check className="h-3 w-3 text-white" />}
         </div>
         <span className="text-sm font-medium">{col.label}</span>
-      </button>
+      </Pressable>
     </div>
   );
 });
@@ -177,12 +178,12 @@ export function ExportModal({
       size="full"
       footer={
         <>
-          <button
+          <Pressable
             onClick={onClose}
             className="btn-secondary w-full sm:w-auto"
           >
             取消
-          </button>
+          </Pressable>
           <Button
             variant="outline"
             size="lg"
@@ -192,7 +193,7 @@ export function ExportModal({
             <Printer className="h-4 w-4 mr-2" />
             打印
           </Button>
-          <button
+          <Pressable
             onClick={() => handleExport(filteredUsersLength)}
             disabled={isExporting || exportConfig.columns.filter((c: ExportColumn) => c.selected).length === 0}
             className="btn-primary w-full sm:w-auto disabled:opacity-50"
@@ -208,7 +209,7 @@ export function ExportModal({
                 确认导出
               </>
             )}
-          </button>
+          </Pressable>
         </>
       }
     >
@@ -288,7 +289,7 @@ export function ExportModal({
           </div>
 
           <div className="flex p-1 bg-zinc-100 dark:bg-zinc-700 rounded-lg">
-            <button
+            <Pressable
               onClick={() => setExportConfig((prev: ExportConfig) => ({ ...prev, mode: 'theme' }))}
               className={`flex-1 py-1.5 text-xs font-medium rounded-md transition ${
                 exportConfig.mode === 'theme'
@@ -297,8 +298,8 @@ export function ExportModal({
               }`}
             >
               配色主题模式
-            </button>
-            <button
+            </Pressable>
+            <Pressable
               onClick={() => setExportConfig((prev: ExportConfig) => ({ ...prev, mode: 'script' }))}
               className={`flex-1 py-1.5 text-xs font-medium rounded-md transition ${
                 exportConfig.mode === 'script'
@@ -307,7 +308,7 @@ export function ExportModal({
               }`}
             >
               JS 脚本模式
-            </button>
+            </Pressable>
           </div>
 
           {exportConfig.mode === 'theme' ? (
@@ -315,7 +316,7 @@ export function ExportModal({
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">选择表格主题</label>
               <div className="grid grid-cols-4 gap-3">
                 {Object.values(themes).map((theme: ExportTheme) => (
-                  <button
+                  <Pressable
                     key={theme.id}
                     data-id={theme.id}
                     onClick={onThemeSelect}
@@ -334,7 +335,7 @@ export function ExportModal({
                     >
                       {theme.name}
                     </span>
-                  </button>
+                  </Pressable>
                 ))}
               </div>
             </div>
@@ -343,7 +344,7 @@ export function ExportModal({
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">选择脚本模板</label>
               <div className="space-y-2">
                 {scripts.map((script) => (
-                  <button
+                  <Pressable
                     key={script.name}
                     data-name={script.name}
                     onClick={onScriptSelect}
@@ -362,14 +363,14 @@ export function ExportModal({
                       >
                         {script.name}.js
                       </div>
-                      <div className="text-3xs text-zinc-500 dark:text-zinc-400 truncate max-w-[200px]">
+                      <div className="text-3xs text-zinc-500 dark:text-zinc-400 truncate max-w-50">
                         {script.code.substring(0, 50)}...
                       </div>
                     </div>
                     {exportConfig.templateName === script.name && (
                       <div className="ml-auto w-2 h-2 bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner rounded-full"></div>
                     )}
-                  </button>
+                  </Pressable>
                 ))}
                 {scripts.length === 0 && (
                   <div className="py-6 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl bg-zinc-50 dark:bg-zinc-800/50">
@@ -399,7 +400,7 @@ export function ExportModal({
                 items={exportConfig.columns.map((c: ExportColumn) => c.key as string)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                <div className="space-y-2 max-h-75 overflow-y-auto pr-2">
                   {exportConfig.columns.map((col: ExportColumn, idx: number) => {
                     return (
                       <SortableColumn
@@ -419,7 +420,7 @@ export function ExportModal({
           </div>
         </div>
 
-        <div className="w-full md:w-2/3 flex flex-col items-center bg-zinc-100 dark:bg-zinc-900 px-6 pb-6 overflow-auto relative min-h-[400px] h-full">
+        <div className="w-full md:w-2/3 flex flex-col items-center bg-zinc-100 dark:bg-zinc-900 px-6 pb-6 overflow-auto relative min-h-100 h-full">
           <div className="sticky top-0 z-10 -mx-6 mb-4 flex self-stretch items-center justify-between gap-3 bg-white/90 py-1.5 pl-3 pr-2 text-xs font-medium uppercase tracking-wider text-zinc-500 shadow-sm backdrop-blur dark:bg-zinc-800/90 dark:text-zinc-400">
             <span>打印预览</span>
             <PreviewZoomControl zoom={zoom} onChange={change} onReset={reset} />

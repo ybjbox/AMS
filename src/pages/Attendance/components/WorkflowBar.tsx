@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React from 'react';
 import { Check, CircleAlert, ChevronRight } from 'lucide-react';
 import type { WorkflowStep, StepState } from '../lib/workflow';
@@ -49,7 +50,7 @@ export default function WorkflowBar({ steps, activeTab, onSelect, onOpenDialog }
           const meta = STATE_META[step.state];
           return (
             <li key={step.tab} className="flex min-w-0 flex-1 items-stretch">
-              <button
+              <Pressable
                 type="button"
                 onClick={() => (step.opensDialog ? onOpenDialog() : onSelect(step.tab as TabType))}
                 aria-current={isActive ? 'step' : undefined}
@@ -103,7 +104,7 @@ export default function WorkflowBar({ steps, activeTab, onSelect, onOpenDialog }
                     aria-hidden="true"
                   />
                 )}
-              </button>
+              </Pressable>
             </li>
           );
         })}

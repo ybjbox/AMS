@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, RotateCcw, ListOrdered } from 'lucide-react';
 import { useAppSettings } from '@/store/appSettings';
@@ -92,22 +93,22 @@ export default function NavOrderPanel() {
                 <Icon className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
                 <span className="flex-1 text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate">{meta.label}</span>
                 <div className="flex items-center gap-1">
-                  <button
+                  <Pressable
                     onClick={() => move(index, -1)}
                     disabled={index === 0}
                     aria-label={`上移 ${meta.label}`}
                     className="p-1.5 rounded-md text-zinc-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
                   >
                     <ArrowUp className="w-4 h-4" />
-                  </button>
-                  <button
+                  </Pressable>
+                  <Pressable
                     onClick={() => move(index, 1)}
                     disabled={index === list.length - 1}
                     aria-label={`下移 ${meta.label}`}
                     className="p-1.5 rounded-md text-zinc-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
                   >
                     <ArrowDown className="w-4 h-4" />
-                  </button>
+                  </Pressable>
                 </div>
               </li>
             );

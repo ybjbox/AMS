@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Armchair, IdCard, UtensilsCrossed } from 'lucide-react';
@@ -52,7 +53,7 @@ export default function PrintTools() {
           const Icon = tab.icon;
           const isActive = tab.id === active.id;
           return (
-            <button
+            <Pressable
               key={tab.id}
               id={`print-tool-tab-${tab.id}`}
               type="button"
@@ -64,7 +65,7 @@ export default function PrintTools() {
             >
               <Icon className="mr-1.5 inline h-3.5 w-3.5 -mt-0.5" />
               {tab.label}
-            </button>
+            </Pressable>
           );
         })}
       </div>

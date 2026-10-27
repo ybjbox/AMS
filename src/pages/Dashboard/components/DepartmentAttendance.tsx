@@ -50,9 +50,9 @@ export default function DepartmentAttendance({ stats, isLoading, size, onSizeCha
       )}
 
       {isLoading || !stats ? (
-        <div className="h-[140px] animate-pulse bg-zinc-100 dark:bg-zinc-800 rounded-lg" />
+        <div className="h-35 animate-pulse bg-zinc-100 dark:bg-zinc-800 rounded-lg" />
       ) : rates.length === 0 ? (
-        <div className="h-[140px] flex flex-col items-center justify-center gap-1 text-sm text-muted-foreground">
+        <div className="h-35 flex flex-col items-center justify-center gap-1 text-sm text-muted-foreground">
           <span>暂无出勤率数据</span>
           <span className="text-2xs">需要先在「考勤管理 → 部门时段」给部门配上下班时间</span>
         </div>

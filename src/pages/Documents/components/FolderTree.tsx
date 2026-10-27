@@ -1,3 +1,4 @@
+import { Pressable } from '@/components/ui/Pressable';
 import React from 'react';
 import { Folder, ChevronRight, ChevronDown, Plus, Edit2, Trash2, FolderOpen, FolderPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -48,7 +49,7 @@ export function FolderTree({
                   onClick={() => onSetCurrentFolderClick(folder.id)}
                 >
                   <div className="flex items-center space-x-1.5 overflow-hidden">
-                    <button
+                    <Pressable
                       aria-label="展开或收起该文件夹"
                       className="p-0.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 shrink-0"
                       onClick={(e) => {
@@ -65,11 +66,11 @@ export function FolderTree({
                       ) : (
                         <span className="w-3.5 h-3.5 inline-block" />
                       )}
-                    </button>
+                    </Pressable>
                     <Folder className={`w-4 h-4 shrink-0 ${isSelected ? 'text-brand-600' : 'text-zinc-400'}`} />
                     {/* 行本身是 div，此前"进入文件夹"只有鼠标一条路；名称做成真按钮，
                         Tab 到位后 Enter/Space 就能选中（2026-09-26 审查 B2） */}
-                    <button
+                    <Pressable
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -79,14 +80,14 @@ export function FolderTree({
                       aria-current={isSelected ? 'true' : undefined}
                     >
                       {folder.name}
-                    </button>
+                    </Pressable>
                   </div>
                   {canManageDocs && (
                   /* 不能用 hidden group-hover:flex：display:none 的元素压根进不了 Tab 序，
                      键盘用户永远触发不了 group-focus-within。改成占位但透明（与部门树同一口径，
                      顺带消掉 hover 时才出现导致的行内布局跳动） */
                   <div className="flex items-center space-x-1 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-                    <button
+                    <Pressable
                       onClick={(e) => {
                         e.stopPropagation();
                         onAddSubFolderClick(folder.id);
@@ -95,8 +96,8 @@ export function FolderTree({
                       className="p-1 text-zinc-400 hover:text-brand-600"
                     >
                       <Plus className="w-3 h-3" />
-                    </button>
-                    <button
+                    </Pressable>
+                    <Pressable
                       onClick={(e) => {
                         e.stopPropagation();
                         onEditFolderClick(folder.id);
@@ -105,8 +106,8 @@ export function FolderTree({
                       className="p-1 text-zinc-400 hover:text-brand-600"
                     >
                       <Edit2 className="w-3 h-3" />
-                    </button>
-                    <button
+                    </Pressable>
+                    <Pressable
                       onClick={(e) => {
                         e.stopPropagation();
                         onDeleteFolderClick(folder.id);
@@ -115,7 +116,7 @@ export function FolderTree({
                       className="p-1 text-zinc-400 hover:text-red-600"
                     >
                       <Trash2 className="w-3 h-3" />
-                    </button>
+                    </Pressable>
                   </div>
                   )}
                 </div>
