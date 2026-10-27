@@ -626,3 +626,42 @@ main,
   border-radius: 9999px;
   background: var(--color-brand-500);
 }
+
+/* 设置索引卡：编号 + 细线，用一次入场与悬停扫线替代大图标块 */
+@keyframes settings-card-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.settings-card {
+  position: relative;
+  overflow: hidden;
+  animation: settings-card-in 220ms var(--ease-smooth-out) both;
+}
+.settings-card:nth-child(2) { animation-delay: 40ms; }
+.settings-card:nth-child(3) { animation-delay: 80ms; }
+.settings-card:nth-child(4) { animation-delay: 120ms; }
+.settings-card:nth-child(5) { animation-delay: 160ms; }
+.settings-card::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background: var(--color-brand-600);
+  transition: width 220ms var(--ease-smooth-out);
+}
+.settings-card:hover::after,
+.settings-card:focus-visible::after {
+  width: 100%;
+}
+.settings-card-index {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  color: var(--color-muted-foreground);
+}
+@media (prefers-reduced-motion: reduce) {
+  .settings-card { animation: none; }
+  .settings-card::after { transition: none; }
+}

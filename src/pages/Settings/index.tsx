@@ -17,6 +17,7 @@ import {
   Megaphone,
   Send,
   ChevronLeft,
+  ArrowUpRight,
   ListOrdered,
   BellRing,
   KeyRound,
@@ -241,28 +242,41 @@ export default function Settings() {
     <PageContainer width="none">
       <div className="max-w-6xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-6 animate-in fade-in duration-400">
         <div className="shrink-0">
-          <h1 className="page-title">系统设置</h1>
+          <h1 className="page-title">{activeGroup && !isHub ? activeGroup.title : '系统设置'}</h1>
           <p className="page-subtitle">
             {isHub ? '按任务选择一组设置' : activeGroup?.description ?? '管理系统偏好、组织架构及个人信息'}
           </p>
         </div>
 
         {isHub ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {groups.map((group) => {
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {groups.map((group, index) => {
               const Icon = group.icon;
               return (
                 <Pressable
                   key={group.id}
                   type="button"
                   onClick={() => handleTabChange(group.tabs[0].id)}
-                  className="card-base card-lift flex min-h-36 flex-col items-start p-5 text-left"
+                  className="settings-card card-base card-lift group flex min-h-32 flex-col justify-between p-5 text-left"
                 >
-                  <span className="flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
-                    <Icon className="size-5" aria-hidden="true" />
+                  <span className="flex items-start justify-between gap-3">
+                    <span className="settings-card-index" aria-hidden="true">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    <ArrowUpRight
+                      className="size-4 text-zinc-300 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-brand-600 dark:text-zinc-600 dark:group-hover:text-brand-400"
+                      aria-hidden="true"
+                    />
                   </span>
-                  <span className="mt-3 text-base font-semibold text-zinc-900 dark:text-white">{group.title}</span>
-                  <span className="mt-1 text-xs leading-relaxed text-muted-foreground">{group.description}</span>
+                  <span className="mt-6 block">
+                    <span className="flex items-center gap-2">
+                      <Icon className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+                      <span className="text-base font-semibold text-zinc-900 dark:text-white">{group.title}</span>
+                    </span>
+                    <span className="mt-1.5 block text-xs leading-relaxed text-muted-foreground">
+                      {group.description}
+                    </span>
+                  </span>
                 </Pressable>
               );
             })}
@@ -278,8 +292,7 @@ export default function Settings() {
                 <ChevronLeft className="size-4" aria-hidden="true" />
                 全部设置
               </Pressable>
-              <p className="px-1 text-sm font-semibold text-zinc-900 dark:text-white">{activeGroup.title}</p>
-              <div className="tab-group mt-2" role="tablist" aria-label="设置导航">
+              <div className="tab-group mt-1" role="tablist" aria-label="设置导航">
                 {activeGroup.tabs.map((tab) => renderTabButton(tab, true))}
               </div>
             </div>
@@ -294,9 +307,7 @@ export default function Settings() {
                   <ChevronLeft className="size-4" aria-hidden="true" />
                   全部设置
                 </Pressable>
-                <p className="mt-4 px-3 text-sm font-semibold text-zinc-900 dark:text-white">{activeGroup.title}</p>
-                <p className="mt-1 px-3 text-2xs leading-relaxed text-muted-foreground">{activeGroup.description}</p>
-                <nav className="mt-3 space-y-1" role="tablist" aria-label="设置导航" aria-orientation="vertical">
+                <nav className="mt-4 space-y-1" role="tablist" aria-label="设置导航" aria-orientation="vertical">
                   {activeGroup.tabs.map((tab) => renderTabButton(tab, false))}
                 </nav>
               </div>
