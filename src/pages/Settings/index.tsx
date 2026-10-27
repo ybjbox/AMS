@@ -1,6 +1,6 @@
 import { Pressable } from '@/components/ui/Pressable';
 import PageContainer from "@/components/PageContainer";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import {
   User,
@@ -16,7 +16,7 @@ import {
   Activity,
   Megaphone,
   Send,
-  ChevronDown,
+  ChevronLeft,
   ListOrdered,
   BellRing,
   KeyRound,
@@ -60,9 +60,20 @@ interface SettingsTab {
   permission?: string;
 }
 
-const TAB_GROUPS: { title: string; tabs: SettingsTab[] }[] = [
+interface SettingsGroup {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ElementType;
+  tabs: SettingsTab[];
+}
+
+const TAB_GROUPS: SettingsGroup[] = [
   {
+    id: 'personal',
     title: '个人',
+    description: '个人资料、外观与功能模块顺序',
+    icon: User,
     tabs: [
       { id: 'profile', label: '个人设置', icon: User, minRole: SystemRole.EMPLOYEE },
       { id: 'appearance', label: '外观设置', icon: Monitor, minRole: SystemRole.EMPLOYEE },
@@ -70,14 +81,20 @@ const TAB_GROUPS: { title: string; tabs: SettingsTab[] }[] = [
     ],
   },
   {
+    id: 'ai',
     title: 'AI 助手',
+    description: '模型配置与会话记录（超级管理员）',
+    icon: Bot,
     tabs: [
       { id: 'ai', label: 'AI 管理配置', icon: Bot, minRole: SystemRole.SUPER_ADMIN },
       { id: 'ai-history', label: 'AI 会话记录', icon: History, minRole: SystemRole.SUPER_ADMIN },
     ],
   },
   {
+    id: 'notify',
     title: '通知与公告',
+    description: '到期提醒、出站通道与全员公告',
+    icon: BellRing,
     tabs: [
       { id: 'reminders', label: '到期提醒', icon: BellRing, minRole: SystemRole.HR },
       { id: 'notify', label: '通知出站通道', icon: Send, minRole: SystemRole.ADMIN },
@@ -85,7 +102,10 @@ const TAB_GROUPS: { title: string; tabs: SettingsTab[] }[] = [
     ],
   },
   {
+    id: 'data',
     title: '数据与导出',
+    description: '导出主题、脚本模板与数据库备份',
+    icon: DatabaseBackup,
     tabs: [
       { id: 'themes', label: '导出主题管理', icon: Palette, minRole: SystemRole.ADMIN, permission: 'export-templates:manage' },
       { id: 'scripts', label: '导出脚本模板', icon: Code2, minRole: SystemRole.ADMIN, permission: 'export-templates:manage' },
@@ -93,7 +113,10 @@ const TAB_GROUPS: { title: string; tabs: SettingsTab[] }[] = [
     ],
   },
   {
+    id: 'system',
     title: '系统管理',
+    description: '系统偏好、企微、账号、权限与诊断',
+    icon: Sliders,
     tabs: [
       { id: 'preferences', label: '系统偏好', icon: Sliders, minRole: SystemRole.ADMIN },
       { id: 'wecom', label: '企业微信打卡', icon: Fingerprint, minRole: SystemRole.ADMIN },
@@ -135,32 +158,24 @@ export default function Settings() {
 
   // Tab 优先级：URL ?tab=（外部深链 / 前进后退）＞ 登录强制改密携带的 state.tab ＞ 首个可见 Tab。
   // 不可见或未授权的 tab 参数一律回退，避免深链绕过角色门槛。
-  const wanted =
+  const wantedRaw =
     searchParams.get('tab') || (location.state as { tab?: string } | null)?.tab;
-  const activeTab =
-    visibleTabs.find((t) => t.id === wanted)?.id ?? visibleTabs[0]?.id ?? '';
+  const wanted = visibleTabs.find((t) => t.id === wantedRaw)?.id ?? '';
+  // 多分组时先落在「设置首页」；单分组（如员工只有个人）直接进组，避免只有一张卡
+  const activeTab = wanted || (groups.length === 1 ? groups[0]?.tabs[0]?.id ?? '' : '');
+  const isHub = !activeTab && groups.length > 1;
+  const activeGroup = groups.find((g) => g.tabs.some((t) => t.id === activeTab)) ?? null;
 
   const currentTabLabel = visibleTabs.find((t) => t.id === activeTab)?.label ?? '系统设置';
   useDocumentTitle(currentTabLabel);
+
+  const backToHub = () => setSearchParams({});
 
   const handleTabChange = (tabId: string) => {
     if (tabId === activeTab) return;
     // setSearchParams 会保留 location.state（强制改密引导依赖它传给 ProfilePanel）
     setSearchParams({ tab: tabId });
   };
-
-  // 桌面端侧栏导航：隐藏滚动条，改为底部渐隐 + 下箭头示意「下方还有分组」（与主侧栏一致），滚到底自动消失
-  const navRef = useRef<HTMLDivElement | null>(null);
-  const [canScrollDown, setCanScrollDown] = useState(false);
-  const updateScrollHint = useCallback(() => {
-    const el = navRef.current;
-    if (el) setCanScrollDown(el.scrollHeight - el.clientHeight - el.scrollTop > 4);
-  }, []);
-  useEffect(() => {
-    updateScrollHint();
-    window.addEventListener('resize', updateScrollHint);
-    return () => window.removeEventListener('resize', updateScrollHint);
-  }, [updateScrollHint, groups]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -227,54 +242,84 @@ export default function Settings() {
       <div className="max-w-6xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-6 animate-in fade-in duration-400">
         <div className="shrink-0">
           <h1 className="page-title">系统设置</h1>
-          <p className="page-subtitle">管理系统偏好、组织架构及个人信息</p>
+          <p className="page-subtitle">
+            {isHub ? '按任务选择一组设置' : activeGroup?.description ?? '管理系统偏好、组织架构及个人信息'}
+          </p>
         </div>
 
-        <div className="flex-1 bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-2xl overflow-hidden flex flex-col md:flex-row min-h-0">
-          {/* 移动端横向滚动 Tab（仅小屏显示） */}
-          <div className="md:hidden border-b border-zinc-200 dark:border-zinc-700 p-2">
-            <div className="tab-group" role="tablist" aria-label="设置导航">
-              {visibleTabs.map((tab) => renderTabButton(tab, true))}
-            </div>
+        {isHub ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {groups.map((group) => {
+              const Icon = group.icon;
+              return (
+                <Pressable
+                  key={group.id}
+                  type="button"
+                  onClick={() => handleTabChange(group.tabs[0].id)}
+                  className="card-base card-lift flex min-h-44 flex-col items-start p-5 text-left"
+                >
+                  <span className="flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
+                    <Icon className="size-5" aria-hidden="true" />
+                  </span>
+                  <span className="mt-3 text-base font-semibold text-zinc-900 dark:text-white">{group.title}</span>
+                  <span className="mt-1 text-xs leading-relaxed text-muted-foreground">{group.description}</span>
+                  <span className="mt-auto line-clamp-2 pt-3 text-2xs text-muted-foreground">
+                    {group.tabs.map((t) => t.label).join(' · ')}
+                  </span>
+                </Pressable>
+              );
+            })}
           </div>
-
-          {/* 桌面端分组侧边导航（仅大屏显示）：absolute 滚动容器 + 底部渐隐箭头提示 */}
-          <div className="hidden md:block relative w-48 bg-zinc-50 dark:bg-zinc-900/50 border-r border-zinc-200 dark:border-zinc-700 shrink-0 min-h-0">
-            <div ref={navRef} onScroll={updateScrollHint} className="absolute inset-0 overflow-y-auto overflow-x-hidden no-scrollbar p-4">
-              <nav className="space-y-5" role="tablist" aria-label="设置导航" aria-orientation="vertical">
-                {groups.map((group) => (
-                  <div key={group.title}>
-                    <p className="px-3 mb-1.5 text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      {group.title}
-                    </p>
-                    <div className="space-y-1">{group.tabs.map((tab) => renderTabButton(tab, false))}</div>
-                  </div>
-                ))}
-              </nav>
-            </div>
-            {canScrollDown && (
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-0 bottom-0 h-12 flex items-end justify-center pb-1.5 bg-gradient-to-t from-zinc-50 via-zinc-50/70 to-transparent dark:from-zinc-900 dark:via-zinc-900/70"
+        ) : activeGroup ? (
+          <div className="flex-1 bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-2xl overflow-hidden flex flex-col md:flex-row min-h-0">
+            <div className="md:hidden border-b border-zinc-200 dark:border-zinc-700 p-2">
+              <Pressable
+                type="button"
+                onClick={backToHub}
+                className="mb-2 inline-flex min-h-11 items-center gap-1 px-1 text-xs font-medium text-muted-foreground hover:text-zinc-900 dark:hover:text-white"
               >
-                <ChevronDown className="h-4 w-4 text-zinc-400 dark:text-zinc-500 animate-bounce [animation-duration:1.6s]" />
+                <ChevronLeft className="size-4" aria-hidden="true" />
+                全部设置
+              </Pressable>
+              <p className="px-1 text-sm font-semibold text-zinc-900 dark:text-white">{activeGroup.title}</p>
+              <div className="tab-group mt-2" role="tablist" aria-label="设置导航">
+                {activeGroup.tabs.map((tab) => renderTabButton(tab, true))}
               </div>
-            )}
-          </div>
-          <div className="flex-1 bg-zinc-50/30 dark:bg-zinc-900/30 min-h-0 flex flex-col overflow-hidden">
-            {/* 面板切换动画：CSS 动画替代 AnimatePresence（避免面板组件因 exit 动画双挂载、
-                重复发起面板内数据请求）。prefers-reduced-motion 由全局媒体查询降级。 */}
-            <div
-              key={activeTab}
-              role="tabpanel"
-              id={`panel-${activeTab}`}
-              aria-labelledby={`tab-${activeTab}`}
-              className="flex-1 flex flex-col min-h-0 overflow-hidden animate-in fade-in slide-in-from-right-2 duration-250 ease-smooth-out"
-            >
-              {renderContent()}
+            </div>
+
+            <div className="hidden md:block relative w-56 bg-zinc-50 dark:bg-zinc-900/50 border-r border-zinc-200 dark:border-zinc-700 shrink-0 min-h-0">
+              <div className="absolute inset-0 overflow-y-auto overflow-x-hidden no-scrollbar p-4">
+                <Pressable
+                  type="button"
+                  onClick={backToHub}
+                  className="inline-flex min-h-11 items-center gap-1 px-2 text-xs font-medium text-muted-foreground hover:text-zinc-900 dark:hover:text-white"
+                >
+                  <ChevronLeft className="size-4" aria-hidden="true" />
+                  全部设置
+                </Pressable>
+                <p className="mt-4 px-3 text-sm font-semibold text-zinc-900 dark:text-white">{activeGroup.title}</p>
+                <p className="mt-1 px-3 text-2xs leading-relaxed text-muted-foreground">{activeGroup.description}</p>
+                <nav className="mt-3 space-y-1" role="tablist" aria-label="设置导航" aria-orientation="vertical">
+                  {activeGroup.tabs.map((tab) => renderTabButton(tab, false))}
+                </nav>
+              </div>
+            </div>
+
+            <div className="flex-1 bg-zinc-50/30 dark:bg-zinc-900/30 min-h-0 flex flex-col overflow-hidden">
+              <div
+                key={activeTab}
+                role="tabpanel"
+                id={`panel-${activeTab}`}
+                aria-labelledby={`tab-${activeTab}`}
+                className="flex-1 flex flex-col min-h-0 overflow-hidden animate-in fade-in slide-in-from-right-2 duration-250 ease-smooth-out"
+              >
+                {renderContent()}
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">没有可用的设置项。</p>
+        )}
       </div>
     </PageContainer>
   );

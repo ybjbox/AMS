@@ -43,6 +43,8 @@ test.describe('移动端无障碍与触控', () => {
   test('设置页签 ≥44px', async ({ page }) => {
     await page.goto('/settings');
     await expect(page.locator('h1').first()).toBeVisible({ timeout: 30000 });
+    // 首页是任务卡片；进入「个人」后才出现子页签
+    await page.getByRole('button', { name: /个人资料、外观/ }).click();
     const tab = page.getByRole('tab', { name: '个人设置', exact: true });
     await expect(tab).toBeVisible();
     expect((await tab.boundingBox())!.height).toBeGreaterThanOrEqual(44);
