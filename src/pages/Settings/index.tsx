@@ -17,7 +17,7 @@ import {
   Megaphone,
   Send,
   ChevronLeft,
-  ArrowUpRight,
+  ChevronRight,
   ListOrdered,
   BellRing,
   KeyRound,
@@ -250,33 +250,28 @@ export default function Settings() {
 
         {isHub ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {groups.map((group, index) => {
+            {groups.map((group) => {
               const Icon = group.icon;
               return (
                 <Pressable
                   key={group.id}
                   type="button"
                   onClick={() => handleTabChange(group.tabs[0].id)}
-                  className="settings-card card-base card-lift group flex min-h-32 flex-col justify-between p-5 text-left"
+                  className="settings-card card-base card-lift group flex items-center gap-3.5 p-4 text-left sm:p-5"
                 >
-                  <span className="flex items-start justify-between gap-3">
-                    <span className="settings-card-index" aria-hidden="true">
-                      {String(index + 1).padStart(2, '0')}
-                    </span>
-                    <ArrowUpRight
-                      className="size-4 text-zinc-300 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-brand-600 dark:text-zinc-600 dark:group-hover:text-brand-400"
-                      aria-hidden="true"
-                    />
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
+                    <Icon className="size-5" aria-hidden="true" />
                   </span>
-                  <span className="mt-6 block">
-                    <span className="flex items-center gap-2">
-                      <Icon className="size-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                      <span className="text-base font-semibold text-zinc-900 dark:text-white">{group.title}</span>
-                    </span>
-                    <span className="mt-1.5 block text-xs leading-relaxed text-muted-foreground">
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-zinc-900 dark:text-white">{group.title}</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
                       {group.description}
                     </span>
                   </span>
+                  <ChevronRight
+                    className="size-4 shrink-0 text-zinc-300 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-brand-600 dark:text-zinc-600 dark:group-hover:text-brand-400"
+                    aria-hidden="true"
+                  />
                 </Pressable>
               );
             })}

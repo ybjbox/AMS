@@ -655,12 +655,6 @@ main,
 .settings-card:focus-visible::after {
   width: 100%;
 }
-.settings-card-index {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.18em;
-  color: var(--color-muted-foreground);
-}
 @media (prefers-reduced-motion: reduce) {
   .settings-card { animation: none; }
   .settings-card::after { transition: none; }
