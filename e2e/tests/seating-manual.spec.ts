@@ -129,7 +129,7 @@ test.describe('座位手动微调', () => {
         .querySelector(`[data-member-id="${id}"]`)
         ?.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true }));
     }, chipId);
-    await expect(page.locator(`[data-member-id="${chipId}"]`)).toHaveClass(/before:bg-brand-500/);
+    await expect(page.locator(`[data-member-id="${chipId}"]`)).toHaveClass(/insert-before/);
     await expect(page.locator(`[data-table-number="${firstNumber}"] [data-drop-tail]`)).toHaveCount(0);
 
     // 2) 删掉最后一桌 → 用 toast 里的「撤销」放回原位
