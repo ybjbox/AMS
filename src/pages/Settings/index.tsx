@@ -256,16 +256,13 @@ export default function Settings() {
                   key={group.id}
                   type="button"
                   onClick={() => handleTabChange(group.tabs[0].id)}
-                  className="card-base card-lift flex min-h-44 flex-col items-start p-5 text-left"
+                  className="card-base card-lift flex min-h-36 flex-col items-start p-5 text-left"
                 >
                   <span className="flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
                     <Icon className="size-5" aria-hidden="true" />
                   </span>
                   <span className="mt-3 text-base font-semibold text-zinc-900 dark:text-white">{group.title}</span>
                   <span className="mt-1 text-xs leading-relaxed text-muted-foreground">{group.description}</span>
-                  <span className="mt-auto line-clamp-2 pt-3 text-2xs text-muted-foreground">
-                    {group.tabs.map((t) => t.label).join(' · ')}
-                  </span>
                 </Pressable>
               );
             })}
