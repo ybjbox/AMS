@@ -1,9 +1,9 @@
 import { Pressable } from '@/components/ui/Pressable';
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Bell } from 'lucide-react';
-import { AnimatePresence } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useNotificationStore } from '@/store/useNotificationStore';
-import NotificationPanel from './NotificationPanel';
+import NotificationContent from './NotificationContent';
 
 export default function NotificationTrigger() {
   const [isOpen, setIsOpen] = useState(false);
@@ -52,7 +52,19 @@ export default function NotificationTrigger() {
         )}
       </Pressable>
 
-      <AnimatePresence>{isOpen && <NotificationPanel onClose={handleClose} />}</AnimatePresence>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.12, ease: 'easeIn' } }}
+            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white dark:bg-zinc-800 rounded-lg shadow-xl border border-zinc-100 dark:border-zinc-700 z-50 transform origin-top-right"
+          >
+            <NotificationContent onClose={handleClose} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

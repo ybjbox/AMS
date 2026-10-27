@@ -21,6 +21,7 @@ vi.mock('@/services/accountApi', async (importOriginal) => ({
 }));
 
 const listMock = vi.mocked(accountApi.list);
+const createMock = vi.mocked(accountApi.create);
 
 const acct = (over: Partial<Account> & { username: string }): Account => ({
   employeeId: null,
@@ -146,5 +147,24 @@ describe('账号管理面板（第 8 批）', () => {
     // 选完仍要能直接换别人（回归：曾经整块列表被「已选」替换掉）
     expect(within(scope).getByText('清除')).toBeTruthy();
     expect(within(scope).getByRole('button', { name: /张三/ })).toBeTruthy();
+  });
+
+  it('新建账号成功后留在弹窗展示一次性口令，而不是立刻关窗', async () => {
+    listMock.mockResolvedValue([]);
+    createMock.mockResolvedValue(acct({ username: 'newbie', displayName: '新人' }));
+
+    renderManager();
+    await waitFor(() => expect(listMock).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: /新建账号/ }));
+
+    fireEvent.change(screen.getByLabelText(/用户名/), { target: { value: 'newbie' } });
+    fireEvent.click(screen.getByRole('button', { name: '创建' }));
+
+    await waitFor(() => expect(createMock).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText('账号已创建。初始密码只显示这一次，请转交本人：')).toBeTruthy();
+    expect(screen.getByText('InitPass123456')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: '关闭' }));
+    await waitFor(() => expect(screen.queryByText('账号已创建。初始密码只显示这一次，请转交本人：')).toBeNull());
   });
 });

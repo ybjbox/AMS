@@ -13,7 +13,7 @@ interface NotificationContentProps {
 
 /**
  * 通知面板的正文（标题行 + 列表 + 底部入口），不含弹层定位外壳。
- * 两处宿主复用：NotificationPanel（移动端页眉铃铛）、UserMenu 账户弹窗（桌面端通知收纳于此）。
+ * 两处宿主复用：NotificationTrigger（移动端页眉铃铛）、UserMenu 账户弹窗（桌面端通知收纳于此）。
  * 按窄容器（~168px 账户弹窗）设计：操作为纯图标按钮，标题/内容单行截断。
  */
 const NotificationContent = React.memo(function NotificationContent({ onClose }: NotificationContentProps) {

@@ -444,20 +444,20 @@ export default function AccountManager() {
       </p>
 
       {creating && (
-        <CreateAccountDialog
+        <AccountDialog
           accounts={accounts}
           selfUsername={me}
           roles={grantableRoles(myRole)}
-          onClose={() => setCreating(false)}
-          onCreated={() => {
+          onClose={() => {
             setCreating(false);
             void load();
           }}
+          onCreated={() => void load()}
         />
       )}
 
       {editing && (
-        <EditAccountDialog
+        <AccountDialog
           account={editing}
           accounts={accounts}
           selfUsername={me}
@@ -504,48 +504,66 @@ function IconAction({
   );
 }
 
-function CreateAccountDialog({
+function AccountDialog({
+  account,
   accounts,
   selfUsername,
   roles,
   onClose,
   onCreated,
+  onSaved,
 }: {
+  account?: Account;
   accounts: Account[];
   selfUsername: string;
   roles: AccountSystemRole[];
   onClose: () => void;
-  onCreated: () => void;
+  onCreated?: () => void;
+  onSaved?: (next: Account) => void;
 }) {
-  const [username, setUsername] = useState('');
+  const isEdit = Boolean(account);
+  const [username, setUsername] = useState(account?.username ?? '');
   const [password, setPassword] = useState(randomInitialPassword);
-  const [systemRole, setSystemRole] = useState<AccountSystemRole>('EMPLOYEE');
-  const [displayName, setDisplayName] = useState('');
-  const [email, setEmail] = useState('');
-  const [employeeId, setEmployeeId] = useState<string | null>(null);
+  const [systemRole, setSystemRole] = useState<AccountSystemRole>(account?.systemRole ?? 'EMPLOYEE');
+  const [displayName, setDisplayName] = useState(account?.displayName ?? '');
+  const [email, setEmail] = useState(account?.email ?? '');
+  const [employeeId, setEmployeeId] = useState<string | null>(account?.employeeId ?? null);
   const [saving, setSaving] = useState(false);
   const [shownPassword, setShownPassword] = useState('');
 
+  const roleOptions = isEdit && account ? [...new Set([account.systemRole, ...roles])] : roles;
+
   const submit = async () => {
-    if (!/^[a-zA-Z0-9._-]{3,32}$/.test(username)) {
+    if (!isEdit && !/^[a-zA-Z0-9._-]{3,32}$/.test(username)) {
       toast.error('用户名只能包含字母、数字、点、下划线、连字符，长度 3-32');
       return;
     }
     setSaving(true);
     try {
-      await accountApi.create({
-        username: username.trim(),
-        password,
-        systemRole,
-        displayName: displayName.trim(),
-        email: email.trim(),
-        employeeId,
-      });
-      setShownPassword(password);
-      toast.success(`账号 ${username} 已创建`);
-      onCreated();
+      if (isEdit && account) {
+        const next = await accountApi.update(account.username, {
+          employeeId,
+          systemRole,
+          displayName: displayName.trim(),
+          email: email.trim(),
+        });
+        toast.success(`账号 ${account.username} 已更新`);
+        onSaved?.(next);
+      } else {
+        await accountApi.create({
+          username: username.trim(),
+          password,
+          systemRole,
+          displayName: displayName.trim(),
+          email: email.trim(),
+          employeeId,
+        });
+        // 先留在弹窗里展示一次性口令；关闭时父组件再刷新列表
+        setShownPassword(password);
+        onCreated?.();
+      }
     } catch (e) {
-      toast.error(accountError(e, '创建失败'));
+      toast.error(accountError(e, isEdit ? '更新失败' : '创建失败'));
     } finally {
       setSaving(false);
     }
@@ -555,18 +573,25 @@ function CreateAccountDialog({
     <BaseModal
       isOpen
       onClose={onClose}
-      title="新建账号"
+      title={isEdit && account ? `编辑账号：${account.username}` : '新建账号'}
       size="lg"
       footer={
-        <>
+        shownPassword ? (
           <Pressable type="button" onClick={onClose} className="btn-secondary">
             关闭
           </Pressable>
-          <Pressable type="button" onClick={() => void submit()} disabled={saving} className="btn-primary disabled:opacity-70">
-            {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-            创建
-          </Pressable>
-        </>
+        ) : (
+          <>
+            <Pressable type="button" onClick={onClose} className="btn-secondary">
+              {isEdit ? '取消' : '关闭'}
+            </Pressable>
+            <Pressable type="button" onClick={() => void submit()} disabled={saving} className="btn-primary disabled:opacity-70">
+              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {!saving && !isEdit && <Plus className="w-4 h-4 mr-2" />}
+              {isEdit ? '保存' : '创建'}
+            </Pressable>
+          </>
+        )
       }
     >
       {shownPassword ? (
@@ -577,26 +602,28 @@ function CreateAccountDialog({
       ) : (
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300" htmlFor="acct-username">
-                用户名 *
-              </label>
-              <Input
-                id="acct-username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="如 zhangsan"
-                className={fieldClass}
-              />
-            </div>
+            {!isEdit && (
+              <div>
+                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300" htmlFor="acct-username">
+                  用户名 *
+                </label>
+                <Input
+                  id="acct-username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="如 zhangsan"
+                  className={fieldClass}
+                />
+              </div>
+            )}
             <div>
               <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">系统角色</label>
-              <Select value={systemRole} onValueChange={(v) => setSystemRole((v ?? 'EMPLOYEE') as AccountSystemRole)}>
+              <Select value={systemRole} onValueChange={(v) => setSystemRole((v ?? systemRole) as AccountSystemRole)}>
                 <SelectTrigger className="w-full mt-1" aria-label="系统角色">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {roles.map((r) => (
+                  {roleOptions.map((r) => (
                     <SelectItem key={r} value={r}>
                       {ACCOUNT_ROLE_LABELS[r]}
                     </SelectItem>
@@ -605,144 +632,58 @@ function CreateAccountDialog({
               </Select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300" htmlFor="acct-display">
+              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300" htmlFor={`${isEdit ? 'edit' : 'acct'}-display`}>
                 显示名称
               </label>
-              <Input id="acct-display" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className={fieldClass} />
+              <Input
+                id={`${isEdit ? 'edit' : 'acct'}-display`}
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className={fieldClass}
+              />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300" htmlFor="acct-email">
-                邮箱（用于接收提醒邮件）
+              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300" htmlFor={`${isEdit ? 'edit' : 'acct'}-email`}>
+                邮箱{isEdit ? '' : '（用于接收提醒邮件）'}
               </label>
-              <Input id="acct-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={fieldClass} />
+              <Input
+                id={`${isEdit ? 'edit' : 'acct'}-email`}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={fieldClass}
+              />
             </div>
           </div>
-          <div>
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">初始密码</label>
-              {/* -my-1 + py-1：实测 54×16 低于 WCAG 2.2 AA 的 24px 命中区（2.5.8）。
-                负外边距抵掉 padding，视觉位置不变，只把命中区撑到 24px。 */}
-              <Pressable
-                type="button"
-                onClick={() => setPassword(randomInitialPassword())}
-                className="-my-1 py-1 text-xs text-brand-600 dark:text-brand-400 flex items-center"
-              >
-                <RefreshCw className="w-3.5 h-3.5 mr-1" />
-                换一批
-              </Pressable>
+          {!isEdit && (
+            <div>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">初始密码</label>
+                <Pressable
+                  type="button"
+                  onClick={() => setPassword(randomInitialPassword())}
+                  className="-my-1 py-1 text-xs text-brand-600 dark:text-brand-400 flex items-center"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 mr-1" />
+                  换一批
+                </Pressable>
+              </div>
+              <p className="mt-1 select-all font-mono text-sm bg-zinc-100 dark:bg-zinc-700 rounded-lg px-3 py-2">{password}</p>
+              <p className="mt-1 text-xs text-muted-foreground">首次登录会要求改密。</p>
             </div>
-            <p className="mt-1 select-all font-mono text-sm bg-zinc-100 dark:bg-zinc-700 rounded-lg px-3 py-2">{password}</p>
-            <p className="mt-1 text-xs text-muted-foreground">首次登录会要求改密。</p>
-          </div>
+          )}
           <div>
             <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">绑定员工</label>
-            <EmployeePicker value={employeeId} onChange={setEmployeeId} accounts={accounts} selfUsername={selfUsername} />
+            <EmployeePicker
+              value={employeeId}
+              onChange={setEmployeeId}
+              accounts={accounts}
+              selfUsername={selfUsername}
+              editingUsername={account?.username}
+            />
           </div>
         </div>
       )}
-    </BaseModal>
-  );
-}
-
-function EditAccountDialog({
-  account,
-  accounts,
-  selfUsername,
-  roles,
-  onClose,
-  onSaved,
-}: {
-  account: Account;
-  accounts: Account[];
-  selfUsername: string;
-  roles: AccountSystemRole[];
-  onClose: () => void;
-  onSaved: (next: Account) => void;
-}) {
-  const [employeeId, setEmployeeId] = useState<string | null>(account.employeeId);
-  const [systemRole, setSystemRole] = useState<AccountSystemRole>(account.systemRole);
-  const [displayName, setDisplayName] = useState(account.displayName);
-  const [email, setEmail] = useState(account.email);
-  const [saving, setSaving] = useState(false);
-
-  const submit = async () => {
-    setSaving(true);
-    try {
-      const next = await accountApi.update(account.username, {
-        employeeId,
-        systemRole,
-        displayName: displayName.trim(),
-        email: email.trim(),
-      });
-      toast.success(`账号 ${account.username} 已更新`);
-      onSaved(next);
-    } catch (e) {
-      toast.error(accountError(e, '更新失败'));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <BaseModal
-      isOpen
-      onClose={onClose}
-      title={`编辑账号：${account.username}`}
-      size="lg"
-      footer={
-        <>
-          <Pressable type="button" onClick={onClose} className="btn-secondary">
-            取消
-          </Pressable>
-          <Pressable type="button" onClick={() => void submit()} disabled={saving} className="btn-primary disabled:opacity-70">
-            {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            保存
-          </Pressable>
-        </>
-      }
-    >
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">系统角色</label>
-            <Select value={systemRole} onValueChange={(v) => setSystemRole((v ?? account.systemRole) as AccountSystemRole)}>
-              <SelectTrigger className="w-full mt-1" aria-label="系统角色">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {/* 自己的账号总在选项里（改自己资料时不该看到空值），其余只列可授予的角色 */}
-                {[...new Set([account.systemRole, ...roles])].map((r) => (
-                  <SelectItem key={r} value={r}>
-                    {ACCOUNT_ROLE_LABELS[r]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300" htmlFor="edit-display">
-              显示名称
-            </label>
-            <Input id="edit-display" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className={fieldClass} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300" htmlFor="edit-email">
-              邮箱
-            </label>
-            <Input id="edit-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={fieldClass} />
-          </div>
-        </div>
-        <div>
-          <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">绑定员工</label>
-          <EmployeePicker
-            value={employeeId}
-            onChange={setEmployeeId}
-            accounts={accounts}
-            selfUsername={selfUsername}
-            editingUsername={account.username}
-          />
-        </div>
-      </div>
     </BaseModal>
   );
 }
