@@ -34,6 +34,36 @@ function GlobalLoadingFallback() {
   );
 }
 
+/**
+ * 后台懒加载页面的骨架：页头 + 页签 + 内容卡。
+ * 之前是一整块灰矩形，看不出页面结构；慢网/冷启动时尤其像白屏。
+ */
+function PageContentSkeleton() {
+  return (
+    <div className="w-full space-y-4 p-4 sm:p-6" aria-busy="true">
+      <span className="sr-only">页面加载中…</span>
+      <div className="space-y-2">
+        <Skeleton className="h-7 w-40" />
+        <Skeleton className="h-4 w-64 max-w-full" />
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+        {[0, 1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-9 rounded-lg sm:w-28" />
+        ))}
+      </div>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
+        <Skeleton className="hidden h-64 rounded-card lg:block" />
+        <div className="space-y-3 rounded-card border border-zinc-200/60 p-4 dark:border-zinc-700/60">
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="h-11 w-full" />
+          <Skeleton className="h-11 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function GlobalLoadingOverlay() {
   const globalLoading = useLoadingStore((state) => state.globalLoading);
 
@@ -75,7 +105,7 @@ export default function App() {
             <Route
               element={
                 <Layout>
-                  <Suspense fallback={<Skeleton className="w-full h-full min-h-[80vh] rounded-xl m-6" />}>
+                  <Suspense fallback={<PageContentSkeleton />}>
                     <Outlet />
                   </Suspense>
                 </Layout>

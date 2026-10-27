@@ -222,7 +222,7 @@ export default function Seating() {
             <h1 className="page-title">座位安排</h1>
             <p className="page-subtitle">自动按部门与职位优先级生成方案，可拖拽微调；座次顺序即打印序号</p>
           </div>
-          <div>
+          <div className="hidden lg:block">
             <button
               onClick={runAutoArrange}
               aria-label="自动排座"
@@ -233,11 +233,21 @@ export default function Seating() {
             </button>
           </div>
         </div>
-        <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-50/80 px-3 py-2 text-xs leading-relaxed text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300 lg:hidden">
+        <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-50/80 px-3 py-3 text-xs leading-relaxed text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300 lg:hidden">
           <Monitor className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-          <span>排座画布需要拖拽操作，建议在电脑上使用；手机上可以先查看或载入已保存的方案。</span>
+          <div className="min-w-0 space-y-3">
+            <p>排座画布需要拖拽操作，建议在电脑上使用。手机上可以先查看或载入已保存的方案。</p>
+            <button
+              onClick={() => setIsPlansModalOpen(true)}
+              className="btn-secondary min-h-11 w-full sm:w-auto"
+            >
+              查看已保存方案
+            </button>
+          </div>
         </div>
-        <SeatingToolbar
+
+        <div className="hidden flex-1 flex-col space-y-6 lg:flex">
+          <SeatingToolbar
           viewMode={viewMode}
           setViewMode={setViewMode}
           hasTables={tables.length > 0}
@@ -315,6 +325,7 @@ export default function Seating() {
             }
           />
         )}
+        </div>
 
       <ParticipantModal
         isOpen={isParticipantModalOpen}

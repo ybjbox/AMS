@@ -55,6 +55,14 @@ test.describe('移动端无障碍与触控', () => {
     await expect(region).toBeVisible();
     await expect(region).toHaveAttribute('tabindex', '0');
   });
+
+  test('排座在手机只显示桌面提示，不渲染画布', async ({ page }) => {
+    await page.goto('/print-tools?tab=seating');
+    await expect(page.getByRole('heading', { name: '座位安排' })).toBeVisible({ timeout: 30000 });
+    await expect(page.getByRole('button', { name: '查看已保存方案' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '自动排座' })).toHaveCount(0);
+    await expect(page.getByText('各桌人数设置')).toBeHidden();
+  });
 });
 
 test.describe('未登录公开页', () => {
