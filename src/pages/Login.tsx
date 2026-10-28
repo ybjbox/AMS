@@ -12,6 +12,8 @@ import { authService, toUserInfo } from '../services/auth';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { useBrandingSync } from '@/hooks/useBrandingSync';
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
 
 const loginSchema = z.object({
   username: z.string().min(1, '请输入用户名'),
@@ -23,6 +25,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
   const globalLoading = useLoadingStore((state) => state.globalLoading);
   const setLoading = useLoadingStore((state) => state.setLoading);
   const loading = globalLoading;
@@ -192,12 +195,7 @@ export default function Login() {
               <div className="text-sm">
                 <Pressable
                   type="button"
-                  onClick={() => {
-                    // 功能待接入后端，暂时提示
-                    import('sonner').then(({ toast }) => {
-                      toast.info('忘记密码功能暂未开放，请联系管理员重置');
-                    });
-                  }}
+                  onClick={() => setForgotOpen(true)}
                   className="inline-flex min-h-6 max-sm:min-h-11 items-center font-medium text-sm text-brand-600 hover:text-brand-500 dark:text-brand-400 dark:hover:text-brand-300 transition-colors"
                 >
                   忘记密码？
@@ -248,6 +246,30 @@ export default function Login() {
           )}
         </div>
       </div>
+
+      <Sheet open={forgotOpen} onOpenChange={setForgotOpen}>
+        <SheetContent side="bottom" className="safe-area-bottom max-h-dvh overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>忘记密码</SheetTitle>
+            <SheetDescription>
+              当前没有自助找回。请在企微找行政 / HR，或请班长转达，报姓名 + 工号。
+            </SheetDescription>
+          </SheetHeader>
+          <ol className="space-y-2 px-4 text-sm">
+            <li className="rounded-lg bg-zinc-50 px-3 py-2 dark:bg-zinc-800/60">1. 提供姓名与工号</li>
+            <li className="rounded-lg bg-zinc-50 px-3 py-2 dark:bg-zinc-800/60">2. 管理员重置一次性口令</li>
+            <li className="rounded-lg bg-zinc-50 px-3 py-2 dark:bg-zinc-800/60">3. 登录后马上改密</li>
+          </ol>
+          <p className="px-4 text-xs leading-relaxed text-muted-foreground">
+            重置后没收到口令？找班长转达，或稍后再试。
+          </p>
+          <SheetFooter>
+            <Button type="button" className="min-h-11 w-full" onClick={() => setForgotOpen(false)}>
+              我知道了
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </main>
   );
 }

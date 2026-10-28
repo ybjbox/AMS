@@ -131,6 +131,18 @@ test.describe('触屏设备', () => {
 test.describe('未登录公开页', () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
+  test('忘记密码给出具体找回路径与退路', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByRole('button', { name: '忘记密码？' }).click();
+    const sheet = page.getByRole('dialog');
+    await expect(sheet).toBeVisible();
+    await expect(sheet).toContainText('企微找行政 / HR');
+    await expect(sheet).toContainText('报姓名 + 工号');
+    await expect(sheet).toContainText('没收到口令');
+    await sheet.getByRole('button', { name: '我知道了' }).click();
+    await expect(sheet).toBeHidden();
+  });
+
   test('登录页移动端保留 16px 外边距与 44px 输入/按钮', async ({ page }) => {
     await page.goto('/login');
     await expect(page.locator('h1').first()).toBeVisible({ timeout: 30000 });

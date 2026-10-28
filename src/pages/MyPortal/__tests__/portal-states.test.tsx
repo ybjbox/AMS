@@ -5,6 +5,7 @@ import MyPortal from '@/pages/MyPortal';
 import { myApi, type MySummary } from '@/services/myApi';
 import { announcementApi } from '@/services/announcementApi';
 import { useUserStore } from '@/store/useUserStore';
+import { MemoryRouter } from 'react-router-dom';
 import { writeSummaryCache } from '@/pages/MyPortal/summaryCache';
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() } }));
@@ -71,13 +72,13 @@ async function goTab(name: RegExp) {
 describe('员工门户状态细节（qa-2 / qa-4 / qa-5 / qa-7 / qa-18）', () => {
   it('首屏加载用骨架，不是一行“加载中”文字', async () => {
     summaryApi.mockReturnValue(new Promise(() => undefined));
-    render(<MyPortal />);
+    render(<MemoryRouter><MyPortal /></MemoryRouter>);
     await waitFor(() => expect(document.querySelector('[aria-busy="true"]')).toBeTruthy());
     expect(screen.getByText('加载中…')).toBeInTheDocument();
   });
 
   it('迟到预填原卡时间，且输入框走品牌焦点环', async () => {
-    render(<MyPortal />);
+    render(<MemoryRouter><MyPortal /></MemoryRouter>);
     await goTab(/^异常/);
     fireEvent.click(await screen.findByRole('button', { name: '对此提异议' }));
 
@@ -111,7 +112,7 @@ describe('员工门户状态细节（qa-2 / qa-4 / qa-5 / qa-7 / qa-18）', () =
         recomputedAt: null,
       },
     ]);
-    render(<MyPortal />);
+    render(<MemoryRouter><MyPortal /></MemoryRouter>);
     await goTab(/^异常/);
 
     expect(await screen.findByText('已提交，等 HR 处理。')).toBeInTheDocument();
@@ -121,7 +122,7 @@ describe('员工门户状态细节（qa-2 / qa-4 / qa-5 / qa-7 / qa-18）', () =
   it('断网时显示上次成功结果并标注离线', async () => {
     writeSummaryCache('hebing', month, summary());
     summaryApi.mockRejectedValue({ isAxiosError: true });
-    render(<MyPortal />);
+    render(<MemoryRouter><MyPortal /></MemoryRouter>);
 
     expect(await screen.findByText(/当前离线，显示的是上次加载的结果/)).toBeInTheDocument();
     await goTab(/^异常/);
@@ -153,7 +154,7 @@ describe('员工门户状态细节（qa-2 / qa-4 / qa-5 / qa-7 / qa-18）', () =
         recomputedAt: '2026-10-04 10:00:01',
       },
     ]);
-    render(<MyPortal />);
+    render(<MemoryRouter><MyPortal /></MemoryRouter>);
     await goTab(/^我的/);
     expect(await screen.findByText('补卡已通过，结论已更新。')).toBeInTheDocument();
   });
@@ -183,7 +184,7 @@ describe('员工门户状态细节（qa-2 / qa-4 / qa-5 / qa-7 / qa-18）', () =
         recomputedAt: '2026-10-04 10:00:01',
       },
     ]);
-    render(<MyPortal />);
+    render(<MemoryRouter><MyPortal /></MemoryRouter>);
     await goTab(/^我的/);
     expect(await screen.findByText('补卡已通过，但结论还没更新；HR 会再核对一次。')).toBeInTheDocument();
   });

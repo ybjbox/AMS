@@ -552,6 +552,11 @@ main,
   }
 }
 
+/* 底部 Sheet / 固定操作区：给 iOS 安全区留白 */
+.safe-area-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
 /* 通知面板：桌面 320，窄屏最多留 12px 边距，避免 320 档左侧被裁 */
 .notification-panel {
   width: min(20rem, calc(100vw - 1.5rem));

@@ -129,7 +129,10 @@ test.describe.serial('员工门户', () => {
     await page.waitForURL('**/my');
 
     await page.getByRole('button', { name: '公告', exact: true }).click();
+    await expect(page).toHaveURL(/\/my\?tab=notices/);
+    await page.reload();
     await expect(page.getByRole('heading', { name: '公告', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: '公告', exact: true })).toHaveAttribute('aria-current', 'page');
     await expect(page.getByText('E2E 门户公告')).toBeVisible();
     await expect(page.getByText('本周五前完成考勤确认')).toBeVisible();
     await expect(page.getByText('重要', { exact: true })).toBeVisible();

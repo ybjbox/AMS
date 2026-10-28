@@ -1,6 +1,7 @@
 import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
+import { useSearchParams } from 'react-router-dom';
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, LogOut, Megaphone, Send, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -69,7 +70,17 @@ export default function MyPortal() {
   const logout = useUserStore((s) => s.logout);
   const { t, staggerDelay } = useMotionPrefs();
 
-  const [tab, setTab] = useState<Tab>('month');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const tab: Tab = TAB_LABEL.some((t) => t.id === tabParam) ? (tabParam as Tab) : 'month';
+  const setTab = useCallback(
+    (next: Tab) => {
+      const params = new URLSearchParams(searchParams);
+      params.set('tab', next);
+      setSearchParams(params, { replace: true });
+    },
+    [searchParams, setSearchParams]
+  );
   const [month, setMonth] = useState(nowMonth());
   const [data, setData] = useState<MySummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -153,6 +164,10 @@ export default function MyPortal() {
   );
   const anomalies = data?.anomalies ?? [];
   const anomalyCount = anomalies.length;
+  const uncoveredDays = data?.coverage.uncoveredDays ?? 0;
+  const latestDate = data?.coverage.latestDate ?? '—';
+  const noPunchData = !!data && !data.coverage.latestDate;
+  const coverageGap = uncoveredDays > 0 || noPunchData;
   // 矩阵把「审批中心（我的申请）」关掉时，门户里的异议入口也要一起收起来，避免点了必 403
   const canDispute = user?.permissions?.includes('approvals:view') ?? false;
   // 同一天已有一条待审补卡时，按钮直接变成「已提交」，不让人重复点、等服务端 409
@@ -298,11 +313,15 @@ export default function MyPortal() {
             <h1 className="text-base font-semibold text-zinc-900 dark:text-white">
               {user?.displayName || user?.username || '我'}
             </h1>
-            {data && (
+            {data ? (
               <p className="data-rise-in mt-0.5 text-2xs text-muted-foreground font-mono tabular-nums">
-                数据截止 {data.coverage.latestDate ?? '—'}
-                {data.coverage.uncoveredDays > 0 && ` · 本月还有 ${data.coverage.uncoveredDays} 天没算进来`}
+                {data.coverage.latestDate
+                  ? `数据截止 ${data.coverage.latestDate}${data.coverage.uncoveredDays > 0 ? ` · 本月还有 ${data.coverage.uncoveredDays} 天没算进来` : ''}`
+                  : '尚未导入打卡数据'}
               </p>
+            ) : (
+              /* 预留同一行高度：数据到达后只换文字，不把下面整块内容往下推（CLS 0.232 的来源） */
+              <div className="mt-0.5 h-4" aria-hidden="true" />
             )}
           </header>
 
@@ -329,9 +348,7 @@ export default function MyPortal() {
                   <div className="portal-summary-grid grid gap-4 md:items-start">
                     <Skeleton className="h-40 rounded-card" />
                     <div className="space-y-2">
-                      {[0, 1, 2].map((i) => (
-                        <Skeleton key={i} className="h-14 rounded-card" />
-                      ))}
+                      <Skeleton className="h-14 rounded-card" />
                     </div>
                   </div>
                 </div>
@@ -403,7 +420,17 @@ export default function MyPortal() {
                     </div>
 
                     {abnormalDays.length === 0 ? (
-                      <EmptyState title="今天之前都算正常" description="有新数据或新的判定后，会出现在这里。" icon={CalendarDays} />
+                      <EmptyState
+                        title={coverageGap ? '这段时间还没算完' : '今天之前都算正常'}
+                        description={
+                          coverageGap
+                            ? noPunchData
+                              ? '还没有导入打卡数据；等导入后再看。'
+                              : `数据截止 ${latestDate}，还有 ${uncoveredDays} 天没算进来；等导入后再看。`
+                            : '有新数据或新的判定后，会出现在这里。'
+                        }
+                        icon={CalendarDays}
+                      />
                     ) : (
                       <ul className="space-y-2">
                         {abnormalDays.map((v, i) => (
@@ -442,6 +469,16 @@ export default function MyPortal() {
                 </div>
               ) : tab === 'anomalies' ? (
                 <>
+                  {coverageGap && (
+                    <div
+                      role="status"
+                      className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
+                    >
+                      {noPunchData
+                        ? '还没有导入打卡数据；这不等于本月没有异常。'
+                        : `数据截止 ${latestDate}，还有 ${uncoveredDays} 天没算进来；这不等于本月没有异常。`}
+                    </div>
+                  )}
                   <div className="hidden items-baseline justify-between md:flex">
                     <h2 className="text-base font-semibold text-zinc-900 dark:text-white">我的异常</h2>
                     <span className="text-2xs text-muted-foreground font-mono tabular-nums">{anomalyCount} 条</span>
@@ -449,8 +486,14 @@ export default function MyPortal() {
 
                   {anomalyCount === 0 ? (
                     <EmptyState
-                      title="这个月没有要处理的事"
-                      description="被判异常的日子会出现在这里，而且可以直接提异议。"
+                      title={coverageGap ? '这段时间还没有数据' : '这个月没有要处理的事'}
+                      description={
+                        coverageGap
+                          ? noPunchData
+                            ? '还没有导入打卡数据；等导入后再看。'
+                            : `数据截止 ${latestDate}，还有 ${uncoveredDays} 天没算进来；等导入后再看。`
+                          : '被判异常的日子会出现在这里，而且可以直接提异议。'
+                      }
                       icon={Send}
                     />
                   ) : (
