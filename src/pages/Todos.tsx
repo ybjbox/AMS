@@ -13,9 +13,11 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
+import { BaseModal } from '@/components/ui/BaseModal';
+import { todoApi } from '@/services/todoApi';
 import RenewContractModal from '@/pages/Users/components/RenewContractModal';
 import { useEmployeeStore } from '@/store/useEmployeeStore';
-import type { User } from '@/types';
+import type { Todo, User } from '@/types';
 
 type Filter = 'all' | 'pending' | 'overdue' | 'today';
 
@@ -38,6 +40,9 @@ export default function Todos() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [renewUser, setRenewUser] = useState<User | null>(null);
   const [renewTodoId, setRenewTodoId] = useState<string | null>(null);
+  const [dismissTodo, setDismissTodo] = useState<Todo | null>(null);
+  const [dismissReason, setDismissReason] = useState('');
+  const [dismissing, setDismissing] = useState(false);
   const completeTodos = useTodoStore((state) => state.completeTodos);
   const employees = useEmployeeStore((state) => state.users);
   const fetchEmployees = useEmployeeStore((state) => state.fetchUsers);
@@ -114,6 +119,27 @@ export default function Todos() {
     },
     [employees, navigate]
   );
+
+  const handleDismiss = useCallback(async () => {
+    if (!dismissTodo || !dismissReason.trim()) return;
+    setDismissing(true);
+    try {
+      const note = `
+暂不续签：${dismissReason.trim()}`;
+      await todoApi.update(dismissTodo.id, {
+        completed: true,
+        description: `${dismissTodo.description}${note}`,
+      });
+      toast.success('已记录暂不续签说明');
+      setDismissTodo(null);
+      setDismissReason('');
+      await fetchTodos();
+    } catch {
+      toast.error('保存说明失败，请重试');
+    } finally {
+      setDismissing(false);
+    }
+  }, [dismissTodo, dismissReason, fetchTodos]);
 
   const handleBatchComplete = useCallback(async () => {
     if (selectedIds.length === 0) return;
@@ -373,13 +399,25 @@ export default function Todos() {
                     </div>
                   </div>
                   {todo.type === 'contract' && !todo.completed && (
-                    <Pressable
-                      type="button"
-                      onClick={() => openRenew(todo.id, todo.targetId)}
-                      className="btn-secondary shrink-0"
-                    >
-                      续签
-                    </Pressable>
+                    <div className="flex shrink-0 flex-wrap items-center gap-2">
+                      <Pressable
+                        type="button"
+                        onClick={() => openRenew(todo.id, todo.targetId)}
+                        className="btn-secondary"
+                      >
+                        续签
+                      </Pressable>
+                      <Pressable
+                        type="button"
+                        onClick={() => {
+                          setDismissTodo(todo);
+                          setDismissReason('');
+                        }}
+                        className="btn-secondary"
+                      >
+                        说明
+                      </Pressable>
+                    </div>
                   )}
                   <Pressable
                     data-todoid={todo.id}
@@ -397,6 +435,50 @@ export default function Todos() {
           </div>
         )}
       </div>
+
+      <BaseModal
+        isOpen={!!dismissTodo}
+        onClose={() => {
+          setDismissTodo(null);
+          setDismissReason('');
+        }}
+        title="暂不续签说明"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            {dismissTodo?.title}：关闭提醒后不可恢复，说明会留在待办记录里。
+          </p>
+          <label className="block">
+            <span className="mb-1 block text-xs text-muted-foreground">原因（必填）</span>
+            <Textarea
+              rows={3}
+              value={dismissReason}
+              onChange={(e) => setDismissReason(e.target.value)}
+              placeholder="例如：员工已离职 / 合同转外包 / 待法务确认…"
+            />
+          </label>
+          <div className="flex justify-end gap-2">
+            <Pressable
+              type="button"
+              className="btn-secondary"
+              onClick={() => {
+                setDismissTodo(null);
+                setDismissReason('');
+              }}
+            >
+              取消
+            </Pressable>
+            <Pressable
+              type="button"
+              className="btn-primary"
+              disabled={!dismissReason.trim() || dismissing}
+              onClick={() => void handleDismiss()}
+            >
+              {dismissing ? '保存中…' : '记录说明并关闭'}
+            </Pressable>
+          </div>
+        </div>
+      </BaseModal>
 
       <RenewContractModal
         isOpen={!!renewUser}

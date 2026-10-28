@@ -101,6 +101,12 @@ test.describe('运营闭环：通知 / 数据 / 待办 / 账号', () => {
       await expect(page.getByRole('dialog')).toContainText('合同续签');
       await page.keyboard.press('Escape');
 
+      await contractRow.getByRole('button', { name: '说明', exact: true }).click();
+      await expect(page.getByRole('dialog')).toContainText('暂不续签说明');
+      await page.getByPlaceholder(/例如：员工已离职/).fill('E2E 暂不续签说明');
+      await page.getByRole('button', { name: '记录说明并关闭' }).click();
+      await expect(page.getByText('已记录暂不续签说明')).toBeVisible();
+
       const manualRow = page.locator('div.group').filter({ hasText: 'E2E 批量完成' }).first();
       await manualRow.scrollIntoViewIfNeeded();
       await manualRow.getByRole('checkbox', { name: /选择待办：E2E 批量完成/ }).check();

@@ -27,6 +27,7 @@ export default function Notifications() {
   const markNotificationAsRead = useNotificationStore((state) => state.markNotificationAsRead);
   const markAllNotificationsAsRead = useNotificationStore((state) => state.markAllNotificationsAsRead);
   const [filter, setFilter] = useState<Filter>('all');
+  const [limit, setLimit] = useState(20);
 
   useEffect(() => {
     fetchNotifications();
@@ -36,6 +37,7 @@ export default function Notifications() {
     () => (filter === 'unread' ? notifications.filter((n) => !n.read) : notifications),
     [filter, notifications]
   );
+  const shown = visible.slice(0, limit);
 
   const openNotification = (n: Notification) => {
     markNotificationAsRead(n.id);
@@ -71,7 +73,7 @@ export default function Notifications() {
                 key={id}
                 role="tab"
                 aria-selected={filter === id}
-                onClick={() => setFilter(id)}
+                onClick={() => { setFilter(id); setLimit(20); }}
                 className={`min-h-11 rounded-lg px-3 text-sm font-medium transition-colors ${
                   filter === id
                     ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
@@ -106,7 +108,7 @@ export default function Notifications() {
           />
         ) : (
           <ul className="divide-y divide-zinc-100 dark:divide-zinc-700/60" aria-label="通知列表">
-            {visible.map((n) => {
+            {shown.map((n) => {
               const target = notificationTarget(n);
               return (
                 <li key={n.id}>
@@ -151,6 +153,13 @@ export default function Notifications() {
               );
             })}
           </ul>
+        )}
+        {!isLoading && !loadError && visible.length > limit && (
+          <div className="border-t border-zinc-100 p-3 text-center dark:border-zinc-700/60">
+            <Button variant="outline" onClick={() => setLimit((n) => n + 20)}>
+              加载更多（剩余 {visible.length - limit} 条）
+            </Button>
+          </div>
         )}
       </div>
     </PageContainer>
