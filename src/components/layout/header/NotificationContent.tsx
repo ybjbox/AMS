@@ -5,6 +5,9 @@ import { CheckCheck, Trash2, Bell } from 'lucide-react';
 import { useNotificationStore } from '@/store/useNotificationStore';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { formatNotificationTime } from '@/utils/dateUtils';
+import { notificationTarget } from '@/utils/notificationTarget';
+import { useConfirm } from '@/hooks/useConfirm';
+import type { Notification } from '@/types';
 
 interface NotificationContentProps {
   /** 「查看全部通知」跳转后回调（供宿主关闭所在弹层） */
@@ -23,12 +26,28 @@ const NotificationContent = React.memo(function NotificationContent({ onClose }:
   const markNotificationAsRead = useNotificationStore((state) => state.markNotificationAsRead);
   const markAllNotificationsAsRead = useNotificationStore((state) => state.markAllNotificationsAsRead);
   const clearNotifications = useNotificationStore((state) => state.clearNotifications);
+  const confirm = useConfirm();
 
-  const handleMarkAsRead = useCallback(
-    (id: string) => {
-      markNotificationAsRead(id);
+  const handleClear = useCallback(async () => {
+    const ok = await confirm({
+      title: '清空全部通知？',
+      description: '清空后不可恢复；已读和未读都会消失。',
+      confirmText: '清空',
+      variant: 'danger',
+    });
+    if (ok) clearNotifications();
+  }, [confirm, clearNotifications]);
+
+  const openNotification = useCallback(
+    (notification: Notification) => {
+      markNotificationAsRead(notification.id);
+      const target = notificationTarget(notification);
+      if (target) {
+        navigate(target);
+        onClose?.();
+      }
     },
-    [markNotificationAsRead]
+    [markNotificationAsRead, navigate, onClose]
   );
 
   // 未读点颜色 = 通知级别；已读不显示点
@@ -59,7 +78,7 @@ const NotificationContent = React.memo(function NotificationContent({ onClose }:
           )}
           {notifications.length > 0 && (
             <Pressable
-              onClick={clearNotifications}
+              onClick={() => void handleClear()}
               title="清空全部"
               aria-label="清空全部"
               className="p-1.5 rounded-md text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-zinc-100/70 dark:hover:bg-zinc-600/60 transition-colors"
@@ -77,7 +96,7 @@ const NotificationContent = React.memo(function NotificationContent({ onClose }:
           notifications.map((notification) => (
             <Pressable
               key={notification.id}
-              onClick={() => handleMarkAsRead(notification.id)}
+              onClick={() => openNotification(notification)}
               className="w-full text-left px-3 py-2 border-b border-zinc-50 dark:border-zinc-600/40 last:border-b-0 hover:bg-zinc-50 dark:hover:bg-zinc-600/40 transition-colors"
             >
               <div className="flex items-center gap-1.5">
@@ -110,7 +129,7 @@ const NotificationContent = React.memo(function NotificationContent({ onClose }:
         <div className="py-1.5 border-t border-zinc-100 dark:border-zinc-600/60 text-center">
           <Pressable
             onClick={() => {
-              navigate('/settings?tab=logs');
+              navigate('/notifications');
               onClose?.();
             }}
             className="px-3 py-1 text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 font-medium transition-colors"

@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Approvals from '@/pages/Approvals';
 import { ConfirmProvider } from '@/hooks/useConfirm';
 import { useUserStore } from '@/store/useUserStore';
+import { MemoryRouter } from 'react-router-dom';
 import { approvalApi, type Approval } from '@/services/approvalApi';
 
 /**
@@ -51,7 +52,7 @@ const item: Approval = {
 
 beforeEach(() => {
   useUserStore.setState({
-    userInfo: { role: 'EMPLOYEE', username: 'zhangsan', permissions: ['approvals:view'] } as never,
+    userInfo: { role: 'EMPLOYEE', username: 'zhangsan', employeeId: 'EMP0027', permissions: ['approvals:view'] } as never,
     token: 't',
   });
   compBalance.mockResolvedValue({ total: 0, used: 0 } as never);
@@ -60,9 +61,11 @@ beforeEach(() => {
 
 function renderPage() {
   return render(
-    <ConfirmProvider>
-      <Approvals />
-    </ConfirmProvider>
+    <MemoryRouter>
+      <ConfirmProvider>
+        <Approvals />
+      </ConfirmProvider>
+    </MemoryRouter>
   );
 }
 

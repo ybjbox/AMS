@@ -15,6 +15,8 @@ interface TodoState {
   fetchTodos: () => Promise<void>;
   addTodo: (todo: Omit<Todo, 'id' | 'createdAt' | 'completed'>) => void;
   toggleTodo: (id: string) => void;
+  /** 批量完成；返回成功/失败数。只应在页面确认后调用 */
+  completeTodos: (ids: string[]) => Promise<{ completed: number; failed: number }>;
   deleteTodo: (id: string) => void;
 }
 
@@ -115,6 +117,21 @@ export const useTodoStore = create<TodoState>()((set, get) => ({
         }));
         toast.error(errText(e, '待办状态更新失败'));
       });
+  },
+
+  completeTodos: async (ids) => {
+    set((state) => ({
+      todos: state.todos.map((t) => (ids.includes(t.id) ? { ...t, completed: true } : t)),
+    }));
+    const results = await Promise.allSettled(ids.map((id) => todoApi.update(id, { completed: true })));
+    const failed = ids.filter((id, i) => results[i].status === 'rejected');
+    if (failed.length) {
+      set((state) => ({
+        todos: state.todos.map((t) => (failed.includes(t.id) ? { ...t, completed: false } : t)),
+      }));
+      toast.error(`${failed.length} 条待办未完成，请重试`);
+    }
+    return { completed: ids.length - failed.length, failed: failed.length };
   },
 
   deleteTodo: (id) => {

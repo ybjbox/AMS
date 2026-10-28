@@ -63,6 +63,11 @@ export default function WorkforceTrend({ stats, isLoading, size, onSizeChange, e
 
       {isLoading || !stats ? (
         <div className={`${HEIGHT[size]} animate-pulse bg-zinc-100 dark:bg-zinc-800 rounded-lg`} />
+      ) : totals.hires + totals.departures === 0 ? (
+        <div className={`${HEIGHT[size]} flex flex-col items-center justify-center rounded-lg border border-dashed border-zinc-200 text-center dark:border-zinc-700`}>
+          <p className="text-sm text-muted-foreground">近 {months.length} 个月没有人员流动记录</p>
+          <p className="mt-1 text-2xs text-muted-foreground">有入职或离职后，这里会自动出现趋势。</p>
+        </div>
       ) : (
         <>
           <div className={`flex items-end justify-between gap-2 ${HEIGHT[size]}`}>

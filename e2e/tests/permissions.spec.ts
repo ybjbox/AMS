@@ -215,19 +215,21 @@ test.describe.serial('角色权限矩阵', () => {
       });
   });
 
-  // ---- 审批自助提交：EMPLOYEE+ ----
-  test('审批自助提交：EMPLOYEE 可提交（特例策略）', async ({ request }) => {
-    // 先造一条待审批数据；注意返回结构可能是数组或信封
-    const res = await expectStatus(request, tokens[EMP].token, 'POST', '/api/approvals', 201,
-      'POST /approvals as EMPLOYEE 应 201', {
+  // ---- 审批自助提交：权限放行后，员工档案绑定是第二道门 ----
+  test('审批自助提交：EMPLOYEE 通过权限，但未关联员工档案被 400 拦住', async ({ request }) => {
+    // 这个账号没有 employeeId。关键不是 403（权限矩阵放行），而是业务门槛明确拦住。
+    const res = await request.post('/api/approvals', {
+      headers: { Authorization: `Bearer ${tokens[EMP].token}` },
+      data: {
         type: 'leave',
         leaveType: '事假',
         startDate: '2026-12-01',
         endDate: '2026-12-02',
         reason: 'E2E 权限矩阵测试请假',
-      });
-    // 清理：管理员不再提供审批删除接口——该数据留给管理员查看（无删除端点），无副作用
-    void res;
+      },
+    });
+    expect(res.status()).toBe(400);
+    expect((await res.json()).code).toBe('EMPLOYEE_NOT_LINKED');
   });
 
   // ---- 审计日志：仅 ADMIN ----

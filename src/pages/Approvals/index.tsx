@@ -2,6 +2,7 @@ import { Pressable } from '@/components/ui/Pressable';
 import PageContainer from "@/components/PageContainer";
 import React, { useCallback, useEffect, useState } from 'react';
 import { useConfirm } from '@/hooks/useConfirm';
+import { Link } from 'react-router-dom';
 import { useUserStore } from '@/store/useUserStore';
 import { CheckCircle2, Clock, FileCheck2, Send, XCircle, CalendarClock, ShieldCheck, Undo2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -55,6 +56,9 @@ function StatusBadge({ status }: { status: ApprovalStatus }) {
 export default function Approvals() {
   const confirm = useConfirm();
   const hasPermission = useUserStore((state) => state.hasPermission);
+  const employeeId = useUserStore((state) => state.userInfo?.employeeId ?? null);
+  const role = (useUserStore((state) => state.userInfo?.role) ?? '').toUpperCase();
+  const canManageAccounts = role === 'ADMIN' || role === 'SUPER_ADMIN';
   const canApprove = hasPermission('approvals:approve');
   /** 认领核对：批准等于发身份，能力码在服务端定的是 ADMIN */
   const canReviewClaims = hasPermission('claims:review');
@@ -124,6 +128,10 @@ export default function Approvals() {
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
+      if (!employeeId) {
+        toast.error('当前账号未关联员工档案，请先在账号管理中关联员工');
+        return;
+      }
       setSubmitting(true);
       try {
         if (formType === 'makeup') {
@@ -177,7 +185,7 @@ export default function Approvals() {
         setSubmitting(false);
       }
     },
-    [form, formType, refresh]
+    [form, formType, refresh, employeeId]
   );
 
   /** 打开决定对话框：传 1 条=单条决定，传多条=批量决定 */
@@ -287,7 +295,7 @@ export default function Approvals() {
           }
           description={
             tab === 'mine'
-              ? '在左侧提交你的第一条申请'
+              ? '提交你的第一条申请'
               : tab === 'pending'
                 ? '有新的申请时会出现在这里'
                 : '换个状态筛选或清空月份试试；历史记录不会因已处理而消失'
@@ -379,6 +387,24 @@ export default function Approvals() {
           <h2 className="text-sm font-medium text-zinc-900 dark:text-white flex items-center gap-2">
             <Send className="w-4 h-4 text-zinc-400" /> 提交申请
           </h2>
+          {!employeeId && (
+            <div
+              role="alert"
+              className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
+            >
+              当前账号未关联员工档案，无法提交审批。
+              {canManageAccounts ? (
+                <Link
+                  className="mt-1 flex min-h-11 w-fit items-center font-semibold underline underline-offset-2"
+                  to="/settings?tab=accounts"
+                >
+                  去账号管理 →
+                </Link>
+              ) : (
+                <span className="mt-1 block font-semibold">请联系管理员在「账号管理」中完成关联。</span>
+              )}
+            </div>
+          )}
 
           {/* 类型切换：请假 / 补卡 / 转正 / 离职 / 加班（清单见 lib/approvalMeta.ts） */}
           <div className="flex rounded-lg bg-zinc-100 dark:bg-zinc-700/50 p-0.5 flex-wrap gap-y-1" role="tablist" aria-label="申请类型">
@@ -566,8 +592,13 @@ export default function Approvals() {
               className="field-sizing-fixed resize-y"
             />
           </label>
-          <Button type="submit" disabled={submitting} className="w-full">
-            {submitting ? '提交中…' : '提交申请'}
+          <Button
+            type="submit"
+            disabled={submitting || !employeeId}
+            className="w-full"
+            title={employeeId ? undefined : '请先在账号管理中关联员工档案'}
+          >
+            {submitting ? '提交中…' : employeeId ? '提交申请' : '账号未关联员工档案'}
           </Button>
         </form>
 

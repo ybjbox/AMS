@@ -49,6 +49,9 @@ export default function StatCards({ stats, isLoading }: StatCardsProps) {
               <div className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-white [font-variant-numeric:tabular-nums]">
                 {item.value}
               </div>
+              {item.hint && (
+                <p className="mt-1 text-2xs leading-relaxed text-muted-foreground tabular-nums">{item.hint}</p>
+              )}
             </div>
           </div>
         );

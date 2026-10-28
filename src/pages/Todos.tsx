@@ -2,7 +2,7 @@ import { Pressable } from '@/components/ui/Pressable';
 import PageContainer from "@/components/PageContainer";
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTodoStore, todoUrgency } from '../store/useTodoStore';
-import { CheckCircle2, Circle, Clock, Plus, Trash2, Calendar, ListTodo } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, Plus, Trash2, Calendar, ListTodo, FileSignature } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { FailedState } from '@/components/ui/FailedState';
@@ -10,6 +10,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDateTime, formatDate } from '@/utils/dateUtils';
 import { useConfirm } from '@/hooks/useConfirm';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { Checkbox } from '@/components/ui/checkbox';
+import RenewContractModal from '@/pages/Users/components/RenewContractModal';
+import { useEmployeeStore } from '@/store/useEmployeeStore';
+import type { User } from '@/types';
 
 type Filter = 'all' | 'pending' | 'overdue' | 'today';
 
@@ -29,6 +35,18 @@ export default function Todos() {
   const [isAdding, setIsAdding] = useState(false);
   const [only, setOnly] = useState<Filter>('all');
   const [newTodo, setNewTodo] = useState({ title: '', description: '', dueDate: '' });
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [renewUser, setRenewUser] = useState<User | null>(null);
+  const [renewTodoId, setRenewTodoId] = useState<string | null>(null);
+  const completeTodos = useTodoStore((state) => state.completeTodos);
+  const employees = useEmployeeStore((state) => state.users);
+  const fetchEmployees = useEmployeeStore((state) => state.fetchUsers);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // 续签需要员工档案；没有 users:view 的角色会失败，入口会退化为员工详情链接
+    fetchEmployees().catch(() => undefined);
+  }, [fetchEmployees]);
 
   const handleAdd = useCallback(
     (e: React.FormEvent) => {
@@ -79,6 +97,36 @@ export default function Todos() {
     },
     [toggleTodo]
   );
+
+  const toggleSelected = useCallback((id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }, []);
+
+  const openRenew = useCallback(
+    (todoId: string, targetId?: string) => {
+      const user = employees.find((u) => u.id === targetId) ?? null;
+      if (user) {
+        setRenewUser(user);
+        setRenewTodoId(todoId);
+      } else if (targetId) {
+        navigate(`/users?detail=${encodeURIComponent(targetId)}`);
+      }
+    },
+    [employees, navigate]
+  );
+
+  const handleBatchComplete = useCallback(async () => {
+    if (selectedIds.length === 0) return;
+    const ok = await confirm({
+      title: `完成 ${selectedIds.length} 条待办？`,
+      description: '合同提醒需要逐条续签，不在批量范围内。',
+      confirmText: '完成',
+    });
+    if (!ok) return;
+    const result = await completeTodos(selectedIds);
+    setSelectedIds([]);
+    if (result.completed > 0) toast.success(`已完成 ${result.completed} 条待办`);
+  }, [selectedIds, confirm, completeTodos]);
 
   const onDeleteTodoClick = useCallback(
     async (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -134,6 +182,26 @@ export default function Todos() {
           </Pressable>
         ))}
       </div>
+
+      {selectedIds.length > 0 && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="sticky bottom-3 z-20 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand-500/30 bg-white px-3 py-2 shadow-lg dark:bg-zinc-800"
+        >
+          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
+            已选 <span className="tabular-nums">{selectedIds.length}</span> 条
+          </span>
+          <div className="flex items-center gap-2">
+            <Pressable type="button" onClick={() => setSelectedIds([])} className="btn-secondary">
+              取消
+            </Pressable>
+            <Pressable type="button" onClick={() => void handleBatchComplete()} className="btn-primary">
+              批量完成
+            </Pressable>
+          </div>
+        </div>
+      )}
 
       <AnimatePresence>
         {isAdding && (
@@ -238,19 +306,35 @@ export default function Todos() {
                     todo.completed ? 'opacity-60' : ''
                   }`}
                 >
-                  <Pressable
-                    data-todoid={todo.id}
-                    onClick={onToggleTodoClick}
-                    aria-label={todo.completed ? `标记为未完成：${todo.title}` : `标记为完成：${todo.title}`}
-                    aria-pressed={todo.completed}
-                    className={`mt-1 transition-colors ${
-                      todo.completed
-                        ? 'text-brand-500'
-                        : 'text-muted-foreground hover:text-brand-600 dark:hover:text-brand-400'
-                    }`}
-                  >
-                    {todo.completed ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
-                  </Pressable>
+                  {todo.type === 'contract' ? (
+                    <span className="mt-1 text-amber-700 dark:text-amber-400" title="合同提醒请用续签处理">
+                      <FileSignature className="w-5 h-5" aria-hidden="true" />
+                      <span className="sr-only">合同提醒，需要续签</span>
+                    </span>
+                  ) : (
+                    <span className="mt-1 flex items-center gap-2">
+                      {todo.type === 'manual' && !todo.completed && (
+                        <Checkbox
+                          checked={selectedIds.includes(todo.id)}
+                          onCheckedChange={() => toggleSelected(todo.id)}
+                          aria-label={`选择待办：${todo.title}`}
+                        />
+                      )}
+                      <Pressable
+                        data-todoid={todo.id}
+                        onClick={onToggleTodoClick}
+                        aria-label={todo.completed ? `标记为未完成：${todo.title}` : `标记为完成：${todo.title}`}
+                        aria-pressed={todo.completed}
+                        className={`transition-colors ${
+                          todo.completed
+                            ? 'text-brand-500'
+                            : 'text-muted-foreground hover:text-brand-600 dark:hover:text-brand-400'
+                        }`}
+                      >
+                        {todo.completed ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
+                      </Pressable>
+                    </span>
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2">
                       <div
@@ -288,6 +372,15 @@ export default function Todos() {
                       </div>
                     </div>
                   </div>
+                  {todo.type === 'contract' && !todo.completed && (
+                    <Pressable
+                      type="button"
+                      onClick={() => openRenew(todo.id, todo.targetId)}
+                      className="btn-secondary shrink-0"
+                    >
+                      续签
+                    </Pressable>
+                  )}
                   <Pressable
                     data-todoid={todo.id}
                     data-todotitle={todo.title}
@@ -304,6 +397,25 @@ export default function Todos() {
           </div>
         )}
       </div>
+
+      <RenewContractModal
+        isOpen={!!renewUser}
+        user={renewUser}
+        onClose={() => {
+          setRenewUser(null);
+          setRenewTodoId(null);
+        }}
+        onRenewed={() => {
+          const todoId = renewTodoId;
+          setRenewUser(null);
+          setRenewTodoId(null);
+          if (todoId) {
+            void completeTodos([todoId]).then(() => fetchTodos());
+          } else {
+            void fetchTodos();
+          }
+        }}
+      />
     </PageContainer>
   );
 }

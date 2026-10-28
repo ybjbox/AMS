@@ -38,6 +38,8 @@ export interface UserInfo {
   username: string;
   /** 显示名称（资料可编辑），UI 优先于 username 展示 */
   displayName?: string;
+  /** 绑定员工档案；未绑定时审批/余额等依赖档案的动作应被阻断 */
+  employeeId?: string | null;
   email: string;
   phone?: string;
   avatar?: string;

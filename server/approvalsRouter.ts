@@ -83,6 +83,11 @@ approvalsRouter.post("/", validateBody(createSchema), (req, res, next) => {
       pendingCompHours: () => getPendingCompUsedHours(username),
       today: () => localToday(),
     };
+    // 所有需要落到员工档案的动作统一前置校验：未关联时不允许提交，
+    // 避免审批通过后才发现加班/转正/调休落不了账。
+    if (!ctx.employeeId()) {
+      return res.status(400).json({ error: "你的账号未关联员工档案，请先在「账号管理」中完成关联后重新申请。", code: "EMPLOYEE_NOT_LINKED" });
+    }
     const result = spec.toDraft(input, ctx);
     if (!result.ok) {
       return res.status(400).json(result.code ? { error: result.error, code: result.code } : { error: result.error });

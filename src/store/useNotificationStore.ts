@@ -7,6 +7,8 @@ interface NotificationState {
   notifications: Notification[];
   unreadCount: number;
   isLoading: boolean;
+  /** 拉取失败原因；页面不能把“请求失败”显示成“没有通知” */
+  loadError: string | null;
   fetchNotifications: () => Promise<void>;
   addNotification: (notification: Omit<Notification, 'id' | 'time' | 'read'>) => void;
   markNotificationAsRead: (id: string) => void;
@@ -29,6 +31,7 @@ export const useNotificationStore = create<NotificationState>()((set, get) => ({
   notifications: [],
   unreadCount: 0,
   isLoading: false,
+  loadError: null,
 
   /** 从后端拉取我的通知（recipient = 当前登录用户）。
    *  inflight 去重：并发调用复用同一 Promise（Header 挂载/路由切换场景常见）。 */
@@ -38,10 +41,11 @@ export const useNotificationStore = create<NotificationState>()((set, get) => ({
       set({ isLoading: true });
       try {
         const notifications = await notificationApi.list();
-        set({ ...withUnread(notifications), isLoading: false });
+        set({ ...withUnread(notifications), isLoading: false, loadError: null });
       } catch (e) {
-        set({ isLoading: false });
-        toast.error(errText(e, '通知加载失败'));
+        const message = errText(e, '通知加载失败');
+        set({ isLoading: false, loadError: message });
+        toast.error(message);
       } finally {
         notificationsInflight = null;
       }

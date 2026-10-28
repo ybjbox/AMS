@@ -16,6 +16,8 @@ export interface StatItem {
   icon: LucideIcon;
   color: string;
   bg: string;
+  /** 口径说明：如数据截止日；不要用一个数字假装它是“今天” */
+  hint?: string;
 }
 
 export interface NoticeItem {
@@ -44,6 +46,8 @@ export interface UseDashboardReturn {
   chartData: ChartData[];
   workforce: WorkforceStats | null;
   attendance: AttendanceStats | null;
+  /** 打卡数据的新鲜度：截止日 + 未覆盖天数 */
+  coverage: { latestDate: string | null; uncoveredDays: number } | null;
   /** 本次取数完成的时刻（不是库里数据的新旧） */
   refreshedAt: string;
   isLoading: boolean;
@@ -85,6 +89,13 @@ const QUICK_ACTIONS: QuickActionItem[] = [
 ];
 
 const WEEKDAY = '日一二三四五六';
+
+function daysBetween(dateStr: string, to: Date): number {
+  const from = new Date(`${dateStr}T00:00:00`);
+  const end = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+  if (Number.isNaN(from.getTime())) return 0;
+  return Math.max(0, Math.round((end.getTime() - from.getTime()) / 86400000));
+}
 
 /** 快捷入口按能力码过滤（导出以便单测钉住「不摆出点了必 403 的入口」这条规则） */
 export function filterQuickActions(hasPermission: (code: string) => boolean): QuickActionItem[] {
@@ -202,6 +213,12 @@ export function useDashboard(): UseDashboardReturn {
   }, []);
 
   // 统计卡片：从原始数据 + store 派生值组合（render 期派生，不触发副作用）
+  const coverage = useMemo(() => {
+    if (!attendance) return null;
+    const latestDate = attendance.lastPunchDate;
+    return { latestDate, uncoveredDays: latestDate ? daysBetween(latestDate, new Date()) : 0 };
+  }, [attendance]);
+
   const stats = useMemo<StatItem[]>(() => {
     const deptCount = flattenDepartments(departments).length;
     /**
@@ -213,11 +230,22 @@ export function useDashboard(): UseDashboardReturn {
     const active = workforce ? Object.values(workforce.statuses).reduce((s, n) => s + n, 0) : 0;
     return [
       { name: '在册员工', value: String(active), icon: Users, color: 'text-brand-600 dark:text-brand-400', bg: 'bg-brand-50 dark:bg-brand-900/30' },
-      { name: '今日打卡', value: String(raw?.todayPunchers ?? 0), icon: Activity, color: 'text-brand-600 dark:text-brand-400', bg: 'bg-brand-50 dark:bg-brand-900/30' },
+      {
+        name: '今日打卡',
+        value: String(raw?.todayPunchers ?? 0),
+        icon: Activity,
+        color: 'text-brand-600 dark:text-brand-400',
+        bg: 'bg-brand-50 dark:bg-brand-900/30',
+        hint: coverage
+          ? coverage.latestDate
+            ? `数据截止 ${coverage.latestDate}${coverage.uncoveredDays > 0 ? ` · 未覆盖 ${coverage.uncoveredDays} 天` : ''}`
+            : '尚未导入打卡'
+          : undefined,
+      },
       { name: '待办事项', value: String(pendingTodos), icon: FileText, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/30' },
       { name: '部门数量', value: String(deptCount), icon: Briefcase, color: 'text-brand-600 dark:text-brand-400', bg: 'bg-brand-50 dark:bg-brand-900/30' },
     ];
-  }, [raw, departments, pendingTodos, workforce]);
+  }, [raw, departments, pendingTodos, workforce, coverage]);
 
   // 快捷入口与侧栏同一套能力码过滤：写死的常量会摆出「员工点了进 /403」的假入口
   const hasPermission = useUserStore((state) => state.hasPermission);
@@ -230,6 +258,7 @@ export function useDashboard(): UseDashboardReturn {
     chartData: raw?.chartData ?? [],
     workforce,
     attendance,
+    coverage,
     refreshedAt: raw?.refreshedAt ?? '',
     isLoading,
   };

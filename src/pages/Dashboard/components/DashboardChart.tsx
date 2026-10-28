@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer } from 'recharts';
 import { Activity } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { EmptyState } from '@/components/ui/EmptyState';
 import WidgetSizePicker from '@/components/ui/WidgetSizePicker';
 import { resolveChartLayout, WIDGET_SIZES, type WidgetSize } from '@/config/widgetSizes';
@@ -75,6 +76,7 @@ export default function DashboardChart({ data, isLoading, size, onSizeChange, ed
   const popoverColor  = cssVars['--popover']           || 'oklch(1 0 0)';
   const fgColor       = cssVars['--foreground']        || 'oklch(0.30 0 0)';
   const skeletonHeights = [60, 85, 70, 95, 75, 55, 40];
+  const hasData = data.some((d) => d.value > 0);
   const preset = WIDGET_SIZES[size];
   const layout = resolveChartLayout(size);
   // 大档才显示摘要，所以小/中档不白算
@@ -109,9 +111,18 @@ export default function DashboardChart({ data, isLoading, size, onSizeChange, ed
             />
           ))}
         </div>
-      ) : data.length === 0 ? (
+      ) : !hasData ? (
         <div className={`${preset.chartClass} flex items-center justify-center`}>
-          <EmptyState icon={Activity} title="暂无图表数据" description="数据加载完成后将在此处显示趋势图" />
+          <EmptyState
+            icon={Activity}
+            title="近 7 天暂无打卡数据"
+            description="这不代表没人出勤，可能只是打卡还没导入。"
+            action={
+              <Link to="/attendance" className="btn-secondary">
+                去考勤导入
+              </Link>
+            }
+          />
         </div>
       ) : (
         <div className={`${preset.chartClass} w-full`}>

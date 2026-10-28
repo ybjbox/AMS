@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * 全站冒烟测试：验证 12 个核心页面可访问、无控制台错误、标题正确。
+ * 全站冒烟测试：验证核心页面可访问、无控制台错误、标题正确。
  * 这是最基础的回归保护——任何页面崩溃/白屏会在此被捕获。
  * 打印工具的三个标签都单独跑一遍：它们共用一个路由，崩溃点各自独立。
  */
@@ -17,6 +17,7 @@ const PAGES = [
   { path: '/departments', title: '部门管理', name: '部门管理' },
   { path: '/todos', title: '待办事项', name: '待办事项' },
   { path: '/approvals', title: '审批中心', name: '审批中心' },
+  { path: '/notifications', title: '通知中心', name: '通知中心' },
   { path: '/settings', title: '系统设置', name: '系统设置' },
 ];
 

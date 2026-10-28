@@ -5,6 +5,7 @@ import Todos from '@/pages/Todos';
 import { ConfirmProvider } from '@/hooks/useConfirm';
 import { todoApi } from '@/services/todoApi';
 import { useTodoStore } from '@/store/useTodoStore';
+import { MemoryRouter } from 'react-router-dom';
 
 /**
  * 审查 M1 的待办这一路：失败只在 toast 里待了四秒，屏幕上留下的是
@@ -12,6 +13,11 @@ import { useTodoStore } from '@/store/useTodoStore';
  */
 vi.mock('@/services/todoApi', () => ({
   todoApi: { list: vi.fn(), create: vi.fn(), update: vi.fn(), remove: vi.fn() },
+}));
+
+vi.mock('@/store/useEmployeeStore', () => ({
+  useEmployeeStore: (selector: (s: { users: unknown[]; fetchUsers: () => Promise<null> }) => unknown) =>
+    selector({ users: [], fetchUsers: () => Promise.resolve(null) }),
 }));
 
 const list = vi.mocked(todoApi.list);
@@ -22,9 +28,11 @@ beforeEach(() => {
 
 function renderPage() {
   return render(
-    <ConfirmProvider>
-      <Todos />
-    </ConfirmProvider>
+    <MemoryRouter>
+      <ConfirmProvider>
+        <Todos />
+      </ConfirmProvider>
+    </MemoryRouter>
   );
 }
 
