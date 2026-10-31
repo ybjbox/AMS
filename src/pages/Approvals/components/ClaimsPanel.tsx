@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { FailedState } from '@/components/ui/FailedState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { Table } from '@/components/ui/Table';
 import { useConfirm } from '@/hooks/useConfirm';
 import { claimApi, type Claim } from '@/services/claimApi';
 
@@ -179,7 +180,7 @@ export default function ClaimsPanel({ onDecided }: { onDecided?: () => void }) {
             </div>
 
             <div className="rounded-panel border border-zinc-200/60 dark:border-zinc-700/60 overflow-hidden">
-              <table className="w-full text-sm">
+              <Table className="text-sm">
                 <thead className="bg-zinc-50/60 dark:bg-zinc-800/60 text-xs text-muted-foreground">
                   <tr>
                     <th className="px-3 py-2 text-left font-medium">对照项</th>
@@ -214,7 +215,7 @@ export default function ClaimsPanel({ onDecided }: { onDecided?: () => void }) {
                     <td className="px-3 py-2 tabular-nums">{selected.employee?.joinDate || '—'}</td>
                   </tr>
                 </tbody>
-              </table>
+              </Table>
             </div>
 
             {selected.note && (

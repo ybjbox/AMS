@@ -6,6 +6,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { notifySaveFailure } from '@/store/saveFailure';
 import { scheduleAppReload } from '@/utils/reloadApp';
 import { Button } from '@/components/ui/button';
+import { Table } from '@/components/ui/Table';
 import {
   fetchBackups,
   createBackup,
@@ -268,7 +269,7 @@ export default function BackupPanel() {
       </div>
 
       <div className="flex-1 overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
-        <table className="w-full text-sm">
+        <Table className="text-sm">
           <thead className="bg-zinc-50 text-muted-foreground sticky top-0 dark:bg-zinc-800/50">
             <tr>
               <th className="text-left px-4 py-2.5 font-medium">文件名</th>
@@ -369,7 +370,7 @@ export default function BackupPanel() {
               </tr>
             )}
           </tbody>
-        </table>
+        </Table>
       </div>
     </div>
   );

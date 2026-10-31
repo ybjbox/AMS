@@ -230,6 +230,9 @@ AMS 是单人自用的企业后台（员工/部门/考勤/合同/审批/文档/�
 **硬规则**
 
 - 页面级不得横滑；宽表只在自己的 `overflow-x-auto` 容器里滚。
+- **宽表自适应：** 表格用 `w-full` 跟随容器铺满，`min-w-*` 只作为窄屏横滑的下限；不要用 JS 把列宽总和写死成 `<table>` 的像素宽度——大屏会把剩余宽度留成空白，窄屏又会把右侧列裁掉。
+- **表格原语：** 数据表统一用 `ui/Table` 的 `Table` 基座；宽表再加 `TableFrame`（滚动容器）、`minWidth`、`StickyHeaderCell` / `StickyCell`（首末列冻结）。sticky 定位、层级与阴影只在原语里定义，各表只给背景色与内边距。
+- **设置二级面板：** 统一 `h-full p-6` + 面板内部滚动（长表用 `TableFrame` 占满剩余高度并固定表头）；不要让表格把卡片撑高后再被外层 `overflow-hidden` 裁掉。
 - grid/flex 子项里有固定宽度内容（A4 预览 794px、画布、宽表）时，给子项 `min-w-0`；否则 `min-width: auto` 会把整列撑出视口（2026-10-25 业务单据实测 390 档被撑到 824px）。
 - 宽表冻结身份与动作：首列 `sticky left-0`、操作列 `sticky right-0`；表头与表体同步 sticky，且 sticky 单元格必须自带背景（透明表头滚过去会叠字）。
 - 移动端可点元素 ≥44px（`min-h-11`）；桌面沿用 32/36px 控件。输入框在员工端至少 `min-h-11`。
@@ -243,7 +246,7 @@ AMS 是单人自用的企业后台（员工/部门/考勤/合同/审批/文档/�
 - 公开页：`src/pages/Claim/index.tsx`、`src/pages/Login.tsx`
 - 门户：`src/pages/MyPortal/index.tsx`（底部 Tab ↔ 左栏）
 - 后台外壳：`src/components/layout/Layout.tsx` + `Header`（Sheet）+ `Sidebar`
-- 宽内容：`BusinessForms`（`min-w-0`）、`ContractTable`（首末列冻结）、`EmployeeRollupTable`（首列冻结）
+- 宽内容：`BusinessForms`（`min-w-0`）；表格统一走 `ui/Table`（`Table` 基座用于全站数据表，宽表见 `UserTable`、`ContractTable`、`EmployeeRollupTable`、`AnomaliesTable`、`AccountManager`，再加 `TableFrame` + `minWidth` + 冻结列原语）
 - 桌面提示：`src/pages/Seating/index.tsx`（<1024）
 
 **验证方法**：390 / 768 / 1280 各截一次；宽表滚 200px 后检查首列 x 不变；`page.scrollWidth` 必须等于视口。

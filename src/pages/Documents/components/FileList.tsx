@@ -5,6 +5,7 @@ import { Document } from '@/store/useDocumentStore';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/input';
+import { Table } from '@/components/ui/Table';
 import { formatFileSize } from '@/utils/fileUtils';
 import { withAuthToken } from '@/services/api';
 import { hasPermission } from '@/utils/permission';
@@ -102,7 +103,7 @@ export function FileList({
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
+            <Table minWidth="min-w-full" nowrapHeaders className="divide-y divide-zinc-200 dark:divide-zinc-700">
               <thead className="bg-zinc-50 dark:bg-zinc-800/50 sticky top-0 z-10">
                 <tr>
                   <th
@@ -195,7 +196,7 @@ export function FileList({
                   ))
                 )}
               </tbody>
-            </table>
+            </Table>
           </div>
         )}
       </div>

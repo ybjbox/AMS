@@ -19,6 +19,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { FailedState } from '../ui/FailedState';
 import { Button } from '../ui/button';
 import Badge from '../ui/Badge';
+import { Table, TableFrame, StickyCell, StickyHeaderCell } from '../ui/Table';
 
 interface UserTableProps {
   data: User[];
@@ -366,8 +367,8 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
 
           {/* 桌面端虚拟化表格（>= md），原有代码保持不变 */}
           <div className="hidden md:flex flex-1 flex-col min-h-0">
-            <div ref={parentRef} className="w-full h-full overflow-x-auto overflow-y-auto relative">
-              <table className="w-full min-w-200 text-left border-collapse relative [&_th]:whitespace-nowrap" style={{ width: table.getTotalSize() }} aria-label="员工列表">
+            <TableFrame ref={parentRef} className="h-full relative">
+              <Table className="relative" minWidth="min-w-200" nowrapHeaders aria-label="员工列表">
                 <caption className="sr-only">员工列表</caption>
                 <thead>
                   {table.getHeaderGroups().map((headerGroup) => (
@@ -375,30 +376,8 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
                       {headerGroup.headers.map((header, index) => {
                         const isFirst = index === 0;
                         const isLast = index === headerGroup.headers.length - 1;
-                        return (
-                          <th
-                            key={header.id}
-                            scope="col"
-                            aria-sort={
-                              header.column.getIsSorted() === 'asc'
-                                ? 'ascending'
-                                : header.column.getIsSorted() === 'desc'
-                                ? 'descending'
-                                : undefined
-                            }
-                            className={`group px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-100 dark:border-zinc-800 sticky top-0 z-20 ${
-                              isFirst
-                                ? 'left-0 z-30 shadow-sticky-left'
-                                : ''
-                            } ${
-                              isLast
-                                ? 'right-0 z-30 shadow-sticky-right'
-                                : ''
-                            }`}
-                            style={{
-                              width: header.getSize(),
-                            }}
-                          >
+                        const content = (
+                          <>
                             {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                             {header.column.getCanResize() && (
                               <div
@@ -409,6 +388,28 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
                                 }`}
                               />
                             )}
+                          </>
+                        );
+                        const headProps = {
+                          scope: 'col' as const,
+                          'aria-sort':
+                            header.column.getIsSorted() === 'asc'
+                              ? ('ascending' as const)
+                              : header.column.getIsSorted() === 'desc'
+                                ? ('descending' as const)
+                                : undefined,
+                          className: `group px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-100 dark:border-zinc-800 sticky top-0 ${
+                            isFirst || isLast ? '' : 'z-20'
+                          }`,
+                          style: { width: header.getSize() },
+                        };
+                        return isFirst || isLast ? (
+                          <StickyHeaderCell key={header.id} side={isFirst ? 'left' : 'right'} {...headProps}>
+                            {content}
+                          </StickyHeaderCell>
+                        ) : (
+                          <th key={header.id} {...headProps}>
+                            {content}
                           </th>
                         );
                       })}
@@ -442,25 +443,23 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
                         {row.getVisibleCells().map((cell, index) => {
                           const isFirst = index === 0;
                           const isLast = index === row.getVisibleCells().length - 1;
-                          return (
-                            <td
-                              key={cell.id}
-                              className={`px-4 whitespace-nowrap text-sm bg-white dark:bg-zinc-800 group-hover/row:bg-zinc-50/80 dark:group-hover/row:bg-zinc-700/30 transition-colors ${
-                                isFirst
-                                  ? 'sticky left-0 z-10 shadow-sticky-left'
-                                  : ''
-                              } ${
-                                isLast
-                                  ? 'sticky right-0 z-10 shadow-sticky-right'
-                                  : ''
-                              } border-b border-zinc-50 dark:border-zinc-800/50`}
-                              style={{
-                                width: cell.column.getSize(),
-                                minWidth: cell.column.getSize(),
-                                height: '52px',
-                              }}
-                            >
+                          const cellProps = {
+                            className: `px-4 whitespace-nowrap text-sm bg-white dark:bg-zinc-800 group-hover/row:bg-zinc-50/80 dark:group-hover/row:bg-zinc-700/30 transition-colors border-b border-zinc-50 dark:border-zinc-800/50`,
+                            style: {
+                              width: cell.column.getSize(),
+                              minWidth: cell.column.getSize(),
+                              height: '52px',
+                            },
+                          };
+                          return isFirst || isLast ? (
+                            <StickyCell key={cell.id} side={isFirst ? 'left' : 'right'} {...cellProps}>
                               <div className={`flex items-center h-full ${isLast ? 'justify-end' : ''}`}>
+                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                              </div>
+                            </StickyCell>
+                          ) : (
+                            <td key={cell.id} {...cellProps}>
+                              <div className="flex items-center h-full">
                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
                               </div>
                             </td>
@@ -475,8 +474,8 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
                     </tr>
                   )}
                 </tbody>
-              </table>
-            </div>
+              </Table>
+            </TableFrame>
           </div>
         </>
       )}

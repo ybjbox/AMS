@@ -49,13 +49,13 @@ export function Pagination({
       )}
     >
       {/* 桌面端 */}
-      <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+      <div className="hidden sm:flex sm:flex-1 sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-2">
         <p className="text-sm text-zinc-600 dark:text-zinc-300 tabular-nums">
           显示第 <span className="font-medium">{start}</span> 到{' '}
           <span className="font-medium">{end}</span> 条，共{' '}
           <span className="font-medium">{totalItems}</span> 条记录
         </p>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 sm:ml-auto">
           {/* 每页条数选择器（传了回调才显示） */}
           {onItemsPerPageChange && (
             <div className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
@@ -66,7 +66,7 @@ export function Pagination({
                   if (v != null) onItemsPerPageChange(Number(v));
                 }}
               >
-                <SelectTrigger size="sm" aria-label="每页显示条数" className="w-14 justify-center tabular-nums">
+                <SelectTrigger size="sm" aria-label="每页显示条数" className="min-w-14 justify-center tabular-nums">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

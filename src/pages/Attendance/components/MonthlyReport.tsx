@@ -4,6 +4,7 @@ import { CalendarDays, ChevronDown, ClipboardCheck, Download, FileSpreadsheet, R
 import { toast } from 'sonner';
 import { FailedState } from '@/components/ui/FailedState';
 import { Input } from '@/components/ui/input';
+import { Table } from '@/components/ui/Table';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -244,7 +245,7 @@ export default function MonthlyReport() {
                 : `${month} 暂无打卡数据`}
           </div>
         ) : (
-          <table className="w-full text-left text-sm" aria-label="月度考勤汇总">
+          <Table className="text-sm" aria-label="月度考勤汇总">
             <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs text-muted-foreground">
               <tr>
                 <th className="px-4 py-2.5 font-medium">工号</th>
@@ -304,7 +305,7 @@ export default function MonthlyReport() {
                 <td className="px-4 py-2.5 text-right font-semibold text-zinc-700 dark:text-zinc-200 tabular-nums">{totals.missingCount}</td>
               </tr>
             </tfoot>
-          </table>
+          </Table>
         )}
       </div>
     </div>

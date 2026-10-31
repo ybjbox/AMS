@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/Badge';
 import type { BadgeVariant } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/input';
+import { Table } from '@/components/ui/Table';
 import { useConfirm } from '@/hooks/useConfirm';
 import { reportWrite } from '@/store/saveFailure';
 import { useAttendanceStore } from '@/store/useAttendanceStore';
@@ -264,7 +265,7 @@ export default function EmployeePunchDialog({
         />
       ) : (
         <div className="modal-scroll-52 overflow-y-auto">
-          <table className="w-full text-left text-sm">
+          <Table className="text-sm">
             <caption className="sr-only">{employee.employeeName}的每日打卡记录</caption>
             <tbody>
               {scoped.map((g) => {
@@ -385,7 +386,7 @@ export default function EmployeePunchDialog({
                 );
               })}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
     </BaseModal>

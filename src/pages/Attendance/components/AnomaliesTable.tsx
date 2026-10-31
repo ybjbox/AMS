@@ -6,6 +6,7 @@ import { FailedState } from '@/components/ui/FailedState';
 import { AlertTriangle, ArrowUpDown, ChevronDown, ChevronUp, SearchX, ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import type { BadgeVariant } from '@/components/ui/Badge';
+import { Table, TableFrame } from '@/components/ui/Table';
 import CoverageBanner from './CoverageBanner';
 import { useAttendanceStore } from '@/store/useAttendanceStore';
 import type { Anomaly } from '@/store/useAttendanceStore';
@@ -139,8 +140,8 @@ export default function AnomaliesTable({
           />
         </div>
       ) : (
-        <div className="overflow-x-auto border border-zinc-100 dark:border-zinc-800 rounded-2xl">
-          <table className="min-w-225 w-full divide-y divide-zinc-100 dark:divide-zinc-800">
+        <TableFrame className="border border-zinc-100 dark:border-zinc-800 rounded-2xl">
+          <Table minWidth="min-w-225" nowrapHeaders className="divide-y divide-zinc-100 dark:divide-zinc-800">
             <thead className="bg-zinc-50/50 dark:bg-zinc-800/50">
               <tr>
                 <th scope="col" className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -256,13 +257,13 @@ export default function AnomaliesTable({
                 );
               })}
             </tbody>
-          </table>
+          </Table>
           {filterActive && (
             <p className="px-4 py-2 text-2xs tabular-nums text-muted-foreground">
               筛选出 {anomalies.length} / {totalCount} 条异常
             </p>
           )}
-        </div>
+        </TableFrame>
       )}
     </div>
   );

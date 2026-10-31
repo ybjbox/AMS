@@ -1,4 +1,5 @@
 import { Pressable } from '@/components/ui/Pressable';
+import { Table } from '@/components/ui/Table';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Activity, Database, RefreshCw, Server, AlertTriangle, Clock } from 'lucide-react';
 import { notifySaveFailure } from '@/store/saveFailure';
@@ -147,7 +148,7 @@ export default function DiagnosticsPanel() {
         </div>
         <div className="flex-1 min-h-0 overflow-auto" tabIndex={0} role="region" aria-label="最近异常请求（可滚动）">
           {data && data.recent.length > 0 ? (
-            <table className="w-full text-left text-sm" aria-label="最近异常请求">
+            <Table className="text-sm" aria-label="最近异常请求">
               <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs text-muted-foreground">
                 <tr>
                   <th className="px-3 py-2 font-medium whitespace-nowrap">时间</th>
@@ -178,7 +179,7 @@ export default function DiagnosticsPanel() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </Table>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-sm text-muted-foreground py-12">
               <Activity className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-3" aria-hidden="true" />

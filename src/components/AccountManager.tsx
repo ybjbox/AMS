@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/Badge';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableFrame } from '@/components/ui/Table';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useEmployeeStore } from '@/store/useEmployeeStore';
 import { useUserStore } from '@/store/useUserStore';
@@ -326,8 +327,8 @@ export default function AccountManager() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto">
-          <table className="w-full min-w-215 text-left border-collapse">
+        <TableFrame className="flex-1">
+          <Table minWidth="min-w-215" nowrapHeaders>
             <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 font-medium">账号</th>
@@ -434,8 +435,8 @@ export default function AccountManager() {
                 </tr>
               )}
             </tbody>
-          </table>
-        </div>
+          </Table>
+        </TableFrame>
       </div>
 
       <p className="mt-3 text-xs text-muted-foreground leading-relaxed">

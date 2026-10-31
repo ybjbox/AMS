@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FailedState } from '@/components/ui/FailedState';
+import { Table, TableFrame } from '@/components/ui/Table';
 import { useConfirm } from '@/hooks/useConfirm';
 import { SystemRole } from '@/types';
 import {
@@ -140,8 +141,8 @@ export default function RolePermissionsPanel() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div className="flex h-full min-h-0 flex-col gap-4 p-6">
+      <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="flex items-center gap-2 text-lg font-medium text-zinc-900 dark:text-white">
             <ShieldCheck className="size-5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
@@ -163,20 +164,20 @@ export default function RolePermissionsPanel() {
       </div>
 
       {saveError && (
-        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-900/15 dark:text-red-300">
+        <div role="alert" className="shrink-0 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-900/15 dark:text-red-300">
           {saveError}
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-zinc-200/70 dark:border-zinc-700/60">
-        <table className="w-full min-w-165 text-sm" aria-label="角色能力矩阵">
-          <thead className="bg-zinc-50/80 dark:bg-zinc-800/60">
+      <TableFrame className="min-h-0 flex-1 rounded-xl border border-zinc-200/70 dark:border-zinc-700/60">
+        <Table minWidth="min-w-165" nowrapHeaders className="text-sm" aria-label="角色能力矩阵">
+          <thead className="bg-zinc-50/80 dark:bg-zinc-800/60 sticky top-0 z-10">
             <tr>
-              <th scope="col" className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">
+              <th scope="col" className="w-1/3 px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">
                 能力
               </th>
               {ROLES.map((role) => (
-                <th key={role} scope="col" className="w-20 px-4 py-2.5 text-center text-xs font-medium text-muted-foreground">
+                <th key={role} scope="col" className="w-1/6 px-4 py-2.5 text-center text-xs font-medium text-muted-foreground">
                   {ROLE_LABEL[role]}
                 </th>
               ))}
@@ -240,10 +241,10 @@ export default function RolePermissionsPanel() {
               );
             })}
           </tbody>
-        </table>
-      </div>
+        </Table>
+      </TableFrame>
 
-      <div className="rounded-xl border border-zinc-200/70 bg-zinc-50/70 p-4 dark:border-zinc-700/60 dark:bg-zinc-900/40">
+      <div className="shrink-0 rounded-xl border border-zinc-200/70 bg-zinc-50/70 p-4 dark:border-zinc-700/60 dark:bg-zinc-900/40">
         <p className="text-xs font-medium text-zinc-800 dark:text-zinc-100">安全硬编码（不进入矩阵）</p>
         <p className="mt-1 text-2xs leading-relaxed text-muted-foreground">
           {matrix.hardcoded.join(' · ')}

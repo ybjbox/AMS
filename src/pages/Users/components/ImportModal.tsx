@@ -4,6 +4,7 @@ import { Download, FileSpreadsheet, UploadCloud, CheckCircle2, AlertCircle, Rota
 import { toast } from 'sonner';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Button } from '@/components/ui/button';
+import { Table } from '@/components/ui/Table';
 import { withAuthToken } from '@/services/api';
 import {
   previewImport,
@@ -197,7 +198,7 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
           </div>
 
           <div className="modal-scroll-45 overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
-            <table className="w-full text-left text-sm" aria-label="导入预览">
+            <Table className="text-sm" aria-label="导入预览">
               <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs text-muted-foreground">
                 <tr>
                   <th className="px-3 py-2 font-medium">行</th>
@@ -239,7 +240,7 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
                   );
                 })}
               </tbody>
-            </table>
+            </Table>
           </div>
 
           <div className="flex items-center justify-end gap-3">

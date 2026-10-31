@@ -6,6 +6,7 @@ import { FailedState } from '@/components/ui/FailedState';
 import { AlertTriangle, ArrowUpDown, ChevronUp, ChevronDown, FileSpreadsheet, SearchX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/Badge';
+import { Table, TableFrame, StickyCell, StickyHeaderCell } from '@/components/ui/Table';
 import { cn } from '@/lib/utils';
 import { useConfirm } from '@/hooks/useConfirm';
 import EmployeePunchDialog from './EmployeePunchDialog';
@@ -184,41 +185,50 @@ export default function EmployeeRollupTable({
           }
         />
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-180 w-full divide-y divide-zinc-100 dark:divide-zinc-800">
+        <TableFrame>
+          <Table minWidth="min-w-180" nowrapHeaders className="divide-y divide-zinc-100 dark:divide-zinc-800">
             <thead className="bg-zinc-50/50 dark:bg-zinc-800/50">
               <tr>
                 {COLUMNS.map((c, i) => {
                   const sortable = c.key !== null;
                   const isActive = sortable && sortKey === c.key;
-                  return (
-                    <th
-                      key={c.label}
-                      scope="col"
-                      aria-sort={isActive ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
-                      className={cn(
-                        'px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider',
-                        c.align === 'right' ? 'text-right' : 'text-left',
-                        i === 0 && 'sticky left-0 z-20 bg-zinc-50/50 shadow-sticky-left dark:bg-zinc-800/50'
-                      )}
-                    >
-                      {sortable && c.key ? (
-                        <Pressable
-                          type="button"
-                          onClick={() => toggleSort(c.key!)}
-                          className={cn(
-                            'inline-flex items-center gap-1 rounded transition-colors duration-quick hover:text-zinc-900 dark:hover:text-zinc-100',
-                            isActive && 'text-zinc-900 dark:text-white'
-                          )}
-                        >
-                          {c.align === 'right' && isActive && <SortIcon dir={sortDir} />}
-                          {c.label}
-                          {!isActive && <ArrowUpDown className="h-3 w-3 opacity-40" aria-hidden="true" />}
-                          {c.align !== 'right' && isActive && <SortIcon dir={sortDir} />}
-                        </Pressable>
-                      ) : (
-                        c.label
-                      )}
+                  const content =
+                    sortable && c.key ? (
+                      <Pressable
+                        type="button"
+                        onClick={() => toggleSort(c.key!)}
+                        className={cn(
+                          'inline-flex items-center gap-1 rounded transition-colors duration-quick hover:text-zinc-900 dark:hover:text-zinc-100',
+                          isActive && 'text-zinc-900 dark:text-white'
+                        )}
+                      >
+                        {c.align === 'right' && isActive && <SortIcon dir={sortDir} />}
+                        {c.label}
+                        {!isActive && <ArrowUpDown className="h-3 w-3 opacity-40" aria-hidden="true" />}
+                        {c.align !== 'right' && isActive && <SortIcon dir={sortDir} />}
+                      </Pressable>
+                    ) : (
+                      c.label
+                    );
+                  const headProps = {
+                    scope: 'col' as const,
+                    'aria-sort': (isActive ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none') as
+                      | 'ascending'
+                      | 'descending'
+                      | 'none',
+                    className: cn(
+                      'px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider',
+                      c.align === 'right' ? 'text-right' : 'text-left',
+                      i === 0 && 'bg-zinc-50/50 dark:bg-zinc-800/50'
+                    ),
+                  };
+                  return i === 0 ? (
+                    <StickyHeaderCell key={c.label} side="left" {...headProps}>
+                      {content}
+                    </StickyHeaderCell>
+                  ) : (
+                    <th key={c.label} {...headProps}>
+                      {content}
                     </th>
                   );
                 })}
@@ -231,7 +241,9 @@ export default function EmployeeRollupTable({
             </tbody>
             <tfoot className="bg-zinc-50/50 dark:bg-zinc-800/50">
               <tr className="text-xs font-medium text-zinc-700 dark:text-zinc-200">
-                <td className="sticky left-0 z-10 bg-zinc-50/50 px-4 py-2 shadow-sticky-left dark:bg-zinc-800/50">合计 {totals.employees} 人</td>
+                <StickyCell side="left" className="bg-zinc-50/50 px-4 py-2 dark:bg-zinc-800/50">
+                  合计 {totals.employees} 人
+                </StickyCell>
                 <td className="px-4 py-2 text-muted-foreground">—</td>
                 <td className="px-4 py-2 text-right tabular-nums">{totals.records}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{totals.days}</td>
@@ -239,8 +251,8 @@ export default function EmployeeRollupTable({
                 <td className="px-4 py-2 text-muted-foreground">—</td>
               </tr>
             </tfoot>
-          </table>
-        </div>
+          </Table>
+        </TableFrame>
       )}
 
       <EmployeePunchDialog
@@ -280,7 +292,10 @@ function Row({
   const stale = idle !== null && idle > 7;
   return (
     <tr className="hover:bg-zinc-50/80 dark:hover:bg-zinc-700/30 transition-colors">
-      <td className="sticky left-0 z-10 whitespace-nowrap bg-white px-4 py-2 shadow-sticky-left transition-colors hover:bg-zinc-50/80 dark:bg-zinc-800 dark:hover:bg-zinc-700/30">
+      <StickyCell
+        side="left"
+        className="whitespace-nowrap bg-white px-4 py-2 transition-colors hover:bg-zinc-50/80 dark:bg-zinc-800 dark:hover:bg-zinc-700/30"
+      >
         <Pressable
           type="button"
           onClick={onOpen}
@@ -290,7 +305,7 @@ function Row({
         >
           {row.employeeName}
         </Pressable>
-      </td>
+      </StickyCell>
       <td className="px-4 py-2 whitespace-nowrap text-sm text-muted-foreground tabular-nums">{row.employeeId}</td>
       <td className="px-4 py-2 whitespace-nowrap text-right text-sm text-zinc-900 tabular-nums dark:text-zinc-100">
         {row.records}

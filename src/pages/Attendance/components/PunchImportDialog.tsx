@@ -4,6 +4,7 @@ import { AlertCircle, CheckCircle2, Download, RotateCcw, UploadCloud } from 'luc
 import { toast } from 'sonner';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Button } from '@/components/ui/button';
+import { Table } from '@/components/ui/Table';
 import {
   commitPunchImport,
   getPunchImportJob,
@@ -317,7 +318,7 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
           </div>
 
           <div className="modal-scroll-45 overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
-            <table className="w-full text-left text-sm" aria-label="导入预览">
+            <Table className="text-sm" aria-label="导入预览">
               <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs text-muted-foreground">
                 <tr>
                   <th className="w-9 px-3 py-2">
@@ -404,7 +405,7 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
                   })
                 )}
               </tbody>
-            </table>
+            </Table>
           </div>
 
           {counts && (

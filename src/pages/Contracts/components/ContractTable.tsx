@@ -5,6 +5,7 @@ import { User } from '@/types';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { FailedState } from '@/components/ui/FailedState';
 import Badge from '@/components/ui/Badge';
+import { Table, TableFrame, StickyCell, StickyHeaderCell } from '@/components/ui/Table';
 import { expiryBucket } from '../utils/expiryBucket';
 import { Eye, Printer, FileText } from 'lucide-react';
 
@@ -28,16 +29,17 @@ export const ContractTable = ({ filteredUsers, loadError, onRetry, onPreview, on
 
   return (
     <div className="relative flex-1 rounded-b-xl border-t border-zinc-200 dark:border-zinc-700 h-full min-h-0">
-      <div ref={parentRef} className="h-full overflow-x-auto overflow-y-auto">
-        <table className="w-full min-w-200 text-left border-collapse relative [&_th]:whitespace-nowrap" aria-label="合同列表">
+      <TableFrame ref={parentRef} className="h-full">
+        <Table className="relative" minWidth="min-w-200" nowrapHeaders aria-label="合同列表">
           <thead className="bg-zinc-50 dark:bg-zinc-900/50 sticky top-0 z-20">
             <tr>
-              <th
+              <StickyHeaderCell
+                side="left"
                 scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider sticky left-0 z-30 shadow-sticky-left bg-zinc-50 dark:bg-zinc-900/50"
+                className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-zinc-50 dark:bg-zinc-900/50"
               >
                 工号
-              </th>
+              </StickyHeaderCell>
               <th
                 scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-zinc-50 dark:bg-zinc-900/50"
@@ -68,12 +70,13 @@ export const ContractTable = ({ filteredUsers, loadError, onRetry, onPreview, on
               >
                 到期日期
               </th>
-              <th
+              <StickyHeaderCell
+                side="right"
                 scope="col"
-                className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider sticky right-0 z-30 shadow-sticky-right bg-zinc-50 dark:bg-zinc-900/50"
+                className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider bg-zinc-50 dark:bg-zinc-900/50"
               >
                 操作
-              </th>
+              </StickyHeaderCell>
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
@@ -93,11 +96,14 @@ export const ContractTable = ({ filteredUsers, loadError, onRetry, onPreview, on
                   return (
                     <tr
                       key={user.id}
-                      className="w-full hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors"
+                      className="group w-full hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-900 dark:text-white sticky left-0 z-10 bg-white dark:bg-zinc-800 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-700/50 shadow-sticky-left">
+                      <StickyCell
+                        side="left"
+                        className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-900 dark:text-white bg-white dark:bg-zinc-800 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-700/50"
+                      >
                         {user.id}
-                      </td>
+                      </StickyCell>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {user.name}
                       </td>
@@ -118,7 +124,10 @@ export const ContractTable = ({ filteredUsers, loadError, onRetry, onPreview, on
                           <span className="ml-2 text-xs text-amber-700 dark:text-amber-400">({user.daysToExpiry}天后)</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium sticky right-0 z-10 bg-white dark:bg-zinc-800 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-700/50 shadow-sticky-right">
+                      <StickyCell
+                        side="right"
+                        className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium bg-white dark:bg-zinc-800 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-700/50"
+                      >
                         <div className="flex items-center justify-end space-x-3">
                           <Pressable
                             data-userid={user.id}
@@ -137,7 +146,7 @@ export const ContractTable = ({ filteredUsers, loadError, onRetry, onPreview, on
                             打印
                           </Pressable>
                         </div>
-                      </td>
+                      </StickyCell>
                     </tr>
                   );
                 })}
@@ -163,8 +172,8 @@ export const ContractTable = ({ filteredUsers, loadError, onRetry, onPreview, on
               </tr>
             )}
           </tbody>
-        </table>
-      </div>
+        </Table>
+      </TableFrame>
     </div>
   );
 };

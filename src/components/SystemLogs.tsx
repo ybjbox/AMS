@@ -23,6 +23,7 @@ import { describeSaveError } from '@/store/saveFailureCore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Table } from '@/components/ui/Table';
 import { EmptyState } from './ui/EmptyState';
 import { formatDateTime } from '@/utils/dateUtils';
 
@@ -288,7 +289,7 @@ export default function SystemLogs() {
               <EmptyState title="暂无日志记录" description="没有找到符合条件的审计记录" icon={Info} />
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
+            <Table minWidth="min-w-full" nowrapHeaders className="divide-y divide-zinc-200 dark:divide-zinc-700">
               <thead className="bg-zinc-50 dark:bg-zinc-900/50 sticky top-0 z-10">
                 <tr>
                   {['时间', '等级', '分类 / 操作', '操作人', '对象', '结果', '详情'].map((h) => (
@@ -375,7 +376,7 @@ export default function SystemLogs() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </Table>
           )}
         </div>
 

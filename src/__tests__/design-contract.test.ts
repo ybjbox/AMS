@@ -117,6 +117,16 @@ describe('设计契约：辅助文字与暗色表面', () => {
       .flatMap((f) => linesWith(f, PAIR, isIconLine));
     expect(bad, `应改用 text-muted-foreground：\n${bad.join('\n')}`).toEqual([]);
   });
+
+  it('首末列冻结只走 ui/Table 原语', () => {
+    // sticky 的定位 / 层级 / 阴影必须三件套同步；各表各写一套就会出现
+    // 「表头 z-20、单元格 z-10、漏了阴影」这类漂移。原语在 ui/Table.tsx。
+    const STICKY_ALLOWED = /[/\\]components[/\\]ui[/\\]Table\.tsx$/;
+    const bad = files
+      .filter((f) => !STICKY_ALLOWED.test(f) && !f.includes('__tests__'))
+      .flatMap((f) => linesWith(f, /shadow-sticky-(left|right)/));
+    expect(bad, `宽表冻结列请用 ui/Table 的 StickyHeaderCell / StickyCell：\n${bad.join('\n')}`).toEqual([]);
+  });
 });
 
 /**

@@ -57,4 +57,5 @@ Tailwind v4 默认扫描整个项目，**包括 `.md` 和 `.css` 里的字符串
 
 - **新代码不得新增**任意 Tailwind 值（`w-[…]`）、px 魔法数、内联样式、硬编码颜色。
 - 标准动作按钮用 `ui/Button`；卡片/页签/筛选 chip 等复合交互用 `ui/Pressable`；表单用 `ui/Input` / `ui/Textarea`，不要再写裸 `<button>` / `<input>`。
+- 数据表用 `ui/Table`（普通表只需 `Table`；宽表再加 `TableFrame` / `minWidth` / `StickyHeaderCell`、`StickyCell` 做首末列冻结）；不要再手写 sticky + z-index + shadow 组合，也不要把列宽总和写死成 `<table>` 的像素宽度。
 - 打印/导出、虚拟滚动、图表数据驱动尺寸、用户自定义颜色属于合法例外，必须在 `design.qa.yaml` 的排除项里写明理由，不能靠注释口头豁免。
