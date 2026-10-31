@@ -1,4 +1,3 @@
-import { Pressable } from '@/components/ui/Pressable';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { printReactTree } from '@/utils/printWindow';
@@ -7,6 +6,7 @@ import { useEmployeeStore } from '@/store/useEmployeeStore';
 import { useDepartments } from '@/store/useDepartmentStore';
 import { Armchair, Monitor, RefreshCw } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Button } from '@/components/ui/button';
 import { User } from '@/types';
 
 import { SeatingToolbar } from './components/SeatingToolbar';
@@ -224,26 +224,24 @@ export default function Seating() {
             <p className="page-subtitle">自动按部门与职位优先级生成方案，可拖拽微调；座次顺序即打印序号</p>
           </div>
           <div className="hidden lg:block">
-            <Pressable
-              onClick={runAutoArrange}
-              aria-label="自动排座"
-              className="btn-primary max-sm:min-h-11"
-            >
-              <RefreshCw className="w-4 h-4 sm:mr-2" />
+            <Button onClick={runAutoArrange} aria-label="自动排座" size="page">
+              <RefreshCw className="w-4 h-4" />
               <span className="hidden sm:inline">自动排座</span>
-            </Pressable>
+            </Button>
           </div>
         </div>
         <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-50/80 px-3 py-3 text-xs leading-relaxed text-amber-800 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300 lg:hidden">
           <Monitor className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <div className="min-w-0 space-y-3">
             <p>排座画布需要拖拽操作，建议在电脑上使用。手机上可以先查看或载入已保存的方案。</p>
-            <Pressable
+            <Button
+              variant="outline"
+              size="inline"
               onClick={() => setIsPlansModalOpen(true)}
-              className="btn-secondary min-h-11 w-full sm:w-auto"
+              className="w-full sm:w-auto"
             >
               查看已保存方案
-            </Pressable>
+            </Button>
           </div>
         </div>
 
@@ -268,18 +266,12 @@ export default function Seating() {
               （{seatingPlans.restorable.payload?.tables?.length ?? 0} 桌 · {seatingPlans.restorable.updatedAt}），当前画布是空的。
             </p>
             <div className="flex items-center gap-2 shrink-0">
-              <Pressable
-                onClick={() => seatingPlans.restore(seatingPlans.restorable!)}
-                className="btn-primary px-3 py-1.5 text-sm"
-              >
+              <Button size="inline" onClick={() => seatingPlans.restore(seatingPlans.restorable!)}>
                 载入该方案
-              </Pressable>
-              <Pressable
-                onClick={() => seatingPlans.refresh()}
-                className="btn-secondary px-3 py-1.5 text-sm"
-              >
+              </Button>
+              <Button variant="outline" size="inline" onClick={() => seatingPlans.refresh()}>
                 刷新列表
-              </Pressable>
+              </Button>
             </div>
           </div>
         )}
@@ -320,9 +312,9 @@ export default function Seating() {
             title="准备好开始排座了吗？"
             description="点击右上角的“自动排座”按钮，系统将根据员工的部门和职位优先级为您生成最佳方案；生成后可拖拽微调。"
             action={
-              <Pressable onClick={runAutoArrange} className="btn-primary">
+              <Button size="page" onClick={runAutoArrange}>
                 自动排座
-              </Pressable>
+              </Button>
             }
           />
         )}

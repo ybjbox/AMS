@@ -1,4 +1,5 @@
 import { Pressable } from '@/components/ui/Pressable';
+import { Button } from '@/components/ui/button';
 import React from 'react';
 import {
   LayoutGrid,
@@ -52,21 +53,24 @@ export function SeatingToolbar({
           </Pressable>
         </div>
         {hasTables && (
-          <Pressable
+          <Button
+            variant="danger-outline"
+            size="toolbar"
             onClick={handleClear}
             aria-label="重置排座"
-            className="btn-danger max-sm:min-h-11"
           >
-            <Trash2 className="w-4 h-4 sm:mr-2" />
+            <Trash2 className="w-4 h-4" />
             <span className="hidden sm:inline">重置</span>
-          </Pressable>
+          </Button>
         )}
-        <Pressable
+        <Button
+          variant="outline"
+          size="toolbar"
           onClick={() => setIsPlansModalOpen(true)}
           aria-label="排座方案"
-          className="btn-secondary relative max-sm:min-h-11"
+          className="relative"
         >
-          <FolderClock className="w-4 h-4 sm:mr-2" />
+          <FolderClock className="w-4 h-4" />
           <span className="hidden sm:inline">方案</span>
           {unsaved && (
             <span
@@ -74,26 +78,28 @@ export function SeatingToolbar({
               title="当前排座还有未保存的改动"
             />
           )}
-        </Pressable>
-        <Pressable
+        </Button>
+        <Button
+          variant="outline"
+          size="toolbar"
           onClick={() => setIsParticipantModalOpen(true)}
           aria-label={`选择人员，已选 ${selectedCount} 人`}
-          className="btn-secondary max-sm:min-h-11"
         >
-          <Users className="w-4 h-4 sm:mr-2" />
+          <Users className="w-4 h-4" />
           <span className="hidden sm:inline">选择人员 ({selectedCount})</span>
           <span className="sm:hidden">({selectedCount})</span>
-        </Pressable>
+        </Button>
         {/* 一个入口：弹窗里就是「左设置 + 右预览 + 打印」，不再单列一个跳过预览直接出纸的按钮 */}
-        <Pressable
+        <Button
+          variant="outline"
+          size="toolbar"
           onClick={() => setIsPrintModalOpen(true)}
           disabled={!hasTables}
           aria-label="打印台卡"
-          className="btn-secondary disabled:opacity-50 max-sm:min-h-11"
         >
-          <Printer className="w-4 h-4 sm:mr-2" />
+          <Printer className="w-4 h-4" />
           <span className="hidden sm:inline">打印台卡</span>
-        </Pressable>
+        </Button>
       </div>
   );
 }

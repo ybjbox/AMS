@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { FailedState } from '@/components/ui/FailedState';
 import { useDepartmentsLogic } from './hooks/useDepartments';
 import { DepartmentTree } from './components/DepartmentTree';
+import { Button } from '@/components/ui/button';
 import { RoleList } from './components/RoleList';
 import { DepartmentModal } from './components/DepartmentModal';
 import { RoleModal } from './components/RoleModal';
@@ -47,13 +48,10 @@ export default function Departments() {
               </h2>
             </div>
             {canManage && (
-              <Pressable
-                onClick={logic.handleAddRoot}
-                className="btn-primary whitespace-nowrap shrink-0"
-              >
-                <Plus className="h-4 w-4 mr-1" />
+              <Button size="toolbar" onClick={logic.handleAddRoot} className="shrink-0">
+                <Plus className="h-4 w-4" />
                 新增一级部门
-              </Pressable>
+              </Button>
             )}
           </div>
           <div className="p-6 flex-1 overflow-y-auto">
@@ -87,13 +85,10 @@ export default function Departments() {
                     /* 空态不能承诺做不到的事：写操作要 departments:manage，
                        没有该能力的人点「立即创建」只会吃一次 403（2026-09-26 审查 M7） */
                     canManage ? (
-                      <Pressable
-                        onClick={logic.handleAddRoot}
-                        className="btn-primary"
-                      >
-                        <Plus className="w-4 h-4 sm:mr-2" />
+                      <Button size="page" onClick={logic.handleAddRoot}>
+                        <Plus className="w-4 h-4" />
                         <span className="hidden sm:inline">立即创建</span>
-                      </Pressable>
+                      </Button>
                     ) : undefined
                   }
                 />

@@ -52,13 +52,10 @@ export function DocumentSetGrid({
             description={canManageDocs ? '点击右上角新建套件，将常用文件组合在一起' : '暂无文件套件'}
             icon={Folder}
             action={canManageDocs ? (
-              <Pressable
-                onClick={handleCreateSetClick}
-                className="btn-primary"
-              >
-                <Plus className="w-4 h-4 mr-2" />
+              <Button size="page" onClick={handleCreateSetClick}>
+                <Plus className="w-4 h-4" />
                 立即创建
-              </Pressable>
+              </Button>
             ) : undefined}
           />
         </div>

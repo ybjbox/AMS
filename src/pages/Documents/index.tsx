@@ -1,5 +1,6 @@
 import { Pressable } from '@/components/ui/Pressable';
 import PageContainer from "@/components/PageContainer";
+import { Button } from '@/components/ui/button';
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Plus, Upload } from 'lucide-react';
 import { useBodyOverflow } from '@/hooks/useBodyOverflow';
@@ -141,25 +142,21 @@ export default function Documents() {
           {canManageDocs && (activeTab === 'files' ? (
             <>
               <input type="file" multiple className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
-              <Pressable
+              <Button
                 onClick={() => fileInputRef.current?.click()}
                 aria-label="上传文件"
-                className="btn-primary max-sm:min-h-11"
+                size="page"
                 disabled={isUploading}
               >
-                <Upload className="w-4 h-4 sm:mr-2" />
+                <Upload className="w-4 h-4" />
                 <span className="hidden sm:inline">{isUploading ? '上传中…' : '上传文件'}</span>
-              </Pressable>
+              </Button>
             </>
           ) : (
-            <Pressable
-              onClick={handleCreateSetClick}
-              aria-label="新建套件"
-              className="btn-primary max-sm:min-h-11"
-            >
-              <Plus className="w-4 h-4 sm:mr-2" />
+            <Button onClick={handleCreateSetClick} aria-label="新建套件" size="page">
+              <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">新建套件</span>
-            </Pressable>
+            </Button>
           ))}
         </div>
       </div>

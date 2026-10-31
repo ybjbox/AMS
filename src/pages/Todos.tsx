@@ -13,6 +13,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { todoApi } from '@/services/todoApi';
 import RenewContractModal from '@/pages/Users/components/RenewContractModal';
@@ -178,13 +179,10 @@ export default function Todos() {
             <h1 className="page-title">待办事项</h1>
             <p className="page-subtitle">管理您的日常任务及系统自动生成的提醒事项</p>
           </div>
-          <Pressable
-            onClick={() => setIsAdding(true)}
-            className="btn-primary"
-          >
-            <Plus className="w-4 h-4 mr-2" />
+          <Button size="page" onClick={() => setIsAdding(true)}>
+            <Plus className="w-4 h-4" />
             新建待办
-          </Pressable>
+          </Button>
         </div>
 
       {/*
@@ -221,12 +219,12 @@ export default function Todos() {
             已选 <span className="tabular-nums">{selectedIds.length}</span> 条
           </span>
           <div className="flex items-center gap-2">
-            <Pressable type="button" onClick={() => setSelectedIds([])} className="btn-secondary">
+            <Button variant="outline" size="inline" onClick={() => setSelectedIds([])}>
               取消
-            </Pressable>
-            <Pressable type="button" onClick={() => void handleBatchComplete()} className="btn-primary">
+            </Button>
+            <Button size="inline" onClick={() => void handleBatchComplete()}>
               批量完成
-            </Pressable>
+            </Button>
           </div>
         </div>
       )}
@@ -306,17 +304,14 @@ export default function Todos() {
             icon={ListTodo}
             action={
               only === 'all' ? (
-                <Pressable
-                  onClick={() => setIsAdding(true)}
-                  className="btn-primary"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
+                <Button size="page" onClick={() => setIsAdding(true)}>
+                  <Plus className="w-4 h-4" />
                   立即创建
-                </Pressable>
+                </Button>
               ) : (
-                <Pressable onClick={() => setOnly('all')} className="btn-secondary">
+                <Button variant="outline" size="inline" onClick={() => setOnly('all')}>
                   看全部
-                </Pressable>
+                </Button>
               )
             }
           />

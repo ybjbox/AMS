@@ -1,4 +1,3 @@
-import { Pressable } from '@/components/ui/Pressable';
 import { Permission } from "@/components/Permission";
 import PageContainer from "@/components/PageContainer";
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -20,6 +19,7 @@ import { useUserFilters } from './hooks/useUserFilters';
 import { useExport } from './hooks/useExport';
 import { Pagination } from '@/components/ui/Pagination';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { Button, buttonVariants } from '@/components/ui/button';
 import ImportModal from './components/ImportModal';
 import RenewContractModal from './components/RenewContractModal';
 import { RosterPrintTemplate, AddressBookPrintTemplate } from './components/PrintTemplates';
@@ -140,10 +140,13 @@ export default function Users() {
             <div className="toolbar">
               {/* 导出入口合并：通讯录 / 花名册收进一个下拉，减少顶部按钮数量 */}
               <DropdownMenu>
-                <DropdownMenuTrigger aria-label="导出" className="btn-secondary max-sm:min-h-11">
-                  <Download className="h-4 w-4 sm:mr-2" />
+                <DropdownMenuTrigger
+                  aria-label="导出"
+                  className={buttonVariants({ variant: 'outline', size: 'page' })}
+                >
+                  <Download className="h-4 w-4" />
                   <span className="hidden sm:inline">导出</span>
-                  <ChevronDown className="h-4 w-4 ml-1 hidden sm:block" />
+                  <ChevronDown className="h-4 w-4 hidden sm:block" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => setIsExportModalOpen(true)}>
@@ -157,24 +160,21 @@ export default function Users() {
                 </DropdownMenuContent>
               </DropdownMenu>
               <Permission code="users:manage">
-                <Pressable
+                <Button
+                  variant="outline"
+                  size="page"
                   onClick={() => setIsImportModalOpen(true)}
                   aria-label="批量导入"
-                  className="btn-secondary max-sm:min-h-11"
                 >
-                  <Upload className="h-4 w-4 sm:mr-2" />
+                  <Upload className="h-4 w-4" />
                   <span className="hidden sm:inline">批量导入</span>
-                </Pressable>
+                </Button>
               </Permission>
               <Permission code="users:manage">
-                <Pressable
-                  onClick={handleAdd}
-                  aria-label="新增员工"
-                  className="btn-primary max-sm:min-h-11"
-                >
-                  <Plus className="h-4 w-4 sm:mr-2" />
+                <Button size="page" onClick={handleAdd} aria-label="新增员工">
+                  <Plus className="h-4 w-4" />
                   <span className="hidden sm:inline">新增员工</span>
-                </Pressable>
+                </Button>
               </Permission>
             </div>
           </div>
