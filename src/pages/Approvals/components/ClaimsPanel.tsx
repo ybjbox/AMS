@@ -137,14 +137,14 @@ export default function ClaimsPanel({ onDecided }: { onDecided?: () => void }) {
               <Pressable
                 type="button"
                 onClick={() => setSelectedId(r.id)}
-                className={`relative w-full text-left px-3 py-2.5 transition-colors duration-200 ${
+                className={`relative w-full text-left px-3 py-2.5 transition-colors duration-quick ${
                   r.id === selectedId ? 'bg-brand-50 dark:bg-brand-500/10' : 'hover:bg-zinc-50 dark:hover:bg-zinc-700/30'
                 }`}
                 aria-pressed={r.id === selectedId}
               >
                 <span
                   aria-hidden="true"
-                  className={`absolute inset-y-2 left-0 w-0.5 origin-center rounded-full bg-brand-600 transition-transform duration-200 dark:bg-brand-400 ${
+                  className={`absolute inset-y-2 left-0 w-0.5 origin-center rounded-full bg-brand-600 transition-transform duration-quick dark:bg-brand-400 ${
                     r.id === selectedId ? 'scale-y-100' : 'scale-y-0'
                   }`}
                 />

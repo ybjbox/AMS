@@ -46,7 +46,7 @@ export default function PrintTools() {
   return (
     <PageContainer
       width="none"
-      className="flex-1 min-h-0 space-y-4 animate-in fade-in duration-400 print:space-y-0"
+      className="flex-1 min-h-0 space-y-4 animate-in fade-in duration-slow print:space-y-0"
     >
       <div className="tab-group shrink-0 print:hidden" role="tablist" aria-label="打印工具">
         {PRINT_TOOL_TABS.map((tab) => {

@@ -32,7 +32,7 @@ export default function DepartmentAttendance({ stats, isLoading, size, onSizeCha
   );
 
   return (
-    <div className="card-base p-6 transition duration-250 hover:shadow-md">
+    <div className="card-base p-6 transition duration-fast hover:shadow-md">
       <div className="flex items-center justify-between mb-2 gap-3">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
           <Gauge className="w-4 h-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />
@@ -72,7 +72,7 @@ export default function DepartmentAttendance({ stats, isLoading, size, onSizeCha
                 </span>
                 <div className="flex-1 h-5 rounded-md bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
                   <div
-                    className={`h-full rounded-md transition-all duration-500 ${
+                    className={`h-full rounded-md transition-[width] duration-very-slow ${
                       r.rate >= 90 ? 'bg-emerald-500/85' : r.rate >= 75 ? 'bg-lime-400/85' : 'bg-amber-400/85'
                     }`}
                     style={{ width: `${Math.max(2, (r.rate / max) * 100)}%` }}

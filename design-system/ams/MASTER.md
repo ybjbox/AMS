@@ -278,6 +278,7 @@ AMS 是单人自用的企业后台（员工/部门/考勤/合同/审批/文档/�
 | `--duration-ambient` | 900ms | 一次性背景光晕入场（禁止循环） |
 
 - 开/关非对称是允许的（开 250 / 关 150 一类），别为"统一"把它抹平。
+- 时长已注册为 `duration-stagger / micro / quick / fast / medium / slow / very-slow / ambient` utility；功能代码只写语义类，**不写数字时长**（`duration-200/300` 不在令牌表内）。未显式声明时长/缓动的 `transition-*` 默认走 150ms + `ease-smooth-out`。
 - 缓动统一用 utility `ease-smooth-out`，禁止 `ease-[var(…)]` 任意值写法。
 - `prefers-reduced-motion: reduce` 已在 index.css 全局兜底（时长压到 0.01ms），新增动效不需要各自处理。
 - 登录 / 认领页背景光晕：一次性 900ms 淡入 + `translateY(18px) scale(0.82→1)`，首团延后 150ms、第二团延后 300ms；不做循环背景动效。
@@ -286,7 +287,7 @@ AMS 是单人自用的企业后台（员工/部门/考勤/合同/审批/文档/�
 
 v3 写的是「❌ 布局位移型 hover（scale/translate 导致 reflow）」—— 前提不成立：`transform` 走合成层，**不引起 reflow**。真实要防的是"改变布局盒/尺寸"和"无过渡的瞬变"。规则改为：
 
-- ✅ 卡片抬升统一用 `card-base card-lift`（= `transition-[box-shadow,transform] duration-250 hover:shadow-md hover:-translate-y-0.5`，位移 2px 封顶）。**不要内联重复这串**（已有契约测试挡）。
+- ✅ 卡片抬升统一用 `card-base card-lift`（= `transition-[box-shadow,transform] duration-fast hover:shadow-md hover:-translate-y-0.5`，位移 2px 封顶）。**不要内联重复这串**（已有契约测试挡）。
 - ✅ 图标可做 ≤1.1 的缩放强调（`group-hover:scale-110`），FAB 可用 `hover:scale-105 active:scale-95`。
 - ❌ 改变宽高/内边距/字号的 hover（真会造成 reflow）、无过渡的瞬变。
 

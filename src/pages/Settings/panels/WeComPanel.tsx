@@ -214,7 +214,7 @@ export default function WeComPanel() {
   const unclaimedBindings = bindings.filter((b) => !b.employeeId).length;
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-400 space-y-6">
+    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-slow space-y-6">
       <div>
         <h2 className="text-lg font-medium text-zinc-900 dark:text-white mb-1">企业微信打卡同步</h2>
         <p className={HINT_CLASS}>

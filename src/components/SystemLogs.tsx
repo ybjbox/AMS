@@ -144,7 +144,7 @@ export default function SystemLogs() {
   };
 
   return (
-    <div className="animate-in fade-in duration-400 h-full flex flex-col">
+    <div className="animate-in fade-in duration-slow h-full flex flex-col">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-lg font-medium text-zinc-900 dark:text-white">审计日志</h2>

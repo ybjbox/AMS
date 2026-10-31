@@ -277,7 +277,7 @@ export default function BusinessForms() {
   };
 
   return (
-    <PageContainer width="6xl" className="space-y-6 animate-in fade-in duration-400">
+    <PageContainer width="6xl" className="space-y-6 animate-in fade-in duration-slow">
       <div className="page-header shrink-0">
         <div>
           <h1 className="page-title">业务单据生成</h1>

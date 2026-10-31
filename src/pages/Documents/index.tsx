@@ -113,7 +113,7 @@ export default function Documents() {
   }, [documents, searchQuery, currentFolderId]);
 
   return (
-    <PageContainer className="space-y-6 animate-in fade-in duration-400">
+    <PageContainer className="space-y-6 animate-in fade-in duration-slow">
       <div className="page-header shrink-0">
         <div>
           <h1 className="page-title">常用文件</h1>

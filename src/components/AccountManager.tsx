@@ -251,7 +251,7 @@ export default function AccountManager() {
     query.trim() !== '' || roleFilter !== 'ALL' || bindingFilter !== 'ALL' || stateFilter !== 'ALL';
 
   return (
-    <div className="animate-in fade-in duration-400 h-full flex flex-col">
+    <div className="animate-in fade-in duration-slow h-full flex flex-col">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <h2 className="text-lg font-medium text-zinc-900 dark:text-white">账号管理</h2>

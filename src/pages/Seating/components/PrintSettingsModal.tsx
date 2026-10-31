@@ -426,7 +426,7 @@ export function PrintSettingsModal({
                   className="flex-shrink-0 relative"
                 >
                   <div
-                    className="absolute top-0 left-0 flex flex-col bg-white dark:bg-zinc-800 box-border break-inside-avoid shadow-lg transition-all duration-300 origin-top-left"
+                    className="absolute top-0 left-0 flex flex-col bg-white dark:bg-zinc-800 box-border break-inside-avoid shadow-lg transition-[width,min-height] duration-fast origin-top-left"
                     style={{
                       width: `${printSettings.cardWidth}mm`,
                       minHeight: `${printSettings.cardHeight}mm`,

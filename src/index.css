@@ -46,8 +46,8 @@ nav,
 main,
 .theme-transition {
   transition-property: color, background-color, border-color;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 200ms;
+  transition-timing-function: var(--ease-smooth-out);
+  transition-duration: var(--duration-fast);
 }
 
 /* 全局滚动条样式 */
@@ -268,7 +268,7 @@ main,
     rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white 
     outline-none focus:border-brand-600 dark:focus:border-brand-400 focus:ring-4 focus:ring-brand-600/20 dark:focus:ring-brand-400/20
     placeholder:text-zinc-400 dark:placeholder:text-zinc-500
-    transition-[color,background-color,border-color,box-shadow] duration-200 dark:[color-scheme:dark];
+    transition-[color,background-color,border-color,box-shadow] duration-quick dark:[color-scheme:dark];
   }
   
   .btn-primary {
@@ -280,7 +280,7 @@ main,
     bg-brand-600 dark:bg-brand-500
     text-white font-medium rounded-lg
     hover:bg-brand-700 dark:hover:bg-brand-400
-    active:scale-95 transition-[background-color,transform] duration-200 shadow-sm;
+    active:scale-95 transition-[background-color,transform] duration-quick shadow-sm;
   }
   
   .btn-secondary {
@@ -330,7 +330,7 @@ main,
      刻意只动 transform/box-shadow（transform 不引起 reflow），位移上限 2px，
      时长走 --duration-fast(250ms)。新增卡片要抬升就加这个类，别再内联一遍。 */
   .card-lift {
-    @apply transition-[box-shadow,transform] duration-250 hover:shadow-md hover:-translate-y-0.5;
+    @apply transition-[box-shadow,transform] duration-fast hover:shadow-md hover:-translate-y-0.5;
   }
   
   .page-header {
@@ -398,7 +398,7 @@ main,
 
 /* 基础 Tab 样式（内部复用） */
 @utility tab-item-base {
-  @apply px-4 py-1.5 text-sm font-medium rounded-lg transition-[color,background-color,box-shadow] duration-200 whitespace-nowrap cursor-pointer;
+  @apply px-4 py-1.5 text-sm font-medium rounded-lg transition-[color,background-color,box-shadow] duration-quick whitespace-nowrap cursor-pointer;
 }
 
 @layer base {
@@ -447,20 +447,20 @@ main,
   }
 }
 
-/* 判定依据展开（动效规范 spec-3）：单次 180ms、位移 4px、不循环。
+/* 判定依据展开（动效规范 spec-3）：单次揭示、位移 4px、不循环。
    DASHBOARD 场景：任何 infinite 都被禁止——这里只有 both。 */
 @keyframes soft-rise-in {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: none; }
 }
-.soft-rise-in { animation: soft-rise-in 180ms cubic-bezier(0.2, 0, 0, 1) both; }
+.soft-rise-in { animation: soft-rise-in var(--duration-quick) var(--ease-smooth-out) both; }
 
 /* 数据截止日横幅（spec-7）：单独一拍出现，不与列表同帧 */
 @keyframes data-rise-in {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: none; }
 }
-.data-rise-in { animation: data-rise-in 200ms cubic-bezier(0.2, 0, 0, 1) both; }
+.data-rise-in { animation: data-rise-in var(--duration-fast) var(--ease-smooth-out) both; }
 
 /* 登录 / 认领页背景光晕：一次性入场，不做持续漂浮（motion-plan 禁止循环背景动效）。
    延后到首帧可见之后才开始，否则慢设备上动画会在首次绘制前跑完、看起来完全没动。 */
@@ -470,15 +470,10 @@ main,
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 .glow-in {
-  animation: glow-in var(--duration-ambient) var(--ease-in-out) var(--duration-quick) both;
+  animation: glow-in var(--duration-ambient) var(--ease-smooth-out) var(--duration-quick) both;
 }
 .glow-in--late {
   animation-delay: calc(var(--duration-quick) * 2);
-}
-
-@media (max-width: 767px) {
-  .soft-rise-in { animation-duration: 140ms; }
-  .data-rise-in { animation-duration: 160ms; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -611,7 +606,7 @@ main,
   letter-spacing: 0.14em;
 }
 .progress-fill {
-  transition: width 300ms ease-out;
+  transition: width var(--duration-fast) var(--ease-smooth-out);
 }
 .ai-assistant-panel {
   max-height: 80vh;
@@ -628,7 +623,7 @@ main,
 .collapse-grid {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 250ms var(--ease-smooth-out);
+  transition: grid-template-rows var(--duration-fast) var(--ease-smooth-out);
 }
 .collapse-grid-open {
   grid-template-rows: 1fr;
@@ -661,12 +656,12 @@ main,
 .settings-card {
   position: relative;
   overflow: hidden;
-  animation: settings-card-in 220ms var(--ease-smooth-out) both;
+  animation: settings-card-in var(--duration-fast) var(--ease-smooth-out) both;
 }
-.settings-card:nth-child(2) { animation-delay: 40ms; }
-.settings-card:nth-child(3) { animation-delay: 80ms; }
-.settings-card:nth-child(4) { animation-delay: 120ms; }
-.settings-card:nth-child(5) { animation-delay: 160ms; }
+.settings-card:nth-child(2) { animation-delay: var(--duration-stagger); }
+.settings-card:nth-child(3) { animation-delay: calc(var(--duration-stagger) * 2); }
+.settings-card:nth-child(4) { animation-delay: calc(var(--duration-stagger) * 3); }
+.settings-card:nth-child(5) { animation-delay: calc(var(--duration-stagger) * 4); }
 .settings-card::after {
   content: "";
   position: absolute;
@@ -675,7 +670,7 @@ main,
   width: 0;
   height: 2px;
   background: var(--color-brand-600);
-  transition: width 220ms var(--ease-smooth-out);
+  transition: width var(--duration-fast) var(--ease-smooth-out);
 }
 .settings-card:hover::after,
 .settings-card:focus-visible::after {

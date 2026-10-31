@@ -76,7 +76,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
         title={isCollapsed ? (showBadge ? `${item.label} (${pendingTodoCount})` : item.label) : undefined}
         aria-current={isActive ? 'page' : undefined}
         aria-label={isCollapsed ? (showBadge ? `${item.label}，${pendingTodoCount} 项未完成` : item.label) : undefined}
-        className={`relative flex items-center justify-center py-2.5 px-3 rounded-xl transition duration-250 ease-smooth-out group ${
+        className={`relative flex items-center justify-center py-2.5 px-3 rounded-xl transition duration-fast ease-smooth-out group ${
           isActive
             ? 'bg-brand-50 dark:bg-brand-900/25 text-brand-700 dark:text-brand-300 font-semibold shadow-sm ring-1 ring-brand-500/20'
             : 'text-muted-foreground hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white hover:shadow-sm'
@@ -97,7 +97,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
           )}
         </span>
         {!isCollapsed && (
-          <span className="w-14 shrink-0 whitespace-nowrap text-sm text-left animate-in fade-in duration-150">{item.label}</span>
+          <span className="w-14 shrink-0 whitespace-nowrap text-sm text-left animate-in fade-in duration-quick">{item.label}</span>
         )}
       </Link>
     );
@@ -106,14 +106,14 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
   return (
     <aside
       aria-label="侧边导航"
-      className={`relative z-30 bg-white/80 dark:bg-zinc-800/70 backdrop-blur-xl border border-zinc-200/60 dark:border-white/10 shadow-sm dark:shadow-inset-glow rounded-2xl flex flex-col print:hidden shrink-0 transition duration-300 ease-in-out ${
+      className={`relative z-30 bg-white/80 dark:bg-zinc-800/70 backdrop-blur-xl border border-zinc-200/60 dark:border-white/10 shadow-sm dark:shadow-inset-glow rounded-2xl flex flex-col print:hidden shrink-0 transition duration-fast ease-smooth-out ${
         isCollapsed ? 'w-20' : 'w-48'
       } ${className}`}
     >
       {/* Banner：Logo 与名称上下两行居中。折叠入口做成骑跨侧栏右边框的小圆钮（不占 banner 横向空间）；
           桌面端页眉已移除，此区承担品牌展示 */}
       <div
-        className="flex items-center justify-center h-18 shrink-0 border-b border-zinc-200/60 dark:border-white/10 transition duration-250"
+        className="flex items-center justify-center h-18 shrink-0 border-b border-zinc-200/60 dark:border-white/10 transition duration-fast"
       >
         <div className={`flex flex-col items-center justify-center min-w-0 ${isCollapsed ? '' : 'w-31'}`}>
           <div className="w-9 h-9 flex items-center justify-center shrink-0 overflow-hidden">
@@ -126,7 +126,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
             />
           </div>
           {!isCollapsed && (
-            <span className="mt-1 text-base font-bold text-zinc-800 dark:text-white leading-none whitespace-nowrap overflow-hidden animate-in fade-in duration-300">
+            <span className="mt-1 text-base font-bold text-zinc-800 dark:text-white leading-none whitespace-nowrap overflow-hidden animate-in fade-in duration-fast">
               AMS 系统
             </span>
           )}
@@ -135,7 +135,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
       {onToggleCollapse && (
         <Pressable
           onClick={onToggleCollapse}
-          className="absolute z-40 -right-3 top-18 -translate-y-1/2 h-6 w-6 rounded-full bg-white dark:bg-zinc-800 border border-zinc-300/80 dark:border-zinc-600 shadow-sm flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-brand-600 dark:hover:text-brand-400 hover:border-brand-400 dark:hover:border-brand-500 transition-colors duration-150"
+          className="absolute z-40 -right-3 top-18 -translate-y-1/2 h-6 w-6 rounded-full bg-white dark:bg-zinc-800 border border-zinc-300/80 dark:border-zinc-600 shadow-sm flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-brand-600 dark:hover:text-brand-400 hover:border-brand-400 dark:hover:border-brand-500 transition-colors duration-quick"
           title={isCollapsed ? '展开菜单' : '收起菜单'}
           aria-label={isCollapsed ? '展开菜单' : '收起菜单'}
         >

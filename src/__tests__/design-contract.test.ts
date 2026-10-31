@@ -196,4 +196,15 @@ describe('设计契约：表单无障碍', () => {
       `role=combobox 不吃子元素文字当名字，必须显式 aria-label（实测 AX name=""）：\n${bad.join('\n')}`
     ).toEqual([]);
   });
+
+  it('动效时长走语义令牌，不写数字时长或任意缓动', () => {
+    // 数字时长（200/300 等）不在令牌表内；ease-[var(…)] 绕过主题；transition-all 会过渡无关属性。
+    const bad = files
+      .filter((f) => !f.includes('__tests__'))
+      .flatMap((f) => linesWith(f, /\bduration-\d+\b|ease-\[|transition-all\b/));
+    expect(
+      bad,
+      `改用 duration-quick / fast / medium / slow / very-slow 与 ease-smooth-out：\n${bad.join('\n')}`
+    ).toEqual([]);
+  });
 });

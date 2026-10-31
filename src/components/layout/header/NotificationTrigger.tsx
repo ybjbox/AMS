@@ -39,7 +39,7 @@ export default function NotificationTrigger() {
     <div className="relative" ref={panelRef}>
       <Pressable
         onClick={toggleOpen}
-        className="relative flex size-11 items-center justify-center rounded-full text-zinc-400 transition-colors duration-200 hover:bg-zinc-100 hover:text-zinc-500 dark:hover:bg-zinc-700 dark:hover:text-zinc-300"
+        className="relative flex size-11 items-center justify-center rounded-full text-zinc-400 transition-colors duration-quick hover:bg-zinc-100 hover:text-zinc-500 dark:hover:bg-zinc-700 dark:hover:text-zinc-300"
         aria-label={unreadCount > 0 ? `通知，${unreadCount}条未读` : '通知'}
         aria-haspopup="true"
         aria-expanded={isOpen}

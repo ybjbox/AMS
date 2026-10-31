@@ -157,7 +157,7 @@ export default function ThemesPanel() {
                       type="text"
                       value={theme.name}
                       onChange={(e) => handleUpdateTheme(theme.id, 'name', e.target.value)}
-                      className="px-2 py-1 bg-transparent border border-brand-300 rounded text-sm font-semibold outline-none focus:outline-none focus:ring-4 focus:ring-brand-600/20 text-zinc-900 dark:text-white transition duration-200"
+                      className="px-2 py-1 bg-transparent border border-brand-300 rounded text-sm font-semibold outline-none focus:outline-none focus:ring-4 focus:ring-brand-600/20 text-zinc-900 dark:text-white transition duration-quick"
                     />
                   ) : (
                     <h3 className="font-semibold text-zinc-900 dark:text-white">{theme.name}</h3>

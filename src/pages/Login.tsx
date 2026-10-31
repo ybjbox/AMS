@@ -98,7 +98,7 @@ export default function Login() {
 
       {loginBackground && <div className="absolute inset-0 bg-black/40 backdrop-blur-sm -z-10" />}
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md animate-in fade-in slide-in-from-bottom-4 duration-very-slow">
         <div className="flex justify-center">
           <div className="w-14 h-14 flex items-center justify-center overflow-hidden">
             <img
@@ -122,7 +122,7 @@ export default function Login() {
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md animate-in fade-in slide-in-from-bottom-8 duration-500 delay-80 fill-mode-both">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md animate-in fade-in slide-in-from-bottom-8 duration-very-slow delay-80 fill-mode-both">
         <div className="mx-4 rounded-2xl bg-white px-4 py-8 shadow-xl shadow-zinc-200/40 dark:bg-zinc-800 dark:shadow-none border border-zinc-100 dark:border-zinc-700 sm:mx-0 sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <div>

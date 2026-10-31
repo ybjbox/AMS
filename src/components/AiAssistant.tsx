@@ -211,7 +211,7 @@ export default function AiAssistant() {
           transform: tucked ? 'translateX(calc(50% + 24px))' : undefined,
         }}
         className={
-          "fixed z-50 flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-[transform,opacity] duration-300 ease-smooth-out hover:scale-105 active:scale-95" +
+          "fixed z-50 flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-[transform,opacity] duration-fast ease-smooth-out hover:scale-105 active:scale-95" +
           (tucked ? " opacity-50" : "") +
           (isFloatable ? " cursor-grab" : " bottom-6 right-6") +
           (dragging ? " cursor-grabbing" : "")

@@ -178,7 +178,7 @@ export default function UserMenu({
                     setIsOpen(false);
                     onNavigate?.();
                   }}
-                  className="block px-4 py-2 text-sm font-medium text-brand-700 dark:text-brand-300 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors duration-200"
+                  className="block px-4 py-2 text-sm font-medium text-brand-700 dark:text-brand-300 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors duration-quick"
                 >
                   我的考勤
                 </Link>
@@ -190,14 +190,14 @@ export default function UserMenu({
                     setIsOpen(false);
                     onNavigate?.();
                   }}
-                  className="block px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100/70 dark:hover:bg-zinc-700/50 transition-colors duration-200"
+                  className="block px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100/70 dark:hover:bg-zinc-700/50 transition-colors duration-quick"
                 >
                   {settingsLabel}
                 </Link>
               )}
               <Pressable
                 onClick={handleLogout}
-                className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-t border-zinc-100 dark:border-zinc-700 transition-colors duration-200"
+                className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-t border-zinc-100 dark:border-zinc-700 transition-colors duration-quick"
               >
                 <LogOut className="h-4 w-4" />
                 退出登录

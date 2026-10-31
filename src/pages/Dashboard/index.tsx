@@ -119,7 +119,7 @@ export default function Dashboard() {
   };
 
   return (
-    <PageContainer className="space-y-8 animate-in fade-in duration-400">
+    <PageContainer className="space-y-8 animate-in fade-in duration-slow">
       <div className="page-header">
         <div>
           <h1 className="page-title">控制台</h1>

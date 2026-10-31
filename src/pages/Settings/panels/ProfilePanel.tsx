@@ -186,7 +186,7 @@ export default function ProfilePanel() {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-400">
+    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-slow">
       <div className="mb-6">
         <h2 className="text-lg font-medium text-zinc-900 dark:text-white">个人设置</h2>
         <p className="text-sm text-muted-foreground mt-1">管理您的个人资料与账号安全</p>

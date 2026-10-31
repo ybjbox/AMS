@@ -43,7 +43,7 @@ export default function QuickActions({ quickActions, isLoading }: QuickActionsPr
               className="flex flex-col items-center justify-center rounded-2xl border border-zinc-100 px-2 py-4 dark:border-zinc-700/50 shadow-sm card-lift group bg-white dark:bg-zinc-800"
             >
               <div
-                className={`p-3.5 rounded-xl ${action.bg} mb-3 transition-transform duration-250 group-hover:scale-110`}
+                className={`p-3.5 rounded-xl ${action.bg} mb-3 transition-transform duration-fast group-hover:scale-110`}
               >
                 <action.icon className={`h-6 w-6 ${action.color}`} />
               </div>

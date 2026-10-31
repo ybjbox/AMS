@@ -217,7 +217,7 @@ export default function Seating() {
   );
 
   return (
-    <div className="w-full min-h-full flex flex-1 flex-col space-y-6 animate-in fade-in duration-400 print:hidden">
+    <div className="w-full min-h-full flex flex-1 flex-col space-y-6 animate-in fade-in duration-slow print:hidden">
         <div className="page-header shrink-0">
           <div>
             <h1 className="page-title">座位安排</h1>

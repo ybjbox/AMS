@@ -207,7 +207,7 @@ export default function EmployeeRollupTable({
                           type="button"
                           onClick={() => toggleSort(c.key!)}
                           className={cn(
-                            'inline-flex items-center gap-1 rounded transition-colors duration-200 hover:text-zinc-900 dark:hover:text-zinc-100',
+                            'inline-flex items-center gap-1 rounded transition-colors duration-quick hover:text-zinc-900 dark:hover:text-zinc-100',
                             isActive && 'text-zinc-900 dark:text-white'
                           )}
                         >

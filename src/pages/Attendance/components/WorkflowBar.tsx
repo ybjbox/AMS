@@ -57,7 +57,7 @@ export default function WorkflowBar({ steps, activeTab, onSelect, onOpenDialog }
                 title={step.opensDialog ? '打开部门工作时段配置' : undefined}
                 className={[
                   'group flex min-w-0 flex-1 items-center gap-3 rounded-xl px-3 py-2.5 text-left',
-                  'transition-colors duration-200',
+                  'transition-colors duration-quick',
                   isActive
                     ? 'bg-brand-50 ring-1 ring-brand-500/40 dark:bg-brand-900/25 dark:ring-brand-400/40'
                     : 'hover:bg-zinc-50 dark:hover:bg-zinc-700/40',

@@ -107,7 +107,7 @@ const DepartmentTreeNode = React.memo(function DepartmentTreeNode({
       </div>
 
       {isExpanded && hasChildren && (
-        <div className="animate-in fade-in slide-in-from-top-2 duration-250">
+        <div className="animate-in fade-in slide-in-from-top-2 duration-fast">
           <ul
             className={`space-y-1 ml-6 border-l border-zinc-200 dark:border-zinc-700 pl-2 mt-1`}
             role="group"

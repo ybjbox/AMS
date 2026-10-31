@@ -170,7 +170,7 @@ export default function Todos() {
   );
 
   return (
-    <PageContainer className="space-y-6 animate-in fade-in duration-400">
+    <PageContainer className="space-y-6 animate-in fade-in duration-slow">
       <div className="page-header shrink-0">
           <div>
             <h1 className="page-title">待办事项</h1>
@@ -197,7 +197,7 @@ export default function Todos() {
             aria-pressed={only === c.id}
             onClick={() => setOnly(c.id)}
             className={
-              'rounded-full border px-2.5 py-1 transition-colors duration-200 ' +
+              'rounded-full border px-2.5 py-1 transition-colors duration-quick ' +
               (c.tone ?? '') +
               (only === c.id
                 ? ' border-brand-500 bg-brand-50 font-medium dark:bg-brand-500/15'

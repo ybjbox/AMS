@@ -90,7 +90,7 @@ export default function RemindersPanel() {
   const report = status?.lastReport ?? null;
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-400 space-y-6">
+    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-slow space-y-6">
       <h2 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">到期提醒</h2>
 
       <div className="bg-white dark:bg-zinc-800 p-6 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm">

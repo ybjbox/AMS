@@ -125,7 +125,7 @@ export function RecordsFilterBar({
                     onClick={() => onPreset(p.id)}
                     title={`${describeRange(presetRange(p.id, today, padDays).from, presetRange(p.id, today, padDays).to)}`}
                     className={[
-                      'whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors duration-200 max-sm:min-h-11',
+                      'whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors duration-quick max-sm:min-h-11',
                       isActive
                         ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white'
                         : 'text-muted-foreground hover:text-zinc-900 dark:hover:text-zinc-100',
@@ -165,7 +165,7 @@ export function RecordsFilterBar({
                     aria-pressed={isActive}
                     onClick={() => onChange({ source: opt.id })}
                     className={[
-                      'whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors duration-200 max-sm:min-h-11',
+                      'whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors duration-quick max-sm:min-h-11',
                       isActive
                         ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white'
                         : 'text-muted-foreground hover:text-zinc-900 dark:hover:text-zinc-100',
@@ -242,7 +242,7 @@ export function AnomalyFilterBar({ query, onQueryChange, group, onGroupChange, c
                   aria-pressed={isActive}
                   onClick={() => onGroupChange(g.id)}
                   className={[
-                    'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors duration-200',
+                    'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors duration-quick',
                     isActive
                       ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white'
                       : 'text-muted-foreground hover:text-zinc-900 dark:hover:text-zinc-100',

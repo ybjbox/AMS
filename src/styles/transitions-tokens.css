@@ -39,9 +39,20 @@
   --blur-large: 8px;  /* success check open */
 }
 
-/* 注册进 Tailwind 主题命名空间：生成 ease-smooth-out / ease-bounce 等 utility，
-   功能代码用 utility 而非 ease-[var(…)] 任意值 */
+/* 注册进 Tailwind 主题命名空间：生成 duration-* / ease-* utility，
+   功能代码用语义 utility 而非数字时长或 ease-[var(…)] 任意值 */
 @theme {
+  --transition-duration-stagger: 40ms;
+  --transition-duration-micro: 80ms;
+  --transition-duration-quick: 150ms;
+  --transition-duration-fast: 250ms;
+  --transition-duration-medium: 350ms;
+  --transition-duration-slow: 400ms;
+  --transition-duration-very-slow: 500ms;
+  --transition-duration-ambient: 900ms;
   --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-bounce: cubic-bezier(0.34, 1.36, 0.64, 1);
+  /* 未显式写时长/缓动的 transition-* 类也走令牌，避免默认的 Material 曲线成为第二套动效 */
+  --default-transition-duration: 150ms;
+  --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }

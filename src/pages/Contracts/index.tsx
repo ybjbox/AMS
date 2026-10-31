@@ -100,7 +100,7 @@ export default function ContractsPage() {
 
   return (
     <PageContainer width="none">
-      <div className="relative max-w-7xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-6 animate-in fade-in duration-400">
+      <div className="relative max-w-7xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-6 animate-in fade-in duration-slow">
         <div className="page-header shrink-0">
           <div>
             <h1 className="page-title">合同管理</h1>
@@ -179,7 +179,7 @@ export default function ContractsPage() {
                   disabled={n === 0 && !active}
                   onClick={() => setFilterBucket(active ? 'ALL' : b)}
                   className={cn(
-                    'rounded-full border px-2.5 py-1 transition-colors duration-200',
+                    'rounded-full border px-2.5 py-1 transition-colors duration-quick',
                     tone,
                     active
                       ? 'border-brand-500 bg-brand-50 font-medium dark:bg-brand-500/15'

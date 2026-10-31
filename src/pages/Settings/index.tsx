@@ -240,7 +240,7 @@ export default function Settings() {
 
   return (
     <PageContainer width="none">
-      <div className="max-w-6xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-6 animate-in fade-in duration-400">
+      <div className="max-w-6xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-6 animate-in fade-in duration-slow">
         <div className="shrink-0">
           <h1 className="page-title">{activeGroup && !isHub ? activeGroup.title : '系统设置'}</h1>
           <p className="page-subtitle">
@@ -269,7 +269,7 @@ export default function Settings() {
                     </span>
                   </span>
                   <ChevronRight
-                    className="size-4 shrink-0 text-zinc-300 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-brand-600 dark:text-zinc-600 dark:group-hover:text-brand-400"
+                    className="size-4 shrink-0 text-zinc-300 transition-transform duration-quick group-hover:translate-x-0.5 group-hover:text-brand-600 dark:text-zinc-600 dark:group-hover:text-brand-400"
                     aria-hidden="true"
                   />
                 </Pressable>
@@ -314,7 +314,7 @@ export default function Settings() {
                 role="tabpanel"
                 id={`panel-${activeTab}`}
                 aria-labelledby={`tab-${activeTab}`}
-                className="flex-1 flex flex-col min-h-0 overflow-hidden animate-in fade-in slide-in-from-right-2 duration-250 ease-smooth-out"
+                className="flex-1 flex flex-col min-h-0 overflow-hidden animate-in fade-in slide-in-from-right-2 duration-fast ease-smooth-out"
               >
                 {renderContent()}
               </div>

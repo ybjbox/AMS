@@ -233,7 +233,7 @@ export default function WeChatNotice() {
   }, [current]);
 
   return (
-    <PageContainer width="6xl" className="space-y-6 animate-in fade-in duration-400">
+    <PageContainer width="6xl" className="space-y-6 animate-in fade-in duration-slow">
       <div className="page-header shrink-0">
         <div>
           <h1 className="page-title">微信通知生成器</h1>
@@ -443,7 +443,7 @@ export default function WeChatNotice() {
       </div>
 
       {current && (
-        <section className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-250">
+        <section className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-fast">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <h2 className="section-title">生成结果</h2>
             <div className="flex items-center gap-2">

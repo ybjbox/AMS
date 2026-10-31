@@ -277,7 +277,7 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
             aria-label="导入进度"
           >
             <div
-              className="h-full bg-brand-500 transition-all duration-500"
+              className="h-full bg-brand-500 transition-[width] duration-very-slow"
               style={{
                 width: progress && progress.total > 0
                   ? `${Math.round((progress.processed / progress.total) * 100)}%`

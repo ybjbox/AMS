@@ -117,7 +117,7 @@ export default function AiHistoryPanel() {
   });
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-400 space-y-5">
+    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-slow space-y-5">
       <div>
         <h2 className="section-title flex items-center gap-2">
           <MessagesSquare className="size-5 text-primary" />
@@ -137,7 +137,7 @@ export default function AiHistoryPanel() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="按用户名或对话标题筛选…"
-            className="w-full pl-9 pr-3 py-2 text-sm border border-border/80 dark:border-border rounded-lg bg-muted dark:bg-background text-foreground focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary transition duration-200"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-border/80 dark:border-border rounded-lg bg-muted dark:bg-background text-foreground focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary transition duration-quick"
           />
         </div>
         <div className="text-xs text-muted-foreground whitespace-nowrap">

@@ -282,7 +282,7 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
                     aria-pressed={isActive}
                     onClick={() => setPreviewFilter(f.id)}
                     className={[
-                      'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors duration-200',
+                      'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors duration-quick',
                       isActive
                         ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white'
                         : 'text-muted-foreground hover:text-zinc-900 dark:hover:text-zinc-100',

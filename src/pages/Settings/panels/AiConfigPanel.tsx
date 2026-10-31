@@ -267,7 +267,7 @@ export default function AiConfigPanel() {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-400 space-y-6">
+    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-slow space-y-6">
       <div>
         <h2 className="section-title flex items-center gap-2">
           <Bot className="size-5 text-primary" />
@@ -748,7 +748,7 @@ function Section({
           )}
         </span>
         <ChevronDown
-          className={`size-4 shrink-0 text-muted-foreground transition-transform duration-250 ease-smooth-out ${
+          className={`size-4 shrink-0 text-muted-foreground transition-transform duration-fast ease-smooth-out ${
             open ? 'rotate-180' : ''
           }`}
         />

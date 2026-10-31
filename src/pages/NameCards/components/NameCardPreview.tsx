@@ -222,7 +222,7 @@ export default function NameCardPreview({
                   className="flex-shrink-0 relative"
                 >
                   <div
-                    className="absolute top-0 left-0 bg-white dark:bg-zinc-800 shadow-lg origin-top-left transition-all duration-300"
+                    className="absolute top-0 left-0 bg-white dark:bg-zinc-800 shadow-lg origin-top-left transition-[width,height] duration-fast"
                     style={{
                       width: `${printSettings.paperWidth}mm`,
                       height: `${printSettings.paperHeight}mm`,

@@ -50,7 +50,7 @@ export default function AttendanceHeatmap({ stats, isLoading, size, onSizeChange
   const mid = days[Math.floor(days.length / 2)];
 
   return (
-    <div className="card-base p-6 transition duration-250 hover:shadow-md">
+    <div className="card-base p-6 transition duration-fast hover:shadow-md">
       <div className="flex items-center justify-between mb-5 gap-3">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
           <CalendarDays className="w-4 h-4 text-brand-600 dark:text-brand-400" aria-hidden="true" />

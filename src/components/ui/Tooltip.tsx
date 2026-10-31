@@ -64,7 +64,7 @@ export function Tooltip({ content, children, side = 'top', className, delay = 20
           className={cn(
             'pointer-events-none absolute z-50 whitespace-nowrap rounded-md bg-popover px-2 py-1',
             'text-xs font-medium text-popover-foreground shadow-md ring-1 ring-foreground/10',
-            'opacity-100 transition-opacity duration-150',
+            'opacity-100 transition-opacity duration-quick',
             SIDE_CLASSES[side],
             className,
           )}
