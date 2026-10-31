@@ -6,6 +6,7 @@ import { describeSaveError } from '@/store/saveFailureCore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import SettingsPanel from '../components/SettingsPanel';
 
 /**
  * AI 对话历史（仅超级管理员可见）。
@@ -117,17 +118,12 @@ export default function AiHistoryPanel() {
   });
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-slow space-y-5">
-      <div>
-        <h2 className="section-title flex items-center gap-2">
-          <MessagesSquare className="size-5 text-primary" />
-          AI 对话历史（审计）
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          查看全员 AI 助手对话记录，便于合规审计与问题追溯。仅超级管理员可见。
-        </p>
-      </div>
-
+    <SettingsPanel
+      title="AI 对话历史（审计）"
+      description="查看全员 AI 助手对话记录，便于合规审计与问题追溯。仅超级管理员可见。"
+      icon={MessagesSquare}
+      bodyClassName="space-y-5"
+    >
       {/* 搜索 + 统计 */}
       <div className="card-base rounded-xl p-4 flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-50">
@@ -283,6 +279,6 @@ export default function AiHistoryPanel() {
           </SheetContent>
         </Sheet>
       )}
-    </div>
+    </SettingsPanel>
   );
 }

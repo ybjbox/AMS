@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { notifySaveFailure } from '@/store/saveFailure';
+import SettingsPanel from '../components/SettingsPanel';
 import { useEmployeeStore } from '@/store/useEmployeeStore';
 import {
   reminderApi,
@@ -90,9 +91,7 @@ export default function RemindersPanel() {
   const report = status?.lastReport ?? null;
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-slow space-y-6">
-      <h2 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">到期提醒</h2>
-
+    <SettingsPanel title="到期提醒" icon={BellRing}>
       <div className="bg-white dark:bg-zinc-800 p-6 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm">
         <div className="flex items-center space-x-3 mb-6">
           <div className="p-2 bg-brand-50 dark:bg-brand-900/20 rounded-lg">
@@ -202,6 +201,6 @@ export default function RemindersPanel() {
           <p className="text-sm text-muted-foreground">当前窗口内没有到期的合同或试用期。</p>
         )}
       </div>
-    </div>
+    </SettingsPanel>
   );
 }

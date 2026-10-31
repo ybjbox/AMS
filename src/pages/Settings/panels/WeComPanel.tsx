@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { notifySaveFailure } from '@/store/saveFailure';
+import SettingsPanel from '../components/SettingsPanel';
 import { useEmployeeStore } from '@/store/useEmployeeStore';
 import {
   SECRET_CLEAR,
@@ -214,14 +215,11 @@ export default function WeComPanel() {
   const unclaimedBindings = bindings.filter((b) => !b.employeeId).length;
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-slow space-y-6">
-      <div>
-        <h2 className="text-lg font-medium text-zinc-900 dark:text-white mb-1">企业微信打卡同步</h2>
-        <p className={HINT_CLASS}>
-          从企业微信取上下班打卡写入考勤。只取打卡时间；位置、WiFi、设备号等信息收到就丢，不会存进本系统。
-        </p>
-      </div>
-
+    <SettingsPanel
+      title="企业微信打卡同步"
+      description="从企业微信取上下班打卡写入考勤。只取打卡时间；位置、WiFi、设备号等信息收到就丢，不会存进本系统。"
+      icon={Fingerprint}
+    >
       {/* ---------------- 凭据 ---------------- */}
       <div className={CARD_CLASS}>
         <div className="flex items-center space-x-3 mb-6">
@@ -495,7 +493,7 @@ export default function WeComPanel() {
         <ReportTable title="本次预览（未写入）" report={preview} />
         <ReportTable title="上次同步" report={lastReport} />
       </div>
-    </div>
+    </SettingsPanel>
   );
 }
 

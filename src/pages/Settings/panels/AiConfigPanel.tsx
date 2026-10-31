@@ -2,6 +2,7 @@ import { Pressable } from '@/components/ui/Pressable';
 import { useState, useEffect, useRef, type ChangeEvent, type ReactNode } from 'react';
 import { Save, Bot, RotateCcw, RefreshCw, Upload, X, ChevronDown, PlugZap, CircleCheck, CircleX } from 'lucide-react';
 import { STORAGE_KEYS } from '@/config/constants';
+import SettingsPanel from '../components/SettingsPanel';
 import { getRoleDisplayName } from '@/utils/roleUtils';
 import { AI_ICON_OPTIONS, resolveAiIcon, DEFAULT_AI_NAME } from '@/config/aiIcons';
 import { Button } from '@/components/ui/button';
@@ -267,17 +268,11 @@ export default function AiConfigPanel() {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-slow space-y-6">
-      <div>
-        <h2 className="section-title flex items-center gap-2">
-          <Bot className="size-5 text-primary" />
-          AI 助手配置
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          配置接入的大模型与可用范围。保存后立即生效，无需重启服务。
-        </p>
-      </div>
-
+    <SettingsPanel
+      title="AI 助手配置"
+      description="配置接入的大模型与可用范围。保存后立即生效，无需重启服务。"
+      icon={Bot}
+    >
       {/* 可用范围 */}
       <Section title="可用范围">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -709,7 +704,7 @@ export default function AiConfigPanel() {
           重置
         </Button>
       </div>
-    </div>
+    </SettingsPanel>
   );
 }
 

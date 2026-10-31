@@ -7,6 +7,7 @@ import { describeSaveError } from '@/store/saveFailureCore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MOTION, useMotionPrefs } from '@/lib/motionTokens';
+import SettingsPanel from '../components/SettingsPanel';
 
 interface Theme {
   id: string;
@@ -123,18 +124,17 @@ export default function ThemesPanel() {
   if (loading) return <div className="flex items-center justify-center h-full text-zinc-400">加载中…</div>;
 
   return (
-    <div className="h-full overflow-y-auto p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-lg font-medium text-zinc-900 dark:text-white">导出主题管理</h2>
-          <p className="text-sm text-muted-foreground mt-1">自定义 Excel 导出的配色方案，包括标题、表头及隔行变色</p>
-        </div>
+    <SettingsPanel
+      title="导出主题管理"
+      description="自定义 Excel 导出的配色方案，包括标题、表头及隔行变色"
+      icon={Palette}
+      actions={
         <Button onClick={handleAddTheme}>
           <Plus className="w-4 h-4 mr-2" />
           新增主题
         </Button>
-      </div>
-
+      }
+    >
       <div className="grid grid-cols-1 gap-6">
         <AnimatePresence>
           {Object.values(themes).map((theme: Theme) => (
@@ -311,6 +311,6 @@ export default function ThemesPanel() {
           ))}
         </AnimatePresence>
       </div>
-    </div>
+    </SettingsPanel>
   );
 }

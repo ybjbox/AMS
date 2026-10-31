@@ -1,6 +1,6 @@
 import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback, useEffect, useState } from 'react';
-import { AlertCircle, AlertTriangle, Info, Search, Filter, ChevronDown, ChevronRight, Download } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Info, Search, Filter, ChevronDown, ChevronRight, Download, TerminalSquare } from 'lucide-react';
 import {
   fetchAuditLogs,
   fetchAuditFacets,
@@ -136,10 +136,13 @@ export default function SystemLogs() {
   };
 
   return (
-    <div className="animate-in fade-in duration-slow h-full flex flex-col">
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="flex h-full flex-col max-md:block max-md:h-auto">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 max-md:sticky max-md:top-0 max-md:z-40 max-md:mb-0 max-md:bg-background max-md:pb-3">
         <div>
-          <h2 className="text-lg font-medium text-zinc-900 dark:text-white">审计日志</h2>
+          <h2 className="section-title flex items-center gap-2">
+            <TerminalSquare className="size-5 shrink-0 text-primary" aria-hidden="true" />
+            审计日志
+          </h2>
           <p className="text-sm text-muted-foreground mt-1">
             记录所有写操作与登录事件，只增不删{data ? `，保留期 ${data.retentionDays} 天` : ''}
           </p>

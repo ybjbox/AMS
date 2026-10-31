@@ -10,6 +10,7 @@ import { authService, toUserInfo } from '@/services/auth';
 import { useUserStore } from '@/store/useUserStore';
 import { useConfirm } from '@/hooks/useConfirm';
 import { DEFAULT_USER_AVATAR } from '@/config/constants';
+import SettingsPanel from '../components/SettingsPanel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -186,14 +187,9 @@ export default function ProfilePanel() {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-slow">
-      <div className="mb-6">
-        <h2 className="text-lg font-medium text-zinc-900 dark:text-white">个人设置</h2>
-        <p className="text-sm text-muted-foreground mt-1">管理您的个人资料与账号安全</p>
-      </div>
-
+    <SettingsPanel title="个人设置" description="管理您的个人资料与账号安全" icon={UserCog}>
       {mustChangePassword && (
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-900/20 p-4">
+        <div className="flex items-start gap-3 rounded-xl border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-900/20 p-4">
           <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-amber-800 dark:text-amber-200">首次登录，请先修改初始密码</p>
@@ -299,7 +295,7 @@ export default function ProfilePanel() {
         </form>
       </div>
 
-      <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200/60 dark:border-zinc-700/60 shadow-sm p-6 mt-6 max-w-xl">
+      <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200/60 dark:border-zinc-700/60 shadow-sm p-6 max-w-xl">
         <div className="flex items-center gap-2 mb-5">
           <KeyRound className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
           <h3 className="text-sm font-medium text-zinc-900 dark:text-white">修改登录密码</h3>
@@ -357,6 +353,6 @@ export default function ProfilePanel() {
           </div>
         </form>
       </div>
-    </div>
+    </SettingsPanel>
   );
 }

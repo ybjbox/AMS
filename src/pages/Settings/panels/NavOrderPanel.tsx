@@ -5,6 +5,7 @@ import { useAppSettings } from '@/store/appSettings';
 import { useUserStore } from '@/store/useUserStore';
 import { routeConfig, applyNavOrder } from '@/config/routes';
 import { Button } from '@/components/ui/button';
+import SettingsPanel from '../components/SettingsPanel';
 
 /**
  * 功能模块排序：自定义侧边栏导航顺序，调整后即时生效。
@@ -52,9 +53,7 @@ export default function NavOrderPanel() {
   }, [defaultPaths, setNavOrder]);
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-slow space-y-6">
-      <h2 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">功能模块排序</h2>
-
+    <SettingsPanel title="功能模块排序" icon={ListOrdered}>
       <div className="bg-white dark:bg-zinc-800 p-6 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center space-x-3">
@@ -115,6 +114,6 @@ export default function NavOrderPanel() {
           })}
         </ul>
       </div>
-    </div>
+    </SettingsPanel>
   );
 }

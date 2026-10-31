@@ -1,10 +1,11 @@
 import React from 'react';
 import AccountManager from '@/components/AccountManager';
+import SettingsPanel from '../components/SettingsPanel';
 
 export default function AccountsPanel() {
   return (
-    <div className="h-full p-6 flex flex-col min-h-0 overflow-y-auto">
+    <SettingsPanel scroll="none">
       <AccountManager />
-    </div>
+    </SettingsPanel>
   );
 }

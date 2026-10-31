@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useConfirm } from '@/hooks/useConfirm';
 import { announcementApi, type Announcement } from '@/services/announcementApi';
 import { Button } from '@/components/ui/button';
+import SettingsPanel from '../components/SettingsPanel';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -104,23 +105,18 @@ export default function AnnouncementsPanel() {
   );
 
   return (
-    <div className="h-full p-6 flex flex-col min-h-0 gap-5 overflow-y-auto">
-      <div className="flex items-center justify-between shrink-0">
-        <div>
-          <h2 className="text-sm font-semibold text-zinc-900 dark:text-white flex items-center">
-            <Megaphone className="w-4 h-4 mr-2 text-brand-600 dark:text-brand-400" />
-            公告管理
-          </h2>
-          <p className="text-xs text-muted-foreground mt-1">
-            发布的公告将展示在全员控制台「系统公告」区（重要公告置顶）
-          </p>
-        </div>
+    <SettingsPanel
+      title="公告管理"
+      description="发布的公告将展示在全员控制台「系统公告」区（重要公告置顶）。"
+      icon={Megaphone}
+      actions={
         <Button variant="outline" onClick={() => void load()} disabled={isLoading} aria-label="刷新公告列表">
           <RefreshCw className={`h-4 w-4 sm:mr-2 ${isLoading ? 'animate-spin' : ''}`} />
           <span className="hidden sm:inline">刷新</span>
         </Button>
-      </div>
-
+      }
+      bodyClassName="space-y-5"
+    >
       {/* 发布表单 */}
       <form onSubmit={handleCreate} className="card-base p-5 space-y-4 shrink-0">
         <h3 className="text-sm font-medium text-zinc-900 dark:text-white flex items-center gap-2">
@@ -239,6 +235,6 @@ export default function AnnouncementsPanel() {
           )}
         </div>
       </div>
-    </div>
+    </SettingsPanel>
   );
 }

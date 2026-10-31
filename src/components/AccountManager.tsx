@@ -253,10 +253,13 @@ export default function AccountManager() {
   const filterActive = query.trim() !== '' || roleFilter !== 'ALL' || bindingFilter !== 'ALL' || stateFilter !== 'ALL';
 
   return (
-    <div className="animate-in fade-in duration-slow h-full flex flex-col">
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+    <div className="flex h-full flex-col max-md:block max-md:h-auto">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 max-md:sticky max-md:top-0 max-md:z-40 max-md:mb-0 max-md:bg-background max-md:pb-3">
         <div>
-          <h2 className="text-lg font-medium text-zinc-900 dark:text-white">账号管理</h2>
+          <h2 className="section-title flex items-center gap-2">
+            <KeyRound className="size-5 shrink-0 text-primary" aria-hidden="true" />
+            账号管理
+          </h2>
           <p className="text-sm text-muted-foreground mt-1">
             {filterActive ? `筛选后 ${rows.length} / 共 ${stats.total} 个账号` : `共 ${stats.total} 个账号`}
             <span title="未绑定 / 绑定失效 / 停用 / 待改密 / 锁定 始终按全部账号统计，不随筛选变化">

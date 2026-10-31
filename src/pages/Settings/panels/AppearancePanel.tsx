@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Image as ImageIcon, Loader2, Monitor, Moon, Palette, Sun, Upload } from 'lucide-react';
 import { DEFAULT_SYSTEM_ICON } from '@/config/constants';
+import SettingsPanel from '../components/SettingsPanel';
 import { useAppSettings } from '@/store/appSettings';
 import { Button } from '@/components/ui/button';
 import {
@@ -162,12 +163,7 @@ export default function AppearancePanel() {
     ) : null;
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-slow space-y-6">
-      <div>
-        <h2 className="text-lg font-medium text-zinc-900 dark:text-white">外观设置</h2>
-        <p className="text-sm text-muted-foreground mt-1">自定义系统主题、图标和登录页背景</p>
-      </div>
-
+    <SettingsPanel title="外观设置" description="自定义系统主题、图标和登录页背景" icon={Monitor}>
       <div className="bg-white dark:bg-zinc-800 p-6 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl space-y-8">
         {/* Theme Selection */}
         <div>
@@ -256,6 +252,6 @@ export default function AppearancePanel() {
           </div>
         </div>
       </div>
-    </div>
+    </SettingsPanel>
   );
 }

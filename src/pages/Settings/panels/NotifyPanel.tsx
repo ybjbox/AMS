@@ -4,6 +4,7 @@ import { Webhook, Mail, Send, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import SettingsPanel from '../components/SettingsPanel';
 import {
   Select,
   SelectContent,
@@ -71,9 +72,15 @@ export default function NotifyPanel() {
 
   if (!config) {
     return (
-      <div className="flex items-center justify-center py-16 text-muted-foreground">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600" />
-      </div>
+      <SettingsPanel
+        title="通知出站通道"
+        description="站内通知落库后镜像推送到 Webhook 群机器人或邮件。"
+        icon={Send}
+      >
+        <div className="flex items-center justify-center py-16 text-muted-foreground">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600" />
+        </div>
+      </SettingsPanel>
     );
   }
 
@@ -120,7 +127,11 @@ export default function NotifyPanel() {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-slow space-y-6">
+    <SettingsPanel
+      title="通知出站通道"
+      description="站内通知落库后镜像推送到 Webhook 群机器人或邮件。"
+      icon={Send}
+    >
       <div>
         <h2 className="subsection-title flex items-center gap-2">
           <Webhook className="size-4 text-muted-foreground" />
@@ -304,6 +315,6 @@ export default function NotifyPanel() {
           {isTesting ? '发送中…' : '发送测试消息'}
         </Button>
       </div>
-    </div>
+    </SettingsPanel>
   );
 }

@@ -1,7 +1,8 @@
 import React from 'react';
-import { ShieldAlert } from 'lucide-react';
+import { ShieldAlert, Sliders } from 'lucide-react';
 import { useUserStore } from '@/store/useUserStore';
 import { SystemRole } from '@/types';
+import SettingsPanel from '../components/SettingsPanel';
 
 /** 只用于把系统角色渲染成中文；判定一律以后端下发的真实角色与能力表为准。 */
 const ROLE_LABEL: Record<string, string> = {
@@ -18,9 +19,7 @@ export default function PreferencesPanel() {
   const scope = permissions.includes('*') ? '全部' : String(permissions.length) + ' 项';
 
   return (
-    <div className="h-full overflow-y-auto p-6 animate-in fade-in duration-slow space-y-6">
-      <h2 className="text-lg font-medium text-zinc-900 dark:text-white mb-4">系统偏好</h2>
-
+    <SettingsPanel title="系统偏好" icon={Sliders}>
       <div className="bg-white dark:bg-zinc-800 p-6 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm">
         <div className="flex items-center space-x-3">
           <div className="p-2 bg-brand-50 dark:bg-brand-900/20 rounded-lg">
@@ -35,6 +34,6 @@ export default function PreferencesPanel() {
           </div>
         </div>
       </div>
-    </div>
+    </SettingsPanel>
   );
 }

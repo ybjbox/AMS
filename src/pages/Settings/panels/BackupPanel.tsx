@@ -6,6 +6,7 @@ import { notifySaveFailure } from '@/store/saveFailure';
 import { scheduleAppReload } from '@/utils/reloadApp';
 import { Button } from '@/components/ui/button';
 import { Table, TableHead, TableHeader } from '@/components/ui/Table';
+import SettingsPanel from '../components/SettingsPanel';
 import {
   fetchBackups,
   createBackup,
@@ -172,20 +173,17 @@ export default function BackupPanel() {
   const cfg = data?.config;
 
   return (
-    <div className="h-full p-6 flex flex-col min-h-0 space-y-5">
-      <div>
-        <h2 className="section-title flex items-center gap-2">
-          <Database className="size-5 text-primary" />
-          数据备份与恢复
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          系统会定时对数据库做在线热备份（不中断服务）。如遇误删或磁盘损坏，可随时从备份恢复。
-          {canImport && ' 换机器时：在旧机器「下载备份」取到 .zip，到这里「导入备份」，再点恢复。'}
-        </p>
-      </div>
-
+    <SettingsPanel
+      title="数据备份与恢复"
+      description={`系统会定时对数据库做在线热备份（不中断服务）。如遇误删或磁盘损坏，可随时从备份恢复。${
+        canImport ? ' 换机器时：在旧机器「下载备份」取到 .zip，到这里「导入备份」，再点恢复。' : ''
+      }`}
+      icon={Database}
+      scroll="none"
+      bodyClassName="gap-5"
+    >
       {cfg && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 text-sm">
+        <div className="grid shrink-0 grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 text-sm">
           <div className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/50">
             <div className="text-muted-foreground">自动备份</div>
             <div className="font-medium mt-0.5">{cfg.enabled ? '已开启' : '已关闭'}</div>
@@ -232,7 +230,7 @@ export default function BackupPanel() {
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-end gap-2">
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
         {canImport && (
           <>
             {/* 选完即传，没有"先选中再点确认"那一步 —— 少一次可能选错文件的空档 */}
@@ -267,7 +265,7 @@ export default function BackupPanel() {
         </Button>
       </div>
 
-      <div className="flex-1 overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
+      <div className="min-h-0 flex-1 overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
         <Table className="text-sm">
           <TableHeader>
             <tr>
@@ -371,6 +369,6 @@ export default function BackupPanel() {
           </tbody>
         </Table>
       </div>
-    </div>
+    </SettingsPanel>
   );
 }

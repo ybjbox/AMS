@@ -7,6 +7,7 @@ import { exportApi } from '@/services/exportApi';
 import { describeSaveError } from '@/store/saveFailureCore';
 import { Button } from '@/components/ui/button';
 import { MOTION, useMotionPrefs } from '@/lib/motionTokens';
+import SettingsPanel from '../components/SettingsPanel';
 
 export default function ScriptsPanel() {
   const { t } = useMotionPrefs();
@@ -80,22 +81,19 @@ export default async function applyTemplate(worksheet, data, config) {
   if (loading) return <div className="flex items-center justify-center h-full text-zinc-400">加载中…</div>;
 
   return (
-    <div className="h-full overflow-y-auto p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-lg font-medium text-zinc-900 dark:text-white">导出脚本模板</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            使用 JavaScript 高度自定义 Excel 导出逻辑，支持 ExcelJS 所有 API
-          </p>
-        </div>
-        {!editingScript && (
+    <SettingsPanel
+      title="导出脚本模板"
+      description="使用 JavaScript 高度自定义 Excel 导出逻辑，支持 ExcelJS 所有 API"
+      icon={FileCode}
+      actions={
+        !editingScript ? (
           <Button onClick={handleAdd}>
             <Plus className="w-4 h-4 mr-2" />
             创建脚本
           </Button>
-        )}
-      </div>
-
+        ) : undefined
+      }
+    >
       <AnimatePresence mode="wait" initial={false}>
         {editingScript ? (
           <motion.div
@@ -200,6 +198,6 @@ export default async function applyTemplate(worksheet, data, config) {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </SettingsPanel>
   );
 }

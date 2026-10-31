@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Activity, Database, RefreshCw, Server, AlertTriangle, Clock } from 'lucide-react';
 import { notifySaveFailure } from '@/store/saveFailure';
 import { fetchDiagnostics, type DiagnosticsResponse } from '@/services/systemApi';
+import SettingsPanel from '../components/SettingsPanel';
 import { Button } from '@/components/ui/button';
 
 /** 秒 → 人类可读运行时长 */
@@ -60,18 +61,11 @@ export default function DiagnosticsPanel() {
     data?.health.status === 'ok' ? 'text-brand-700 dark:text-brand-400' : 'text-red-600 dark:text-red-400';
 
   return (
-    <div className="h-full p-6 flex flex-col min-h-0 gap-4 overflow-y-auto">
-      {/* 头部：标题 + 刷新 */}
-      <div className="flex items-center justify-between shrink-0">
-        <div>
-          <h2 className="text-sm font-semibold text-zinc-900 dark:text-white flex items-center">
-            <Activity className="w-4 h-4 mr-2 text-brand-600 dark:text-brand-400" />
-            运行诊断
-          </h2>
-          <p className="text-xs text-muted-foreground mt-1">
-            进程健康与访问日志汇总（内存窗口，最近 {data?.accessLog.capacity ?? 200} 条；重启后清空属预期）
-          </p>
-        </div>
+    <SettingsPanel
+      title="运行诊断"
+      description={`进程健康与访问日志汇总（内存窗口，最近 ${data?.accessLog.capacity ?? 200} 条；重启后清空属预期）。`}
+      icon={Activity}
+      actions={
         <Button
           onClick={() => void load()}
           disabled={loading}
@@ -82,8 +76,9 @@ export default function DiagnosticsPanel() {
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           <span className="hidden sm:inline">刷新</span>
         </Button>
-      </div>
-
+      }
+      bodyClassName="space-y-4"
+    >
       {/* 健康卡片 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 shrink-0">
         <div className="card-base p-4">
@@ -238,6 +233,6 @@ export default function DiagnosticsPanel() {
           </div>
         </div>
       )}
-    </div>
+    </SettingsPanel>
   );
 }

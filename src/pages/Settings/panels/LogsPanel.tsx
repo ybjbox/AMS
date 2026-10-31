@@ -1,10 +1,11 @@
 import React from 'react';
 import SystemLogs from '@/components/SystemLogs';
+import SettingsPanel from '../components/SettingsPanel';
 
 export default function LogsPanel() {
   return (
-    <div className="h-full p-6 flex flex-col min-h-0">
+    <SettingsPanel scroll="none">
       <SystemLogs />
-    </div>
+    </SettingsPanel>
   );
 }

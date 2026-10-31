@@ -9,6 +9,7 @@ import { Table, TableFrame, TableHead, TableHeader } from '@/components/ui/Table
 import { useConfirm } from '@/hooks/useConfirm';
 import { SystemRole } from '@/types';
 import { rolePermissionsApi, type RoleCapability, type RolePermissionsMatrix } from '@/services/rolePermissionsApi';
+import SettingsPanel from '../components/SettingsPanel';
 
 /**
  * 角色能力矩阵（仅 SUPER_ADMIN）。
@@ -134,28 +135,23 @@ export default function RolePermissionsPanel() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4 p-6">
-      <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="flex items-center gap-2 text-lg font-medium text-zinc-900 dark:text-white">
-            <ShieldCheck className="size-5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-            角色能力矩阵
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            勾选表示该角色可用。每行只有「最低可用」那一档可点：向上收一档，或点更低的一档放开。
-            保存后接口权限立即生效；侧栏与按钮要等相关账号重新登录才刷新。
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
+    <SettingsPanel
+      title="角色能力矩阵"
+      description="勾选表示该角色可用。每行只有「最低可用」那一档可点：向上收一档，或点更低的一档放开。保存后接口权限立即生效；侧栏与按钮要等相关账号重新登录才刷新。"
+      icon={ShieldCheck}
+      actions={
+        <>
           <Button variant="secondary" size="sm" onClick={() => void reset()} disabled={saving}>
             <RotateCcw className="size-4" /> 恢复默认
           </Button>
           <Button size="sm" onClick={() => void save()} disabled={saving || !dirty}>
             <Save className="size-4" /> {saving ? '保存中…' : '保存'}
           </Button>
-        </div>
-      </div>
-
+        </>
+      }
+      scroll="none"
+      bodyClassName="gap-4"
+    >
       {saveError && (
         <div
           role="alert"
@@ -245,6 +241,6 @@ export default function RolePermissionsPanel() {
           超管始终拥有全部能力，矩阵不能把管理入口锁死；账号管理、审计、诊断与凭据类配置保持代码里的角色下限。
         </p>
       </div>
-    </div>
+    </SettingsPanel>
   );
 }
