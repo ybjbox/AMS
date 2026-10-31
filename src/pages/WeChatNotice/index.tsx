@@ -318,7 +318,7 @@ export default function WeChatNotice() {
               </span>
             </div>
             <div
-              className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
+              className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800"
               role="progressbar"
               aria-valuemin={0}
               aria-valuemax={100}
@@ -395,7 +395,7 @@ export default function WeChatNotice() {
         <div className="space-y-1.5">
           <span className="text-xs font-medium text-muted-foreground">详细程度</span>
           <div
-            className="inline-flex items-center gap-0.5 rounded-lg border bg-muted/40 p-0.5"
+            className="inline-flex items-center gap-0.5 rounded-lg border border-zinc-200 bg-zinc-50 p-0.5 dark:border-zinc-700 dark:bg-zinc-800/40"
             role="radiogroup"
             aria-label="详细程度"
           >
@@ -409,7 +409,7 @@ export default function WeChatNotice() {
                 onClick={() => setDetail(o.value)}
                 className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
                   detail === o.value
-                    ? 'bg-background font-medium text-foreground shadow-sm'
+                    ? 'bg-white font-medium text-foreground shadow-sm dark:bg-zinc-700'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -448,10 +448,10 @@ export default function WeChatNotice() {
             <h2 className="section-title">生成结果</h2>
             <div className="flex items-center gap-2">
               {versions.length > 1 && (
-                <div className="flex items-center gap-1 rounded-lg border bg-muted/40 px-1 py-0.5">
+                <div className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-zinc-50 px-1 py-0.5 dark:border-zinc-700 dark:bg-zinc-800/40">
                   <Pressable
                     type="button"
-                    className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
+                    className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-zinc-100 hover:text-foreground disabled:opacity-40 dark:hover:bg-zinc-700/60"
                     title="查看更早的版本"
                     disabled={viewIdx >= versions.length - 1}
                     onClick={() => setViewIdx((i) => Math.min(versions.length - 1, i + 1))}
@@ -464,7 +464,7 @@ export default function WeChatNotice() {
                   </span>
                   <Pressable
                     type="button"
-                    className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
+                    className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-zinc-100 hover:text-foreground disabled:opacity-40 dark:hover:bg-zinc-700/60"
                     title="查看更新的版本"
                     disabled={viewIdx <= 0}
                     onClick={() => setViewIdx((i) => Math.max(0, i - 1))}
@@ -501,7 +501,7 @@ export default function WeChatNotice() {
               </Pressable>
             )}
           </p>
-          <div className="rounded-xl border bg-muted/40 p-4 max-h-112 overflow-y-auto">
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 max-h-112 overflow-y-auto dark:border-zinc-700 dark:bg-zinc-800/40">
             <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed text-foreground">
               {current.notice}
             </pre>

@@ -303,7 +303,7 @@ export default function BusinessForms() {
             const amountId = `form-amount-${item.id}`;
             const bodyId = `form-body-${item.id}`;
             return (
-              <article key={item.id} className="space-y-3 rounded-xl border bg-card p-3">
+              <article key={item.id} className="space-y-3 rounded-xl border border-zinc-200/60 bg-white p-3 dark:border-zinc-700/60 dark:bg-zinc-800">
                 <header className="flex items-center justify-between gap-2">
                   <h3 className="text-sm font-medium text-foreground">
                     第 {i + 1} 条
@@ -338,7 +338,7 @@ export default function BusinessForms() {
                 <div className="space-y-1.5">
                   <span className="text-xs font-medium text-muted-foreground">业务类型</span>
                   <div
-                    className="inline-flex flex-wrap items-center gap-0.5 rounded-lg border bg-muted/40 p-0.5"
+                    className="inline-flex flex-wrap items-center gap-0.5 rounded-lg border border-zinc-200 bg-zinc-50 p-0.5 dark:border-zinc-700 dark:bg-zinc-800/40"
                     role="radiogroup"
                     aria-label={`第 ${i + 1} 条的业务类型`}
                   >
@@ -352,7 +352,7 @@ export default function BusinessForms() {
                         onClick={() => changeKind(item.id, o.value)}
                         className={`rounded-md px-2.5 py-1 text-sm transition-colors ${
                           item.kind === o.value
-                            ? 'bg-background font-medium text-foreground shadow-sm'
+                            ? 'bg-white font-medium text-foreground shadow-sm dark:bg-zinc-700'
                             : 'text-muted-foreground hover:text-foreground'
                         }`}
                       >
@@ -569,7 +569,7 @@ export default function BusinessForms() {
             role="region"
             aria-label="业务单预览区"
             tabIndex={0}
-            className="max-h-[70vh] space-y-3 overflow-auto rounded-xl border bg-muted/30 p-2"
+            className="max-h-[70vh] space-y-3 overflow-auto rounded-xl border border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-700 dark:bg-zinc-800/30"
           >
             {plan.sheets.map((sheet, i) => (
               <div key={i}>

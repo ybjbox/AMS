@@ -129,7 +129,7 @@ export default function AiHistoryPanel() {
       </div>
 
       {/* 搜索 + 统计 */}
-      <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-wrap items-center gap-3">
+      <div className="card-base rounded-xl p-4 flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-50">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
@@ -137,7 +137,7 @@ export default function AiHistoryPanel() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="按用户名或对话标题筛选…"
-            className="w-full pl-9 pr-3 py-2 text-sm border border-border/80 dark:border-border rounded-lg bg-muted dark:bg-background text-foreground focus:outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary transition duration-quick"
+            className="w-full pl-9 pr-3"
           />
         </div>
         <div className="text-xs text-muted-foreground whitespace-nowrap">
@@ -159,7 +159,7 @@ export default function AiHistoryPanel() {
       </div>
 
       {/* 列表 */}
-      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+      <div className="card-base rounded-xl overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">加载中…</div>
         ) : filtered.length === 0 ? (
@@ -167,11 +167,11 @@ export default function AiHistoryPanel() {
             暂无对话记录
           </div>
         ) : (
-          <ul className="divide-y divide-border">
+          <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {filtered.map((c) => (
               <li
                 key={c.id}
-                className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors"
+                className="flex items-center gap-3 px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
               >
                 <div className="min-w-0 flex-1 cursor-pointer" onClick={() => openDetail(c.id)}>
                   <div className="flex items-center gap-2 min-w-0">
@@ -225,7 +225,7 @@ export default function AiHistoryPanel() {
       {detail && (
         <Sheet open onOpenChange={(open) => !open && setDetail(null)}>
           <SheetContent side="right" showCloseButton={false} className="w-full max-w-lg gap-0 p-0">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 shrink-0 dark:border-zinc-700/60">
               <div className="min-w-0">
                 <SheetTitle className="truncate text-base">{detail.title || '（无标题）'}</SheetTitle>
                 <div className="text-xs text-muted-foreground mt-0.5">
@@ -257,7 +257,7 @@ export default function AiHistoryPanel() {
                     className={`rounded-lg p-3 text-sm ${
                       m.role === 'user'
                         ? 'bg-primary/10 text-foreground'
-                        : 'bg-muted text-foreground'
+                        : 'bg-zinc-100 text-foreground dark:bg-zinc-800'
                     }`}
                   >
                     <div className="text-xs font-medium text-muted-foreground mb-1">
@@ -269,7 +269,7 @@ export default function AiHistoryPanel() {
               )}
             </div>
 
-            <div className="px-5 py-3 border-t border-border shrink-0 flex justify-end">
+            <div className="px-5 py-3 border-t border-zinc-100 shrink-0 flex justify-end dark:border-zinc-700/60">
               <Button
                 type="button"
                 variant="destructive"

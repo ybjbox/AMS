@@ -186,26 +186,26 @@ export default function BackupPanel() {
 
       {cfg && (
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 text-sm">
-          <div className="rounded-lg bg-muted dark:bg-background/50 p-3">
+          <div className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/50">
             <div className="text-muted-foreground">自动备份</div>
             <div className="font-medium mt-0.5">{cfg.enabled ? '已开启' : '已关闭'}</div>
           </div>
-          <div className="rounded-lg bg-muted dark:bg-background/50 p-3">
+          <div className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/50">
             <div className="text-muted-foreground">保留天数</div>
             <div className="font-medium mt-0.5">{cfg.retentionDays} 天</div>
           </div>
-          <div className="rounded-lg bg-muted dark:bg-background/50 p-3">
+          <div className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/50">
             <div className="text-muted-foreground">备份间隔</div>
             <div className="font-medium mt-0.5">{Math.round(cfg.intervalMs / 60000)} 分钟</div>
           </div>
-          <div className="rounded-lg bg-muted dark:bg-background/50 p-3">
+          <div className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/50">
             <div className="text-muted-foreground">已有备份</div>
             <div className="font-medium mt-0.5">
               {cfg.count} / {cfg.maxCount} 份
             </div>
           </div>
           {/* 备份断了最要命的是没人知道：这两块把"最近一次成功吗"和"还塞得下吗"摊开 */}
-          <div className="rounded-lg bg-muted dark:bg-background/50 p-3">
+          <div className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/50">
             <div className="text-muted-foreground">最近一次备份</div>
             <div
               className={
@@ -219,7 +219,7 @@ export default function BackupPanel() {
               {cfg.lastRun ? <span className="block text-xs font-normal text-muted-foreground">{formatDate(cfg.lastRun.at)}</span> : null}
             </div>
           </div>
-          <div className="rounded-lg bg-muted dark:bg-background/50 p-3">
+          <div className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/50">
             <div className="text-muted-foreground">磁盘剩余</div>
             <div className="font-medium mt-0.5">
               {cfg.freeMb === null ? '未知' : `${cfg.freeMb >= 1024 ? (cfg.freeMb / 1024).toFixed(1) + ' GB' : cfg.freeMb + ' MB'}`}
@@ -267,9 +267,9 @@ export default function BackupPanel() {
         </Pressable>
       </div>
 
-      <div className="flex-1 overflow-auto rounded-lg border border-border">
+      <div className="flex-1 overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
         <table className="w-full text-sm">
-          <thead className="bg-muted dark:bg-background/60 text-muted-foreground sticky top-0">
+          <thead className="bg-zinc-50 text-muted-foreground sticky top-0 dark:bg-zinc-800/50">
             <tr>
               <th className="text-left px-4 py-2.5 font-medium">文件名</th>
               <th className="text-left px-4 py-2.5 font-medium">时间</th>
@@ -288,7 +288,7 @@ export default function BackupPanel() {
               data.backups.map((b) => (
                 <tr
                   key={b.name}
-                  className="border-t border-border  hover:bg-muted dark:hover:bg-muted/40"
+                  className="border-t border-zinc-200 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800/40"
                 >
                   <td className="px-4 py-2.5 font-mono text-xs">
                     {b.name}

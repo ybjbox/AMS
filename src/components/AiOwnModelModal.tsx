@@ -115,7 +115,7 @@ export default function AiOwnModelModal({ onClose, onChanged }: Props) {
     >
       <div
         ref={panelRef}
-        className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-2xl"
+        className="w-full max-w-sm rounded-2xl border border-zinc-200/70 bg-white p-5 text-zinc-900 shadow-2xl dark:border-zinc-700/60 dark:bg-zinc-800 dark:text-white"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-1 flex items-center justify-between">

@@ -230,16 +230,16 @@ export default function AiAssistant() {
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
             transition={t(MOTION.fast)}
             style={isFloatable && effectiveY != null ? { bottom: `calc(100vh - ${effectiveY}px + 12px)` } : undefined}
-            className="fixed bottom-24 right-6 z-50 flex h-140 w-95 ai-assistant-panel flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl"
+            className="fixed bottom-24 right-6 z-50 flex h-140 w-95 ai-assistant-panel flex-col overflow-hidden rounded-2xl border border-zinc-200/70 bg-white text-zinc-900 shadow-2xl dark:border-zinc-700/60 dark:bg-zinc-800 dark:text-white"
           >
             {/* 头部 */}
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3 dark:border-zinc-700/60">
               <div className="flex min-w-0 items-center gap-2">
                 {renderGlyph("h-4 w-4")}
                 <span className="shrink-0 text-sm font-semibold">{assistantLabel}</span>
                 <span
                   title={hasOwnModel ? '当前使用个人模型（自有凭据，不占用系统额度）' : '系统模型的当日剩余额度'}
-                  className="truncate rounded-full bg-muted px-2 py-0.5 text-3xs text-muted-foreground"
+                  className="truncate rounded-full bg-zinc-100 px-2 py-0.5 text-3xs text-muted-foreground dark:bg-zinc-800"
                 >
                   {hasOwnModel
                     ? '个人模型 · 不占额度'
@@ -257,7 +257,7 @@ export default function AiAssistant() {
                     onClick={() => setShowOwnModel(true)}
                     aria-label="模型设置"
                     title="模型设置（可配置个人模型，不占用系统额度）"
-                    className="text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    className="text-muted-foreground transition-colors hover:bg-zinc-100 hover:text-foreground dark:hover:bg-zinc-700/60"
                   >
                     <SlidersHorizontal className="h-4 w-4" />
                   </Button>
@@ -273,7 +273,7 @@ export default function AiAssistant() {
                     showHistory
                       ? // ghost 的 hover 底色会盖掉选中态，显式钉回原样（原实现选中时无 hover 反馈）
                         'bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/10'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      : 'text-muted-foreground hover:bg-zinc-100 hover:text-foreground dark:hover:bg-zinc-700/60'
                   }`}
                 >
                   <History className="h-4 w-4" />
@@ -284,7 +284,7 @@ export default function AiAssistant() {
                   size="icon-xs"
                   onClick={handleClose}
                   aria-label="关闭"
-                  className="text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  className="text-muted-foreground transition-colors hover:bg-zinc-100 hover:text-foreground dark:hover:bg-zinc-700/60"
                 >
                   <X className="size-4" />
                 </Button>
@@ -301,7 +301,7 @@ export default function AiAssistant() {
                     animate={{ width: 140, opacity: 1 }}
                     exit={{ width: 0, opacity: 0 }}
                     transition={t(MOTION.fast)}
-                    className="shrink-0 overflow-hidden border-r border-border bg-muted/40"
+                    className="shrink-0 overflow-hidden border-r border-zinc-100 bg-zinc-50 dark:border-zinc-700/60 dark:bg-zinc-800/40"
                   >
                     <div className="flex h-full w-35 flex-col">
                       <Button
@@ -312,7 +312,7 @@ export default function AiAssistant() {
                           newChat();
                           setShowHistory(false);
                         }}
-                        className="m-2 rounded-lg border border-dashed border-border text-xs text-muted-foreground transition-colors hover:border-primary hover:bg-transparent hover:text-primary dark:hover:bg-transparent"
+                        className="m-2 rounded-lg border border-dashed border-zinc-300 text-xs text-muted-foreground dark:border-zinc-600 transition-colors hover:border-primary hover:bg-transparent hover:text-primary dark:hover:bg-transparent"
                       >
                         <Plus className="size-3.5" />
                         新建对话
@@ -329,7 +329,7 @@ export default function AiAssistant() {
                             className={`group flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs transition-colors ${
                               c.id === activeId
                                 ? 'bg-primary/10 text-primary'
-                                : 'text-foreground hover:bg-muted'
+                                : 'text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-700/60'
                             }`}
                           >
                             <Pressable
@@ -391,7 +391,7 @@ export default function AiAssistant() {
                         className={
                           m.role === 'user'
                             ? 'chat-bubble whitespace-pre-wrap rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-primary-foreground'
-                            : 'chat-bubble whitespace-pre-wrap rounded-2xl rounded-bl-sm bg-muted px-3 py-2 text-foreground'
+                            : 'chat-bubble whitespace-pre-wrap rounded-2xl rounded-bl-sm bg-zinc-100 px-3 py-2 text-foreground dark:bg-zinc-800'
                         }
                       >
                         {m.content ? (
@@ -405,7 +405,7 @@ export default function AiAssistant() {
                 </div>
 
                 {/* 底部：开关 + 输入 */}
-                <div className="border-t border-border px-4 py-3">
+                <div className="border-t border-zinc-100 px-4 py-3 dark:border-zinc-700/60">
                   <label
                     htmlFor="ai-assistant-use-data"
                     className="mb-2 flex cursor-pointer items-center gap-2 text-xs text-muted-foreground"
@@ -454,7 +454,7 @@ export default function AiAssistant() {
                         type="button"
                         onClick={stop}
                         aria-label="停止"
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground transition-colors hover:bg-muted/70"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-foreground transition-colors hover:bg-zinc-200/70 dark:bg-zinc-800 dark:hover:bg-zinc-700/70"
                       >
                         <Square className="h-4 w-4" />
                       </Pressable>

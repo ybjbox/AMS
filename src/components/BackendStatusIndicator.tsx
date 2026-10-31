@@ -64,7 +64,7 @@ export default function BackendStatusIndicator({
 
   const container =
     variant === 'pill'
-      ? 'inline-flex items-center gap-1.5 rounded-full border border-border bg-card/80 px-2.5 py-1 shadow-sm backdrop-blur select-none'
+      ? 'inline-flex items-center gap-1.5 rounded-full border border-zinc-200/70 bg-white/80 px-2.5 py-1 shadow-sm backdrop-blur select-none dark:border-zinc-700/60 dark:bg-zinc-800/80'
       : 'inline-flex items-center gap-1.5 select-none';
 
   return (

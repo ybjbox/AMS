@@ -371,7 +371,7 @@ export default function AiConfigPanel() {
           )}
         </div>
 
-        <div className="border-t border-border/60" />
+        <div className="border-t border-zinc-200/60 dark:border-zinc-700/60" />
 
         {/* 个人模型 */}
         <div className="space-y-3">
@@ -389,7 +389,7 @@ export default function AiConfigPanel() {
                 {personalUsers.map((u) => (
                   <span
                     key={u}
-                    className="rounded-full bg-muted px-2.5 py-1 text-xs text-foreground"
+                    className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs text-foreground dark:bg-zinc-800"
                   >
                     {u}
                   </span>
@@ -454,7 +454,7 @@ export default function AiConfigPanel() {
                   className={`flex flex-col items-center gap-1.5 rounded-lg border p-2.5 transition-colors ${
                     selected
                       ? 'border-brand-500 bg-brand-50/60 text-brand-700 ring-1 ring-brand-500/30 dark:bg-brand-900/20 dark:text-brand-300'
-                      : 'border-border/80 text-muted-foreground hover:border-brand-300 hover:text-foreground'
+                      : 'border-zinc-200 text-muted-foreground hover:border-brand-300 hover:text-foreground dark:border-zinc-700'
                   }`}
                 >
                   <Icon className="size-5" />
@@ -472,7 +472,7 @@ export default function AiConfigPanel() {
                 className={`flex w-full flex-col items-center gap-1.5 rounded-lg border p-2.5 transition-colors ${
                   form.assistantLogo
                     ? 'border-brand-500 bg-brand-50/60 text-brand-700 ring-1 ring-brand-500/30 dark:bg-brand-900/20 dark:text-brand-300'
-                    : 'border-dashed border-border/80 text-muted-foreground hover:border-brand-300 hover:text-foreground'
+                    : 'border-dashed border-zinc-200 text-muted-foreground hover:border-brand-300 hover:text-foreground dark:border-zinc-700'
                 }`}
               >
                 {form.assistantLogo ? (
@@ -732,7 +732,7 @@ function Section({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="bg-card rounded-xl border border-border shadow-sm">
+    <div className="card-base rounded-xl">
       <Pressable
         type="button"
         aria-expanded={open}
@@ -742,7 +742,7 @@ function Section({
         <span className="flex items-center gap-2 min-w-0">
           <h2 className="subsection-title shrink-0">{title}</h2>
           {badge && !open && (
-            <span className="truncate rounded-full bg-muted px-2 py-0.5 text-2xs text-muted-foreground">
+            <span className="truncate rounded-full bg-zinc-100 px-2 py-0.5 text-2xs text-muted-foreground dark:bg-zinc-800">
               {badge}
             </span>
           )}
@@ -783,11 +783,11 @@ function Switch({
       aria-label={label}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 ${
-        checked ? 'bg-brand-500 dark:bg-brand-500' : 'bg-muted'
+        checked ? 'bg-brand-500 dark:bg-brand-500' : 'bg-zinc-200 dark:bg-zinc-700'
       }`}
     >
       <span
-        className={`inline-block size-4 transform rounded-full bg-card shadow ring-0 transition ${
+        className={`inline-block size-4 transform rounded-full bg-white shadow ring-0 transition ${
           checked ? 'translate-x-4' : 'translate-x-0.5'
         }`}
       />
@@ -807,7 +807,7 @@ function SwitchRow({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 dark:bg-background/40 px-3 py-2.5">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200/70 bg-zinc-50 px-3 py-2.5 dark:border-zinc-700/60 dark:bg-zinc-800/40">
       <div className="min-w-0">
         <div className="text-sm font-medium text-foreground">{label}</div>
         <div className="text-xs text-muted-foreground mt-0.5">{desc}</div>
