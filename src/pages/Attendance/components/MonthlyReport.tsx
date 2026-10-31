@@ -1,4 +1,3 @@
-import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, ChevronDown, ClipboardCheck, Download, FileSpreadsheet, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
@@ -6,6 +5,7 @@ import { FailedState } from '@/components/ui/FailedState';
 import { Input } from '@/components/ui/input';
 import { Table, TableHead, TableHeader } from '@/components/ui/Table';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { FilterChip } from '@/components/ui/FilterChip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -213,19 +213,16 @@ export default function MonthlyReport() {
         <div className="px-4 py-2 border-b border-zinc-200/80 dark:border-zinc-700 flex flex-wrap items-center gap-2 shrink-0">
           <span className="text-xs text-muted-foreground">有打卡的月份</span>
           {stats.map((s) => (
-            <Pressable
+            <FilterChip
               key={s.month}
-              type="button"
-              aria-pressed={s.month === month}
+              shape="pill"
+              active={s.month === month}
               onClick={() => switchMonth(s.month)}
-              className={`rounded-full border px-2.5 py-1 text-xs tabular-nums transition-colors ${
-                s.month === month
-                  ? 'border-brand-500 bg-brand-50 text-brand-800 dark:bg-brand-500/15 dark:text-brand-200'
-                  : 'border-zinc-200 dark:border-zinc-600 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
-              }`}
+              count={`${s.days} 天`}
+              className="tabular-nums"
             >
-              {s.month} · {s.days} 天
-            </Pressable>
+              {s.month}
+            </FilterChip>
           ))}
           {fullerMonth && currentStat && (
             <span className="text-xs text-muted-foreground">

@@ -15,7 +15,7 @@ import { ContractTemplateEditor } from './components/ContractTemplateEditor';
 import { useContractPrint } from './hooks/useContractPrint';
 import { ContractTemplate } from './components/ContractTemplate';
 import { expiryBucket, expiryCounts, EXPIRY_BUCKET_LABEL, type ExpiryBucket } from './utils/expiryBucket';
-import { cn } from '@/lib/utils';
+import { FilterChip, type FilterChipTone } from '@/components/ui/FilterChip';
 import { Button } from '@/components/ui/button';
 
 // 状态筛选选项（value 与展示文案不一致，交由 ui/Select 的 items 映射）
@@ -161,30 +161,20 @@ export default function ContractsPage() {
             {(['expired', 'soon', 'none', 'ok'] as ExpiryBucket[]).map((b) => {
               const n = counts[b];
               const active = filterBucket === b;
-              const tone =
-                b === 'expired' && n > 0
-                  ? 'text-red-700 dark:text-red-400'
-                  : b === 'soon' && n > 0
-                    ? 'text-amber-700 dark:text-amber-400'
-                    : 'text-muted-foreground';
+              const tone: FilterChipTone =
+                b === 'expired' && n > 0 ? 'danger' : b === 'soon' && n > 0 ? 'warning' : 'neutral';
               return (
-                <Pressable
+                <FilterChip
                   key={b}
-                  type="button"
-                  aria-pressed={active}
+                  shape="pill"
+                  active={active}
+                  tone={tone}
+                  count={n}
                   disabled={n === 0 && !active}
                   onClick={() => setFilterBucket(active ? 'ALL' : b)}
-                  className={cn(
-                    'rounded-full border px-2.5 py-1 transition-colors duration-quick',
-                    tone,
-                    active
-                      ? 'border-brand-500 bg-brand-50 font-medium dark:bg-brand-500/15'
-                      : 'border-zinc-200 dark:border-zinc-600',
-                    n === 0 && !active && 'opacity-50'
-                  )}
                 >
-                  {EXPIRY_BUCKET_LABEL[b]} <span className="font-semibold tabular-nums">{n}</span>
-                </Pressable>
+                  {EXPIRY_BUCKET_LABEL[b]}
+                </FilterChip>
               );
             })}
             {filterBucket && (

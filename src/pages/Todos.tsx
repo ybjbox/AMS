@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
+import { FilterChip, type FilterChipTone } from '@/components/ui/FilterChip';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { todoApi } from '@/services/todoApi';
 import RenewContractModal from '@/pages/Users/components/RenewContractModal';
@@ -89,21 +90,21 @@ export default function Todos() {
 
   /** 未完成 / 已逾期 / 今天到期 —— 点数字即筛选，所以它们不是装饰 */
   const urgency = useMemo(() => todoUrgency(todos), [todos]);
-  const chips: { id: Filter; label: string; n: number; tone: string }[] = [
-    { id: 'all', label: '全部', n: todos.length, tone: '' },
+  const chips: { id: Filter; label: string; n: number; tone: FilterChipTone }[] = [
+    { id: 'all', label: '全部', n: todos.length, tone: 'neutral' },
     {
       id: 'overdue',
       label: '已逾期',
       n: urgency.overdue,
-      tone: urgency.overdue ? 'text-red-700 dark:text-red-400' : '',
+      tone: urgency.overdue ? 'danger' : 'neutral',
     },
     {
       id: 'today',
       label: '今天到期',
       n: urgency.dueToday,
-      tone: urgency.dueToday ? 'text-amber-700 dark:text-amber-400' : '',
+      tone: urgency.dueToday ? 'warning' : 'neutral',
     },
-    { id: 'pending', label: '未完成', n: urgency.pending, tone: '' },
+    { id: 'pending', label: '未完成', n: urgency.pending, tone: 'neutral' },
   ];
 
   const onToggleTodoClick = useCallback(
@@ -201,21 +202,16 @@ export default function Todos() {
       */}
       <div className="shrink-0 flex flex-wrap items-center gap-2 text-xs">
         {chips.map((c) => (
-          <Pressable
+          <FilterChip
             key={c.id}
-            type="button"
-            aria-pressed={only === c.id}
+            shape="pill"
+            active={only === c.id}
+            tone={c.tone}
+            count={c.n}
             onClick={() => setOnly(c.id)}
-            className={
-              'rounded-full border px-2.5 py-1 transition-colors duration-quick ' +
-              (c.tone ?? '') +
-              (only === c.id
-                ? ' border-brand-500 bg-brand-50 font-medium dark:bg-brand-500/15'
-                : ' border-zinc-200 dark:border-zinc-600')
-            }
           >
-            {c.label} <span className="font-semibold tabular-nums">{c.n}</span>
-          </Pressable>
+            {c.label}
+          </FilterChip>
         ))}
       </div>
 

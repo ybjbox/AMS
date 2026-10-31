@@ -1,8 +1,8 @@
-import { Pressable } from '@/components/ui/Pressable';
 import React from 'react';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { FilterChip } from '@/components/ui/FilterChip';
 import type { RecordFilter, RecordSourceFilter } from '../lib/filters';
 import { ANOMALY_GROUPS } from '../lib/filters';
 import type { AnomalyGroup } from '../lib/filters';
@@ -118,21 +118,14 @@ export function RecordsFilterBar({
               {DATE_PRESETS.map((p) => {
                 const isActive = activePreset === p.id;
                 return (
-                  <Pressable
+                  <FilterChip
                     key={p.id}
-                    type="button"
-                    aria-pressed={isActive}
+                    active={isActive}
                     onClick={() => onPreset(p.id)}
                     title={`${describeRange(presetRange(p.id, today, padDays).from, presetRange(p.id, today, padDays).to)}`}
-                    className={[
-                      'whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors duration-quick max-sm:min-h-11',
-                      isActive
-                        ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white'
-                        : 'text-muted-foreground hover:text-zinc-900 dark:hover:text-zinc-100',
-                    ].join(' ')}
                   >
                     {p.label}
-                  </Pressable>
+                  </FilterChip>
                 );
               })}
             </div>
@@ -159,20 +152,13 @@ export function RecordsFilterBar({
               {SOURCE_OPTIONS.map((opt) => {
                 const isActive = filter.source === opt.id;
                 return (
-                  <Pressable
+                  <FilterChip
                     key={opt.id}
-                    type="button"
-                    aria-pressed={isActive}
+                    active={isActive}
                     onClick={() => onChange({ source: opt.id })}
-                    className={[
-                      'whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors duration-quick max-sm:min-h-11',
-                      isActive
-                        ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white'
-                        : 'text-muted-foreground hover:text-zinc-900 dark:hover:text-zinc-100',
-                    ].join(' ')}
                   >
                     {opt.label}
-                  </Pressable>
+                  </FilterChip>
                 );
               })}
             </div>
@@ -236,22 +222,14 @@ export function AnomalyFilterBar({ query, onQueryChange, group, onGroupChange, c
             {ANOMALY_GROUPS.map((g) => {
               const isActive = group === g.id;
               return (
-                <Pressable
+                <FilterChip
                   key={g.id}
-                  type="button"
-                  aria-pressed={isActive}
+                  active={isActive}
                   onClick={() => onGroupChange(g.id)}
-                  className={[
-                    'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors duration-quick',
-                    isActive
-                      ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white'
-                      : 'text-muted-foreground hover:text-zinc-900 dark:hover:text-zinc-100',
-                  ].join(' ')}
+                  count={counts[g.id]}
                 >
                   {g.label}
-                  {/* 计数是信息，不靠透明度弱化：opacity-70 实测对比度不足 4.5:1（access-2） */}
-                  <span className="tabular-nums">{counts[g.id]}</span>
-                </Pressable>
+                </FilterChip>
               );
             })}
           </div>

@@ -4,6 +4,7 @@ import { AlertCircle, CheckCircle2, Download, RotateCcw, UploadCloud } from 'luc
 import { toast } from 'sonner';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Button } from '@/components/ui/button';
+import { FilterChip } from '@/components/ui/FilterChip';
 import { Table, TableHead, TableHeader } from '@/components/ui/Table';
 import {
   commitPunchImport,
@@ -273,21 +274,14 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
                         ? preview.duplicates
                         : preview.valid;
                 return (
-                  <Pressable
+                  <FilterChip
                     key={f.id}
-                    type="button"
-                    aria-pressed={isActive}
+                    active={isActive}
                     onClick={() => setPreviewFilter(f.id)}
-                    className={[
-                      'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors duration-quick',
-                      isActive
-                        ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white'
-                        : 'text-muted-foreground hover:text-zinc-900 dark:hover:text-zinc-100',
-                    ].join(' ')}
+                    count={n}
                   >
                     {f.label}
-                    <span className="tabular-nums opacity-70">{n}</span>
-                  </Pressable>
+                  </FilterChip>
                 );
               })}
             </div>

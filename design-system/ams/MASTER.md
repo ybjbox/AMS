@@ -315,6 +315,10 @@ v3 写的是「❌ 布局位移型 hover（scale/translate 导致 reflow）」�
 
 次级按钮统一 `variant="outline"`（白底 + `zinc-200/80` 边框，hover 浅底）。危险操作用 red 语义色并要求 `useConfirm` 二次确认。
 
+### Filter chips
+
+筛选/分档统一用 `ui/FilterChip`：`shape="rect"` 用于分段组（考勤快捷区间、来源、异常类型、导入预览），`shape="pill"` 用于独立分档（待办催办、合同到期、月报月份）。`size="compact"` = 28px、`comfortable` = 32px；小屏统一 `min-h-11`（44px）。选中态只有一套：`border-brand-500 + bg-white + shadow-sm`（暗色 `zinc-700` + `brand-100`）；计数走 `count`（加粗 tabular-nums），未选中可传 `tone="danger|warning"`。不要再手写 `rounded-full border px-2.5 py-1` 这类样式串。
+
 图标按钮一律 `<Button variant="ghost" size="icon-xs|icon-sm">` 且**必须带中文 `aria-label`**（作用对象写全，如「删除文件夹：行政部」）。`size="xs"` 是 h-6/px-2 —— 放进密排表格或面包屑时要补 `h-auto px-0` 才不会把行撑高 4px。
 
 ### 焦点环（v4 新增硬规则）
