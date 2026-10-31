@@ -88,7 +88,7 @@ spacing:
   2xl: "48px"
   3xl: "64px"
 components:
-  btn-primary:
+  button-primary:
     backgroundColor: "#005BA8"
     textColor: "#FFFFFF"
     rounded: "8px"
@@ -305,25 +305,15 @@ v3 写的是「❌ 布局位移型 hover（scale/translate 导致 reflow）」�
 
 ## Components
 
-**优先级：`src/components/ui/*` 原语 > 全局契约类（btn-primary / card-base / page-title 等）> 页内样式。** 新功能不得手搓交互原语；重复 ≥3 次的样式块应下沉为 ui 组件或契约类（P3 迁移即执行此规则）。
+**优先级：`src/components/ui/*` 原语 > 全局契约类（card-base / page-title / tab-item 等）> 页内样式。** 新功能不得手搓交互原语；重复 ≥3 次的样式块应下沉为 ui 组件或契约类（P3 迁移即执行此规则）。
 
 **`ui/` 目录本身也要合规**：原语里不得放裸 `<select>` / 手搓浮层 —— 2026-09-22 的 `ui/Pagination` 原生 select 就是扫描盲区（扫描器把 ui/* 整体当原语豁免）。
 
 ### Buttons
 
-新代码统一用 `ui/Button`：页面级 `size="page"`（40px）、工具条 `toolbar`（36px）、行内 `inline` / `sm`（28–32px）；变体 `default` = 品牌主按钮、`outline` = 白底描边次级、`danger` = 实色红危险确认、`danger-outline` = 白底红字危险操作。下面的 `.btn-*` 是迁移期旧契约，逐步删除，不再新增。
+新代码统一用 `ui/Button`：页面级 `size="page"`（40px）、工具条 `toolbar`（36px）、行内 `inline` / `sm`（28–32px）；变体 `default` = 品牌主按钮、`outline` = 白底描边次级、`danger` = 实色红危险确认、`danger-outline` = 白底红字危险操作。`.btn-*` 契约类已于 2026-10-31 删除，代码与文档不得再引用。
 
-```css
-.btn-primary {
-  background: #005BA8; color: #fff;
-  padding: 10px 16px; border-radius: 8px;
-  font-weight: 500; transition: all 200ms ease; cursor: pointer;
-}
-.btn-primary:hover { background: brand-700; }
-.btn-primary:disabled { opacity: .6; cursor: not-allowed; }
-```
-
-次级按钮：`border zinc-300/600 + text-zinc-700`，hover 浅底。危险操作用 red 语义色并要求 useConfirm 二次确认。
+次级按钮统一 `variant="outline"`（白底 + `zinc-200/80` 边框，hover 浅底）。危险操作用 red 语义色并要求 `useConfirm` 二次确认。
 
 图标按钮一律 `<Button variant="ghost" size="icon-xs|icon-sm">` 且**必须带中文 `aria-label`**（作用对象写全，如「删除文件夹：行政部」）。`size="xs"` 是 h-6/px-2 —— 放进密排表格或面包屑时要补 `h-auto px-0` 才不会把行撑高 4px。
 

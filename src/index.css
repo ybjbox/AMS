@@ -271,50 +271,6 @@ main,
     transition-[color,background-color,border-color,box-shadow] duration-quick dark:[color-scheme:dark];
   }
   
-  .btn-primary {
-    /* 品牌 CTA：实色 Logo 蓝 #005BA8（brand-600），白字对比 6.9:1（MASTER v3 扁平契约）
-       border-transparent：与 .btn-secondary/.btn-danger 同高 —— 那两条各带 1px 实边框，
-       实测同一工具条里 36 vs 38 差 2px（border-box 下边框计入高度）。 */
-    @apply inline-flex items-center justify-center whitespace-nowrap px-4 py-2 text-sm
-    border border-transparent
-    bg-brand-600 dark:bg-brand-500
-    text-white font-medium rounded-lg
-    hover:bg-brand-700 dark:hover:bg-brand-400
-    active:scale-95 transition-[background-color,transform] duration-quick shadow-sm;
-  }
-  
-  .btn-secondary {
-    @apply inline-flex items-center justify-center whitespace-nowrap px-4 py-2 shadow-sm
-    text-sm font-semibold text-zinc-700 bg-white border border-zinc-200/80 
-    rounded-lg hover:bg-zinc-50 hover:border-brand-500/40
-    dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-600 dark:hover:bg-zinc-700 
-    transition-colors;
-  }
-
-  .btn-danger {
-    @apply inline-flex items-center justify-center whitespace-nowrap px-4 py-2 
-    text-sm font-medium text-red-600 bg-white border border-zinc-200/80 
-    rounded-lg hover:bg-red-50 shadow-sm
-    dark:bg-zinc-800 dark:text-red-400 dark:border-zinc-600 dark:hover:bg-red-900/20 
-    transition-colors;
-  }
-
-  .btn-primary-danger {
-    @apply inline-flex items-center justify-center whitespace-nowrap px-4 py-2 text-sm
-    border border-transparent
-    bg-red-600 text-white font-medium rounded-lg
-    hover:bg-red-700
-    active:scale-95 transition-transform shadow-sm;
-  }
-
-  .btn-icon {
-    @apply inline-flex items-center justify-center p-2 
-    text-sm font-medium text-zinc-700 bg-white border border-zinc-200/80 
-    rounded-lg hover:bg-zinc-50 shadow-sm
-    dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-600 dark:hover:bg-zinc-700 
-    transition-colors;
-  }
-  
   .card-base {
     /* 基准玻璃卡：暗色内高光边（border-white/10）+ 内阴影，玻璃拟态实体化 */
     @apply bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 
@@ -440,7 +396,7 @@ main,
   }
 
   /* 键盘焦点统一走品牌环（MASTER：焦点环必须可见）。
-     全站约 180 个裸 <button> 与 btn-* 契约类按钮此前只显示 UA 默认 1px auto 环，
+     全站裸 <button> 与旧按钮契约类此前只显示 UA 默认 1px auto 环，
      与 ui/* 原语的 brand ring 是两套观感；这里一次性收齐。
      原语自带 outline-none + ring（utilities 层优先级高于 base），不会被这条盖成双环。
      --ring 在亮色=brand-600、暗色=brand-400，随主题自动切换。 */
@@ -500,16 +456,6 @@ main,
 /* 移动端触控契约（MASTER v5）：可点控件至少 44px。
    只放宽移动端；桌面仍保留 32/36 的密度。 */
 @media (max-width: 639px) {
-  .btn-primary,
-  .btn-secondary,
-  .btn-danger,
-  .btn-primary-danger {
-    min-height: 44px;
-  }
-  .btn-icon {
-    min-width: 44px;
-    min-height: 44px;
-  }
   .tab-item,
   .tab-item-active {
     min-height: 44px;

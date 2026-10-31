@@ -242,4 +242,12 @@ describe('设计契约：表单无障碍', () => {
     );
     expect(bad, `浮层标题请统一为 font-heading text-base font-medium：\n${bad.join('\n')}`).toEqual([]);
   });
+
+  it('动作按钮只走 ui/Button，不再引用 btn-* 契约类', () => {
+    // .btn-* 已于 2026-10-31 删除；按钮的尺寸/变体只由 ui/Button 提供。
+    const bad = files
+      .filter((f) => !f.includes('__tests__'))
+      .flatMap((f) => linesWith(f, /\bbtn-(primary|secondary|danger|primary-danger|icon)\b/));
+    expect(bad, `改用 ui/Button 的 size/variant：\n${bad.join('\n')}`).toEqual([]);
+  });
 });

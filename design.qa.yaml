@@ -53,11 +53,9 @@ components:
     - '**/components/ui/**'
     - src/pages/Settings/panels/ScriptsPanel.tsx  # 代码编辑器：等宽深色 textarea 是专用控件
     - src/index.css  # 仅注释里提到 <button>，不是 JSX
-  # 契约类本身就是设计系统的一部分：.btn-* 与原生 file/hidden/checkbox/radio
-  # 不是「绕过组件」，不纳入 bypass 计数（2026-10-27 裁定）。
+  # 原生 file/hidden/checkbox/radio 不是「绕过组件」，不纳入 bypass 计数。
+  # 按钮已统一走 ui/Button（.btn-* 契约类于 2026-10-31 删除），不再有 button 豁免。
   allowedRawElementPatterns:
-    button:
-      - 'className=[^>]*btn-(primary|secondary|danger|icon)'
     input:
       - 'type="(file|hidden|checkbox|radio|color)"'
 
