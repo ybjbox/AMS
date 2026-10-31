@@ -55,7 +55,7 @@ test.describe('移动端无障碍与触控', () => {
     await expect(page.locator('h1').first()).toBeVisible({ timeout: 30000 });
 
     for (const name of ['我的申请', '待我审批', '审批记录', '待核对']) {
-      const tab = page.getByRole('button', { name, exact: true });
+      const tab = page.getByRole('tab', { name, exact: true });
       await expect(tab).toBeVisible();
       const box = (await tab.boundingBox())!;
       expect(box.height, name).toBeGreaterThanOrEqual(44);

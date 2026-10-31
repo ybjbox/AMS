@@ -1,6 +1,6 @@
-import { Pressable } from '@/components/ui/Pressable';
 import PageContainer from "@/components/PageContainer";
 import { Button } from '@/components/ui/button';
+import { Tab, TabList, Tabs } from '@/components/ui/Tabs';
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Plus, Upload } from 'lucide-react';
 import { useBodyOverflow } from '@/hooks/useBodyOverflow';
@@ -35,8 +35,8 @@ export default function Documents() {
   // 使用统一的 title hook 管理页面标题
   useDocumentTitle(activeTab === 'files' ? '文件库' : '文件套件');
 
-  const handleTabChange = useCallback((tab: 'files' | 'sets') => {
-    setActiveTab(tab);
+  const handleTabChange = useCallback((tab: string) => {
+    setActiveTab(tab === 'files' ? 'files' : 'sets');
   }, []);
 
   const {
@@ -114,31 +114,22 @@ export default function Documents() {
   }, [documents, searchQuery, currentFolderId]);
 
   return (
-    <PageContainer className="space-y-6 animate-in fade-in duration-slow">
+    <Tabs value={activeTab} onValueChange={handleTabChange} variant="page">
+      <PageContainer className="space-y-6 animate-in fade-in duration-slow">
       <div className="page-header shrink-0">
         <div>
           <h1 className="page-title">常用文件</h1>
           <p className="page-subtitle">管理公司常用文件模板，支持一键打包打印</p>
         </div>
         <div className="toolbar">
-          <div className="tab-group" role="tablist" aria-label="文件管理">
-            <Pressable
-              role="tab"
-              aria-selected={activeTab === 'sets'}
-              onClick={() => handleTabChange('sets')}
-              className={activeTab === 'sets' ? 'tab-item-active' : 'tab-item'}
-            >
+          <TabList aria-label="文件管理">
+            <Tab value="sets" id="documents-tab-sets" aria-controls="documents-panel-sets">
               文件套件
-            </Pressable>
-            <Pressable
-              role="tab"
-              aria-selected={activeTab === 'files'}
-              onClick={() => handleTabChange('files')}
-              className={activeTab === 'files' ? 'tab-item-active' : 'tab-item'}
-            >
+            </Tab>
+            <Tab value="files" id="documents-tab-files" aria-controls="documents-panel-files">
               文件库
-            </Pressable>
-          </div>
+            </Tab>
+          </TabList>
           {canManageDocs && (activeTab === 'files' ? (
             <>
               <input type="file" multiple className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
@@ -161,7 +152,13 @@ export default function Documents() {
         </div>
       </div>
 
-      {activeTab === 'files' && (
+      <div
+        role="tabpanel"
+        id="documents-panel-files"
+        aria-labelledby="documents-tab-files"
+        hidden={activeTab !== 'files'}
+        className="flex flex-1 min-h-0 flex-col"
+      >
         <div className="flex flex-col md:flex-row gap-6 flex-1 min-h-100 md:min-h-125">
           <FolderTree
             folders={folders}
@@ -186,9 +183,15 @@ export default function Documents() {
             handleDeleteDocClick={handleDeleteDocClick}
           />
         </div>
-      )}
+      </div>
 
-      {activeTab === 'sets' && (
+      <div
+        role="tabpanel"
+        id="documents-panel-sets"
+        aria-labelledby="documents-tab-sets"
+        hidden={activeTab !== 'sets'}
+        className="flex flex-1 min-h-0 flex-col"
+      >
         <DocumentSetGrid
           documentSets={documentSets}
           documents={documents}
@@ -200,7 +203,7 @@ export default function Documents() {
           onPrintSetClick={handlePrintSetClick}
           handleCreateSetClick={handleCreateSetClick}
         />
-      )}
+      </div>
 
       <SetFormModal
         isOpen={isSetModalOpen}
@@ -244,6 +247,7 @@ export default function Documents() {
         handlePrint={handlePrintSet}
         documents={documents}
       />
-    </PageContainer>
+      </PageContainer>
+    </Tabs>
   );
 }

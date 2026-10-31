@@ -305,7 +305,7 @@ v3 写的是「❌ 布局位移型 hover（scale/translate 导致 reflow）」�
 
 ## Components
 
-**优先级：`src/components/ui/*` 原语 > 全局契约类（card-base / page-title / tab-item 等）> 页内样式。** 新功能不得手搓交互原语；重复 ≥3 次的样式块应下沉为 ui 组件或契约类（P3 迁移即执行此规则）。
+**优先级：`src/components/ui/*` 原语 > 全局契约类（card-base / page-title 等）> 页内样式。** 新功能不得手搓交互原语；重复 ≥3 次的样式块应下沉为 ui 组件或契约类（P3 迁移即执行此规则）。
 
 **`ui/` 目录本身也要合规**：原语里不得放裸 `<select>` / 手搓浮层 —— 2026-09-22 的 `ui/Pagination` 原生 select 就是扫描盲区（扫描器把 ui/* 整体当原语豁免）。
 
@@ -318,6 +318,16 @@ v3 写的是「❌ 布局位移型 hover（scale/translate 导致 reflow）」�
 ### Filter chips
 
 筛选/分档统一用 `ui/FilterChip`：`shape="rect"` 用于分段组（考勤快捷区间、来源、异常类型、导入预览），`shape="pill"` 用于独立分档（待办催办、合同到期、月报月份）。`size="compact"` = 28px、`comfortable` = 32px；小屏统一 `min-h-11`（44px）。选中态只有一套：`border-brand-500 + bg-white + shadow-sm`（暗色 `zinc-700` + `brand-100`）；计数走 `count`（加粗 tabular-nums），未选中可传 `tone="danger|warning"`。不要再手写 `rounded-full border px-2.5 py-1` 这类样式串。
+
+### Tabs
+
+页签统一用 `ui/Tabs`：`<Tabs value onValueChange variant>` 包住 `<TabList>` 与 `<Tab>`。
+
+- `variant="page"`：页面级页签（常用文件、打印工具、设置）；`orientation="vertical"` 用于设置页左侧导航。
+- `variant="segmented"`：卡片/表单内的紧凑分段（审批列表、申请类型）。
+- `variant="filter"`：通知筛选等带计数的过滤页签。
+- `TabList` 负责 `role=tablist`、roving tabindex、左右/上下方向键与 Home/End；`Tab` 负责 `role=tab`、`aria-selected`、点击和键盘选中。不要在页面里再手写 `role=tablist` 或 `.tab-group`/`.tab-item*`（契约类已删除）。
+- 面板继续由页面渲染，但必须有 `role=tabpanel`、`id` 与 `aria-labelledby`；未访问的懒挂载页签不要写指向不存在面板的 `aria-controls`。
 
 图标按钮一律 `<Button variant="ghost" size="icon-xs|icon-sm">` 且**必须带中文 `aria-label`**（作用对象写全，如「删除文件夹：行政部」）。`size="xs"` 是 h-6/px-2 —— 放进密排表格或面包屑时要补 `h-auto px-0` 才不会把行撑高 4px。
 

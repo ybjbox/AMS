@@ -4,6 +4,7 @@ import { Bell, CheckCheck, ChevronRight, Inbox } from 'lucide-react';
 import PageContainer from '@/components/PageContainer';
 import { Pressable } from '@/components/ui/Pressable';
 import { Button } from '@/components/ui/button';
+import { Tab, TabList, Tabs } from '@/components/ui/Tabs';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { FailedState } from '@/components/ui/FailedState';
 import { ListSkeleton } from '@/components/ui/Skeleton';
@@ -48,6 +49,14 @@ export default function Notifications() {
   const title = filter === 'unread' ? '没有未读通知' : '暂无通知';
 
   return (
+    <Tabs
+      value={filter}
+      onValueChange={(value) => {
+        setFilter(value === 'unread' ? 'unread' : 'all');
+        setLimit(20);
+      }}
+      variant="filter"
+    >
     <PageContainer width="6xl">
       <div className="page-header">
         <div>
@@ -64,28 +73,28 @@ export default function Notifications() {
 
       <div className="card-base overflow-hidden">
         <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-2 dark:border-zinc-700/60">
-          <div className="flex gap-1" role="tablist" aria-label="通知筛选">
+          <TabList aria-label="通知筛选">
             {([
               ['all', `全部 ${notifications.length}`],
               ['unread', `未读 ${unreadCount}`],
             ] as const).map(([id, label]) => (
-              <Pressable
+              <Tab
                 key={id}
-                role="tab"
-                aria-selected={filter === id}
-                onClick={() => { setFilter(id); setLimit(20); }}
-                className={`min-h-11 rounded-lg px-3 text-sm font-medium transition-colors ${
-                  filter === id
-                    ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300'
-                    : 'text-muted-foreground hover:bg-zinc-50 dark:hover:bg-zinc-800'
-                }`}
+                value={id}
+                id={`notification-tab-${id}`}
+                aria-controls="notification-panel"
               >
                 {label}
-              </Pressable>
+              </Tab>
             ))}
-          </div>
+          </TabList>
         </div>
 
+        <div
+          role="tabpanel"
+          id="notification-panel"
+          aria-labelledby={`notification-tab-${filter}`}
+        >
         {isLoading ? (
           <div className="p-4">
             <ListSkeleton rows={5} />
@@ -161,7 +170,9 @@ export default function Notifications() {
             </Button>
           </div>
         )}
+        </div>
       </div>
     </PageContainer>
+    </Tabs>
   );
 }

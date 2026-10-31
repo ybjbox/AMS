@@ -1,5 +1,6 @@
 import { Pressable } from '@/components/ui/Pressable';
 import PageContainer from "@/components/PageContainer";
+import { Tab, TabList, Tabs } from '@/components/ui/Tabs';
 import React, { useMemo } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import {
@@ -201,44 +202,8 @@ export default function Settings() {
     }
   };
 
-  const renderTabButton = (tab: SettingsTab, mobile: boolean) => {
-    const Icon = tab.icon;
-    const isActive = activeTab === tab.id;
-    if (mobile) {
-      return (
-        <Pressable
-          key={tab.id}
-          role="tab"
-          aria-selected={isActive}
-          onClick={() => handleTabChange(tab.id)}
-          className={isActive ? 'tab-item-active' : 'tab-item'}
-        >
-          <Icon className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
-          {tab.label}
-        </Pressable>
-      );
-    }
-    return (
-      <Pressable
-        key={tab.id}
-        role="tab"
-        aria-selected={isActive}
-        aria-controls={`panel-${tab.id}`}
-        id={`tab-${tab.id}`}
-        onClick={() => handleTabChange(tab.id)}
-        className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
-          isActive
-            ? 'bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-400'
-            : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white'
-        }`}
-      >
-        <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-brand-700 dark:text-brand-400' : 'text-zinc-400 dark:text-zinc-500'}`} />
-        {tab.label}
-      </Pressable>
-    );
-  };
-
   return (
+    <Tabs value={activeTab} onValueChange={handleTabChange} variant="page">
     <PageContainer width="none">
       <div className="max-w-6xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-6 animate-in fade-in duration-slow">
         <div className="shrink-0">
@@ -287,9 +252,22 @@ export default function Settings() {
                 <ChevronLeft className="size-4" aria-hidden="true" />
                 全部设置
               </Pressable>
-              <div className="tab-group mt-1" role="tablist" aria-label="设置导航">
-                {activeGroup.tabs.map((tab) => renderTabButton(tab, true))}
-              </div>
+              <TabList className="mt-1" aria-label="设置导航">
+                {activeGroup.tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <Tab
+                      key={tab.id}
+                      value={tab.id}
+                      id={`settings-mobile-tab-${tab.id}`}
+                      aria-controls={activeTab === tab.id ? `panel-${tab.id}` : undefined}
+                    >
+                      <Icon aria-hidden="true" />
+                      {tab.label}
+                    </Tab>
+                  );
+                })}
+              </TabList>
             </div>
 
             <div className="hidden md:block relative w-56 bg-zinc-50 dark:bg-zinc-900/50 border-r border-zinc-200 dark:border-zinc-700 shrink-0 min-h-0">
@@ -302,9 +280,22 @@ export default function Settings() {
                   <ChevronLeft className="size-4" aria-hidden="true" />
                   全部设置
                 </Pressable>
-                <nav className="mt-4 space-y-1" role="tablist" aria-label="设置导航" aria-orientation="vertical">
-                  {activeGroup.tabs.map((tab) => renderTabButton(tab, false))}
-                </nav>
+                <TabList as="nav" orientation="vertical" className="mt-4" aria-label="设置导航">
+                  {activeGroup.tabs.map((tab) => {
+                    const Icon = tab.icon;
+                    return (
+                      <Tab
+                        key={tab.id}
+                        value={tab.id}
+                        id={`tab-${tab.id}`}
+                        aria-controls={activeTab === tab.id ? `panel-${tab.id}` : undefined}
+                      >
+                        <Icon aria-hidden="true" />
+                        {tab.label}
+                      </Tab>
+                    );
+                  })}
+                </TabList>
               </div>
             </div>
 
@@ -325,5 +316,6 @@ export default function Settings() {
         )}
       </div>
     </PageContainer>
+    </Tabs>
   );
 }

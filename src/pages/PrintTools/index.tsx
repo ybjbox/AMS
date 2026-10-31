@@ -1,8 +1,8 @@
-import { Pressable } from '@/components/ui/Pressable';
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Armchair, IdCard, UtensilsCrossed } from 'lucide-react';
 import PageContainer from '@/components/PageContainer';
+import { Tab, TabList, Tabs } from '@/components/ui/Tabs';
 import { cn } from '@/lib/utils';
 import Seating from '@/pages/Seating';
 import NameCards from '@/pages/NameCards';
@@ -44,31 +44,31 @@ export default function PrintTools() {
   if (!visited.includes(active.id)) setVisited((prev) => [...prev, active.id]);
 
   return (
+    <Tabs
+      value={active.id}
+      onValueChange={(value) => setSearchParams({ tab: value })}
+      variant="page"
+    >
     <PageContainer
       width="none"
       className="flex-1 min-h-0 space-y-4 animate-in fade-in duration-slow print:space-y-0"
     >
-      <div className="tab-group shrink-0 print:hidden" role="tablist" aria-label="打印工具">
+      <TabList className="shrink-0 print:hidden" aria-label="打印工具">
         {PRINT_TOOL_TABS.map((tab) => {
           const Icon = tab.icon;
-          const isActive = tab.id === active.id;
           return (
-            <Pressable
+            <Tab
               key={tab.id}
+              value={tab.id}
               id={`print-tool-tab-${tab.id}`}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
               aria-controls={visited.includes(tab.id) ? `print-tool-panel-${tab.id}` : undefined}
-              onClick={() => setSearchParams({ tab: tab.id })}
-              className={isActive ? 'tab-item-active' : 'tab-item'}
             >
-              <Icon className="mr-1.5 inline h-3.5 w-3.5 -mt-0.5" />
+              <Icon aria-hidden="true" />
               {tab.label}
-            </Pressable>
+            </Tab>
           );
         })}
-      </div>
+      </TabList>
 
       {PRINT_TOOL_TABS.filter((tab) => visited.includes(tab.id)).map((tab) => {
         const Panel = tab.component;
@@ -91,5 +91,6 @@ export default function PrintTools() {
         );
       })}
     </PageContainer>
+    </Tabs>
   );
 }

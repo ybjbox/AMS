@@ -16,8 +16,16 @@ import { Checkbox } from '@/components/ui/checkbox';
 import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { approvalApi, Approval, ApprovalStatus, type CompBalance } from '@/services/approvalApi';
-import { APPROVAL_TABS, approvalSummary, approvalTitle } from './lib/approvalMeta';
+import {
+  APPROVAL_TABS,
+  approvalSummary,
+  approvalTitle,
+  type ApprovalTabId,
+} from './lib/approvalMeta';
+import { Tab, TabList, Tabs } from '@/components/ui/Tabs';
 import ClaimsPanel from './components/ClaimsPanel';
+
+type ApprovalListTab = 'mine' | 'pending' | 'ledger' | 'claims';
 
 const LEAVE_TYPES = ['事假', '病假', '年假', '调休'] as const;
 const PUNCH_KINDS = ['上班卡', '下班卡'] as const;
@@ -63,7 +71,7 @@ export default function Approvals() {
   /** 认领核对：批准等于发身份，能力码在服务端定的是 ADMIN */
   const canReviewClaims = hasPermission('claims:review');
 
-  const [tab, setTab] = useState<'mine' | 'pending' | 'ledger' | 'claims'>('mine');
+  const [tab, setTab] = useState<ApprovalListTab>('mine');
   const [mine, setMine] = useState<Approval[]>([]);
   const [pending, setPending] = useState<Approval[]>([]);
   const [ledger, setLedger] = useState<Approval[]>([]);
@@ -83,7 +91,7 @@ export default function Approvals() {
    */
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [formType, setFormType] = useState<'leave' | 'makeup' | 'conversion' | 'resign' | 'overtime'>('leave');
+  const [formType, setFormType] = useState<ApprovalTabId>('leave');
   const [form, setForm] = useState({
     leaveType: '事假',
     startDate: '',
@@ -380,6 +388,11 @@ export default function Approvals() {
 
       <div className={tab === 'claims' ? 'grid gap-6' : 'grid gap-6 lg:grid-cols-5 items-start'}>
         {/* 自助提交表单 */}
+        <Tabs
+          value={formType}
+          onValueChange={(value) => setFormType(value as ApprovalTabId)}
+          variant="segmented"
+        >
         <form
           onSubmit={handleSubmit}
           className={`${tab === 'claims' ? 'hidden' : 'lg:col-span-2'} bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60 shadow-sm p-5 space-y-4`}
@@ -407,25 +420,25 @@ export default function Approvals() {
           )}
 
           {/* 类型切换：请假 / 补卡 / 转正 / 离职 / 加班（清单见 lib/approvalMeta.ts） */}
-          <div className="flex rounded-lg bg-zinc-100 dark:bg-zinc-700/50 p-0.5 flex-wrap gap-y-1" role="tablist" aria-label="申请类型">
+          <TabList aria-label="申请类型">
             {APPROVAL_TABS.map((t) => (
-              <Pressable
+              <Tab
                 key={t.id}
-                type="button"
-                role="tab"
-                aria-selected={formType === t.id}
-                onClick={() => setFormType(t.id)}
-                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors max-sm:min-h-11 ${
-                  formType === t.id
-                    ? 'bg-white dark:bg-zinc-800 text-brand-600 dark:text-brand-400 shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
+                value={t.id}
+                id={`approval-type-tab-${t.id}`}
+                aria-controls="approval-type-panel"
               >
                 {t.label}
-              </Pressable>
+              </Tab>
             ))}
-          </div>
+          </TabList>
 
+          <div
+            role="tabpanel"
+            id="approval-type-panel"
+            aria-labelledby={`approval-type-tab-${formType}`}
+            className="space-y-4"
+          >
                     {formType === 'leave' && (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="block">
@@ -600,38 +613,50 @@ export default function Approvals() {
           >
             {submitting ? '提交中…' : employeeId ? '提交申请' : '账号未关联员工档案'}
           </Button>
+          </div>
         </form>
+        </Tabs>
 
         {/* 列表 */}
+        <Tabs
+          value={tab}
+          onValueChange={(value) => setTab(value as ApprovalListTab)}
+          variant="segmented"
+        >
         <div className={`${tab === 'claims' ? 'lg:col-span-5' : 'lg:col-span-3'} bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-200/60 dark:border-zinc-700/60 shadow-sm overflow-hidden flex flex-col min-h-80`}>
-          <div className="no-scrollbar flex overflow-x-auto border-b border-zinc-100 dark:border-zinc-700/60">
+          <div className="border-b border-zinc-100 p-2 dark:border-zinc-700/60">
+            <TabList aria-label="审批列表" className="no-scrollbar flex-nowrap overflow-x-auto">
             {(
               [
                 { id: 'mine', label: '我的申请' },
                 ...(canApprove ? [{ id: 'pending', label: '待我审批' }] : []),
                 ...(canApprove ? [{ id: 'ledger', label: '审批记录' }] : []),
                 ...(canReviewClaims ? [{ id: 'claims', label: '待核对' }] : []),
-              ] as Array<{ id: 'mine' | 'pending' | 'ledger' | 'claims'; label: string }>
+              ] as Array<{ id: ApprovalListTab; label: string }>
             ).map((t) => (
-              <Pressable
+              <Tab
                 key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-3 text-sm font-medium transition-colors sm:px-4 ${
-                  tab === t.id
-                    ? 'text-brand-600 dark:text-brand-400 border-b-2 border-brand-600 dark:border-brand-400'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
+                value={t.id}
+                id={`approval-tab-${t.id}`}
+                aria-controls="approval-panel"
               >
-                <Clock className="hidden h-4 w-4 sm:block" /> {t.label}
+                <Clock className="hidden sm:block" aria-hidden="true" /> {t.label}
                 {t.id === 'pending' && pending.length > 0 && (
                   <span className="rounded-full bg-red-500 text-white text-3xs px-1.5 leading-4">
                     {pending.length}
                   </span>
                 )}
-              </Pressable>
+              </Tab>
             ))}
+            </TabList>
           </div>
 
+          <div
+            role="tabpanel"
+            id="approval-panel"
+            aria-labelledby={`approval-tab-${tab}`}
+            className="flex flex-1 min-h-0 flex-col"
+          >
           {/* 台账筛选：状态 + 处理月份（批过的单子不再从视野里消失） */}
           {tab === 'ledger' && (
             <>
@@ -714,7 +739,9 @@ export default function Approvals() {
           )}
 
           <div className="flex-1 overflow-y-auto">{tab === 'claims' ? <ClaimsPanel onDecided={refresh} /> : renderList()}</div>
+          </div>
         </div>
+        </Tabs>
       </div>
 
       {/* 决定对话框：通过/驳回都在这里有意见可写（驳回必填） */}
