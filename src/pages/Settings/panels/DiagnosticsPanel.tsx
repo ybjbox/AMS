@@ -1,4 +1,4 @@
-import { Table } from '@/components/ui/Table';
+import { Table, TableHead, TableHeader } from '@/components/ui/Table';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Activity, Database, RefreshCw, Server, AlertTriangle, Clock } from 'lucide-react';
 import { notifySaveFailure } from '@/store/saveFailure';
@@ -148,16 +148,28 @@ export default function DiagnosticsPanel() {
         <div className="flex-1 min-h-0 overflow-auto" tabIndex={0} role="region" aria-label="最近异常请求（可滚动）">
           {data && data.recent.length > 0 ? (
             <Table className="text-sm" aria-label="最近异常请求">
-              <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs text-muted-foreground">
+              <TableHeader>
                 <tr>
-                  <th className="px-3 py-2 font-medium whitespace-nowrap">时间</th>
-                  <th className="px-3 py-2 font-medium whitespace-nowrap">方法</th>
-                  <th className="px-3 py-2 font-medium w-full">路径</th>
-                  <th className="px-3 py-2 font-medium whitespace-nowrap">状态</th>
-                  <th className="px-3 py-2 font-medium whitespace-nowrap">耗时</th>
-                  <th className="px-3 py-2 font-medium whitespace-nowrap">操作者</th>
+                  <TableHead className="px-3" scope="col">
+                    时间
+                  </TableHead>
+                  <TableHead className="px-3" scope="col">
+                    方法
+                  </TableHead>
+                  <TableHead className="w-full px-3" scope="col">
+                    路径
+                  </TableHead>
+                  <TableHead className="px-3" align="right" scope="col">
+                    状态
+                  </TableHead>
+                  <TableHead className="px-3" align="right" scope="col">
+                    耗时
+                  </TableHead>
+                  <TableHead className="px-3" scope="col">
+                    操作者
+                  </TableHead>
                 </tr>
-              </thead>
+              </TableHeader>
               <tbody>
                 {data.recent.map((e, i) => (
                   <tr key={`${e.ts}-${i}`} className="border-t border-zinc-100 dark:border-zinc-800">
@@ -183,7 +195,7 @@ export default function DiagnosticsPanel() {
                         {e.status}
                       </span>
                     </td>
-                    <td className="px-3 py-2 tabular-nums whitespace-nowrap text-zinc-700 dark:text-zinc-300">
+                    <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap text-zinc-700 dark:text-zinc-300">
                       {e.durationMs}ms
                       {e.slow && (
                         <span className="ml-1.5 text-3xs px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">

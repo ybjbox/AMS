@@ -5,7 +5,7 @@ import { Document } from '@/store/useDocumentStore';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/input';
-import { Table } from '@/components/ui/Table';
+import { Table, TableHead, TableHeader } from '@/components/ui/Table';
 import { formatFileSize } from '@/utils/fileUtils';
 import { withAuthToken } from '@/services/api';
 import { hasPermission } from '@/utils/permission';
@@ -104,34 +104,22 @@ export function FileList({
         ) : (
           <div className="overflow-x-auto">
             <Table minWidth="min-w-full" nowrapHeaders className="divide-y divide-zinc-200 dark:divide-zinc-700">
-              <thead className="bg-zinc-50 dark:bg-zinc-800/50 sticky top-0 z-10">
+              <TableHeader>
                 <tr>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
-                  >
+                  <TableHead density="comfortable" scope="col">
                     文件名称
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
-                  >
+                  </TableHead>
+                  <TableHead density="comfortable" align="right" scope="col">
                     大小
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
-                  >
+                  </TableHead>
+                  <TableHead density="comfortable" scope="col">
                     上传时间
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider"
-                  >
+                  </TableHead>
+                  <TableHead density="comfortable" align="right" scope="col">
                     操作
-                  </th>
+                  </TableHead>
                 </tr>
-              </thead>
+              </TableHeader>
               <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
                 {isLoading ? (
                   <tr>
@@ -151,27 +139,27 @@ export function FileList({
                             {getFileIcon(doc.type)}
                           </div>
                           <div className="ml-4 min-w-0">
-                            <div className="text-sm font-medium text-zinc-900 dark:text-zinc-200 truncate max-w-45 sm:max-w-105">{doc.name}</div>
+                            <div className="text-sm font-medium text-zinc-900 dark:text-zinc-200 truncate max-w-45 sm:max-w-105">
+                              {doc.name}
+                            </div>
                             <div className="text-xs text-muted-foreground">{doc.type.toUpperCase()}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-muted-foreground tabular-nums">
                         {formatFileSize(doc.size)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {doc.uploadedAt}
-                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{doc.uploadedAt}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         {canManageDocs && (
-                        <Button
-                          variant="link"
-                          size="xs"
-                          onClick={() => onMoveDocClick(doc.id, doc.folderId || null)}
-                          className="h-auto px-0 text-sm text-muted-foreground hover:text-zinc-700 dark:hover:text-zinc-200 mr-4"
-                        >
-                          移动
-                        </Button>
+                          <Button
+                            variant="link"
+                            size="xs"
+                            onClick={() => onMoveDocClick(doc.id, doc.folderId || null)}
+                            className="h-auto px-0 text-sm text-muted-foreground hover:text-zinc-700 dark:hover:text-zinc-200 mr-4"
+                          >
+                            移动
+                          </Button>
                         )}
                         <Button
                           variant="link"
@@ -182,14 +170,14 @@ export function FileList({
                           下载
                         </Button>
                         {canManageDocs && (
-                        <Button
-                          variant="link"
-                          size="xs"
-                          onClick={() => handleDeleteDocClick(doc.id)}
-                          className="h-auto px-0 text-sm text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
-                        >
-                          删除
-                        </Button>
+                          <Button
+                            variant="link"
+                            size="xs"
+                            onClick={() => handleDeleteDocClick(doc.id)}
+                            className="h-auto px-0 text-sm text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                          >
+                            删除
+                          </Button>
                         )}
                       </td>
                     </tr>

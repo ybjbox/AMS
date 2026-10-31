@@ -12,11 +12,12 @@ const STICKY_SIDE: Record<StickySide, string> = {
  * 宽表滚动容器：横向滚动只发生在这一层，页面本身不滚（MASTER 响应式硬规则）。
  * 需要接虚拟滚动时把 ref 传进来即可。
  */
-export const TableFrame = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  function TableFrame({ className, ...props }, ref) {
-    return <div ref={ref} className={cn('w-full overflow-auto', className)} {...props} />;
-  }
-);
+export const TableFrame = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(function TableFrame(
+  { className, ...props },
+  ref
+) {
+  return <div ref={ref} className={cn('w-full overflow-auto', className)} {...props} />;
+});
 
 /**
  * 表格基座：默认铺满、左对齐、不设下限；宽表再按需给 minWidth 与 nowrapHeaders。
@@ -41,16 +42,60 @@ export function Table({
   );
 }
 
-/**
- * 首/末列冻结的表头单元格。
- * 背景色、内边距、hover 仍由调用方给 —— 表头底色、暗色、行悬停各表不同；
- * 这里只固定 sticky 定位、层级与阴影，避免每张表各写一套组合。
- */
-export function StickyHeaderCell({
-  side,
+export type TableDensity = 'compact' | 'comfortable';
+export type TableAlign = 'left' | 'center' | 'right';
+
+const DENSITY: Record<TableDensity, string> = {
+  compact: 'px-4 py-2',
+  comfortable: 'px-6 py-3',
+};
+
+/** 表头容器：统一吸顶与背景；不吸顶的表显式传 sticky={false}。 */
+export function TableHeader({
+  sticky = true,
   className,
   ...props
-}: React.ComponentProps<'th'> & { side: StickySide }) {
+}: React.ComponentProps<'thead'> & { sticky?: boolean }) {
+  return (
+    <thead className={cn('bg-zinc-50 dark:bg-zinc-800/50', sticky && 'sticky top-0 z-20', className)} {...props} />
+  );
+}
+
+/**
+ * 标准表头单元格：字号/字重/字距/底色/下边框/密度只在这里定义。
+ * 数字列用 align="right"；首末列用 sticky="left|right"。
+ */
+export function TableHead({
+  density = 'compact',
+  align = 'left',
+  sticky,
+  className,
+  ...props
+}: React.ComponentProps<'th'> & {
+  density?: TableDensity;
+  align?: TableAlign;
+  sticky?: StickySide;
+}) {
+  return (
+    <th
+      className={cn(
+        'text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap',
+        'bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-700/60',
+        DENSITY[density],
+        align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left',
+        sticky && cn('sticky z-30', STICKY_SIDE[sticky]),
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+/**
+ * 首/末列冻结的表头单元格（兼容旧调用）。
+ * 新代码直接用 TableHead 的 sticky 属性；保留此导出避免外部引用中断。
+ */
+export function StickyHeaderCell({ side, className, ...props }: React.ComponentProps<'th'> & { side: StickySide }) {
   return <th className={cn('sticky z-30', STICKY_SIDE[side], className)} {...props} />;
 }
 

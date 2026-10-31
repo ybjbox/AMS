@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/Badge';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableFrame } from '@/components/ui/Table';
+import { Table, TableFrame, TableHead, TableHeader } from '@/components/ui/Table';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useEmployeeStore } from '@/store/useEmployeeStore';
 import { useUserStore } from '@/store/useUserStore';
@@ -110,8 +110,8 @@ function EmployeePicker({
               title={taken ? `已被账号 ${holder} 绑定` : ''}
               onClick={() => onChange(e.id)}
               className={`w-full flex items-center justify-between px-3 py-2 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 disabled:opacity-45 disabled:cursor-not-allowed ${
- isCurrent ? 'bg-brand-50 dark:bg-brand-900/25' : ''
- }`}
+                isCurrent ? 'bg-brand-50 dark:bg-brand-900/25' : ''
+              }`}
             >
               <span className="truncate">
                 {e.name}
@@ -330,16 +330,28 @@ export default function AccountManager() {
 
         <TableFrame className="flex-1">
           <Table minWidth="min-w-215" nowrapHeaders>
-            <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs uppercase tracking-wider text-muted-foreground">
+            <TableHeader>
               <tr>
-                <th className="px-4 py-3 font-medium">账号</th>
-                <th className="px-4 py-3 font-medium">系统角色</th>
-                <th className="px-4 py-3 font-medium">状态</th>
-                <th className="px-4 py-3 font-medium">绑定员工</th>
-                <th className="px-4 py-3 font-medium">最近登录</th>
-                <th className="px-4 py-3 font-medium text-right">操作</th>
+                <TableHead density="comfortable" className="px-4" scope="col">
+                  账号
+                </TableHead>
+                <TableHead density="comfortable" className="px-4" scope="col">
+                  系统角色
+                </TableHead>
+                <TableHead density="comfortable" className="px-4" scope="col">
+                  状态
+                </TableHead>
+                <TableHead density="comfortable" className="px-4" scope="col">
+                  绑定员工
+                </TableHead>
+                <TableHead density="comfortable" className="px-4" scope="col">
+                  最近登录
+                </TableHead>
+                <TableHead density="comfortable" className="px-4" align="right" scope="col">
+                  操作
+                </TableHead>
               </tr>
-            </thead>
+            </TableHeader>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-700/60 text-sm">
               {rows.map((a) => {
                 const emp = a.employeeId ? employeeById.get(a.employeeId) : null;
@@ -499,10 +511,10 @@ function IconAction({
       disabled={disabled}
       onClick={onClick}
       className={`p-1.5 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
- danger
- ? 'text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
- : 'text-muted-foreground hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-zinc-700/60'
- }`}
+        danger
+          ? 'text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
+          : 'text-muted-foreground hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-zinc-700/60'
+      }`}
     >
       <Icon className="w-4 h-4" />
     </Pressable>

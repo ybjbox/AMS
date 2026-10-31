@@ -4,7 +4,7 @@ import { AlertCircle, CheckCircle2, Download, RotateCcw, UploadCloud } from 'luc
 import { toast } from 'sonner';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Button } from '@/components/ui/button';
-import { Table } from '@/components/ui/Table';
+import { Table, TableHead, TableHeader } from '@/components/ui/Table';
 import {
   commitPunchImport,
   getPunchImportJob,
@@ -192,12 +192,8 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
             ) : (
               <>
                 <UploadCloud className="w-8 h-8 text-zinc-400" aria-hidden="true" />
-                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                  点击选择 .xlsx 文件
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  单次最多 5000 行，解析后先预览再导入
-                </span>
+                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">点击选择 .xlsx 文件</span>
+                <span className="text-xs text-muted-foreground">单次最多 5000 行，解析后先预览再导入</span>
               </>
             )}
           </Pressable>
@@ -304,7 +300,13 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
               <Button type="button" variant="ghost" size="xs" className="h-6 px-2 text-xs" onClick={() => bulk('none')}>
                 全不选
               </Button>
-              <Button type="button" variant="ghost" size="xs" className="h-6 px-2 text-xs" onClick={() => bulk('invert')}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                className="h-6 px-2 text-xs"
+                onClick={() => bulk('invert')}
+              >
                 反选
               </Button>
             </div>
@@ -319,9 +321,9 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
 
           <div className="modal-scroll-45 overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
             <Table className="text-sm" aria-label="导入预览">
-              <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs text-muted-foreground">
+              <TableHeader>
                 <tr>
-                  <th className="w-9 px-3 py-2">
+                  <TableHead className="w-9 px-3">
                     {counts && counts.visibleSelectable > 0 ? (
                       <input
                         type="checkbox"
@@ -336,15 +338,14 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
                     ) : (
                       <span className="block h-4" />
                     )}
-                  </th>
-                  <th className="px-3 py-2 font-medium">行</th>
-                  <th className="px-3 py-2 font-medium">工号</th>
-                  <th className="px-3 py-2 font-medium">姓名</th>
-                  <th className="px-3 py-2 font-medium">日期</th>
-                  <th className="px-3 py-2 font-medium">时间</th>
-                  <th className="px-3 py-2 font-medium">校验结果</th>
+                  </TableHead>
+                  {['行', '工号', '姓名', '日期', '时间', '校验结果'].map((h) => (
+                    <TableHead key={h} className="px-3" scope="col">
+                      {h}
+                    </TableHead>
+                  ))}
                 </tr>
-              </thead>
+              </TableHeader>
               <tbody>
                 {visibleRows.length === 0 ? (
                   <tr>
@@ -384,8 +385,12 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
                           {row.data.employeeId || '—'}
                         </td>
                         <td className="px-3 py-2 text-zinc-900 dark:text-white">{row.data.employeeName || '—'}</td>
-                        <td className="px-3 py-2 text-zinc-600 dark:text-zinc-300 tabular-nums">{row.data.date || '—'}</td>
-                        <td className="px-3 py-2 text-zinc-600 dark:text-zinc-300 tabular-nums">{row.data.time || '—'}</td>
+                        <td className="px-3 py-2 text-zinc-600 dark:text-zinc-300 tabular-nums">
+                          {row.data.date || '—'}
+                        </td>
+                        <td className="px-3 py-2 text-zinc-600 dark:text-zinc-300 tabular-nums">
+                          {row.data.time || '—'}
+                        </td>
                         <td className="px-3 py-2 text-xs">
                           {row.errors.length === 0 ? (
                             <span className="inline-flex items-center gap-1 text-brand-700 dark:text-brand-300">
@@ -410,14 +415,17 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
 
           {counts && (
             <p className="text-2xs text-muted-foreground">
-              将导入 <span className="tabular-nums text-brand-700 dark:text-brand-300">{counts.willImport}</span> 行新记录
-              {counts.willImportHidden > 0 && <span className="tabular-nums">（另有 {counts.willImportHidden} 行已勾选但被当前筛选隐藏）</span>}
+              将导入 <span className="tabular-nums text-brand-700 dark:text-brand-300">{counts.willImport}</span>{' '}
+              行新记录
+              {counts.willImportHidden > 0 && (
+                <span className="tabular-nums">（另有 {counts.willImportHidden} 行已勾选但被当前筛选隐藏）</span>
+              )}
               ；库中已存在将跳过 <span className="tabular-nums">{counts.duplicates}</span> 行
               {counts.invalid > 0 && <span className="tabular-nums">；校验错误 {counts.invalid} 行</span>}
-              {counts.deselected > 0 && <span className="tabular-nums text-amber-700 dark:text-amber-400">；已取消 {counts.deselected} 行</span>}。
-              <span className="ml-1">
-                重复行不可勾选 —— 它与库中那一行内容完全相同，导入与否结果一致。
-              </span>
+              {counts.deselected > 0 && (
+                <span className="tabular-nums text-amber-700 dark:text-amber-400">；已取消 {counts.deselected} 行</span>
+              )}
+              。<span className="ml-1">重复行不可勾选 —— 它与库中那一行内容完全相同，导入与否结果一致。</span>
             </p>
           )}
 
@@ -451,9 +459,7 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
           <p className="text-sm text-zinc-700 dark:text-zinc-200">
             正在后台写入… {progress ? `${progress.processed} / ${progress.total}` : ''}
           </p>
-          <p className="text-xs text-muted-foreground">
-            同一分钟已存在的记录会被跳过，不会重复计入月报。
-          </p>
+          <p className="text-xs text-muted-foreground">同一分钟已存在的记录会被跳过，不会重复计入月报。</p>
         </div>
       )}
 
@@ -467,7 +473,14 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
             导入只是第一步：判定要去「异常分析」点「一键分析异常」才会出来。
           </p>
           <div className="flex justify-center gap-2 pt-1">
-            <Button type="button" variant="outline" onClick={() => { reset(); onClose(); }}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                reset();
+                onClose();
+              }}
+            >
               关闭
             </Button>
             {onGoAnalyze && (

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { Table, TableFrame, StickyCell, StickyHeaderCell } from '@/components/ui/Table';
+import { Table, TableFrame, TableHead, TableHeader, StickyCell, StickyHeaderCell } from '@/components/ui/Table';
 
 describe('ui/Table 宽表原语', () => {
   it('默认铺满容器，不额外设下限', () => {
@@ -71,5 +71,43 @@ describe('ui/Table 宽表原语', () => {
     );
     expect(screen.getByTestId('frame').className).toContain('overflow-auto');
     expect(screen.getByTestId('frame').className).toContain('w-full');
+  });
+
+  it('表头统一字号/底色/密度，数字列可右对齐', () => {
+    render(
+      <table>
+        <TableHeader sticky={false}>
+          <tr>
+            <TableHead>普通列</TableHead>
+            <TableHead density="comfortable" align="right" sticky="left">
+              数字列
+            </TableHead>
+          </tr>
+        </TableHeader>
+        <tbody />
+      </table>
+    );
+    const [normal, numeric] = screen.getAllByRole('columnheader');
+    expect(normal.className).toContain('uppercase');
+    expect(normal.className).toContain(['bg', 'zinc-50'].join('-'));
+    expect(normal.className).toContain('px-4');
+    expect(numeric.className).toContain('text-right');
+    expect(numeric.className).toContain('px-6');
+    expect(numeric.className).toContain('left-0');
+    expect(numeric.closest('thead')?.className).not.toContain('sticky');
+  });
+
+  it('TableHeader 默认为吸顶表头', () => {
+    render(
+      <table>
+        <TableHeader>
+          <tr>
+            <TableHead>列</TableHead>
+          </tr>
+        </TableHeader>
+        <tbody />
+      </table>
+    );
+    expect(screen.getByRole('columnheader').closest('thead')?.className).toContain('sticky');
   });
 });

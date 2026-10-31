@@ -6,7 +6,7 @@ import { FailedState } from '@/components/ui/FailedState';
 import { AlertTriangle, ArrowUpDown, ChevronDown, ChevronUp, SearchX, ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import type { BadgeVariant } from '@/components/ui/Badge';
-import { Table, TableFrame } from '@/components/ui/Table';
+import { Table, TableFrame, TableHead, TableHeader } from '@/components/ui/Table';
 import CoverageBanner from './CoverageBanner';
 import { useAttendanceStore } from '@/store/useAttendanceStore';
 import type { Anomaly } from '@/store/useAttendanceStore';
@@ -143,12 +143,9 @@ export default function AnomaliesTable({
       ) : (
         <TableFrame className="border border-zinc-100 dark:border-zinc-800 rounded-2xl">
           <Table minWidth="min-w-225" nowrapHeaders className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            <thead className="bg-zinc-50/50 dark:bg-zinc-800/50">
+            <TableHeader sticky={false}>
               <tr>
-                <th
-                  scope="col"
-                  className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
-                >
+                <TableHead scope="col" density="compact">
                   <Pressable
                     type="button"
                     onClick={() => toggleSort('date')}
@@ -157,11 +154,8 @@ export default function AnomaliesTable({
                     日期
                     <SortIcon active={sort.key === 'date'} dir={sort.dir} />
                   </Pressable>
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
-                >
+                </TableHead>
+                <TableHead scope="col" density="compact">
                   <Pressable
                     type="button"
                     onClick={() => toggleSort('name')}
@@ -170,33 +164,21 @@ export default function AnomaliesTable({
                     姓名
                     <SortIcon active={sort.key === 'name'} dir={sort.dir} />
                   </Pressable>
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
-                >
+                </TableHead>
+                <TableHead scope="col" density="compact">
                   工号
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
-                >
+                </TableHead>
+                <TableHead scope="col" density="compact">
                   异常类型
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
-                >
+                </TableHead>
+                <TableHead scope="col" density="compact">
                   描述
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
-                >
+                </TableHead>
+                <TableHead scope="col" density="compact">
                   需确认
-                </th>
+                </TableHead>
               </tr>
-            </thead>
+            </TableHeader>
             <tbody className="divide-y divide-zinc-50 bg-white dark:divide-zinc-800/50 dark:bg-zinc-800">
               {rows.map((anomaly) => {
                 const v = whyByKey.get(`${anomaly.employeeId}|${anomaly.date}`);
@@ -235,10 +217,10 @@ export default function AnomaliesTable({
                               })
                             }
                             className={`inline-flex items-center gap-1 text-left ${
- v.flag.startsWith('★')
- ? 'font-medium text-amber-800 dark:text-amber-300'
- : 'text-muted-foreground'
- }`}
+                              v.flag.startsWith('★')
+                                ? 'font-medium text-amber-800 dark:text-amber-300'
+                                : 'text-muted-foreground'
+                            }`}
                           >
                             {v.flag || '看依据'}
                             <ChevronDown

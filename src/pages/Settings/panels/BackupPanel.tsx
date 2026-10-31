@@ -5,7 +5,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { notifySaveFailure } from '@/store/saveFailure';
 import { scheduleAppReload } from '@/utils/reloadApp';
 import { Button } from '@/components/ui/button';
-import { Table } from '@/components/ui/Table';
+import { Table, TableHead, TableHeader } from '@/components/ui/Table';
 import {
   fetchBackups,
   createBackup,
@@ -269,14 +269,18 @@ export default function BackupPanel() {
 
       <div className="flex-1 overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
         <Table className="text-sm">
-          <thead className="bg-zinc-50 text-muted-foreground sticky top-0 dark:bg-zinc-800/50">
+          <TableHeader>
             <tr>
-              <th className="text-left px-4 py-2.5 font-medium">文件名</th>
-              <th className="text-left px-4 py-2.5 font-medium">时间</th>
-              <th className="text-right px-4 py-2.5 font-medium">大小</th>
-              <th className="text-right px-4 py-2.5 font-medium">操作</th>
+              <TableHead scope="col">文件名</TableHead>
+              <TableHead scope="col">时间</TableHead>
+              <TableHead align="right" scope="col">
+                大小
+              </TableHead>
+              <TableHead align="right" scope="col">
+                操作
+              </TableHead>
             </tr>
-          </thead>
+          </TableHeader>
           <tbody>
             {loading ? (
               <tr>

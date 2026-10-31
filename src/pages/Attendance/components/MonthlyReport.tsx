@@ -4,7 +4,7 @@ import { CalendarDays, ChevronDown, ClipboardCheck, Download, FileSpreadsheet, R
 import { toast } from 'sonner';
 import { FailedState } from '@/components/ui/FailedState';
 import { Input } from '@/components/ui/input';
-import { Table } from '@/components/ui/Table';
+import { Table, TableHead, TableHeader } from '@/components/ui/Table';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -219,10 +219,10 @@ export default function MonthlyReport() {
               aria-pressed={s.month === month}
               onClick={() => switchMonth(s.month)}
               className={`rounded-full border px-2.5 py-1 text-xs tabular-nums transition-colors ${
- s.month === month
- ? 'border-brand-500 bg-brand-50 text-brand-800 dark:bg-brand-500/15 dark:text-brand-200'
- : 'border-zinc-200 dark:border-zinc-600 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
- }`}
+                s.month === month
+                  ? 'border-brand-500 bg-brand-50 text-brand-800 dark:bg-brand-500/15 dark:text-brand-200'
+                  : 'border-zinc-200 dark:border-zinc-600 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+              }`}
             >
               {s.month} · {s.days} 天
             </Pressable>
@@ -250,18 +250,34 @@ export default function MonthlyReport() {
           </div>
         ) : (
           <Table className="text-sm" aria-label="月度考勤汇总">
-            <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs text-muted-foreground">
+            <TableHeader>
               <tr>
-                <th className="px-4 py-2.5 font-medium">工号</th>
-                <th className="px-4 py-2.5 font-medium">姓名</th>
-                <th className="px-4 py-2.5 font-medium">部门</th>
-                <th className="px-4 py-2.5 font-medium text-right">出勤天数</th>
-                <th className="px-4 py-2.5 font-medium text-right">打卡次数</th>
-                <th className="px-4 py-2.5 font-medium text-right">迟到</th>
-                <th className="px-4 py-2.5 font-medium text-right">早退</th>
-                <th className="px-4 py-2.5 font-medium text-right">缺卡</th>
+                <TableHead density="compact" scope="col">
+                  工号
+                </TableHead>
+                <TableHead density="compact" scope="col">
+                  姓名
+                </TableHead>
+                <TableHead density="compact" scope="col">
+                  部门
+                </TableHead>
+                <TableHead density="compact" align="right" scope="col">
+                  出勤天数
+                </TableHead>
+                <TableHead density="compact" align="right" scope="col">
+                  打卡次数
+                </TableHead>
+                <TableHead density="compact" align="right" scope="col">
+                  迟到
+                </TableHead>
+                <TableHead density="compact" align="right" scope="col">
+                  早退
+                </TableHead>
+                <TableHead density="compact" align="right" scope="col">
+                  缺卡
+                </TableHead>
               </tr>
-            </thead>
+            </TableHeader>
             <tbody>
               {rows.map((r) => {
                 return (

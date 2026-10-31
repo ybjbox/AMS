@@ -6,7 +6,7 @@ import { FailedState } from '@/components/ui/FailedState';
 import { AlertTriangle, ArrowUpDown, ChevronUp, ChevronDown, FileSpreadsheet, SearchX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/Badge';
-import { Table, TableFrame, StickyCell, StickyHeaderCell } from '@/components/ui/Table';
+import { Table, TableFrame, TableHead, TableHeader, StickyCell } from '@/components/ui/Table';
 import { cn } from '@/lib/utils';
 import { useConfirm } from '@/hooks/useConfirm';
 import EmployeePunchDialog from './EmployeePunchDialog';
@@ -187,7 +187,7 @@ export default function EmployeeRollupTable({
       ) : (
         <TableFrame>
           <Table minWidth="min-w-180" nowrapHeaders className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            <thead className="bg-zinc-50/50 dark:bg-zinc-800/50">
+            <TableHeader sticky={false}>
               <tr>
                 {COLUMNS.map((c, i) => {
                   const sortable = c.key !== null;
@@ -216,27 +216,26 @@ export default function EmployeeRollupTable({
                       | 'ascending'
                       | 'descending'
                       | 'none',
-                    className: cn(
-                      'px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider',
-                      c.align === 'right' ? 'text-right' : 'text-left',
-                      i === 0 && 'bg-zinc-50/50 dark:bg-zinc-800/50'
-                    ),
+                    density: 'compact' as const,
+                    align: c.align ?? ('left' as const),
+                    sticky: i === 0 ? ('left' as const) : undefined,
                   };
-                  return i === 0 ? (
-                    <StickyHeaderCell key={c.label} side="left" {...headProps}>
+                  return (
+                    <TableHead key={c.label} {...headProps}>
                       {content}
-                    </StickyHeaderCell>
-                  ) : (
-                    <th key={c.label} {...headProps}>
-                      {content}
-                    </th>
+                    </TableHead>
                   );
                 })}
               </tr>
-            </thead>
+            </TableHeader>
             <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-50 dark:divide-zinc-800/50">
               {rows.map((r) => (
-                <Row key={r.employeeId} row={r} today={today} onOpen={() => setDetail({ employeeId: r.employeeId, employeeName: r.employeeName })} />
+                <Row
+                  key={r.employeeId}
+                  row={r}
+                  today={today}
+                  onOpen={() => setDetail({ employeeId: r.employeeId, employeeName: r.employeeName })}
+                />
               ))}
             </tbody>
             <tfoot className="bg-zinc-50/50 dark:bg-zinc-800/50">
@@ -278,15 +277,7 @@ function SortIcon({ dir }: { dir: 'asc' | 'desc' }) {
   );
 }
 
-function Row({
-  row,
-  today,
-  onOpen,
-}: {
-  row: EmployeeRollupRow;
-  today: Date;
-  onOpen: () => void;
-}) {
+function Row({ row, today, onOpen }: { row: EmployeeRollupRow; today: Date; onOpen: () => void }) {
   const idle = daysSinceLast(row.lastDate, today);
   // 超过一周没打卡值得看一眼（公司规模下，超过一周基本等于离职或长期请假）
   const stale = idle !== null && idle > 7;
@@ -334,12 +325,8 @@ function Row({
         )}
       </td>
       <td className="px-4 py-2 whitespace-nowrap text-sm tabular-nums">
-        <span className={stale ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}>
-          {row.lastDate}
-        </span>
-        {idle !== null && idle > 0 && (
-          <span className="ml-1.5 text-2xs text-muted-foreground">{idle} 天前</span>
-        )}
+        <span className={stale ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}>{row.lastDate}</span>
+        {idle !== null && idle > 0 && <span className="ml-1.5 text-2xs text-muted-foreground">{idle} 天前</span>}
       </td>
     </tr>
   );

@@ -4,7 +4,7 @@ import { Download, FileSpreadsheet, UploadCloud, CheckCircle2, AlertCircle, Rota
 import { toast } from 'sonner';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Button } from '@/components/ui/button';
-import { Table } from '@/components/ui/Table';
+import { Table, TableHead, TableHeader } from '@/components/ui/Table';
 import { withAuthToken } from '@/services/api';
 import {
   previewImport,
@@ -193,16 +193,15 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
 
           <div className="modal-scroll-45 overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
             <Table className="text-sm" aria-label="导入预览">
-              <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800 text-xs text-muted-foreground">
+              <TableHeader>
                 <tr>
-                  <th className="px-3 py-2 font-medium">行</th>
-                  <th className="px-3 py-2 font-medium">姓名</th>
-                  <th className="px-3 py-2 font-medium">身份证号</th>
-                  <th className="px-3 py-2 font-medium">部门</th>
-                  <th className="px-3 py-2 font-medium">入职日期</th>
-                  <th className="px-3 py-2 font-medium">校验结果</th>
+                  {['行', '姓名', '身份证号', '部门', '入职日期', '校验结果'].map((h) => (
+                    <TableHead key={h} className="px-3" scope="col">
+                      {h}
+                    </TableHead>
+                  ))}
                 </tr>
-              </thead>
+              </TableHeader>
               <tbody>
                 {preview.rows.map((row) => {
                   const ok = row.errors.length === 0;

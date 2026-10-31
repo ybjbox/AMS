@@ -5,14 +5,10 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FailedState } from '@/components/ui/FailedState';
-import { Table, TableFrame } from '@/components/ui/Table';
+import { Table, TableFrame, TableHead, TableHeader } from '@/components/ui/Table';
 import { useConfirm } from '@/hooks/useConfirm';
 import { SystemRole } from '@/types';
-import {
-  rolePermissionsApi,
-  type RoleCapability,
-  type RolePermissionsMatrix,
-} from '@/services/rolePermissionsApi';
+import { rolePermissionsApi, type RoleCapability, type RolePermissionsMatrix } from '@/services/rolePermissionsApi';
 
 /**
  * 角色能力矩阵（仅 SUPER_ADMIN）。
@@ -66,10 +62,7 @@ export default function RolePermissionsPanel() {
     void load();
   }, [load]);
 
-  const byCode = useMemo(
-    () => Object.fromEntries((matrix?.capabilities ?? []).map((c) => [c.code, c])),
-    [matrix]
-  );
+  const byCode = useMemo(() => Object.fromEntries((matrix?.capabilities ?? []).map((c) => [c.code, c])), [matrix]);
 
   const dirty = useMemo(() => {
     if (!matrix) return false;
@@ -164,25 +157,28 @@ export default function RolePermissionsPanel() {
       </div>
 
       {saveError && (
-        <div role="alert" className="shrink-0 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-900/15 dark:text-red-300">
+        <div
+          role="alert"
+          className="shrink-0 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-900/15 dark:text-red-300"
+        >
           {saveError}
         </div>
       )}
 
       <TableFrame className="min-h-0 flex-1 rounded-xl border border-zinc-200/70 dark:border-zinc-700/60">
         <Table minWidth="min-w-165" nowrapHeaders className="text-sm" aria-label="角色能力矩阵">
-          <thead className="bg-zinc-50/80 dark:bg-zinc-800/60 sticky top-0 z-10">
+          <TableHeader>
             <tr>
-              <th scope="col" className="w-1/3 px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">
+              <TableHead scope="col" className="w-1/3">
                 能力
-              </th>
+              </TableHead>
               {ROLES.map((role) => (
-                <th key={role} scope="col" className="w-1/6 px-4 py-2.5 text-center text-xs font-medium text-muted-foreground">
+                <TableHead key={role} scope="col" align="center" className="w-1/6">
                   {ROLE_LABEL[role]}
-                </th>
+                </TableHead>
               ))}
             </tr>
-          </thead>
+          </TableHeader>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-700/60">
             {GROUPS.map((group) => {
               const caps = matrix.capabilities.filter((c) => c.group === group);
@@ -210,9 +206,7 @@ export default function RolePermissionsPanel() {
                               最低 {ROLE_LABEL[cap.floor]}
                             </span>
                             {cap.dependsOn?.length ? (
-                              <span>
-                                依赖：{cap.dependsOn.map((dep) => byCode[dep]?.label ?? dep).join('、')}
-                              </span>
+                              <span>依赖：{cap.dependsOn.map((dep) => byCode[dep]?.label ?? dep).join('、')}</span>
                             ) : null}
                             <span className="tabular-nums">当前最低：{ROLE_LABEL[threshold]}</span>
                           </div>
@@ -246,9 +240,7 @@ export default function RolePermissionsPanel() {
 
       <div className="shrink-0 rounded-xl border border-zinc-200/70 bg-zinc-50/70 p-4 dark:border-zinc-700/60 dark:bg-zinc-900/40">
         <p className="text-xs font-medium text-zinc-800 dark:text-zinc-100">安全硬编码（不进入矩阵）</p>
-        <p className="mt-1 text-2xs leading-relaxed text-muted-foreground">
-          {matrix.hardcoded.join(' · ')}
-        </p>
+        <p className="mt-1 text-2xs leading-relaxed text-muted-foreground">{matrix.hardcoded.join(' · ')}</p>
         <p className="mt-2 text-2xs leading-relaxed text-muted-foreground">
           超管始终拥有全部能力，矩阵不能把管理入口锁死；账号管理、审计、诊断与凭据类配置保持代码里的角色下限。
         </p>

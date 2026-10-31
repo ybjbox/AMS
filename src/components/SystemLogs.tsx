@@ -14,7 +14,7 @@ import { describeSaveError } from '@/store/saveFailureCore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Table } from '@/components/ui/Table';
+import { Table, TableHead, TableHeader } from '@/components/ui/Table';
 import { EmptyState } from './ui/EmptyState';
 import { formatDateTime } from '@/utils/dateUtils';
 
@@ -280,19 +280,15 @@ export default function SystemLogs() {
             </div>
           ) : (
             <Table minWidth="min-w-full" nowrapHeaders className="divide-y divide-zinc-200 dark:divide-zinc-700">
-              <thead className="bg-zinc-50 dark:bg-zinc-900/50 sticky top-0 z-10">
+              <TableHeader>
                 <tr>
                   {['时间', '等级', '分类 / 操作', '操作人', '对象', '结果', '详情'].map((h) => (
-                    <th
-                      key={h}
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
-                    >
+                    <TableHead key={h} density="comfortable" scope="col">
                       {h}
-                    </th>
+                    </TableHead>
                   ))}
                 </tr>
-              </thead>
+              </TableHeader>
               <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
                 {items.map((log) => (
                   <tr key={log.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors align-top">
@@ -324,10 +320,10 @@ export default function SystemLogs() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${
- log.result === 'success'
- ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
- : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800'
- }`}
+                          log.result === 'success'
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800'
+                        }`}
                       >
                         {log.result === 'success' ? '成功' : '失败'} {log.status}
                       </span>

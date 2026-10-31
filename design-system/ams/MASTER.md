@@ -231,7 +231,7 @@ AMS 是单人自用的企业后台（员工/部门/考勤/合同/审批/文档/�
 
 - 页面级不得横滑；宽表只在自己的 `overflow-x-auto` 容器里滚。
 - **宽表自适应：** 表格用 `w-full` 跟随容器铺满，`min-w-*` 只作为窄屏横滑的下限；不要用 JS 把列宽总和写死成 `<table>` 的像素宽度——大屏会把剩余宽度留成空白，窄屏又会把右侧列裁掉。
-- **表格原语：** 数据表统一用 `ui/Table` 的 `Table` 基座；宽表再加 `TableFrame`（滚动容器）、`minWidth`、`StickyHeaderCell` / `StickyCell`（首末列冻结）。sticky 定位、层级与阴影只在原语里定义，各表只给背景色与内边距。
+- **表格原语：** 数据表统一用 `Table` 基座；表头用 `TableHeader` + `TableHead`（`compact` / `comfortable` 两档密度，数字列 `align="right"`，首末列 `sticky="left|right"`）；宽表加 `TableFrame` 与 `minWidth`，冻结数据列用 `StickyCell`。`StickyHeaderCell` 仅保留兼容旧调用。sticky 定位、层级与阴影只在原语里定义。
 - **设置二级面板：** 统一 `h-full p-6` + 面板内部滚动（长表用 `TableFrame` 占满剩余高度并固定表头）；不要让表格把卡片撑高后再被外层 `overflow-hidden` 裁掉。
 - grid/flex 子项里有固定宽度内容（A4 预览 794px、画布、宽表）时，给子项 `min-w-0`；否则 `min-width: auto` 会把整列撑出视口（2026-10-25 业务单据实测 390 档被撑到 824px）。
 - 宽表冻结身份与动作：首列 `sticky left-0`、操作列 `sticky right-0`；表头与表体同步 sticky，且 sticky 单元格必须自带背景（透明表头滚过去会叠字）。

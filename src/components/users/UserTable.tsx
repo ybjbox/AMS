@@ -19,7 +19,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { FailedState } from '../ui/FailedState';
 import { Button } from '../ui/button';
 import Badge from '../ui/Badge';
-import { Table, TableFrame, StickyCell, StickyHeaderCell } from '../ui/Table';
+import { Table, TableFrame, TableHead, TableHeader, StickyCell } from '../ui/Table';
 
 interface UserTableProps {
   data: User[];
@@ -32,7 +32,15 @@ interface UserTableProps {
   onRowClick?: (user: User) => void;
 }
 
-export const UserTable = memo(function UserTable({ data, isLoading, loadError, onRetry, onEdit, onDelete, onRowClick }: UserTableProps) {
+export const UserTable = memo(function UserTable({
+  data,
+  isLoading,
+  loadError,
+  onRetry,
+  onEdit,
+  onDelete,
+  onRowClick,
+}: UserTableProps) {
   const hasPermission = useUserStore((state) => state.hasPermission);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnResizeMode] = useState<ColumnResizeMode>('onChange');
@@ -128,7 +136,11 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
       {
         accessorKey: 'phone',
         header: '联系电话',
-        cell: ({ row }) => <div className="text-zinc-900 dark:text-zinc-200 tabular-nums">{row.original.phone ? maskPhone(row.original.phone) : '-'}</div>,
+        cell: ({ row }) => (
+          <div className="text-zinc-900 dark:text-zinc-200 tabular-nums">
+            {row.original.phone ? maskPhone(row.original.phone) : '-'}
+          </div>
+        ),
         size: 120,
         minSize: 100,
       },
@@ -175,9 +187,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
       {
         accessorKey: 'employmentType',
         header: '用工形式',
-        cell: ({ row }) => (
-          <div className="text-zinc-900 dark:text-zinc-200">{row.original.employmentType || '-'}</div>
-        ),
+        cell: ({ row }) => <div className="text-zinc-900 dark:text-zinc-200">{row.original.employmentType || '-'}</div>,
         size: 90,
         minSize: 80,
       },
@@ -214,7 +224,12 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
               : typeof days === 'number' && days <= 90
                 ? 'text-amber-700 dark:text-amber-400 font-medium'
                 : 'text-zinc-900 dark:text-zinc-200';
-          return <div className={`tabular-nums ${tone}`}>{days}{typeof days === 'number' ? ' 天' : ''}</div>;
+          return (
+            <div className={`tabular-nums ${tone}`}>
+              {days}
+              {typeof days === 'number' ? ' 天' : ''}
+            </div>
+          );
         },
         size: 110,
         minSize: 100,
@@ -316,24 +331,29 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
                     <p className="font-medium text-zinc-900 dark:text-white text-sm">{user.name}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{user.id}</p>
                   </div>
-                  <Badge variant={user.status === '在职' ? 'success' : user.status === '试用期' ? 'warning' : 'neutral'}>
+                  <Badge
+                    variant={user.status === '在职' ? 'success' : user.status === '试用期' ? 'warning' : 'neutral'}
+                  >
                     {user.status}
                   </Badge>
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mb-3">
                   {user.department && (
                     <span className="flex items-center gap-1">
-                      <Building2 className="w-3 h-3" />{user.department}
+                      <Building2 className="w-3 h-3" />
+                      {user.department}
                     </span>
                   )}
                   {user.role && (
                     <span className="flex items-center gap-1">
-                      <Briefcase className="w-3 h-3" />{user.role}
+                      <Briefcase className="w-3 h-3" />
+                      {user.role}
                     </span>
                   )}
                   {user.phone && (
                     <span className="flex items-center gap-1 tabular-nums">
-                      <Phone className="w-3 h-3" />{maskPhone(user.phone)}
+                      <Phone className="w-3 h-3" />
+                      {maskPhone(user.phone)}
                     </span>
                   )}
                 </div>
@@ -345,7 +365,10 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
                       size="sm"
                       className="flex-1"
                       aria-label={`编辑：${user.name}`}
-                      onClick={(e) => { e.stopPropagation(); onEdit(user); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(user);
+                      }}
                     >
                       编辑
                     </Button>
@@ -355,7 +378,10 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
                       size="sm"
                       className="flex-1"
                       aria-label={`删除：${user.name}`}
-                      onClick={(e) => { e.stopPropagation(); onDelete(user); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(user);
+                      }}
                     >
                       删除
                     </Button>
@@ -370,7 +396,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
             <TableFrame ref={parentRef} className="h-full relative">
               <Table className="relative" minWidth="min-w-200" nowrapHeaders aria-label="员工列表">
                 <caption className="sr-only">员工列表</caption>
-                <thead>
+                <TableHeader>
                   {table.getHeaderGroups().map((headerGroup) => (
                     <tr key={headerGroup.id}>
                       {headerGroup.headers.map((header, index) => {
@@ -378,7 +404,9 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
                         const isLast = index === headerGroup.headers.length - 1;
                         const content = (
                           <>
-                            {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(header.column.columnDef.header, header.getContext())}
                             {header.column.getCanResize() && (
                               <div
                                 onMouseDown={header.getResizeHandler()}
@@ -390,6 +418,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
                             )}
                           </>
                         );
+                        const numeric = ['genderAge', 'joinDateYears', 'contractExpiry'].includes(header.column.id);
                         const headProps = {
                           scope: 'col' as const,
                           'aria-sort':
@@ -398,24 +427,21 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
                               : header.column.getIsSorted() === 'desc'
                                 ? ('descending' as const)
                                 : undefined,
-                          className: `group px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-100 dark:border-zinc-800 sticky top-0 ${
-                            isFirst || isLast ? '' : 'z-20'
-                          }`,
+                          density: 'compact' as const,
+                          align: isLast || numeric ? ('right' as const) : ('left' as const),
+                          sticky: isFirst ? ('left' as const) : isLast ? ('right' as const) : undefined,
+                          className: 'group',
                           style: { width: header.getSize() },
                         };
-                        return isFirst || isLast ? (
-                          <StickyHeaderCell key={header.id} side={isFirst ? 'left' : 'right'} {...headProps}>
+                        return (
+                          <TableHead key={header.id} {...headProps}>
                             {content}
-                          </StickyHeaderCell>
-                        ) : (
-                          <th key={header.id} {...headProps}>
-                            {content}
-                          </th>
+                          </TableHead>
                         );
                       })}
                     </tr>
                   ))}
-                </thead>
+                </TableHeader>
                 <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-50 dark:divide-zinc-800/50">
                   {paddingTop > 0 && (
                     <tr>
@@ -443,8 +469,11 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
                         {row.getVisibleCells().map((cell, index) => {
                           const isFirst = index === 0;
                           const isLast = index === row.getVisibleCells().length - 1;
+                          const numeric = ['genderAge', 'joinDateYears', 'contractExpiry'].includes(cell.column.id);
                           const cellProps = {
-                            className: `px-4 whitespace-nowrap text-sm bg-white dark:bg-zinc-800 group-hover/row:bg-zinc-50/80 dark:group-hover/row:bg-zinc-700/30 transition-colors border-b border-zinc-50 dark:border-zinc-800/50`,
+                            className: `px-4 whitespace-nowrap text-sm bg-white dark:bg-zinc-800 group-hover/row:bg-zinc-50/80 dark:group-hover/row:bg-zinc-700/30 transition-colors border-b border-zinc-50 dark:border-zinc-800/50 ${
+                              numeric ? 'text-right' : ''
+                            }`,
                             style: {
                               width: cell.column.getSize(),
                               minWidth: cell.column.getSize(),
@@ -453,7 +482,7 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
                           };
                           return isFirst || isLast ? (
                             <StickyCell key={cell.id} side={isFirst ? 'left' : 'right'} {...cellProps}>
-                              <div className={`flex items-center h-full ${isLast ? 'justify-end' : ''}`}>
+                              <div className={`flex items-center h-full ${isLast || numeric ? 'justify-end' : ''}`}>
                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
                               </div>
                             </StickyCell>
@@ -470,7 +499,10 @@ export const UserTable = memo(function UserTable({ data, isLoading, loadError, o
                   })}
                   {paddingBottom > 0 && (
                     <tr>
-                      <td colSpan={columns.length} style={{ height: `${paddingBottom}px`, padding: 0, border: 'none' }} />
+                      <td
+                        colSpan={columns.length}
+                        style={{ height: `${paddingBottom}px`, padding: 0, border: 'none' }}
+                      />
                     </tr>
                   )}
                 </tbody>

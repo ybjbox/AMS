@@ -5,7 +5,7 @@ import { User } from '@/types';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { FailedState } from '@/components/ui/FailedState';
 import Badge from '@/components/ui/Badge';
-import { Table, TableFrame, StickyCell, StickyHeaderCell } from '@/components/ui/Table';
+import { Table, TableFrame, TableHead, TableHeader, StickyCell } from '@/components/ui/Table';
 import { expiryBucket } from '../utils/expiryBucket';
 import { Eye, Printer, FileText } from 'lucide-react';
 
@@ -31,60 +31,40 @@ export const ContractTable = ({ filteredUsers, loadError, onRetry, onPreview, on
     <div className="relative flex-1 rounded-b-xl border-t border-zinc-200 dark:border-zinc-700 h-full min-h-0">
       <TableFrame ref={parentRef} className="h-full">
         <Table className="relative" minWidth="min-w-200" nowrapHeaders aria-label="合同列表">
-          <thead className="bg-zinc-50 dark:bg-zinc-900/50 sticky top-0 z-20">
+          <TableHeader>
             <tr>
-              <StickyHeaderCell
-                side="left"
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-zinc-50 dark:bg-zinc-900/50"
-              >
+              <TableHead density="comfortable" sticky="left" scope="col">
                 工号
-              </StickyHeaderCell>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-zinc-50 dark:bg-zinc-900/50"
-              >
+              </TableHead>
+              <TableHead density="comfortable" scope="col">
                 姓名
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-zinc-50 dark:bg-zinc-900/50"
-              >
+              </TableHead>
+              <TableHead density="comfortable" scope="col">
                 部门
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-zinc-50 dark:bg-zinc-900/50"
-              >
+              </TableHead>
+              <TableHead density="comfortable" scope="col">
                 合同状态
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-zinc-50 dark:bg-zinc-900/50"
-              >
+              </TableHead>
+              <TableHead density="comfortable" scope="col">
                 签订日期
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider bg-zinc-50 dark:bg-zinc-900/50"
-              >
+              </TableHead>
+              <TableHead density="comfortable" scope="col">
                 到期日期
-              </th>
-              <StickyHeaderCell
-                side="right"
-                scope="col"
-                className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider bg-zinc-50 dark:bg-zinc-900/50"
-              >
+              </TableHead>
+              <TableHead density="comfortable" align="right" sticky="right" scope="col">
                 操作
-              </StickyHeaderCell>
+              </TableHead>
             </tr>
-          </thead>
+          </TableHeader>
           <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
             {filteredUsers.length > 0 ? (
               <>
                 {rowVirtualizer.getVirtualItems().length > 0 && rowVirtualizer.getVirtualItems()[0]?.start > 0 && (
                   <tr>
-                    <td colSpan={7} style={{ height: `${rowVirtualizer.getVirtualItems()[0].start}px`, padding: 0, border: 'none' }} />
+                    <td
+                      colSpan={7}
+                      style={{ height: `${rowVirtualizer.getVirtualItems()[0].start}px`, padding: 0, border: 'none' }}
+                    />
                   </tr>
                 )}
                 {rowVirtualizer.getVirtualItems().map((virtualRow) => {
@@ -104,15 +84,27 @@ export const ContractTable = ({ filteredUsers, loadError, onRetry, onPreview, on
                       >
                         {user.id}
                       </StickyCell>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {user.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                        {user.department}
-                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{user.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{user.department}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge variant={bucket === 'expired' ? 'destructive' : bucket === 'soon' ? 'warning' : bucket === 'ok' ? 'primary' : 'neutral'}>
-                          {bucket === 'expired' ? '已过期' : bucket === 'soon' ? '即将到期' : bucket === 'ok' ? '正常' : '未登记'}
+                        <Badge
+                          variant={
+                            bucket === 'expired'
+                              ? 'destructive'
+                              : bucket === 'soon'
+                                ? 'warning'
+                                : bucket === 'ok'
+                                  ? 'primary'
+                                  : 'neutral'
+                          }
+                        >
+                          {bucket === 'expired'
+                            ? '已过期'
+                            : bucket === 'soon'
+                              ? '即将到期'
+                              : bucket === 'ok'
+                                ? '正常'
+                                : '未登记'}
                         </Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
@@ -121,7 +113,9 @@ export const ContractTable = ({ filteredUsers, loadError, onRetry, onPreview, on
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {user.contractExpiry || '-'}
                         {bucket === 'soon' && (
-                          <span className="ml-2 text-xs text-amber-700 dark:text-amber-400">({user.daysToExpiry}天后)</span>
+                          <span className="ml-2 text-xs text-amber-700 dark:text-amber-400">
+                            ({user.daysToExpiry}天后)
+                          </span>
                         )}
                       </td>
                       <StickyCell
@@ -150,11 +144,21 @@ export const ContractTable = ({ filteredUsers, loadError, onRetry, onPreview, on
                     </tr>
                   );
                 })}
-                {rowVirtualizer.getVirtualItems().length > 0 && rowVirtualizer.getTotalSize() - rowVirtualizer.getVirtualItems()[rowVirtualizer.getVirtualItems().length - 1].end > 0 && (
-                  <tr>
-                    <td colSpan={7} style={{ height: `${rowVirtualizer.getTotalSize() - rowVirtualizer.getVirtualItems()[rowVirtualizer.getVirtualItems().length - 1].end}px`, padding: 0, border: 'none' }} />
-                  </tr>
-                )}
+                {rowVirtualizer.getVirtualItems().length > 0 &&
+                  rowVirtualizer.getTotalSize() -
+                    rowVirtualizer.getVirtualItems()[rowVirtualizer.getVirtualItems().length - 1].end >
+                    0 && (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        style={{
+                          height: `${rowVirtualizer.getTotalSize() - rowVirtualizer.getVirtualItems()[rowVirtualizer.getVirtualItems().length - 1].end}px`,
+                          padding: 0,
+                          border: 'none',
+                        }}
+                      />
+                    </tr>
+                  )}
               </>
             ) : (
               <tr>
