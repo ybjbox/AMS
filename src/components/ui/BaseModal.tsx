@@ -156,8 +156,8 @@ export const BaseModal: React.FC<BaseModalProps> = React.memo(
                 {/* h2 而非 h3：弹窗经 portal 挂到 body，脱离了页面里「h1 → h2」的原有上下文。
                 用 h3 时整篇 heading 序列变成 h1→h3，axe 判 heading-order 跳档（WCAG 1.3.1）。
                 改成 h2 后「页面 h1 → 弹窗 h2 → 弹窗内 h3/h4」成为合法序列，
-                语义也更准：弹窗标题是二级标题。视觉尺寸不变（text-lg 保持）。 */}
-                <h2 className="text-lg font-semibold text-zinc-900 dark:text-white" id="modal-title">
+                语义也更准：弹窗标题是二级标题。视觉尺寸与 Dialog / Sheet 对齐（16px/500）。 */}
+                <h2 className="font-heading text-base font-medium text-foreground" id="modal-title">
                   {title}
                 </h2>
                 <button

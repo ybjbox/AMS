@@ -191,7 +191,7 @@ AMS 是单人自用的企业后台（员工/部门/考勤/合同/审批/文档/�
 ## Typography
 
 - **页面与区块标题：Fira Sans。** `.page-title` = `text-24px / 600`（实测 24px/600/Fira Sans），`.section-title` = 18px/600，`.subsection-title` = 14px/600。
-- **浮层标题：Fira Code**（`font-heading` 令牌，仅 ui/dialog · sheet · popover 的标题使用）。中文标题下 Fira Code 只影响拉丁与数字，这条差异是刻意保留的层级区分，不要扩散到页面 h1。
+- **浮层标题：Fira Code**（`font-heading` 令牌，统一 `font-heading text-base font-medium`；用于 ui/dialog · sheet · popover 与 BaseModal）。中文标题下 Fira Code 只影响拉丁与数字，这条差异是刻意保留的层级区分，不要扩散到页面 h1。
 - **数字/时间戳/工号：Fira Code + `tabular-nums`**（表格已全局 `font-variant-numeric: tabular-nums`）。
 - **辅助文字：`text-muted-foreground`**，禁止再用 `text-zinc-400/500` 表达正文级文字。
 - 层级：页面 h1 ≈ 24px semibold；卡片标题 text-sm/15px medium；字段标签 text-xs；辅助说明 `text-2xs`（11px）；密集表格/热力图微字号 `text-3xs`（10px）。微字号为 @theme 令牌，禁止再写 `text-[10px]/text-[11px]` 任意值。

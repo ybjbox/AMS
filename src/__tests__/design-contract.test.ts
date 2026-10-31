@@ -218,4 +218,18 @@ describe('设计契约：表单无障碍', () => {
     );
     expect(bad, `motion/react 过渡请改用 useMotionPrefs()/MOTION：\n${bad.join('\n')}`).toEqual([]);
   });
+
+  it('浮层标题统一 font-heading 16/500', () => {
+    // Dialog / Sheet / BaseModal 三套浮层共用同一标题字号、字重与字体；
+    // 任一处退回 text-lg/font-semibold 都会让同类弹窗看起来像两个系统。
+    const targets = [
+      'components/ui/dialog.tsx',
+      'components/ui/sheet.tsx',
+      'components/ui/BaseModal.tsx',
+    ];
+    const bad = targets.filter(
+      (rel) => !readFileSync(path.join(SRC, rel), 'utf8').includes('font-heading text-base font-medium')
+    );
+    expect(bad, `浮层标题请统一为 font-heading text-base font-medium：\n${bad.join('\n')}`).toEqual([]);
+  });
 });

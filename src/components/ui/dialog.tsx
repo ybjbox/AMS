@@ -101,7 +101,7 @@ const DialogTitle = React.memo(function DialogTitle({ className, ...props }: Dia
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn('font-heading text-base leading-none font-medium', className)}
+      className={cn('font-heading text-base font-medium text-foreground', className)}
       {...props}
     />
   );
