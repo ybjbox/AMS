@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Printer, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { PreviewZoomControl } from '@/components/PreviewZoomControl';
 import {
@@ -206,14 +207,17 @@ export default function MealVouchers() {
               </SelectContent>
             </Select>
           </div>
-          <label className="mt-3 flex items-center gap-2 text-xs text-zinc-700 dark:text-zinc-300">
-            <input
-              type="checkbox"
+          <div className="mt-3 flex items-center gap-2 text-xs text-zinc-700 dark:text-zinc-300">
+            <Checkbox
+              id="meal-split-by-column"
+              variant="inline"
               checked={spec.splitByColumn}
-              onChange={(e) => patch({ splitByColumn: e.target.checked })}
+              onCheckedChange={(checked) => patch({ splitByColumn: checked === true })}
             />
-            分列号段（右列 = 左列 + 每列张数，同 Excel 母版）
-          </label>
+            <label htmlFor="meal-split-by-column" className="cursor-pointer">
+              分列号段（右列 = 左列 + 每列张数，同 Excel 母版）
+            </label>
+          </div>
 
           <p className="mt-3 text-xs text-muted-foreground">
             共 {numbers.length} 张 · 编号 {numbers[0]} 至 {numbers[numbers.length - 1]} · 券宽{' '}

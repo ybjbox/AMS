@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Webhook, Mail, Send, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import SettingsPanel from '../components/SettingsPanel';
 import {
@@ -141,15 +142,17 @@ export default function NotifyPanel() {
           新站内通知将同步推送到群机器人。回调地址含机器人令牌，保存后仅显示掩码；重新填写完整地址才会覆盖，点「清除」可删除已存地址。
         </p>
         <div className="mt-4 space-y-4">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
+          <div className="flex items-center gap-2 text-sm">
+            <Checkbox
+              id="notify-webhook-enabled"
+              variant="inline"
               checked={config.webhook.enabled}
-              onChange={(e) => patchWebhook({ enabled: e.target.checked })}
-              className="rounded border-zinc-300 dark:border-zinc-600 text-brand-600 focus:ring-brand-500"
+              onCheckedChange={(checked) => patchWebhook({ enabled: checked === true })}
             />
-            启用 Webhook 通道
-          </label>
+            <label htmlFor="notify-webhook-enabled" className="cursor-pointer">
+              启用 Webhook 通道
+            </label>
+          </div>
           <Field label="平台格式">
             <Select
               items={WEBHOOK_FORMATS}
@@ -215,15 +218,17 @@ export default function NotifyPanel() {
           按接收人账号资料中的邮箱投递；接收人未登记邮箱时自动跳过。
         </p>
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <label className="flex items-center gap-2 text-sm sm:col-span-2">
-            <input
-              type="checkbox"
+          <div className="flex items-center gap-2 text-sm sm:col-span-2">
+            <Checkbox
+              id="notify-email-enabled"
+              variant="inline"
               checked={config.email.enabled}
-              onChange={(e) => patchEmail({ enabled: e.target.checked })}
-              className="rounded border-zinc-300 dark:border-zinc-600 text-brand-600 focus:ring-brand-500"
+              onCheckedChange={(checked) => patchEmail({ enabled: checked === true })}
             />
-            启用邮件通道
-          </label>
+            <label htmlFor="notify-email-enabled" className="cursor-pointer">
+              启用邮件通道
+            </label>
+          </div>
           <Field label="SMTP 服务器">
             <Input
               type="text"
@@ -239,15 +244,17 @@ export default function NotifyPanel() {
               onChange={(e) => patchEmail({ port: Number(e.target.value) })}
             />
           </Field>
-          <label className="flex items-center gap-2 text-sm sm:col-span-2">
-            <input
-              type="checkbox"
+          <div className="flex items-center gap-2 text-sm sm:col-span-2">
+            <Checkbox
+              id="notify-email-secure"
+              variant="inline"
               checked={config.email.secure}
-              onChange={(e) => patchEmail({ secure: e.target.checked })}
-              className="rounded border-zinc-300 dark:border-zinc-600 text-brand-600 focus:ring-brand-500"
+              onCheckedChange={(checked) => patchEmail({ secure: checked === true })}
             />
-            使用 SSL/TLS（465 端口通常为 true，587 为 false/STARTTLS）
-          </label>
+            <label htmlFor="notify-email-secure" className="cursor-pointer">
+              使用 SSL/TLS（465 端口通常为 true，587 为 false/STARTTLS）
+            </label>
+          </div>
           <Field label="登录账号">
             <Input
               type="text"

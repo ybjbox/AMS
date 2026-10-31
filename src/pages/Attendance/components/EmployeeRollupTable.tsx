@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { FailedState } from '@/components/ui/FailedState';
 import { AlertTriangle, ArrowUpDown, ChevronUp, ChevronDown, FileSpreadsheet, SearchX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/Badge';
 import { Table, TableFrame, TableHead, TableHeader, StickyCell } from '@/components/ui/Table';
 import { cn } from '@/lib/utils';
@@ -141,15 +142,17 @@ export default function EmployeeRollupTable({
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <label className="flex cursor-pointer items-center gap-1.5 text-2xs text-muted-foreground">
-            <input
-              type="checkbox"
+          <div className="flex items-center gap-1.5 text-2xs text-muted-foreground">
+            <Checkbox
+              id="attendance-only-anomaly"
+              variant="inline"
               checked={onlyWithAnomaly}
-              onChange={(e) => setOnlyWithAnomaly(e.target.checked)}
-              className="h-4 w-4 accent-brand-600"
+              onCheckedChange={(checked) => setOnlyWithAnomaly(checked === true)}
             />
-            只看有异常
-          </label>
+            <label htmlFor="attendance-only-anomaly" className="cursor-pointer">
+              只看有异常
+            </label>
+          </div>
           {canPurge && totalCount > 0 && (
             <Button
               variant="ghost"

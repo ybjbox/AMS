@@ -352,7 +352,7 @@ v3 写的是「❌ 布局位移型 hover（scale/translate 导致 reflow）」�
 底色 白 / dark zinc-900 · 字号 text-sm
 focus：outline-none + ring-4 ring-brand-600/20 + border-brand-600（dark 用 brand-400）
 暗色原生 date/time/number 必加 dark:[color-scheme:dark]
-下拉 → ui/Select（base-ui）；复选框 → ui/Checkbox（brand-600 选中+白勾）
+下拉 → ui/Select（base-ui）；复选框 → ui/Checkbox（16px、brand 选中+白勾、统一焦点环；密集筛选行传 `variant="inline"` 收起外扩热区，行高不跳变）
 必填星号 <span class="text-red-500" aria-hidden>*</span>，标签用 <label> 关联（必须有 htmlFor 或包裹控件）
 ```
 

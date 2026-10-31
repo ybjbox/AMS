@@ -2,6 +2,7 @@ import React from 'react';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { FilterChip } from '@/components/ui/FilterChip';
 import type { RecordFilter, RecordSourceFilter } from '../lib/filters';
 import { ANOMALY_GROUPS } from '../lib/filters';
@@ -132,15 +133,17 @@ export function RecordsFilterBar({
           </div>
           {/* 跨零点班次（17:30-01:00）会让月初/月末那班横跨两天，
               默认多留一天才不漏；想看严格的自然月就把它关掉。 */}
-          <label className="flex cursor-pointer items-center gap-1.5 pb-1.5 text-2xs text-muted-foreground">
-            <input
-              type="checkbox"
+          <div className="flex items-center gap-1.5 pb-1.5 text-2xs text-muted-foreground">
+            <Checkbox
+              id="attendance-pad-days"
+              variant="inline"
               checked={padDays}
-              onChange={(e) => onPadDaysChange(e.target.checked)}
-              className="h-4 w-4 accent-brand-600"
+              onCheckedChange={(checked) => onPadDaysChange(checked === true)}
             />
-            边界多留一天
-          </label>
+            <label htmlFor="attendance-pad-days" className="cursor-pointer">
+              边界多留一天
+            </label>
+          </div>
         </div>
 
         <div className="lg:flex-1" />

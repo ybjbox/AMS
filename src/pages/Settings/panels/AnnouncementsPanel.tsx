@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useConfirm } from '@/hooks/useConfirm';
 import { announcementApi, type Announcement } from '@/services/announcementApi';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import SettingsPanel from '../components/SettingsPanel';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -155,24 +156,30 @@ export default function AnnouncementsPanel() {
           />
         </label>
         <div className="flex flex-wrap items-center gap-4">
-          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-            <input
-              type="checkbox"
+          <div className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+            <Checkbox
+              id="announcement-priority"
+              variant="inline"
               checked={form.priority === 'important'}
-              onChange={(e) => setForm({ ...form, priority: e.target.checked ? 'important' : 'normal' })}
-              className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-brand-600 focus:ring-brand-600"
+              onCheckedChange={(checked) =>
+                setForm({ ...form, priority: checked === true ? 'important' : 'normal' })
+              }
             />
-            重要公告（置顶显示）
-          </label>
-          <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 cursor-pointer">
-            <input
-              type="checkbox"
+            <label htmlFor="announcement-priority" className="cursor-pointer">
+              重要公告（置顶显示）
+            </label>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+            <Checkbox
+              id="announcement-notify-all"
+              variant="inline"
               checked={form.notifyAll}
-              onChange={(e) => setForm({ ...form, notifyAll: e.target.checked })}
-              className="size-4 shrink-0 rounded border-zinc-200/80 dark:border-zinc-600 text-brand-600 focus:ring-brand-600"
+              onCheckedChange={(checked) => setForm({ ...form, notifyAll: checked === true })}
             />
-            同时通知全员
-          </label>
+            <label htmlFor="announcement-notify-all" className="cursor-pointer">
+              同时通知全员
+            </label>
+          </div>
           <div className="flex-1" />
           <Button type="submit" disabled={submitting || !form.title.trim()}>
             {submitting ? '发布中…' : '发布公告'}

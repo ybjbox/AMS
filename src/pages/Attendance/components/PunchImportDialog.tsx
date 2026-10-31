@@ -4,6 +4,7 @@ import { AlertCircle, CheckCircle2, Download, RotateCcw, UploadCloud } from 'luc
 import { toast } from 'sonner';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { FilterChip } from '@/components/ui/FilterChip';
 import { Table, TableHead, TableHeader } from '@/components/ui/Table';
 import {
@@ -319,15 +320,11 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
                 <tr>
                   <TableHead className="w-9 px-3">
                     {counts && counts.visibleSelectable > 0 ? (
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         aria-label="全选当前筛选下的可导入行"
                         checked={counts.allVisibleSelected}
-                        ref={(el) => {
-                          if (el) el.indeterminate = counts.someVisibleSelected;
-                        }}
-                        onChange={() => bulk(counts.allVisibleSelected ? 'none' : 'all')}
-                        className="h-4 w-4 accent-brand-600"
+                        indeterminate={counts.someVisibleSelected}
+                        onCheckedChange={() => bulk(counts.allVisibleSelected ? 'none' : 'all')}
                       />
                     ) : (
                       <span className="block h-4" />
@@ -365,13 +362,11 @@ export default function PunchImportDialog({ isOpen, onClose, initialFile, onImpo
                         }`}
                       >
                         <td className="px-3 py-2 align-middle">
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={checked}
                             disabled={!selectable}
-                            onChange={() => toggleRow(row.rowNumber)}
+                            onCheckedChange={() => toggleRow(row.rowNumber)}
                             aria-label={`导入第 ${row.rowNumber} 行${row.data.employeeId || ''}`}
-                            className="h-4 w-4 accent-brand-600 disabled:opacity-40"
                           />
                         </td>
                         <td className="px-3 py-2 text-zinc-400 tabular-nums">{row.rowNumber}</td>
