@@ -1,4 +1,3 @@
-import { Pressable } from '@/components/ui/Pressable';
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { User, DepartmentNode, RoleNode } from '@/types';
 import * as userApi from '@/services/userApi';
 import { useEmployeeStore } from '@/store/useEmployeeStore';
+import { Button } from '@/components/ui/button';
 
 const userSchema = z.object({
   name: z.string().min(1, '请输入姓名'),
@@ -170,27 +170,26 @@ export function UserFormModal({
       size="4xl"
       footer={
         <>
-          <Pressable
-            type="button"
-            onClick={onClose}
-            className="btn-secondary w-full sm:w-auto"
-          >
+          <Button type="button" onClick={onClose} variant="outline" size="toolbar" className="w-full sm:w-auto">
             取消
-          </Pressable>
-          <Pressable
+          </Button>
+          <Button
             type="submit"
             form="employee-form"
             disabled={isSubmitting}
-            className="btn-primary w-full sm:w-auto disabled:opacity-70 disabled:cursor-not-allowed"
+            size="toolbar"
+            className="w-full sm:w-auto"
           >
             {isSubmitting ? '保存中…' : '保存'}
-          </Pressable>
+          </Button>
         </>
       }
     >
       <form id="employee-form" className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
         <div>
-          <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-brand-600 pl-2">基本信息</h3>
+          <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-brand-600 pl-2">
+            基本信息
+          </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label htmlFor="uf-name" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
@@ -202,7 +201,11 @@ export function UserFormModal({
                 type="text"
                 className={`mt-1 ${errors.name ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
-              {errors.name && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.name.message}</p>}
+              {errors.name && (
+                <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">
+                  {errors.name.message}
+                </p>
+              )}
             </div>
             <div>
               <label htmlFor="uf-id-card" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
@@ -214,7 +217,11 @@ export function UserFormModal({
                 type="text"
                 className={`mt-1 ${errors.idCard ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
-              {errors.idCard && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.idCard.message}</p>}
+              {errors.idCard && (
+                <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">
+                  {errors.idCard.message}
+                </p>
+              )}
             </div>
             <div>
               <label htmlFor="uf-phone" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
@@ -226,10 +233,17 @@ export function UserFormModal({
                 type="text"
                 className={`mt-1 ${errors.phone ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
-              {errors.phone && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.phone.message}</p>}
+              {errors.phone && (
+                <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">
+                  {errors.phone.message}
+                </p>
+              )}
             </div>
             <div className="sm:col-span-2">
-              <label htmlFor="uf-registered-address" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+              <label
+                htmlFor="uf-registered-address"
+                className="block text-xs font-medium text-zinc-700 dark:text-zinc-300"
+              >
                 户口地址 <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <Input
@@ -238,10 +252,17 @@ export function UserFormModal({
                 type="text"
                 className={`mt-1 ${errors.registeredAddress ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
-              {errors.registeredAddress && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.registeredAddress.message}</p>}
+              {errors.registeredAddress && (
+                <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">
+                  {errors.registeredAddress.message}
+                </p>
+              )}
             </div>
             <div className="sm:col-span-2">
-              <label htmlFor="uf-current-address" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+              <label
+                htmlFor="uf-current-address"
+                className="block text-xs font-medium text-zinc-700 dark:text-zinc-300"
+              >
                 现住址 <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <Input
@@ -250,13 +271,19 @@ export function UserFormModal({
                 type="text"
                 className={`mt-1 ${errors.currentAddress ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
-              {errors.currentAddress && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.currentAddress.message}</p>}
+              {errors.currentAddress && (
+                <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">
+                  {errors.currentAddress.message}
+                </p>
+              )}
             </div>
           </div>
         </div>
 
         <div>
-          <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-brand-600 pl-2">工作信息</h3>
+          <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-brand-600 pl-2">
+            工作信息
+          </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               {/**
@@ -279,7 +306,11 @@ export function UserFormModal({
                 nodes={departments}
                 placeholder="请选择部门"
               />
-              {errors.department && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.department.message}</p>}
+              {errors.department && (
+                <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">
+                  {errors.department.message}
+                </p>
+              )}
             </div>
             <div>
               <label htmlFor="uf-position" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
@@ -352,10 +383,17 @@ export function UserFormModal({
                 type="date"
                 className={`mt-1 ${errors.joinDate ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}`}
               />
-              {errors.joinDate && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.joinDate.message}</p>}
+              {errors.joinDate && (
+                <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">
+                  {errors.joinDate.message}
+                </p>
+              )}
             </div>
             <div>
-              <label htmlFor="uf-employment-type" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+              <label
+                htmlFor="uf-employment-type"
+                className="block text-xs font-medium text-zinc-700 dark:text-zinc-300"
+              >
                 用工形式 <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <Select
@@ -391,10 +429,17 @@ export function UserFormModal({
         </div>
 
         <div>
-          <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-brand-600 pl-2">合同与社保</h3>
+          <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-brand-600 pl-2">
+            合同与社保
+          </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="uf-social-security" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">是否购买社保</label>
+              <label
+                htmlFor="uf-social-security"
+                className="block text-xs font-medium text-zinc-700 dark:text-zinc-300"
+              >
+                是否购买社保
+              </label>
               <Select
                 value={watch('hasSocialSecurity')}
                 onValueChange={(v) => setValue('hasSocialSecurity', String(v))}
@@ -409,35 +454,33 @@ export function UserFormModal({
               </Select>
             </div>
             <div>
-              <label htmlFor="uf-contract-years" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">合同年限(年)</label>
-              <Input
-                {...register('contractYears')}
-                id="uf-contract-years"
-                type="number"
-                className="mt-1"
-              />
+              <label htmlFor="uf-contract-years" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                合同年限(年)
+              </label>
+              <Input {...register('contractYears')} id="uf-contract-years" type="number" className="mt-1" />
             </div>
             <div>
-              <label htmlFor="uf-contract-sign-date" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">最新签订时间</label>
-              <Input
-                {...register('contractSignDate')}
-                id="uf-contract-sign-date"
-                type="date"
-                className="mt-1"
-              />
+              <label
+                htmlFor="uf-contract-sign-date"
+                className="block text-xs font-medium text-zinc-700 dark:text-zinc-300"
+              >
+                最新签订时间
+              </label>
+              <Input {...register('contractSignDate')} id="uf-contract-sign-date" type="date" className="mt-1" />
             </div>
           </div>
         </div>
 
         <div>
-          <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-brand-600 pl-2">退役军人信息</h3>
+          <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-200 mb-3 border-l-2 border-brand-600 pl-2">
+            退役军人信息
+          </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="uf-veteran" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">是否退役军人</label>
-              <Select
-                value={watch('isVeteran')}
-                onValueChange={(v) => setValue('isVeteran', String(v))}
-              >
+              <label htmlFor="uf-veteran" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                是否退役军人
+              </label>
+              <Select value={watch('isVeteran')} onValueChange={(v) => setValue('isVeteran', String(v))}>
                 <SelectTrigger id="uf-veteran" aria-label="是否退役军人" className="w-full mt-1">
                   <SelectValue placeholder="选择是否退役军人" />
                 </SelectTrigger>
@@ -448,16 +491,15 @@ export function UserFormModal({
               </Select>
             </div>
             <div>
-              <label htmlFor="uf-former-unit" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">原服役单位</label>
-              <Input
-                {...register('formerUnit')}
-                id="uf-former-unit"
-                type="text"
-                className="mt-1"
-              />
+              <label htmlFor="uf-former-unit" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                原服役单位
+              </label>
+              <Input {...register('formerUnit')} id="uf-former-unit" type="text" className="mt-1" />
             </div>
             <div>
-              <label htmlFor="uf-military-dates" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">入伍及退役时间</label>
+              <label htmlFor="uf-military-dates" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                入伍及退役时间
+              </label>
               <Input
                 {...register('militaryDates')}
                 id="uf-military-dates"
@@ -470,13 +512,10 @@ export function UserFormModal({
         </div>
 
         <div>
-          <label htmlFor="uf-remarks" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">备注</label>
-          <Textarea
-            {...register('remarks')}
-            id="uf-remarks"
-            rows={2}
-            className="mt-1 field-sizing-fixed resize-y"
-          />
+          <label htmlFor="uf-remarks" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+            备注
+          </label>
+          <Textarea {...register('remarks')} id="uf-remarks" rows={2} className="mt-1 field-sizing-fixed resize-y" />
         </div>
       </form>
     </BaseModal>

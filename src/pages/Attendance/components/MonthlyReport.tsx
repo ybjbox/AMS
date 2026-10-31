@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { FailedState } from '@/components/ui/FailedState';
 import { Input } from '@/components/ui/input';
 import { Table } from '@/components/ui/Table';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,7 +23,16 @@ import {
 function exportCsv(month: string, rows: MonthlySummaryRow[]): void {
   const header = ['工号', '姓名', '部门', '出勤天数', '打卡次数', '迟到次数', '早退次数', '缺卡次数'];
   const lines = rows.map((r) =>
-    [r.employeeId, r.employeeName, r.department || '-', r.workDays, r.punchCount, r.lateCount, r.earlyLeaveCount, r.missingCount]
+    [
+      r.employeeId,
+      r.employeeName,
+      r.department || '-',
+      r.workDays,
+      r.punchCount,
+      r.lateCount,
+      r.earlyLeaveCount,
+      r.missingCount,
+    ]
       .map((v) => {
         const s = String(v);
         // 含逗号/引号的字段加引号转义
@@ -73,9 +83,7 @@ export default function MonthlyReport() {
     setIsLoading(true);
     try {
       // 空串 = 让服务端定：最近有数据的月份（新库回退当月）
-      const res = m
-        ? await attendanceApi.fetchMonthlySummary(m)
-        : await attendanceApi.fetchLatestMonthlySummary();
+      const res = m ? await attendanceApi.fetchMonthlySummary(m) : await attendanceApi.fetchLatestMonthlySummary();
       setRows(res.rows ?? []);
       if (Array.isArray(res.stats)) setStats(res.stats);
       if (!touchedRef.current) setMonth(res.month);
@@ -158,22 +166,18 @@ export default function MonthlyReport() {
         <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
           <CalendarDays className="w-4 h-4 text-zinc-400" aria-hidden="true" />
           月份
-          <Input
-            type="month"
-            value={month}
-            onChange={(e) => switchMonth(e.target.value)}
-            className="w-auto"
-          />
+          <Input type="month" value={month} onChange={(e) => switchMonth(e.target.value)} className="w-auto" />
         </label>
-        <Pressable
+        <Button
           onClick={() => void load(month)}
           disabled={isLoading}
-          className="btn-secondary"
           aria-label="刷新月报"
+          variant="outline"
+          size="toolbar"
         >
-          <RefreshCw className={`h-4 w-4 sm:mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
           <span className="hidden sm:inline">刷新</span>
-        </Pressable>
+        </Button>
         <div className="flex-1" />
         {rows.length > 0 && (
           <>
@@ -183,7 +187,7 @@ export default function MonthlyReport() {
             {/* 两种导出收进一个下拉：一个是给领导看的总数，一个是给 HR 逐行核对的明细，
                 放两个并排按钮会让人以为它们是同一份数据的两种格式 */}
             <DropdownMenu>
-              <DropdownMenuTrigger className="btn-secondary">
+              <DropdownMenuTrigger className={buttonVariants({ variant: 'outline', size: 'toolbar' })}>
                 <Download className="h-4 w-4 sm:mr-2" aria-hidden="true" />
                 <span className="hidden sm:inline">导出</span>
                 <ChevronDown className="h-4 w-4 ml-1 hidden sm:block" aria-hidden="true" />
@@ -215,10 +219,10 @@ export default function MonthlyReport() {
               aria-pressed={s.month === month}
               onClick={() => switchMonth(s.month)}
               className={`rounded-full border px-2.5 py-1 text-xs tabular-nums transition-colors ${
-                s.month === month
-                  ? 'border-brand-500 bg-brand-50 text-brand-800 dark:bg-brand-500/15 dark:text-brand-200'
-                  : 'border-zinc-200 dark:border-zinc-600 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
-              }`}
+ s.month === month
+ ? 'border-brand-500 bg-brand-50 text-brand-800 dark:bg-brand-500/15 dark:text-brand-200'
+ : 'border-zinc-200 dark:border-zinc-600 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+ }`}
             >
               {s.month} · {s.days} 天
             </Pressable>
@@ -265,8 +269,12 @@ export default function MonthlyReport() {
                     <td className="px-4 py-2.5 text-muted-foreground font-mono text-xs tabular-nums">{r.employeeId}</td>
                     <td className="px-4 py-2.5 text-zinc-900 dark:text-white font-medium">{r.employeeName}</td>
                     <td className="px-4 py-2.5 text-zinc-600 dark:text-zinc-300">{r.department || '-'}</td>
-                    <td className="px-4 py-2.5 text-right text-zinc-900 dark:text-white tabular-nums font-medium">{r.workDays}</td>
-                    <td className="px-4 py-2.5 text-right text-zinc-600 dark:text-zinc-300 tabular-nums">{r.punchCount}</td>
+                    <td className="px-4 py-2.5 text-right text-zinc-900 dark:text-white tabular-nums font-medium">
+                      {r.workDays}
+                    </td>
+                    <td className="px-4 py-2.5 text-right text-zinc-600 dark:text-zinc-300 tabular-nums">
+                      {r.punchCount}
+                    </td>
                     <td className="px-4 py-2.5 text-right tabular-nums">
                       {r.lateCount > 0 ? (
                         <span className="text-amber-700 dark:text-amber-400 font-medium">{r.lateCount}</span>
@@ -296,13 +304,23 @@ export default function MonthlyReport() {
               <tr>
                 <td className="px-4 py-2.5 font-semibold text-zinc-700 dark:text-zinc-200" colSpan={3}>
                   {/* 人数在表头上方的汇总里已经说过一次，这里只标"这一行是合计" */}
-                合计
+                  合计
                 </td>
-                <td className="px-4 py-2.5 text-right font-semibold text-zinc-700 dark:text-zinc-200 tabular-nums">{totals.workDays}</td>
-                <td className="px-4 py-2.5 text-right font-semibold text-zinc-700 dark:text-zinc-200 tabular-nums">{totals.punchCount}</td>
-                <td className="px-4 py-2.5 text-right font-semibold text-zinc-700 dark:text-zinc-200 tabular-nums">{totals.lateCount}</td>
-                <td className="px-4 py-2.5 text-right font-semibold text-zinc-700 dark:text-zinc-200 tabular-nums">{totals.earlyLeaveCount}</td>
-                <td className="px-4 py-2.5 text-right font-semibold text-zinc-700 dark:text-zinc-200 tabular-nums">{totals.missingCount}</td>
+                <td className="px-4 py-2.5 text-right font-semibold text-zinc-700 dark:text-zinc-200 tabular-nums">
+                  {totals.workDays}
+                </td>
+                <td className="px-4 py-2.5 text-right font-semibold text-zinc-700 dark:text-zinc-200 tabular-nums">
+                  {totals.punchCount}
+                </td>
+                <td className="px-4 py-2.5 text-right font-semibold text-zinc-700 dark:text-zinc-200 tabular-nums">
+                  {totals.lateCount}
+                </td>
+                <td className="px-4 py-2.5 text-right font-semibold text-zinc-700 dark:text-zinc-200 tabular-nums">
+                  {totals.earlyLeaveCount}
+                </td>
+                <td className="px-4 py-2.5 text-right font-semibold text-zinc-700 dark:text-zinc-200 tabular-nums">
+                  {totals.missingCount}
+                </td>
               </tr>
             </tfoot>
           </Table>

@@ -31,14 +31,14 @@ import {
   type AccountSystemRole,
 } from '@/services/accountApi';
 import { canManageAccount, grantableRoles } from '@/utils/accountCeiling';
+import { Button } from '@/components/ui/button';
 
 const ROLES: AccountSystemRole[] = ['SUPER_ADMIN', 'ADMIN', 'HR', 'EMPLOYEE'];
 
 type BindingFilter = 'ALL' | 'bound' | 'unbound' | 'dangling';
 type StateFilter = 'ALL' | 'disabled' | 'mustChange' | 'locked';
 
-const fieldClass =
-  'w-full mt-1';
+const fieldClass = 'w-full mt-1';
 
 /** 员工选择器：账号↔员工是一对一（accounts.employeeId 上有部分唯一索引），已绑他人的不可再选 */
 function EmployeePicker({
@@ -86,9 +86,9 @@ function EmployeePicker({
           />
         </div>
         {value && (
-          <Pressable type="button" className="btn-secondary shrink-0" onClick={() => onChange(null)}>
+          <Button type="button" onClick={() => onChange(null)} variant="outline" size="toolbar" className="shrink-0">
             清除
-          </Pressable>
+          </Button>
         )}
       </div>
       {selected && (
@@ -110,16 +110,14 @@ function EmployeePicker({
               title={taken ? `已被账号 ${holder} 绑定` : ''}
               onClick={() => onChange(e.id)}
               className={`w-full flex items-center justify-between px-3 py-2 text-sm text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50 disabled:opacity-45 disabled:cursor-not-allowed ${
-                isCurrent ? 'bg-brand-50 dark:bg-brand-900/25' : ''
-              }`}
+ isCurrent ? 'bg-brand-50 dark:bg-brand-900/25' : ''
+ }`}
             >
               <span className="truncate">
                 {e.name}
                 <span className="ml-2 text-xs text-muted-foreground">{e.department}</span>
               </span>
-              <span className="text-xs text-muted-foreground shrink-0 ml-3">
-                {taken ? `已绑 ${holder}` : e.id}
-              </span>
+              <span className="text-xs text-muted-foreground shrink-0 ml-3">{taken ? `已绑 ${holder}` : e.id}</span>
             </Pressable>
           );
         })}
@@ -229,12 +227,16 @@ export default function AccountManager() {
     run(`revoke:${a.username}`, () => accountApi.revokeSessions(a.username), `已强制 ${a.username} 下线`);
 
   const onReset = (a: Account) =>
-    run(`reset:${a.username}`, () => {
-      const pw = randomInitialPassword();
-      return accountApi.resetPassword(a.username, pw).then(() => {
-        toast.success(`新密码（仅本次显示）：${pw}`, { duration: 12_000 });
-      });
-    }, null);
+    run(
+      `reset:${a.username}`,
+      () => {
+        const pw = randomInitialPassword();
+        return accountApi.resetPassword(a.username, pw).then(() => {
+          toast.success(`新密码（仅本次显示）：${pw}`, { duration: 12_000 });
+        });
+      },
+      null
+    );
 
   const onDelete = async (a: Account) => {
     const ok = await confirm({
@@ -248,8 +250,7 @@ export default function AccountManager() {
 
   // 头部那串数是**全量口径**（未绑定 / 停用 / 锁定要跨全部账号才有意义），而表格是筛过的。
   // 不标出筛选后条数，就会出现"共 12 个账号"配着 3 行表格的自相矛盾（审查 AC1）。
-  const filterActive =
-    query.trim() !== '' || roleFilter !== 'ALL' || bindingFilter !== 'ALL' || stateFilter !== 'ALL';
+  const filterActive = query.trim() !== '' || roleFilter !== 'ALL' || bindingFilter !== 'ALL' || stateFilter !== 'ALL';
 
   return (
     <div className="animate-in fade-in duration-slow h-full flex flex-col">
@@ -259,20 +260,20 @@ export default function AccountManager() {
           <p className="text-sm text-muted-foreground mt-1">
             {filterActive ? `筛选后 ${rows.length} / 共 ${stats.total} 个账号` : `共 ${stats.total} 个账号`}
             <span title="未绑定 / 绑定失效 / 停用 / 待改密 / 锁定 始终按全部账号统计，不随筛选变化">
-              {' · '}未绑定 {stats.unbound} · 绑定失效 {stats.dangling} · 停用 {stats.disabled} ·
-              待改密 {stats.mustChange} · 锁定 {stats.locked}
+              {' · '}未绑定 {stats.unbound} · 绑定失效 {stats.dangling} · 停用 {stats.disabled} · 待改密{' '}
+              {stats.mustChange} · 锁定 {stats.locked}
             </span>
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Pressable onClick={() => void load()} className="btn-secondary flex items-center px-3 py-2" title="重新拉取账号列表">
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          <Button onClick={() => void load()} title="重新拉取账号列表" variant="outline" size="toolbar">
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             刷新
-          </Pressable>
-          <Pressable onClick={() => setCreating(true)} className="btn-primary flex items-center px-3 py-2">
-            <UserPlus className="w-4 h-4 mr-2" />
+          </Button>
+          <Button onClick={() => setCreating(true)} size="toolbar">
+            <UserPlus className="w-4 h-4" />
             新建账号
-          </Pressable>
+          </Button>
         </div>
       </div>
 
@@ -344,7 +345,9 @@ export default function AccountManager() {
                 const emp = a.employeeId ? employeeById.get(a.employeeId) : null;
                 const isSelf = a.username === me;
                 const manageable = canManageAccount(myRole, a.systemRole, isSelf);
-                const ceilingTip = manageable ? '' : `（目标是${ACCOUNT_ROLE_LABELS[a.systemRole]}，只有权限更高的管理员可以操作）`;
+                const ceilingTip = manageable
+                  ? ''
+                  : `（目标是${ACCOUNT_ROLE_LABELS[a.systemRole]}，只有权限更高的管理员可以操作）`;
                 return (
                   <tr key={a.username} className="hover:bg-zinc-50 dark:hover:bg-zinc-700/30">
                     <td className="px-4 py-3">
@@ -358,17 +361,15 @@ export default function AccountManager() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant={a.systemRole === 'SUPER_ADMIN' || a.systemRole === 'ADMIN' ? 'primary' : 'neutral'}>
+                      <Badge
+                        variant={a.systemRole === 'SUPER_ADMIN' || a.systemRole === 'ADMIN' ? 'primary' : 'neutral'}
+                      >
                         {ACCOUNT_ROLE_LABELS[a.systemRole]}
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
-                        {a.enabled ? (
-                          <Badge variant="success">启用</Badge>
-                        ) : (
-                          <Badge variant="destructive">停用</Badge>
-                        )}
+                        {a.enabled ? <Badge variant="success">启用</Badge> : <Badge variant="destructive">停用</Badge>}
                         {a.locked && <Badge variant="warning">锁定</Badge>}
                         {a.mustChangePassword && <Badge variant="warning">待改密</Badge>}
                       </div>
@@ -380,7 +381,10 @@ export default function AccountManager() {
                           <span className="ml-1.5 text-xs text-muted-foreground">{emp.id}</span>
                         </span>
                       ) : a.employeeId ? (
-                        <span className="text-amber-700 dark:text-amber-400" title="员工档案已删除，但账号仍带着这个工号">
+                        <span
+                          className="text-amber-700 dark:text-amber-400"
+                          title="员工档案已删除，但账号仍带着这个工号"
+                        >
                           绑定失效 · {a.employeeId}
                         </span>
                       ) : (
@@ -495,10 +499,10 @@ function IconAction({
       disabled={disabled}
       onClick={onClick}
       className={`p-1.5 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-        danger
-          ? 'text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
-          : 'text-muted-foreground hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-zinc-700/60'
-      }`}
+ danger
+ ? 'text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
+ : 'text-muted-foreground hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-zinc-700/60'
+ }`}
     >
       <Icon className="w-4 h-4" />
     </Pressable>
@@ -578,19 +582,19 @@ function AccountDialog({
       size="lg"
       footer={
         shownPassword ? (
-          <Pressable type="button" onClick={onClose} className="btn-secondary">
+          <Button type="button" onClick={onClose} variant="outline" size="toolbar">
             关闭
-          </Pressable>
+          </Button>
         ) : (
           <>
-            <Pressable type="button" onClick={onClose} className="btn-secondary">
+            <Button type="button" onClick={onClose} variant="outline" size="toolbar">
               {isEdit ? '取消' : '关闭'}
-            </Pressable>
-            <Pressable type="button" onClick={() => void submit()} disabled={saving} className="btn-primary disabled:opacity-70">
-              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {!saving && !isEdit && <Plus className="w-4 h-4 mr-2" />}
+            </Button>
+            <Button type="button" onClick={() => void submit()} disabled={saving} size="toolbar">
+              {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+              {!saving && !isEdit && <Plus className="w-4 h-4" />}
               {isEdit ? '保存' : '创建'}
-            </Pressable>
+            </Button>
           </>
         )
       }
@@ -598,7 +602,9 @@ function AccountDialog({
       {shownPassword ? (
         <div className="space-y-3">
           <p className="text-sm text-zinc-700 dark:text-zinc-300">账号已创建。初始密码只显示这一次，请转交本人：</p>
-          <p className="select-all font-mono text-sm bg-zinc-100 dark:bg-zinc-700 rounded-lg px-3 py-2">{shownPassword}</p>
+          <p className="select-all font-mono text-sm bg-zinc-100 dark:bg-zinc-700 rounded-lg px-3 py-2">
+            {shownPassword}
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -633,7 +639,10 @@ function AccountDialog({
               </Select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300" htmlFor={`${isEdit ? 'edit' : 'acct'}-display`}>
+              <label
+                className="block text-xs font-medium text-zinc-700 dark:text-zinc-300"
+                htmlFor={`${isEdit ? 'edit' : 'acct'}-display`}
+              >
                 显示名称
               </label>
               <Input
@@ -644,7 +653,10 @@ function AccountDialog({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300" htmlFor={`${isEdit ? 'edit' : 'acct'}-email`}>
+              <label
+                className="block text-xs font-medium text-zinc-700 dark:text-zinc-300"
+                htmlFor={`${isEdit ? 'edit' : 'acct'}-email`}
+              >
                 邮箱{isEdit ? '' : '（用于接收提醒邮件）'}
               </label>
               <Input
@@ -669,7 +681,9 @@ function AccountDialog({
                   换一批
                 </Pressable>
               </div>
-              <p className="mt-1 select-all font-mono text-sm bg-zinc-100 dark:bg-zinc-700 rounded-lg px-3 py-2">{password}</p>
+              <p className="mt-1 select-all font-mono text-sm bg-zinc-100 dark:bg-zinc-700 rounded-lg px-3 py-2">
+                {password}
+              </p>
               <p className="mt-1 text-xs text-muted-foreground">首次登录会要求改密。</p>
             </div>
           )}

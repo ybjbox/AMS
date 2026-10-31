@@ -5,6 +5,7 @@ import { BaseModal } from '@/components/ui/BaseModal';
 import { Input } from '@/components/ui/input';
 import type { SavedItem } from '@/services/savedItemApi';
 import type { SeatingPlanPayload } from '../lib/plan';
+import { Button } from '@/components/ui/button';
 
 interface PlansModalProps {
   isOpen: boolean;
@@ -18,16 +19,7 @@ interface PlansModalProps {
 }
 
 /** 座位方案的保存 / 载入面板：一个账号一套，按最近更新排序 */
-export function PlansModal({
-  isOpen,
-  onClose,
-  plans,
-  listing,
-  saving,
-  onSave,
-  onRestore,
-  onRemove,
-}: PlansModalProps) {
+export function PlansModal({ isOpen, onClose, plans, listing, saving, onSave, onRestore, onRemove }: PlansModalProps) {
   const [name, setName] = useState('');
 
   const submit = async () => {
@@ -58,15 +50,10 @@ export function PlansModal({
               placeholder="如：年会第一轮 / 婚宴主桌方案"
               className="flex-1"
             />
-            <Pressable
-              type="button"
-              onClick={() => void submit()}
-              disabled={saving}
-              className="btn-primary flex items-center px-3 shrink-0 disabled:opacity-70"
-            >
-              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+            <Button type="button" onClick={() => void submit()} disabled={saving} size="toolbar" className="shrink-0">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               保存
-            </Pressable>
+            </Button>
           </div>
           <p className="mt-1.5 text-xs text-zinc-400">同名会覆盖；方案只存工号，载入时按最新员工档案还原。</p>
         </div>
@@ -95,15 +82,16 @@ export function PlansModal({
                     </p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <Pressable
+                    <Button
                       type="button"
                       onClick={() => onRestore(p)}
-                      className="btn-secondary flex items-center px-2.5 py-1.5 text-xs"
                       title="载入并替换当前排座"
+                      variant="outline"
+                      size="toolbar"
                     >
-                      <Download className="w-3.5 h-3.5 sm:mr-1" />
+                      <Download className="w-3.5 h-3.5" />
                       <span className="hidden sm:inline">载入</span>
-                    </Pressable>
+                    </Button>
                     <Pressable
                       type="button"
                       onClick={() => onRemove(p.id)}

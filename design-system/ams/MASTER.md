@@ -311,7 +311,7 @@ v3 写的是「❌ 布局位移型 hover（scale/translate 导致 reflow）」�
 
 ### Buttons
 
-新代码统一用 `ui/Button`：页面级 `size="page"`（40px）、工具条 `toolbar`（36px）、行内 `inline` / `sm`（28–32px）；变体 `default` = 品牌主按钮、`outline` = 白底描边次级、`danger-outline` = 白底红字危险操作。下面的 `.btn-*` 是迁移期旧契约，逐步删除，不再新增。
+新代码统一用 `ui/Button`：页面级 `size="page"`（40px）、工具条 `toolbar`（36px）、行内 `inline` / `sm`（28–32px）；变体 `default` = 品牌主按钮、`outline` = 白底描边次级、`danger` = 实色红危险确认、`danger-outline` = 白底红字危险操作。下面的 `.btn-*` 是迁移期旧契约，逐步删除，不再新增。
 
 ```css
 .btn-primary {

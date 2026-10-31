@@ -52,10 +52,10 @@ const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: Sor
       ref={setNodeRef}
       style={style}
       className={`flex items-center p-3 rounded-xl border transition ${
-        col.selected
-          ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-200 dark:border-brand-800 text-brand-700 dark:text-brand-400 shadow-sm'
-          : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
-      }`}
+ col.selected
+ ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-200 dark:border-brand-800 text-brand-700 dark:text-brand-400 shadow-sm'
+ : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
+ }`}
     >
       <div
         {...attributes}
@@ -68,10 +68,10 @@ const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: Sor
       <Pressable onClick={onToggle} className="flex-1 flex items-center text-left">
         <div
           className={`w-4 h-4 rounded border mr-3 flex items-center justify-center transition-colors ${
-            col.selected
-              ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner border-brand-600'
-              : 'bg-white dark:bg-zinc-800 border-zinc-200/80 dark:border-zinc-600'
-          }`}
+ col.selected
+ ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner border-brand-600'
+ : 'bg-white dark:bg-zinc-800 border-zinc-200/80 dark:border-zinc-600'
+ }`}
         >
           {col.selected && <Check className="h-3 w-3 text-white" />}
         </div>
@@ -178,12 +178,9 @@ export function ExportModal({
       size="full"
       footer={
         <>
-          <Pressable
-            onClick={onClose}
-            className="btn-secondary w-full sm:w-auto"
-          >
+          <Button onClick={onClose} variant="outline" size="toolbar" className="w-full sm:w-auto">
             取消
-          </Pressable>
+          </Button>
           <Button
             variant="outline"
             size="lg"
@@ -193,23 +190,24 @@ export function ExportModal({
             <Printer className="h-4 w-4 mr-2" />
             打印
           </Button>
-          <Pressable
+          <Button
             onClick={() => handleExport(filteredUsersLength)}
             disabled={isExporting || exportConfig.columns.filter((c: ExportColumn) => c.selected).length === 0}
-            className="btn-primary w-full sm:w-auto disabled:opacity-50"
+            size="toolbar"
+            className="w-full sm:w-auto"
           >
             {isExporting ? (
               <>
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                <RefreshCw className="h-4 w-4 animate-spin" />
                 导出中…
               </>
             ) : (
               <>
-                <Download className="h-4 w-4 mr-2" />
+                <Download className="h-4 w-4" />
                 确认导出
               </>
             )}
-          </Pressable>
+          </Button>
         </>
       }
     >
@@ -231,10 +229,17 @@ export function ExportModal({
                 <Checkbox
                   id="export-include-resigned"
                   checked={exportConfig.includeResigned}
-                  onCheckedChange={(checked) => setExportConfig((prev: ExportConfig) => ({ ...prev, includeResigned: checked }))}
+                  onCheckedChange={(checked) =>
+                    setExportConfig((prev: ExportConfig) => ({ ...prev, includeResigned: checked }))
+                  }
                   className="border-zinc-300 dark:border-zinc-600"
                 />
-                <label htmlFor="export-include-resigned" className="ml-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer">包含离职人员</label>
+                <label
+                  htmlFor="export-include-resigned"
+                  className="ml-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer"
+                >
+                  包含离职人员
+                </label>
               </div>
             </div>
           </div>
@@ -246,7 +251,9 @@ export function ExportModal({
                 <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">纸张大小</label>
                 <Select
                   value={exportConfig.paperSize}
-                  onValueChange={(val) => setExportConfig((prev: ExportConfig) => ({ ...prev, paperSize: val || 'A4' }))}
+                  onValueChange={(val) =>
+                    setExportConfig((prev: ExportConfig) => ({ ...prev, paperSize: val || 'A4' }))
+                  }
                 >
                   <SelectTrigger aria-label="纸张大小" className="w-full">
                     <SelectValue placeholder="选择纸张大小" />
@@ -262,8 +269,13 @@ export function ExportModal({
                 <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">纸张方向</label>
                 <Select
                   value={exportConfig.orientation}
-                  onValueChange={(val) => setExportConfig((prev: ExportConfig) => ({ ...prev, orientation: val || 'portrait' }))}
-                  items={[{ value: 'portrait', label: '纵向' }, { value: 'landscape', label: '横向' }]}
+                  onValueChange={(val) =>
+                    setExportConfig((prev: ExportConfig) => ({ ...prev, orientation: val || 'portrait' }))
+                  }
+                  items={[
+                    { value: 'portrait', label: '纵向' },
+                    { value: 'landscape', label: '横向' },
+                  ]}
                 >
                   <SelectTrigger aria-label="纸张方向" className="w-full">
                     <SelectValue placeholder="选择纸张方向" />
@@ -280,10 +292,17 @@ export function ExportModal({
                 <Checkbox
                   id="export-double-sided"
                   checked={exportConfig.isDoubleSided}
-                  onCheckedChange={(checked) => setExportConfig((prev: ExportConfig) => ({ ...prev, isDoubleSided: checked }))}
+                  onCheckedChange={(checked) =>
+                    setExportConfig((prev: ExportConfig) => ({ ...prev, isDoubleSided: checked }))
+                  }
                   className="border-zinc-300 dark:border-zinc-600"
                 />
-                <label htmlFor="export-double-sided" className="ml-2 text-sm text-zinc-600 dark:text-zinc-400 cursor-pointer">双面打印 (预留装订边距)</label>
+                <label
+                  htmlFor="export-double-sided"
+                  className="ml-2 text-sm text-zinc-600 dark:text-zinc-400 cursor-pointer"
+                >
+                  双面打印 (预留装订边距)
+                </label>
               </div>
             </div>
           </div>
@@ -292,20 +311,20 @@ export function ExportModal({
             <Pressable
               onClick={() => setExportConfig((prev: ExportConfig) => ({ ...prev, mode: 'theme' }))}
               className={`flex-1 py-1.5 text-xs font-medium rounded-md transition ${
-                exportConfig.mode === 'theme'
-                  ? 'bg-white dark:bg-zinc-800 text-brand-600 dark:text-brand-400 shadow-sm'
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
-              }`}
+ exportConfig.mode === 'theme'
+ ? 'bg-white dark:bg-zinc-800 text-brand-600 dark:text-brand-400 shadow-sm'
+ : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+ }`}
             >
               配色主题模式
             </Pressable>
             <Pressable
               onClick={() => setExportConfig((prev: ExportConfig) => ({ ...prev, mode: 'script' }))}
               className={`flex-1 py-1.5 text-xs font-medium rounded-md transition ${
-                exportConfig.mode === 'script'
-                  ? 'bg-white dark:bg-zinc-800 text-brand-600 dark:text-brand-400 shadow-sm'
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
-              }`}
+ exportConfig.mode === 'script'
+ ? 'bg-white dark:bg-zinc-800 text-brand-600 dark:text-brand-400 shadow-sm'
+ : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+ }`}
             >
               JS 脚本模式
             </Pressable>
@@ -321,10 +340,10 @@ export function ExportModal({
                     data-id={theme.id}
                     onClick={onThemeSelect}
                     className={`flex flex-col items-center p-2 rounded-xl border transition ${
-                      exportConfig.themeId === theme.id
-                        ? 'border-brand-600 bg-brand-50 dark:bg-brand-900/20 ring-2 ring-brand-600/20'
-                        : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-200/80 dark:hover:border-zinc-600'
-                    }`}
+ exportConfig.themeId === theme.id
+ ? 'border-brand-600 bg-brand-50 dark:bg-brand-900/20 ring-2 ring-brand-600/20'
+ : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-200/80 dark:hover:border-zinc-600'
+ }`}
                   >
                     <div
                       className="w-full h-8 rounded-lg mb-2"
@@ -349,10 +368,10 @@ export function ExportModal({
                     data-name={script.name}
                     onClick={onScriptSelect}
                     className={`w-full flex items-center p-3 rounded-xl border transition ${
-                      exportConfig.templateName === script.name
-                        ? 'border-brand-600 bg-brand-50 dark:bg-brand-900/20 ring-2 ring-brand-600/20'
-                        : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-200/80 dark:hover:border-zinc-600'
-                    }`}
+ exportConfig.templateName === script.name
+ ? 'border-brand-600 bg-brand-50 dark:bg-brand-900/20 ring-2 ring-brand-600/20'
+ : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-200/80 dark:hover:border-zinc-600'
+ }`}
                   >
                     <div className="p-1.5 bg-brand-100 dark:bg-brand-900/30 rounded-lg mr-3">
                       <FileCode className="w-4 h-4 text-brand-600 dark:text-brand-400" />
@@ -425,7 +444,10 @@ export function ExportModal({
             <span>打印预览</span>
             <PreviewZoomControl zoom={zoom} onChange={change} onReset={reset} />
           </div>
-          <div style={zoomStyle(zoom)} className="w-full bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl p-8">
+          <div
+            style={zoomStyle(zoom)}
+            className="w-full bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl p-8"
+          >
             <div className="text-center mb-6">
               {/* 纸张标题：页面已有 h1，打印 HTML 由 builder 单独生成 */}
               <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">{exportConfig.title}</h2>
@@ -458,7 +480,7 @@ export function ExportModal({
                             key={col.key as string}
                             className="border border-zinc-200/80 dark:border-zinc-600 px-3 py-2 text-zinc-600 dark:text-zinc-300"
                           >
-                            {(u as unknown as Record<string, unknown>)[col.key as string] as string || '-'}
+                            {((u as unknown as Record<string, unknown>)[col.key as string] as string) || '-'}
                           </td>
                         ))}
                     </tr>

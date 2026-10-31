@@ -1,8 +1,8 @@
-import { Pressable } from '@/components/ui/Pressable';
 import React from 'react';
 import { Printer, Check } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { DocumentSet, Document } from '@/store/useDocumentStore';
+import { Button } from '@/components/ui/button';
 
 interface PrintSetModalProps {
   isOpen: boolean;
@@ -29,32 +29,29 @@ export function PrintSetModal({
       size="md"
       footer={
         <>
-          <Pressable
+          <Button
             type="button"
             onClick={onClose}
             disabled={isPrinting}
-            className="btn-secondary w-full sm:w-auto disabled:opacity-50"
+            variant="outline"
+            size="toolbar"
+            className="w-full sm:w-auto"
           >
             取消
-          </Pressable>
-          <Pressable
-            type="button"
-            onClick={handlePrint}
-            disabled={isPrinting}
-            className="btn-primary w-full sm:w-auto disabled:opacity-50"
-          >
+          </Button>
+          <Button type="button" onClick={handlePrint} disabled={isPrinting} size="toolbar" className="w-full sm:w-auto">
             {isPrinting ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                 处理中…
               </>
             ) : (
               <>
-                <Printer className="w-4 h-4 mr-2" />
+                <Printer className="w-4 h-4" />
                 确认打印
               </>
             )}
-          </Pressable>
+          </Button>
         </>
       }
     >

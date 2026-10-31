@@ -1,15 +1,6 @@
 import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  AlertCircle,
-  AlertTriangle,
-  Info,
-  Search,
-  Filter,
-  ChevronDown,
-  ChevronRight,
-  Download,
-} from 'lucide-react';
+import { AlertCircle, AlertTriangle, Info, Search, Filter, ChevronDown, ChevronRight, Download } from 'lucide-react';
 import {
   fetchAuditLogs,
   fetchAuditFacets,
@@ -153,14 +144,10 @@ export default function SystemLogs() {
             记录所有写操作与登录事件，只增不删{data ? `，保留期 ${data.retentionDays} 天` : ''}
           </p>
         </div>
-        <Pressable
-          onClick={handleExport}
-          className="btn-secondary flex items-center px-3 py-2"
-          title="按当前筛选条件导出 CSV（最多 10000 条）"
-        >
-          <Download className="w-4 h-4 mr-2" />
+        <Button onClick={handleExport} title="按当前筛选条件导出 CSV（最多 10000 条）" variant="outline" size="toolbar">
+          <Download className="w-4 h-4" />
           导出 CSV
-        </Pressable>
+        </Button>
       </div>
 
       <div className="bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl overflow-hidden flex flex-col flex-1 min-h-0">
@@ -179,7 +166,7 @@ export default function SystemLogs() {
             </div>
             <div className="flex items-center space-x-2">
               <Filter className="w-4 h-4 text-zinc-400 shrink-0" />
-              <Select value={filters.level} onValueChange={(v) => patchFilters({ level: v ?? "ALL" })}>
+              <Select value={filters.level} onValueChange={(v) => patchFilters({ level: v ?? 'ALL' })}>
                 <SelectTrigger className="w-32" aria-label="按等级筛选">
                   <SelectValue placeholder="所有等级" />
                 </SelectTrigger>
@@ -190,7 +177,7 @@ export default function SystemLogs() {
                   <SelectItem value="ERROR">ERROR</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={filters.result} onValueChange={(v) => patchFilters({ result: v ?? "ALL" })}>
+              <Select value={filters.result} onValueChange={(v) => patchFilters({ result: v ?? 'ALL' })}>
                 <SelectTrigger className="w-30" aria-label="按结果筛选">
                   <SelectValue placeholder="所有结果" />
                 </SelectTrigger>
@@ -203,7 +190,7 @@ export default function SystemLogs() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Select value={filters.category} onValueChange={(v) => patchFilters({ category: v ?? "ALL" })}>
+            <Select value={filters.category} onValueChange={(v) => patchFilters({ category: v ?? 'ALL' })}>
               <SelectTrigger className="w-38" aria-label="按分类筛选">
                 <SelectValue placeholder="全部分类" />
               </SelectTrigger>
@@ -216,7 +203,7 @@ export default function SystemLogs() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={filters.action} onValueChange={(v) => patchFilters({ action: v ?? "ALL" })}>
+            <Select value={filters.action} onValueChange={(v) => patchFilters({ action: v ?? 'ALL' })}>
               <SelectTrigger className="w-40" aria-label="按操作筛选">
                 <SelectValue placeholder="全部操作" />
               </SelectTrigger>
@@ -229,7 +216,7 @@ export default function SystemLogs() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={filters.actor} onValueChange={(v) => patchFilters({ actor: v ?? "ALL" })}>
+            <Select value={filters.actor} onValueChange={(v) => patchFilters({ actor: v ?? 'ALL' })}>
               <SelectTrigger className="w-38" aria-label="按操作人筛选">
                 <SelectValue placeholder="全部操作人" />
               </SelectTrigger>
@@ -275,7 +262,10 @@ export default function SystemLogs() {
             <div className="flex flex-col items-center justify-center h-64 gap-2 px-6 text-center">
               <AlertCircle className="w-8 h-8 text-red-500" />
               <p className="text-sm text-zinc-600 dark:text-zinc-300">{error}</p>
-              <Pressable onClick={() => setReloadToken((t) => t + 1)} className="text-sm text-brand-600 dark:text-brand-400">
+              <Pressable
+                onClick={() => setReloadToken((t) => t + 1)}
+                className="text-sm text-brand-600 dark:text-brand-400"
+              >
                 重试
               </Pressable>
             </div>
@@ -334,10 +324,10 @@ export default function SystemLogs() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${
-                          log.result === 'success'
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
-                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800'
-                        }`}
+ log.result === 'success'
+ ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+ : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800'
+ }`}
                       >
                         {log.result === 'success' ? '成功' : '失败'} {log.status}
                       </span>
@@ -345,7 +335,9 @@ export default function SystemLogs() {
                     </td>
                     <td className="px-6 py-4 text-sm text-zinc-900 dark:text-zinc-200 min-w-50">
                       <div className="flex items-start justify-between gap-4">
-                        <div className="text-muted-foreground text-xs break-all">{log.detail || `${log.method} ${log.path}`}</div>
+                        <div className="text-muted-foreground text-xs break-all">
+                          {log.detail || `${log.method} ${log.path}`}
+                        </div>
                         <Pressable
                           onClick={() => toggleExpand(log.id)}
                           className="flex items-center text-xs text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 whitespace-nowrap transition-colors"

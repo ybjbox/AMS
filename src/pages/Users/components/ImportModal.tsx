@@ -127,9 +127,7 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
               >
                 <Download className="w-3.5 h-3.5" /> 下载导入模板
               </a>
-              <span className="text-xs text-muted-foreground self-center">
-                部门需与「部门管理」中的名称一致
-              </span>
+              <span className="text-xs text-muted-foreground self-center">部门需与「部门管理」中的名称一致</span>
             </div>
           </div>
 
@@ -147,12 +145,8 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
             ) : (
               <>
                 <UploadCloud className="w-8 h-8 text-zinc-400" aria-hidden="true" />
-                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                  点击选择 .xlsx 文件
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  单次最多 5000 行，解析后先预览再导入
-                </span>
+                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">点击选择 .xlsx 文件</span>
+                <span className="text-xs text-muted-foreground">单次最多 5000 行，解析后先预览再导入</span>
               </>
             )}
           </Pressable>
@@ -222,8 +216,12 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
                       <td className="px-3 py-2 text-zinc-600 dark:text-zinc-300 font-mono text-xs">
                         {typeof row.data.idCard === 'string' ? row.data.idCard : '—'}
                       </td>
-                      <td className="px-3 py-2 text-zinc-600 dark:text-zinc-300">{String(row.data.department ?? '—')}</td>
-                      <td className="px-3 py-2 text-zinc-600 dark:text-zinc-300 tabular-nums">{String(row.data.joinDate ?? '—')}</td>
+                      <td className="px-3 py-2 text-zinc-600 dark:text-zinc-300">
+                        {String(row.data.department ?? '—')}
+                      </td>
+                      <td className="px-3 py-2 text-zinc-600 dark:text-zinc-300 tabular-nums">
+                        {String(row.data.joinDate ?? '—')}
+                      </td>
                       <td className="px-3 py-2">
                         {ok ? (
                           <span className="inline-flex items-center gap-1 text-xs text-brand-700 dark:text-brand-400">
@@ -244,17 +242,17 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
           </div>
 
           <div className="flex items-center justify-end gap-3">
-            <Pressable type="button" onClick={handleClose} className="btn-secondary">
+            <Button type="button" onClick={handleClose} variant="outline" size="toolbar">
               取消
-            </Pressable>
-            <Pressable
+            </Button>
+            <Button
               type="button"
               onClick={() => void handleCommit()}
               disabled={isCommitting || validRows.length === 0}
-              className="btn-primary disabled:opacity-60 disabled:cursor-not-allowed"
+              size="toolbar"
             >
               {isCommitting ? '导入中…' : `确认导入 ${validRows.length} 条`}
-            </Pressable>
+            </Button>
           </div>
         </div>
       )}
@@ -263,9 +261,7 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
       {step === 'running' && (
         <div className="py-10 flex flex-col items-center text-center">
           <RotateCcw className="w-10 h-10 text-brand-500 animate-spin mb-4" aria-hidden="true" />
-          <h4 className="text-base font-semibold text-zinc-900 dark:text-white mb-1">
-            正在后台导入…
-          </h4>
+          <h4 className="text-base font-semibold text-zinc-900 dark:text-white mb-1">正在后台导入…</h4>
           <p className="text-sm text-zinc-600 dark:text-zinc-300 mb-4" aria-live="polite">
             {progress ? `已处理 ${progress.processed} / ${progress.total} 行` : '任务已提交，等待处理…'}
           </p>
@@ -280,9 +276,8 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
             <div
               className="h-full bg-brand-500 transition-[width] duration-very-slow"
               style={{
-                width: progress && progress.total > 0
-                  ? `${Math.round((progress.processed / progress.total) * 100)}%`
-                  : '0%',
+                width:
+                  progress && progress.total > 0 ? `${Math.round((progress.processed / progress.total) * 100)}%` : '0%',
               }}
             />
           </div>
@@ -300,12 +295,12 @@ export default function ImportModal({ isOpen, onClose, onImported }: ImportModal
             {result.skipped > 0 && <span>（{result.skipped} 条被跳过）</span>}
           </p>
           <div className="mt-6 flex gap-3">
-            <Pressable type="button" onClick={reset} className="btn-secondary">
-              <FileSpreadsheet className="w-4 h-4 mr-1.5" /> 继续导入
-            </Pressable>
-            <Pressable type="button" onClick={handleClose} className="btn-primary">
+            <Button type="button" onClick={reset} variant="outline" size="toolbar">
+              <FileSpreadsheet className="w-4 h-4 .5" /> 继续导入
+            </Button>
+            <Button type="button" onClick={handleClose} size="toolbar">
               完成
-            </Pressable>
+            </Button>
           </div>
         </div>
       )}

@@ -1,8 +1,8 @@
-import { Pressable } from '@/components/ui/Pressable';
 import React from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Input } from '@/components/ui/input';
 import { Folder as FolderType } from '@/store/useDocumentStore';
+import { Button } from '@/components/ui/button';
 
 interface FolderFormModalProps {
   isOpen: boolean;
@@ -20,20 +20,12 @@ export function FolderFormModal({ isOpen, onClose, editingFolder, handleSaveFold
       size="md"
       footer={
         <>
-          <Pressable
-            type="button"
-            onClick={onClose}
-            className="btn-secondary w-full sm:w-auto"
-          >
+          <Button type="button" onClick={onClose} variant="outline" size="toolbar" className="w-full sm:w-auto">
             取消
-          </Pressable>
-          <Pressable
-            type="submit"
-            form="folder-form"
-            className="btn-primary w-full sm:w-auto"
-          >
+          </Button>
+          <Button type="submit" form="folder-form" size="toolbar" className="w-full sm:w-auto">
             保存
-          </Pressable>
+          </Button>
         </>
       }
     >

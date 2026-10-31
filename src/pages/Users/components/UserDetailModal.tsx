@@ -1,5 +1,4 @@
-import { Pressable } from '@/components/ui/Pressable';
-import { Permission } from "@/components/Permission";
+import { Permission } from '@/components/Permission';
 import React from 'react';
 import { Printer, Edit, FileSignature } from 'lucide-react';
 import { BaseModal } from '@/components/ui/BaseModal';
@@ -37,14 +36,10 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit, onR
       size="2xl"
       footer={
         <>
-          <Pressable
-            type="button"
-            onClick={onClose}
-            className="btn-secondary w-full sm:w-auto"
-          >
+          <Button type="button" onClick={onClose} variant="outline" size="toolbar" className="w-full sm:w-auto">
             取消
-          </Pressable>
-          <Pressable
+          </Button>
+          <Button
             type="button"
             onClick={() => {
               if (!selectedUser) return;
@@ -52,39 +47,45 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit, onR
                 toast.error('打印窗口被浏览器拦截，请允许弹窗后重试');
               }
             }}
-            className="btn-primary w-full sm:w-auto"
+            size="toolbar"
+            className="w-full sm:w-auto"
           >
-            <Printer className="w-4 h-4 mr-2" />
+            <Printer className="w-4 h-4" />
             打印档案标签
-          </Pressable>
-          <Pressable
+          </Button>
+          <Button
             type="button"
             onClick={() => {
               const printContent = document.getElementById('printable-contact-card');
               if (!selectedUser || !printContent) return;
               if (
-                !printInWindow(buildContactCardPrintHtml(selectedUser.name, printContent.innerHTML), 'height=600,width=800')
+                !printInWindow(
+                  buildContactCardPrintHtml(selectedUser.name, printContent.innerHTML),
+                  'height=600,width=800'
+                )
               ) {
                 toast.error('打印窗口被浏览器拦截，请允许弹窗后重试');
               }
             }}
-            className="btn-primary w-full sm:w-auto"
+            size="toolbar"
+            className="w-full sm:w-auto"
           >
-            <Printer className="w-4 h-4 mr-2" />
+            <Printer className="w-4 h-4" />
             打印联系卡
-          </Pressable>
+          </Button>
           <Permission code="users:manage">
-            <Pressable
+            <Button
               type="button"
               onClick={() => {
                 onClose();
                 if (selectedUser) handleEdit(selectedUser);
               }}
-              className="btn-primary w-full sm:w-auto"
+              size="toolbar"
+              className="w-full sm:w-auto"
             >
-              <Edit className="w-4 h-4 mr-2" />
+              <Edit className="w-4 h-4" />
               编辑信息
-            </Pressable>
+            </Button>
           </Permission>
         </>
       }
@@ -113,7 +114,9 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit, onR
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">联系电话</span>
-                  <span className="text-sm font-medium text-zinc-900 dark:text-white tabular-nums">{formatPhone(selectedUser.phone)}</span>
+                  <span className="text-sm font-medium text-zinc-900 dark:text-white tabular-nums">
+                    {formatPhone(selectedUser.phone)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -133,7 +136,15 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit, onR
                   <span className="text-sm text-muted-foreground">状态</span>
                   {/* 与员工列表同一套映射走同一原语：此前这里手写 emerald pill、列表用 Badge，
                       同一个「在职」两种颜色（2026-09-26 审查 D3） */}
-                  <Badge variant={selectedUser.status === '在职' ? 'success' : selectedUser.status === '试用期' ? 'warning' : 'neutral'}>
+                  <Badge
+                    variant={
+                      selectedUser.status === '在职'
+                        ? 'success'
+                        : selectedUser.status === '试用期'
+                          ? 'warning'
+                          : 'neutral'
+                    }
+                  >
                     {selectedUser.status}
                   </Badge>
                 </div>
@@ -181,12 +192,7 @@ export function UserDetailModal({ isOpen, onClose, selectedUser, handleEdit, onR
                 </div>
                 {selectedUser && (
                   <Permission code="users:manage">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => onRenew(selectedUser)}
-                    >
+                    <Button type="button" variant="outline" className="w-full" onClick={() => onRenew(selectedUser)}>
                       <FileSignature className="w-3.5 h-3.5" aria-hidden="true" />
                       合同续签
                     </Button>

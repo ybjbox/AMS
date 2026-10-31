@@ -1,8 +1,8 @@
-import { Pressable } from '@/components/ui/Pressable';
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface ConfirmOptions {
   title: string;
@@ -51,24 +51,24 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         size="md"
         footer={
           <div className="flex space-x-3 w-full sm:w-auto">
-            <Pressable
+            <Button
               type="button"
               onClick={handleClose}
-              className="btn-secondary flex-1 sm:flex-none"
+              variant="outline"
+              size="toolbar"
+              className="flex-1 sm:flex-none"
             >
               {options?.cancelText || '取消'}
-            </Pressable>
-            <Pressable
+            </Button>
+            <Button
               type="button"
               onClick={handleConfirm}
-              className={`flex-1 sm:flex-none ${
-                options?.variant === 'danger'
-                  ? 'btn-primary-danger'
-                  : 'btn-primary'
-              }`}
+              variant={options?.variant === 'danger' ? 'danger' : 'default'}
+              size="toolbar"
+              className="flex-1 sm:flex-none"
             >
               {options?.confirmText || '确认'}
-            </Pressable>
+            </Button>
           </div>
         }
       >

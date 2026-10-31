@@ -1,9 +1,9 @@
-import { Pressable } from '@/components/ui/Pressable';
 import { Table } from '@/components/ui/Table';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Activity, Database, RefreshCw, Server, AlertTriangle, Clock } from 'lucide-react';
 import { notifySaveFailure } from '@/store/saveFailure';
 import { fetchDiagnostics, type DiagnosticsResponse } from '@/services/systemApi';
+import { Button } from '@/components/ui/button';
 
 /** 秒 → 人类可读运行时长 */
 function formatUptime(sec: number): string {
@@ -57,9 +57,7 @@ export default function DiagnosticsPanel() {
   }, [load]);
 
   const statusColor =
-    data?.health.status === 'ok'
-      ? 'text-brand-700 dark:text-brand-400'
-      : 'text-red-600 dark:text-red-400';
+    data?.health.status === 'ok' ? 'text-brand-700 dark:text-brand-400' : 'text-red-600 dark:text-red-400';
 
   return (
     <div className="h-full p-6 flex flex-col min-h-0 gap-4 overflow-y-auto">
@@ -71,18 +69,19 @@ export default function DiagnosticsPanel() {
             运行诊断
           </h2>
           <p className="text-xs text-muted-foreground mt-1">
-            进程健康与访问日志汇总（内存窗口，最近 {(data?.accessLog.capacity ?? 200)} 条；重启后清空属预期）
+            进程健康与访问日志汇总（内存窗口，最近 {data?.accessLog.capacity ?? 200} 条；重启后清空属预期）
           </p>
         </div>
-        <Pressable
+        <Button
           onClick={() => void load()}
           disabled={loading}
-          className="btn-secondary"
           aria-label="刷新诊断数据"
+          variant="outline"
+          size="toolbar"
         >
-          <RefreshCw className={`h-4 w-4 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           <span className="hidden sm:inline">刷新</span>
-        </Pressable>
+        </Button>
       </div>
 
       {/* 健康卡片 */}
@@ -103,12 +102,13 @@ export default function DiagnosticsPanel() {
           <div className="flex items-center text-xs text-muted-foreground mb-1">
             <Database className="w-3.5 h-3.5 mr-1.5" /> 数据库
           </div>
-          <div className={`text-lg font-bold ${data?.health.db === 'up' ? 'text-brand-700 dark:text-brand-400' : 'text-red-600'}`} data-testid="diag-db">
+          <div
+            className={`text-lg font-bold ${data?.health.db === 'up' ? 'text-brand-700 dark:text-brand-400' : 'text-red-600'}`}
+            data-testid="diag-db"
+          >
             {data ? (data.health.db === 'up' ? '在线' : '离线') : '—'}
           </div>
-          <div className="text-xs text-muted-foreground mt-0.5">
-            v{data?.health.version ?? '—'}
-          </div>
+          <div className="text-xs text-muted-foreground mt-0.5">v{data?.health.version ?? '—'}</div>
         </div>
 
         <div className="card-base p-4">
@@ -118,9 +118,7 @@ export default function DiagnosticsPanel() {
           <div className="text-lg font-bold text-zinc-900 dark:text-white tabular-nums" data-testid="diag-mem">
             {data ? `${data.health.memHeapMB} MB` : '—'}
           </div>
-          <div className="text-xs text-muted-foreground mt-0.5 tabular-nums">
-            RSS {data?.health.memRssMB ?? '—'} MB
-          </div>
+          <div className="text-xs text-muted-foreground mt-0.5 tabular-nums">RSS {data?.health.memRssMB ?? '—'} MB</div>
         </div>
 
         <div className="card-base p-4">
@@ -143,7 +141,8 @@ export default function DiagnosticsPanel() {
             最近异常请求（{data?.recent.length ?? 0}）
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            报错（状态码 ≥400）或超时（&gt;{data?.accessLog.slowThresholdMs ?? 1000}ms）的接口请求，红色=服务端错误，橙色=客户端错误/慢请求
+            报错（状态码 ≥400）或超时（&gt;{data?.accessLog.slowThresholdMs ?? 1000}
+            ms）的接口请求，红色=服务端错误，橙色=客户端错误/慢请求
           </p>
         </div>
         <div className="flex-1 min-h-0 overflow-auto" tabIndex={0} role="region" aria-label="最近异常请求（可滚动）">
@@ -162,18 +161,35 @@ export default function DiagnosticsPanel() {
               <tbody>
                 {data.recent.map((e, i) => (
                   <tr key={`${e.ts}-${i}`} className="border-t border-zinc-100 dark:border-zinc-800">
-                    <td className="px-3 py-2 text-muted-foreground tabular-nums whitespace-nowrap">{formatTime(e.ts)}</td>
+                    <td className="px-3 py-2 text-muted-foreground tabular-nums whitespace-nowrap">
+                      {formatTime(e.ts)}
+                    </td>
                     <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300 font-mono text-xs">{e.method}</td>
                     <td className="px-3 py-2 text-zinc-700 dark:text-zinc-300 font-mono text-xs">
-                      <div className="truncate" title={e.path}>{e.path}</div>
+                      <div className="truncate" title={e.path}>
+                        {e.path}
+                      </div>
                     </td>
                     <td className="px-3 py-2 tabular-nums">
-                      <span className={e.status >= 500 ? 'text-red-600 dark:text-red-400 font-medium' : e.status >= 400 ? 'text-amber-700 dark:text-amber-400 font-medium' : 'text-muted-foreground'}>
+                      <span
+                        className={
+                          e.status >= 500
+                            ? 'text-red-600 dark:text-red-400 font-medium'
+                            : e.status >= 400
+                              ? 'text-amber-700 dark:text-amber-400 font-medium'
+                              : 'text-muted-foreground'
+                        }
+                      >
                         {e.status}
                       </span>
                     </td>
                     <td className="px-3 py-2 tabular-nums whitespace-nowrap text-zinc-700 dark:text-zinc-300">
-                      {e.durationMs}ms{e.slow && <span className="ml-1.5 text-3xs px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">慢</span>}
+                      {e.durationMs}ms
+                      {e.slow && (
+                        <span className="ml-1.5 text-3xs px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                          慢
+                        </span>
+                      )}
                     </td>
                     <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{e.actor || '—'}</td>
                   </tr>
@@ -199,8 +215,12 @@ export default function DiagnosticsPanel() {
           <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
             {Object.entries(data.tableCounts).map(([table, count]) => (
               <div key={table} className="text-center p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
-                <div className="text-sm font-bold text-zinc-900 dark:text-white tabular-nums">{count < 0 ? '—' : `${count} 条`}</div>
-                <div className="text-2xs text-muted-foreground truncate" title={table}>{TABLE_LABELS[table] ?? table}</div>
+                <div className="text-sm font-bold text-zinc-900 dark:text-white tabular-nums">
+                  {count < 0 ? '—' : `${count} 条`}
+                </div>
+                <div className="text-2xs text-muted-foreground truncate" title={table}>
+                  {TABLE_LABELS[table] ?? table}
+                </div>
               </div>
             ))}
           </div>

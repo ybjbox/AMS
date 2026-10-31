@@ -1,5 +1,5 @@
 import { Pressable } from '@/components/ui/Pressable';
-import PageContainer from "@/components/PageContainer";
+import PageContainer from '@/components/PageContainer';
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTodoStore, todoUrgency } from '../store/useTodoStore';
 import { CheckCircle2, Circle, Clock, Plus, Trash2, Calendar, ListTodo, FileSignature } from 'lucide-react';
@@ -91,8 +91,18 @@ export default function Todos() {
   const urgency = useMemo(() => todoUrgency(todos), [todos]);
   const chips: { id: Filter; label: string; n: number; tone: string }[] = [
     { id: 'all', label: '全部', n: todos.length, tone: '' },
-    { id: 'overdue', label: '已逾期', n: urgency.overdue, tone: urgency.overdue ? 'text-red-700 dark:text-red-400' : '' },
-    { id: 'today', label: '今天到期', n: urgency.dueToday, tone: urgency.dueToday ? 'text-amber-700 dark:text-amber-400' : '' },
+    {
+      id: 'overdue',
+      label: '已逾期',
+      n: urgency.overdue,
+      tone: urgency.overdue ? 'text-red-700 dark:text-red-400' : '',
+    },
+    {
+      id: 'today',
+      label: '今天到期',
+      n: urgency.dueToday,
+      tone: urgency.dueToday ? 'text-amber-700 dark:text-amber-400' : '',
+    },
     { id: 'pending', label: '未完成', n: urgency.pending, tone: '' },
   ];
 
@@ -175,15 +185,15 @@ export default function Todos() {
   return (
     <PageContainer className="space-y-6 animate-in fade-in duration-slow">
       <div className="page-header shrink-0">
-          <div>
-            <h1 className="page-title">待办事项</h1>
-            <p className="page-subtitle">管理您的日常任务及系统自动生成的提醒事项</p>
-          </div>
-          <Button size="page" onClick={() => setIsAdding(true)}>
-            <Plus className="w-4 h-4" />
-            新建待办
-          </Button>
+        <div>
+          <h1 className="page-title">待办事项</h1>
+          <p className="page-subtitle">管理您的日常任务及系统自动生成的提醒事项</p>
         </div>
+        <Button size="page" onClick={() => setIsAdding(true)}>
+          <Plus className="w-4 h-4" />
+          新建待办
+        </Button>
+      </div>
 
       {/*
         催办数字。原先整页一个计数都没有，而侧栏角标只说"未完成 N 件" ——
@@ -241,7 +251,9 @@ export default function Todos() {
             <form onSubmit={handleAdd} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label htmlFor="todo-title" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">标题</label>
+                  <label htmlFor="todo-title" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    标题
+                  </label>
                   <Input
                     id="todo-title"
                     type="text"
@@ -252,7 +264,9 @@ export default function Todos() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label htmlFor="todo-due-date" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">截止日期</label>
+                  <label htmlFor="todo-due-date" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    截止日期
+                  </label>
                   <Input
                     id="todo-due-date"
                     type="date"
@@ -262,7 +276,9 @@ export default function Todos() {
                 </div>
               </div>
               <div className="space-y-1">
-                <label htmlFor="todo-description" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">描述</label>
+                <label htmlFor="todo-description" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  描述
+                </label>
                 <Textarea
                   id="todo-description"
                   rows={3}
@@ -273,19 +289,12 @@ export default function Todos() {
                 />
               </div>
               <div className="flex justify-end space-x-3 pt-2">
-                <Pressable
-                  type="button"
-                  onClick={() => setIsAdding(false)}
-                  className="btn-secondary"
-                >
+                <Button type="button" onClick={() => setIsAdding(false)} variant="outline" size="toolbar">
                   取消
-                </Pressable>
-                <Pressable
-                  type="submit"
-                  className="btn-primary"
-                >
+                </Button>
+                <Button type="submit" size="toolbar">
                   保存待办
-                </Pressable>
+                </Button>
               </div>
             </form>
           </motion.div>
@@ -327,8 +336,8 @@ export default function Todos() {
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={t(MOTION.fast)}
                   className={`p-4 flex items-start space-x-4 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors group ${
-                    todo.completed ? 'opacity-60' : ''
-                  }`}
+ todo.completed ? 'opacity-60' : ''
+ }`}
                 >
                   {todo.type === 'contract' ? (
                     <span className="mt-1 text-amber-700 dark:text-amber-400" title="合同提醒请用续签处理">
@@ -350,10 +359,10 @@ export default function Todos() {
                         aria-label={todo.completed ? `标记为未完成：${todo.title}` : `标记为完成：${todo.title}`}
                         aria-pressed={todo.completed}
                         className={`transition-colors ${
-                          todo.completed
-                            ? 'text-brand-500'
-                            : 'text-muted-foreground hover:text-brand-600 dark:hover:text-brand-400'
-                        }`}
+ todo.completed
+ ? 'text-brand-500'
+ : 'text-muted-foreground hover:text-brand-600 dark:hover:text-brand-400'
+ }`}
                       >
                         {todo.completed ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
                       </Pressable>
@@ -363,26 +372,22 @@ export default function Todos() {
                     <div className="flex items-center space-x-2">
                       <div
                         className={`text-sm font-medium truncate ${
-                          todo.completed
-                            ? 'line-through text-muted-foreground'
-                            : 'text-zinc-900 dark:text-white'
-                        }`}
+ todo.completed ? 'line-through text-muted-foreground' : 'text-zinc-900 dark:text-white'
+ }`}
                       >
                         {todo.title}
                       </div>
                       {todo.type !== 'manual' && (
                         <span
                           className={`px-2 py-0.5 rounded-full text-3xs font-bold uppercase tracking-wider ${
-                            todo.type === 'contract' ? 'bg-amber-100 text-amber-700' : 'bg-brand-100 text-brand-700'
-                          }`}
+ todo.type === 'contract' ? 'bg-amber-100 text-amber-700' : 'bg-brand-100 text-brand-700'
+ }`}
                         >
                           系统生成
                         </span>
                       )}
                     </div>
-                    <p className="text-sm mt-1 text-muted-foreground">
-                      {todo.description}
-                    </p>
+                    <p className="text-sm mt-1 text-muted-foreground">{todo.description}</p>
                     <div className="flex items-center space-x-4 mt-2">
                       {todo.dueDate && (
                         <div className="flex items-center text-xs text-muted-foreground tabular-nums">
@@ -398,23 +403,25 @@ export default function Todos() {
                   </div>
                   {todo.type === 'contract' && !todo.completed && (
                     <div className="flex shrink-0 flex-wrap items-center gap-2">
-                      <Pressable
+                      <Button
                         type="button"
                         onClick={() => openRenew(todo.id, todo.targetId)}
-                        className="btn-secondary"
+                        variant="outline"
+                        size="toolbar"
                       >
                         续签
-                      </Pressable>
-                      <Pressable
+                      </Button>
+                      <Button
                         type="button"
                         onClick={() => {
                           setDismissTodo(todo);
                           setDismissReason('');
                         }}
-                        className="btn-secondary"
+                        variant="outline"
+                        size="toolbar"
                       >
                         说明
-                      </Pressable>
+                      </Button>
                     </div>
                   )}
                   <Pressable
@@ -456,24 +463,25 @@ export default function Todos() {
             />
           </label>
           <div className="flex justify-end gap-2">
-            <Pressable
+            <Button
               type="button"
-              className="btn-secondary"
               onClick={() => {
                 setDismissTodo(null);
                 setDismissReason('');
               }}
+              variant="outline"
+              size="toolbar"
             >
               取消
-            </Pressable>
-            <Pressable
+            </Button>
+            <Button
               type="button"
-              className="btn-primary"
               disabled={!dismissReason.trim() || dismissing}
               onClick={() => void handleDismiss()}
+              size="toolbar"
             >
               {dismissing ? '保存中…' : '记录说明并关闭'}
-            </Pressable>
+            </Button>
           </div>
         </div>
       </BaseModal>

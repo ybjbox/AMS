@@ -115,9 +115,7 @@ export default function Login() {
         >
           登录行政管理系统
         </h1>
-        <p
-          className={`mt-2 text-center text-sm ${loginBackground ? 'text-zinc-200' : 'text-muted-foreground'}`}
-        >
+        <p className={`mt-2 text-center text-sm ${loginBackground ? 'text-zinc-200' : 'text-muted-foreground'}`}>
           企业级后台管理解决方案
         </p>
       </div>
@@ -144,7 +142,11 @@ export default function Login() {
                   placeholder="请输入用户名"
                 />
               </div>
-              {errors.username && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.username.message}</p>}
+              {errors.username && (
+                <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">
+                  {errors.username.message}
+                </p>
+              )}
             </div>
 
             <div>
@@ -173,7 +175,11 @@ export default function Login() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Pressable>
               </div>
-              {errors.password && <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.password.message}</p>}
+              {errors.password && (
+                <p role="alert" className="text-xs text-red-500 dark:text-red-400 mt-1">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-between">
@@ -204,20 +210,21 @@ export default function Login() {
             </div>
 
             <div>
-              <Pressable
+              <Button
                 type="submit"
                 disabled={loading || isSubmitting}
-                className="btn-primary w-full py-2.5 sm:text-sm disabled:opacity-70 disabled:cursor-not-allowed group focus:ring-2 focus:ring-offset-2 focus:ring-brand-600"
+                size="toolbar"
+                className="w-full sm:text-sm group"
               >
                 {loading || isSubmitting ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   <>
                     登录系统
-                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </>
                 )}
-              </Pressable>
+              </Button>
             </div>
           </form>
 
@@ -251,9 +258,7 @@ export default function Login() {
         <SheetContent side="bottom" className="safe-area-bottom max-h-dvh overflow-y-auto">
           <SheetHeader>
             <SheetTitle>忘记密码</SheetTitle>
-            <SheetDescription>
-              当前没有自助找回。请在企微找行政 / HR，或请班长转达，报姓名 + 工号。
-            </SheetDescription>
+            <SheetDescription>当前没有自助找回。请在企微找行政 / HR，或请班长转达，报姓名 + 工号。</SheetDescription>
           </SheetHeader>
           <ol className="space-y-2 px-4 text-sm">
             <li className="rounded-lg bg-zinc-50 px-3 py-2 dark:bg-zinc-800/60">1. 提供姓名与工号</li>

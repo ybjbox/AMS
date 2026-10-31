@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { FileText, CheckSquare, Square, ChevronRight } from 'lucide-react';
 import { User } from '@/types';
+import { Button } from '@/components/ui/button';
 
 interface NameCardModalsProps {
   isParticipantModalOpen: boolean;
@@ -39,9 +40,8 @@ export default function NameCardModals({
   setIsManualInputOpen,
   manualInputText,
   setManualInputText,
-  handleManualInputSubmit
+  handleManualInputSubmit,
 }: NameCardModalsProps) {
-
   const onToggleDepartmentSelectionClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       const dept = e.currentTarget.dataset.dept;
@@ -54,21 +54,24 @@ export default function NameCardModals({
     [toggleDepartmentSelection]
   );
 
-  const onToggleDeptExpandClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    const dept = e.currentTarget.dataset.dept;
-    if (dept) {
-      setExpandedDepts((prev) => {
-        const next = new Set(prev);
-        if (next.has(dept)) {
-          next.delete(dept);
-        } else {
-          next.add(dept);
-        }
-        return next;
-      });
-    }
-  }, [setExpandedDepts]);
+  const onToggleDeptExpandClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      const dept = e.currentTarget.dataset.dept;
+      if (dept) {
+        setExpandedDepts((prev) => {
+          const next = new Set(prev);
+          if (next.has(dept)) {
+            next.delete(dept);
+          } else {
+            next.add(dept);
+          }
+          return next;
+        });
+      }
+    },
+    [setExpandedDepts]
+  );
 
   return (
     <>
@@ -90,20 +93,23 @@ export default function NameCardModals({
         bodyClassName="p-4 sm:p-6 modal-scroll-60 overflow-y-auto"
         footer={
           <>
-            <Pressable
+            <Button
               type="button"
               onClick={() => setIsParticipantModalOpen(false)}
-              className="btn-secondary w-full sm:w-auto"
+              variant="outline"
+              size="toolbar"
+              className="w-full sm:w-auto"
             >
               取消
-            </Pressable>
-            <Pressable
+            </Button>
+            <Button
               type="button"
               onClick={() => setIsParticipantModalOpen(false)}
-              className="btn-primary w-full sm:w-auto"
+              size="toolbar"
+              className="w-full sm:w-auto"
             >
               完成
-            </Pressable>
+            </Button>
           </>
         }
       >
@@ -181,20 +187,18 @@ export default function NameCardModals({
         size="2xl"
         footer={
           <>
-            <Pressable
+            <Button
               type="button"
               onClick={() => setIsManualInputOpen(false)}
-              className="btn-secondary w-full sm:w-auto"
+              variant="outline"
+              size="toolbar"
+              className="w-full sm:w-auto"
             >
               取消
-            </Pressable>
-            <Pressable
-              type="button"
-              onClick={handleManualInputSubmit}
-              className="btn-primary w-full sm:w-auto"
-            >
+            </Button>
+            <Button type="button" onClick={handleManualInputSubmit} size="toolbar" className="w-full sm:w-auto">
               确认导入
-            </Pressable>
+            </Button>
           </>
         }
       >

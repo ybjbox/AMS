@@ -9,11 +9,14 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-brand-600 text-white shadow-sm hover:bg-brand-700 active:not-aria-[haspopup]:scale-95 dark:bg-brand-500 dark:hover:bg-brand-400',
+        default:
+          'bg-brand-600 text-white shadow-sm hover:bg-brand-700 active:not-aria-[haspopup]:scale-95 dark:bg-brand-500 dark:hover:bg-brand-400',
         outline:
           'border-zinc-200/80 bg-white text-zinc-700 font-semibold shadow-sm hover:border-brand-500/40 hover:bg-zinc-50 aria-expanded:bg-zinc-50 dark:aria-expanded:bg-zinc-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700',
         'danger-outline':
           'border-zinc-200/80 bg-white text-red-600 shadow-sm hover:bg-red-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-red-400 dark:hover:bg-red-900/20',
+        danger:
+          'bg-red-600 text-white shadow-sm hover:bg-red-700 active:not-aria-[haspopup]:scale-95 dark:bg-red-500 dark:hover:bg-red-400',
         secondary:
           'bg-secondary text-secondary-foreground hover:bg-secondary/80 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
         ghost:

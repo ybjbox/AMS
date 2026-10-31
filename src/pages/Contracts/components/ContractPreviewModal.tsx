@@ -6,6 +6,7 @@ import { usePreviewZoom, zoomStyle } from '@/hooks/usePreviewZoom';
 import { FileSignature, Printer } from 'lucide-react';
 import { User } from '@/types';
 import { ContractTemplate } from './ContractTemplate';
+import { Button } from '@/components/ui/button';
 
 interface ContractPreviewModalProps {
   isOpen: boolean;
@@ -41,44 +42,36 @@ export const ContractPreviewModal = ({
         <div className="flex items-center w-full justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex items-center bg-zinc-100 dark:bg-zinc-700 p-1 rounded-lg">
-            <Pressable
-              onClick={() => setIsDoubleSided(false)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${!isDoubleSided ? 'bg-white dark:bg-zinc-600 shadow-sm text-zinc-900 dark:text-white' : 'text-muted-foreground hover:text-zinc-700 dark:hover:text-zinc-200'}`}
-            >
-              单面
-            </Pressable>
-            <Pressable
-              onClick={() => setIsDoubleSided(true)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${isDoubleSided ? 'bg-white dark:bg-zinc-600 shadow-sm text-zinc-900 dark:text-white' : 'text-muted-foreground hover:text-zinc-700 dark:hover:text-zinc-200'}`}
-            >
-              双面
-            </Pressable>
+              <Pressable
+                onClick={() => setIsDoubleSided(false)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${!isDoubleSided ? 'bg-white dark:bg-zinc-600 shadow-sm text-zinc-900 dark:text-white' : 'text-muted-foreground hover:text-zinc-700 dark:hover:text-zinc-200'}`}
+              >
+                单面
+              </Pressable>
+              <Pressable
+                onClick={() => setIsDoubleSided(true)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${isDoubleSided ? 'bg-white dark:bg-zinc-600 shadow-sm text-zinc-900 dark:text-white' : 'text-muted-foreground hover:text-zinc-700 dark:hover:text-zinc-200'}`}
+              >
+                双面
+              </Pressable>
             </div>
             <PreviewZoomControl zoom={zoom} onChange={change} onReset={reset} />
           </div>
           <div className="flex items-center gap-3">
-            <Pressable
-              onClick={onClose}
-              className="btn-secondary"
-            >
+            <Button onClick={onClose} variant="outline" size="toolbar">
               取消
-            </Pressable>
-            <Pressable
-              onClick={handlePrint}
-              className="btn-primary"
-            >
-              <Printer className="w-4 h-4 mr-2" />
+            </Button>
+            <Button onClick={handlePrint} size="toolbar">
+              <Printer className="w-4 h-4" />
               打印合同
-            </Pressable>
+            </Button>
           </div>
         </div>
       }
     >
       <div className="flex-1 overflow-y-auto p-8 bg-zinc-100 dark:bg-zinc-900 w-full preview-height-70">
         {/* Printable Contract Area */}
-        <div style={zoomStyle(zoom)}>
-          {selectedUser && <ContractTemplate user={selectedUser} />}
-        </div>
+        <div style={zoomStyle(zoom)}>{selectedUser && <ContractTemplate user={selectedUser} />}</div>
       </div>
     </BaseModal>
   );

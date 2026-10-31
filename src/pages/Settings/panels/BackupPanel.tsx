@@ -1,4 +1,3 @@
-import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Database, Download, History, RotateCcw, Trash2, Plus, Upload } from 'lucide-react';
 import { toast } from 'sonner';
@@ -217,13 +216,17 @@ export default function BackupPanel() {
               title={cfg.lastRun?.detail ?? '本次运行还没有备份过（定时任务尚未到点）'}
             >
               {cfg.lastRun === null ? '尚未备份' : cfg.lastRun.ok ? '成功' : '失败'}
-              {cfg.lastRun ? <span className="block text-xs font-normal text-muted-foreground">{formatDate(cfg.lastRun.at)}</span> : null}
+              {cfg.lastRun ? (
+                <span className="block text-xs font-normal text-muted-foreground">{formatDate(cfg.lastRun.at)}</span>
+              ) : null}
             </div>
           </div>
           <div className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/50">
             <div className="text-muted-foreground">磁盘剩余</div>
             <div className="font-medium mt-0.5">
-              {cfg.freeMb === null ? '未知' : `${cfg.freeMb >= 1024 ? (cfg.freeMb / 1024).toFixed(1) + ' GB' : cfg.freeMb + ' MB'}`}
+              {cfg.freeMb === null
+                ? '未知'
+                : `${cfg.freeMb >= 1024 ? (cfg.freeMb / 1024).toFixed(1) + ' GB' : cfg.freeMb + ' MB'}`}
             </div>
           </div>
         </div>
@@ -246,26 +249,22 @@ export default function BackupPanel() {
                 if (file) void handleImportFile(file);
               }}
             />
-            <Pressable
+            <Button
               type="button"
-              className="btn-secondary flex items-center gap-1.5"
               onClick={() => fileInputRef.current?.click()}
               disabled={busy}
+              variant="outline"
+              size="toolbar"
             >
               <Upload className="size-4" />
               {importPct === null ? '导入备份' : importPct < 100 ? `导入中 ${importPct}%` : '校验中…'}
-            </Pressable>
+            </Button>
           </>
         )}
-        <Pressable
-          type="button"
-          className="btn-primary flex items-center gap-1.5"
-          onClick={() => void handleCreate()}
-          disabled={busy}
-        >
+        <Button type="button" onClick={() => void handleCreate()} disabled={busy} size="toolbar">
           <Plus className="size-4" />
           立即备份
-        </Pressable>
+        </Button>
       </div>
 
       <div className="flex-1 overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
@@ -313,12 +312,8 @@ export default function BackupPanel() {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-2.5 text-muted-foreground">
-                    {formatDate(b.createdAt)}
-                  </td>
-                  <td className="px-4 py-2.5 text-right text-muted-foreground">
-                    {formatSize(b.size)}
-                  </td>
+                  <td className="px-4 py-2.5 text-muted-foreground">{formatDate(b.createdAt)}</td>
+                  <td className="px-4 py-2.5 text-right text-muted-foreground">{formatSize(b.size)}</td>
                   <td className="px-4 py-2.5">
                     <div className="flex justify-end gap-1.5">
                       {canDownload && (

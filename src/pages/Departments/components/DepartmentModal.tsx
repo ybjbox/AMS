@@ -1,9 +1,9 @@
-import { Pressable } from '@/components/ui/Pressable';
 import React from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Input } from '@/components/ui/input';
 import { DeptModalState } from '../hooks/useDepartments';
 import { DepartmentNode } from '@/types';
+import { Button } from '@/components/ui/button';
 
 interface DepartmentModalProps {
   modal: DeptModalState;
@@ -21,27 +21,21 @@ export function DepartmentModal({ modal, onClose, onSubmit, flatDepts }: Departm
       size="md"
       footer={
         <>
-          <Pressable
-            type="button"
-            onClick={onClose}
-            className="btn-secondary w-full sm:w-auto"
-          >
+          <Button type="button" onClick={onClose} variant="outline" size="toolbar" className="w-full sm:w-auto">
             取消
-          </Pressable>
-          <Pressable
-            type="submit"
-            form="dept-form"
-            className="btn-primary w-full sm:w-auto"
-          >
+          </Button>
+          <Button type="submit" form="dept-form" size="toolbar" className="w-full sm:w-auto">
             保存
-          </Pressable>
+          </Button>
         </>
       }
     >
       <form id="dept-form" onSubmit={onSubmit} className="space-y-4">
         {modal.mode === 'add' && modal.parentId && (
           <div>
-            <label htmlFor="dept-parent" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">上级部门</label>
+            <label htmlFor="dept-parent" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+              上级部门
+            </label>
             <Input
               id="dept-parent"
               type="text"
@@ -67,7 +61,9 @@ export function DepartmentModal({ modal, onClose, onSubmit, flatDepts }: Departm
           />
         </div>
         <div>
-          <label htmlFor="dept-priority" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">优先级</label>
+          <label htmlFor="dept-priority" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+            优先级
+          </label>
           <Input
             id="dept-priority"
             name="priority"

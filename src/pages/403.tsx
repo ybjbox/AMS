@@ -1,8 +1,8 @@
-import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldAlert, ArrowLeft } from 'lucide-react';
 import { useUserStore } from '@/store/useUserStore';
+import { Button } from '@/components/ui/button';
 
 const Forbidden403 = React.memo(function Forbidden403() {
   const navigate = useNavigate();
@@ -32,13 +32,10 @@ const Forbidden403 = React.memo(function Forbidden403() {
         </div>
 
         <div className="mt-8">
-          <Pressable
-            onClick={handleGoBack}
-            className="btn-primary"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+          <Button onClick={handleGoBack} size="toolbar">
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             {isEmployee ? '返回我的考勤' : '返回首页'}
-          </Pressable>
+          </Button>
         </div>
       </div>
     </main>

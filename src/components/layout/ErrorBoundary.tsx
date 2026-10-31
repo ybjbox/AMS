@@ -1,6 +1,6 @@
-import { Pressable } from '@/components/ui/Pressable';
 import React, { ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Props {
   children?: ReactNode;
@@ -45,20 +45,14 @@ export default class ErrorBoundary extends React.Component<Props, State> {
             {this.state.error?.message || '抱歉，我们在加载此页面时遇到了一些问题。请尝试刷新页面或返回控制台。'}
           </p>
           <div className="flex space-x-4">
-            <Pressable
-              onClick={this.handleRetry}
-              className="btn-secondary"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
+            <Button onClick={this.handleRetry} variant="outline" size="toolbar">
+              <RefreshCw className="h-4 w-4" />
               重试
-            </Pressable>
-            <Pressable
-              onClick={this.handleGoHome}
-              className="btn-primary"
-            >
-              <Home className="h-4 w-4 mr-2" />
+            </Button>
+            <Button onClick={this.handleGoHome} size="toolbar">
+              <Home className="h-4 w-4" />
               返回控制台
-            </Pressable>
+            </Button>
           </div>
         </div>
       );

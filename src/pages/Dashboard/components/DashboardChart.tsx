@@ -4,6 +4,7 @@ import { Activity } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { EmptyState } from '@/components/ui/EmptyState';
 import WidgetSizePicker from '@/components/ui/WidgetSizePicker';
+import { buttonVariants } from '@/components/ui/button';
 import { resolveChartLayout, WIDGET_SIZES, type WidgetSize } from '@/config/widgetSizes';
 export interface ChartData {
   name: string;
@@ -22,9 +23,7 @@ interface DashboardChartProps {
   editing: boolean;
 }
 /** 批量读取多个 CSS 变量，共享单一 MutationObserver */
-function useCssVars<T extends readonly string[]>(
-  varNames: T
-): Record<T[number], string> {
+function useCssVars<T extends readonly string[]>(varNames: T): Record<T[number], string> {
   const [values, setValues] = useState<Record<string, string>>(() => {
     return Object.fromEntries(varNames.map((v) => [v, ''])) as Record<string, string>;
   });
@@ -63,18 +62,12 @@ function useCssVars<T extends readonly string[]>(
 }
 export default function DashboardChart({ data, isLoading, size, onSizeChange, editing }: DashboardChartProps) {
   // 使用 CSS 变量，自动跟随深色/浅色模式
-  const cssVars = useCssVars([
-    '--primary',
-    '--border',
-    '--muted-foreground',
-    '--popover',
-    '--foreground',
-  ] as const);
-  const primaryColor  = cssVars['--primary']          || 'oklch(0.62 0.19 250)';
-  const borderColor   = cssVars['--border']            || 'oklch(0.87 0 0)';
-  const mutedFgColor  = cssVars['--muted-foreground']  || 'oklch(0.50 0 0)';
-  const popoverColor  = cssVars['--popover']           || 'oklch(1 0 0)';
-  const fgColor       = cssVars['--foreground']        || 'oklch(0.30 0 0)';
+  const cssVars = useCssVars(['--primary', '--border', '--muted-foreground', '--popover', '--foreground'] as const);
+  const primaryColor = cssVars['--primary'] || 'oklch(0.62 0.19 250)';
+  const borderColor = cssVars['--border'] || 'oklch(0.87 0 0)';
+  const mutedFgColor = cssVars['--muted-foreground'] || 'oklch(0.50 0 0)';
+  const popoverColor = cssVars['--popover'] || 'oklch(1 0 0)';
+  const fgColor = cssVars['--foreground'] || 'oklch(0.30 0 0)';
   const skeletonHeights = [60, 85, 70, 95, 75, 55, 40];
   const hasData = data.some((d) => d.value > 0);
   const preset = WIDGET_SIZES[size];
@@ -118,7 +111,7 @@ export default function DashboardChart({ data, isLoading, size, onSizeChange, ed
             title="近 7 天暂无打卡数据"
             description="这不代表没人出勤，可能只是打卡还没导入。"
             action={
-              <Link to="/attendance" className="btn-secondary">
+              <Link to="/attendance" className={buttonVariants({ variant: 'outline', size: 'toolbar' })}>
                 去考勤导入
               </Link>
             }
@@ -138,9 +131,7 @@ export default function DashboardChart({ data, isLoading, size, onSizeChange, ed
                   <stop offset="95%" stopColor={primaryColor} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              {layout.showGrid && (
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={borderColor} />
-              )}
+              {layout.showGrid && <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={borderColor} />}
               <XAxis
                 dataKey="name"
                 axisLine={false}
@@ -151,12 +142,7 @@ export default function DashboardChart({ data, isLoading, size, onSizeChange, ed
                 dy={10}
               />
               {layout.showAxis && (
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12, fill: mutedFgColor }}
-                  width={40}
-                />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: mutedFgColor }} width={40} />
               )}
               <Tooltip
                 contentStyle={{

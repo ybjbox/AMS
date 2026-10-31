@@ -1,5 +1,5 @@
 import { Pressable } from '@/components/ui/Pressable';
-import PageContainer from "@/components/PageContainer";
+import PageContainer from '@/components/PageContainer';
 import React, { useState, useMemo, useCallback } from 'react';
 import { useUrlState } from '@/hooks/useUrlState';
 import { useBodyOverflow } from '@/hooks/useBodyOverflow';
@@ -16,6 +16,7 @@ import { useContractPrint } from './hooks/useContractPrint';
 import { ContractTemplate } from './components/ContractTemplate';
 import { expiryBucket, expiryCounts, EXPIRY_BUCKET_LABEL, type ExpiryBucket } from './utils/expiryBucket';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 // 状态筛选选项（value 与展示文案不一致，交由 ui/Select 的 items 映射）
 const STATUS_OPTIONS = [
@@ -36,18 +37,12 @@ export default function ContractsPage() {
   const searchQuery = urlState.get('q');
   const filterStatus = urlState.get('status', 'ALL');
   const currentPage = urlState.getNumber('page', 1);
-  const setSearchQuery = useCallback(
-    (q: string) => urlState.set({ q, page: null }),
-    [urlState]
-  );
+  const setSearchQuery = useCallback((q: string) => urlState.set({ q, page: null }), [urlState]);
   const setFilterStatus = useCallback(
     (s: string) => urlState.set({ status: s === 'ALL' ? null : s, page: null }),
     [urlState]
   );
-  const setCurrentPage = useCallback(
-    (p: number) => urlState.set({ page: p <= 1 ? null : p }),
-    [urlState]
-  );
+  const setCurrentPage = useCallback((p: number) => urlState.set({ page: p <= 1 ? null : p }), [urlState]);
   /** 到期分档筛选：点顶部那行数字即切换（与状态筛选同样是 URL 态，可深链） */
   const filterBucket = urlState.get('bucket');
   const setFilterBucket = useCallback(
@@ -107,14 +102,15 @@ export default function ContractsPage() {
             <p className="page-subtitle">劳动合同管理、生成与打印</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Pressable
+            <Button
               onClick={() => setIsTemplateEditorOpen(true)}
               aria-label="模板设置"
-              className="btn-secondary max-sm:min-h-11"
+              variant="outline"
+              size="toolbar"
             >
-              <FileEdit className="w-4 h-4 sm:mr-2" />
+              <FileEdit className="w-4 h-4" />
               <span className="hidden sm:inline">模板设置</span>
-            </Pressable>
+            </Button>
           </div>
         </div>
 
@@ -192,7 +188,11 @@ export default function ContractsPage() {
               );
             })}
             {filterBucket && (
-              <Pressable type="button" onClick={() => setFilterBucket('ALL')} className="text-muted-foreground underline underline-offset-2">
+              <Pressable
+                type="button"
+                onClick={() => setFilterBucket('ALL')}
+                className="text-muted-foreground underline underline-offset-2"
+              >
                 清除分档
               </Pressable>
             )}
@@ -207,7 +207,7 @@ export default function ContractsPage() {
           />
           {/* 右侧渐变遮罩提示可横向滚动（仅移动端） */}
           <div className="absolute right-0 top-13 bottom-0 w-8 bg-gradient-to-l from-white dark:from-zinc-800 to-transparent pointer-events-none md:hidden" />
-          
+
           <Pagination
             currentPage={safePage}
             totalPages={totalPages}
@@ -227,10 +227,7 @@ export default function ContractsPage() {
         handlePrint={handlePrint}
       />
 
-      <ContractTemplateEditor
-        isOpen={isTemplateEditorOpen}
-        onClose={() => setIsTemplateEditorOpen(false)}
-      />
+      <ContractTemplateEditor isOpen={isTemplateEditorOpen} onClose={() => setIsTemplateEditorOpen(false)} />
 
       {/* Hidden Printable Area for Direct Print */}
       <div className="hidden">

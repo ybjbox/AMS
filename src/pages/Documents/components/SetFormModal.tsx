@@ -51,20 +51,12 @@ export function SetFormModal({
       size="lg"
       footer={
         <>
-          <Pressable
-            type="button"
-            onClick={onClose}
-            className="btn-secondary w-full sm:w-auto"
-          >
+          <Button type="button" onClick={onClose} variant="outline" size="toolbar" className="w-full sm:w-auto">
             取消
-          </Pressable>
-          <Pressable
-            type="submit"
-            form="set-form"
-            className="btn-primary w-full sm:w-auto"
-          >
+          </Button>
+          <Button type="submit" form="set-form" size="toolbar" className="w-full sm:w-auto">
             保存
-          </Pressable>
+          </Button>
         </>
       }
     >
@@ -84,7 +76,9 @@ export function SetFormModal({
           />
         </div>
         <div>
-          <label htmlFor="set-description" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">描述说明</label>
+          <label htmlFor="set-description" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+            描述说明
+          </label>
           <Textarea
             id="set-description"
             name="description"
@@ -123,9 +117,7 @@ export function SetFormModal({
           </div>
           <div className="max-h-60 overflow-y-auto border border-zinc-200 dark:border-zinc-700 rounded-md bg-zinc-50 dark:bg-zinc-800/50 p-2 space-y-1">
             {documents.length === 0 ? (
-              <div className="text-sm text-muted-foreground text-center py-4">
-                暂无文件，请先在文件库上传
-              </div>
+              <div className="text-sm text-muted-foreground text-center py-4">暂无文件，请先在文件库上传</div>
             ) : (
               <>
                 {/* Root files */}

@@ -1,10 +1,10 @@
-import { Pressable } from '@/components/ui/Pressable';
 import React, { useState, useEffect, useCallback } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useBodyOverflow } from '../hooks/useBodyOverflow';
 import { onBackendProbeResult, requestBackendReprobe, useBackendStatus } from '../hooks/useBackendStatus';
 import { MOTION, useMotionPrefs } from '@/lib/motionTokens';
+import { Button } from '@/components/ui/button';
 
 /**
  * 后端失联遮罩。判定**只信一处**：useBackendStatus 的真 /api/health 轮询（与侧栏状态灯同源）。
@@ -48,16 +48,12 @@ export default function ConnectivityListener() {
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-200 mb-2">后端连接已断开</h2>
           <p className="text-zinc-600 mb-8">无法连接到服务器，请检查您的网络连接或稍后重试。</p>
 
-          <Pressable
-            onClick={checkConnection}
-            disabled={isChecking}
-            className="btn-primary w-full py-3 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed group"
-          >
+          <Button onClick={checkConnection} disabled={isChecking} size="page" className="w-full group">
             <RefreshCw
-              className={`w-5 h-5 mr-2 ${isChecking ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-fast'}`}
+              className={`w-5 h-5 ${isChecking ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-fast'}`}
             />
             {isChecking ? '正在重试...' : '立即重试'}
-          </Pressable>
+          </Button>
         </motion.div>
       </div>
     </AnimatePresence>

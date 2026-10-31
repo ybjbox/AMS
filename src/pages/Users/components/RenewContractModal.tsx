@@ -1,4 +1,3 @@
-import { Pressable } from '@/components/ui/Pressable';
 import React, { useCallback, useEffect, useState } from 'react';
 import { FileSignature, History } from 'lucide-react';
 import { toast } from 'sonner';
@@ -8,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { User } from '@/types';
 import { renewContract, fetchContractRenewals, type ContractRenewal } from '@/services/userApi';
 import { formatDate } from '@/utils/dateUtils';
+import { Button } from '@/components/ui/button';
 
 interface RenewContractModalProps {
   isOpen: boolean;
@@ -55,27 +55,21 @@ export default function RenewContractModal({ isOpen, onClose, user, onRenewed }:
       });
   }, [isOpen, user]);
 
-  const handleYearsChange = useCallback(
-    (years: number) => {
-      setForm((f) => ({
-        ...f,
-        contractYears: years,
-        contractExpiry: addYears(f.contractSignDate, years) || f.contractExpiry,
-      }));
-    },
-    []
-  );
+  const handleYearsChange = useCallback((years: number) => {
+    setForm((f) => ({
+      ...f,
+      contractYears: years,
+      contractExpiry: addYears(f.contractSignDate, years) || f.contractExpiry,
+    }));
+  }, []);
 
-  const handleSignDateChange = useCallback(
-    (signDate: string) => {
-      setForm((f) => ({
-        ...f,
-        contractSignDate: signDate,
-        contractExpiry: addYears(signDate, f.contractYears) || f.contractExpiry,
-      }));
-    },
-    []
-  );
+  const handleSignDateChange = useCallback((signDate: string) => {
+    setForm((f) => ({
+      ...f,
+      contractSignDate: signDate,
+      contractExpiry: addYears(signDate, f.contractYears) || f.contractExpiry,
+    }));
+  }, []);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -112,7 +106,12 @@ export default function RenewContractModal({ isOpen, onClose, user, onRenewed }:
 
         <div className="grid grid-cols-2 gap-3">
           <label className="block col-span-2 sm:col-span-1">
-            <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">续签年限 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
+            <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
+              续签年限{' '}
+              <span className="text-red-600 dark:text-red-400" aria-hidden="true">
+                *
+              </span>
+            </span>
             <Select
               value={form.contractYears}
               onValueChange={(val) => {
@@ -133,7 +132,12 @@ export default function RenewContractModal({ isOpen, onClose, user, onRenewed }:
             </Select>
           </label>
           <label className="block col-span-2 sm:col-span-1">
-            <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">签订日期 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span></span>
+            <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
+              签订日期{' '}
+              <span className="text-red-600 dark:text-red-400" aria-hidden="true">
+                *
+              </span>
+            </span>
             <Input
               type="date"
               required
@@ -142,7 +146,13 @@ export default function RenewContractModal({ isOpen, onClose, user, onRenewed }:
             />
           </label>
           <label className="block col-span-2">
-            <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">到期日期 <span className="text-red-600 dark:text-red-400" aria-hidden="true">*</span>（按年限自动推算，可微调）</span>
+            <span className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
+              到期日期{' '}
+              <span className="text-red-600 dark:text-red-400" aria-hidden="true">
+                *
+              </span>
+              （按年限自动推算，可微调）
+            </span>
             <Input
               type="date"
               required
@@ -161,11 +171,12 @@ export default function RenewContractModal({ isOpen, onClose, user, onRenewed }:
             </h4>
             <ul className="space-y-1.5 max-h-35 overflow-auto">
               {history.map((h) => (
-                <li key={h.id} className="text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900 rounded-md px-3 py-2 tabular-nums">
-                  <span className="text-muted-foreground">{h.createdAt.slice(0, 10)}</span>
-                  {' '}
-                  {h.prevExpiry || '（无）'} → <span className="font-medium">{h.contractExpiry}</span>
-                  {' '}· {h.contractYears} 年 · {h.renewedBy}
+                <li
+                  key={h.id}
+                  className="text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900 rounded-md px-3 py-2 tabular-nums"
+                >
+                  <span className="text-muted-foreground">{h.createdAt.slice(0, 10)}</span> {h.prevExpiry || '（无）'} →{' '}
+                  <span className="font-medium">{h.contractExpiry}</span> · {h.contractYears} 年 · {h.renewedBy}
                 </li>
               ))}
             </ul>
@@ -173,13 +184,13 @@ export default function RenewContractModal({ isOpen, onClose, user, onRenewed }:
         )}
 
         <div className="flex justify-end gap-3 pt-1">
-          <Pressable type="button" onClick={onClose} className="btn-secondary">
+          <Button type="button" onClick={onClose} variant="outline" size="toolbar">
             取消
-          </Pressable>
-          <Pressable type="submit" disabled={submitting} className="btn-primary disabled:opacity-60">
-            <FileSignature className="w-4 h-4 mr-1.5" aria-hidden="true" />
+          </Button>
+          <Button type="submit" disabled={submitting} size="toolbar">
+            <FileSignature className="w-4 h-4 .5" aria-hidden="true" />
             {submitting ? '提交中…' : '确认续签'}
-          </Pressable>
+          </Button>
         </div>
       </form>
     </BaseModal>

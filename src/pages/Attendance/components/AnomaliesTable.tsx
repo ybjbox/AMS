@@ -12,6 +12,7 @@ import { useAttendanceStore } from '@/store/useAttendanceStore';
 import type { Anomaly } from '@/store/useAttendanceStore';
 import { ANOMALY_TYPE_LABEL, anomalyTone } from '../lib/filters';
 import type { AnomalyTone } from '../lib/filters';
+import { Button } from '@/components/ui/button';
 
 export interface AnomaliesTableProps {
   anomalies: Anomaly[];
@@ -128,13 +129,13 @@ export default function AnomaliesTable({
             }
             action={
               filterActive ? (
-                <Pressable type="button" className="btn-secondary" onClick={onResetFilter}>
+                <Button type="button" onClick={onResetFilter} variant="outline" size="toolbar">
                   清除筛选条件
-                </Pressable>
+                </Button>
               ) : canAnalyze ? (
-                <Pressable type="button" className="btn-primary" onClick={onAnalyze}>
+                <Button type="button" onClick={onAnalyze} size="toolbar">
                   一键分析异常
-                </Pressable>
+                </Button>
               ) : undefined
             }
           />
@@ -144,7 +145,10 @@ export default function AnomaliesTable({
           <Table minWidth="min-w-225" nowrapHeaders className="divide-y divide-zinc-100 dark:divide-zinc-800">
             <thead className="bg-zinc-50/50 dark:bg-zinc-800/50">
               <tr>
-                <th scope="col" className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <th
+                  scope="col"
+                  className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                >
                   <Pressable
                     type="button"
                     onClick={() => toggleSort('date')}
@@ -154,7 +158,10 @@ export default function AnomaliesTable({
                     <SortIcon active={sort.key === 'date'} dir={sort.dir} />
                   </Pressable>
                 </th>
-                <th scope="col" className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <th
+                  scope="col"
+                  className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                >
                   <Pressable
                     type="button"
                     onClick={() => toggleSort('name')}
@@ -164,16 +171,28 @@ export default function AnomaliesTable({
                     <SortIcon active={sort.key === 'name'} dir={sort.dir} />
                   </Pressable>
                 </th>
-                <th scope="col" className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <th
+                  scope="col"
+                  className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                >
                   工号
                 </th>
-                <th scope="col" className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <th
+                  scope="col"
+                  className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                >
                   异常类型
                 </th>
-                <th scope="col" className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <th
+                  scope="col"
+                  className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                >
                   描述
                 </th>
-                <th scope="col" className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <th
+                  scope="col"
+                  className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
+                >
                   需确认
                 </th>
               </tr>
@@ -216,10 +235,10 @@ export default function AnomaliesTable({
                               })
                             }
                             className={`inline-flex items-center gap-1 text-left ${
-                              v.flag.startsWith('★')
-                                ? 'font-medium text-amber-800 dark:text-amber-300'
-                                : 'text-muted-foreground'
-                            }`}
+ v.flag.startsWith('★')
+ ? 'font-medium text-amber-800 dark:text-amber-300'
+ : 'text-muted-foreground'
+ }`}
                           >
                             {v.flag || '看依据'}
                             <ChevronDown

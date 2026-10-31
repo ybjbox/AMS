@@ -5,6 +5,7 @@ import { BaseModal } from '@/components/ui/BaseModal';
 import { Checkbox } from '@/components/ui/checkbox';
 
 import { User } from '@/types';
+import { Button } from '@/components/ui/button';
 
 interface ParticipantModalProps {
   isOpen: boolean;
@@ -63,13 +64,9 @@ export function ParticipantModal({
       size="2xl"
       bodyClassName="p-4 sm:p-6 modal-scroll-60 overflow-y-auto"
       footer={
-        <Pressable
-          type="button"
-          onClick={onClose}
-          className="btn-primary w-full sm:w-auto"
-        >
+        <Button type="button" onClick={onClose} size="toolbar" className="w-full sm:w-auto">
           完成
-        </Pressable>
+        </Button>
       }
     >
       <div className="space-y-4 pr-2">

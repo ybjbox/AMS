@@ -26,6 +26,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Button } from '@/components/ui/button';
 
 interface SortableColumnProps {
   key?: React.Key;
@@ -50,10 +51,10 @@ const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: Sor
       ref={setNodeRef}
       style={style}
       className={`flex items-center p-3 rounded-xl border transition ${
-        col.selected
-          ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-200 dark:border-brand-800 text-brand-700 dark:text-brand-400 shadow-sm'
-          : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
-      }`}
+ col.selected
+ ? 'bg-brand-50 dark:bg-brand-900/20 border-brand-200 dark:border-brand-800 text-brand-700 dark:text-brand-400 shadow-sm'
+ : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
+ }`}
     >
       <div
         {...attributes}
@@ -66,10 +67,10 @@ const SortableColumn = React.memo(function SortableColumn({ col, onToggle }: Sor
       <Pressable onClick={onToggle} className="flex-1 flex items-center text-left">
         <div
           className={`w-4 h-4 rounded border mr-3 flex items-center justify-center transition-colors ${
-            col.selected
-              ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner border-brand-600'
-              : 'bg-white dark:bg-zinc-800 border-zinc-200/80 dark:border-zinc-600'
-          }`}
+ col.selected
+ ? 'bg-gradient-to-b from-brand-600 to-brand-700 shadow-inner border-brand-600'
+ : 'bg-white dark:bg-zinc-800 border-zinc-200/80 dark:border-zinc-600'
+ }`}
         >
           {col.selected && <Check className="h-3 w-3 text-white" />}
         </div>
@@ -168,7 +169,7 @@ export function AddressBookModal({
                         className="border border-zinc-200 dark:border-zinc-700/80 px-3 py-2 text-zinc-600 text-center align-middle font-medium bg-zinc-50/50"
                         style={TD_DEPT_STYLE}
                       >
-                        {(user as unknown as Record<string, unknown>)[col.key as string] as string || '-'}
+                        {((user as unknown as Record<string, unknown>)[col.key as string] as string) || '-'}
                         <div className="text-xs text-zinc-400 mt-0.5" style={DEPT_COUNT_STYLE}>
                           ({user._deptCount}人)
                         </div>
@@ -181,7 +182,7 @@ export function AddressBookModal({
                       className="border border-zinc-200 dark:border-zinc-700/80 px-3 py-2 text-zinc-600 text-center"
                       style={TD_CENTER_STYLE}
                     >
-                      {(user as unknown as Record<string, unknown>)[col.key as string] as string || '-'}
+                      {((user as unknown as Record<string, unknown>)[col.key as string] as string) || '-'}
                     </td>
                   );
                 })}
@@ -202,20 +203,18 @@ export function AddressBookModal({
       size="full"
       footer={
         <>
-          <Pressable
-            onClick={onClose}
-            className="btn-secondary w-full sm:w-auto"
-          >
+          <Button onClick={onClose} variant="outline" size="toolbar" className="w-full sm:w-auto">
             取消
-          </Pressable>
-          <Pressable
+          </Button>
+          <Button
             onClick={handlePrintAddressBook}
             disabled={addressBookConfig.columns.filter((c: ExportColumn) => c.selected).length === 0}
-            className="btn-primary w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+            size="toolbar"
+            className="w-full sm:w-auto"
           >
-            <Printer className="h-4 w-4 mr-2" />
+            <Printer className="h-4 w-4" />
             打印通讯录
-          </Pressable>
+          </Button>
         </>
       }
     >
@@ -242,7 +241,12 @@ export function AddressBookModal({
                   }
                   className="border-zinc-300 dark:border-zinc-600"
                 />
-                <label htmlFor="ab-include-resigned" className="ml-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer">包含离职人员</label>
+                <label
+                  htmlFor="ab-include-resigned"
+                  className="ml-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer"
+                >
+                  包含离职人员
+                </label>
               </div>
             </div>
           </div>
@@ -254,7 +258,9 @@ export function AddressBookModal({
                 <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">纸张大小</label>
                 <Select
                   value={addressBookConfig.paperSize}
-                  onValueChange={(val) => setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, paperSize: val || 'A4' }))}
+                  onValueChange={(val) =>
+                    setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, paperSize: val || 'A4' }))
+                  }
                 >
                   <SelectTrigger aria-label="纸张大小" className="w-full">
                     <SelectValue placeholder="选择纸张大小" />
@@ -270,8 +276,13 @@ export function AddressBookModal({
                 <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">纸张方向</label>
                 <Select
                   value={addressBookConfig.orientation}
-                  onValueChange={(val) => setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, orientation: val || 'portrait' }))}
-                  items={[{ value: 'portrait', label: '纵向' }, { value: 'landscape', label: '横向' }]}
+                  onValueChange={(val) =>
+                    setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, orientation: val || 'portrait' }))
+                  }
+                  items={[
+                    { value: 'portrait', label: '纵向' },
+                    { value: 'landscape', label: '横向' },
+                  ]}
                 >
                   <SelectTrigger aria-label="纸张方向" className="w-full">
                     <SelectValue placeholder="选择纸张方向" />
@@ -293,7 +304,12 @@ export function AddressBookModal({
                   }
                   className="border-zinc-300 dark:border-zinc-600"
                 />
-                <label htmlFor="ab-double-sided" className="ml-2 text-sm text-zinc-600 dark:text-zinc-400 cursor-pointer">双面打印 (预留装订边距)</label>
+                <label
+                  htmlFor="ab-double-sided"
+                  className="ml-2 text-sm text-zinc-600 dark:text-zinc-400 cursor-pointer"
+                >
+                  双面打印 (预留装订边距)
+                </label>
               </div>
             </div>
             <div className="flex items-center justify-between pt-2">
@@ -301,10 +317,14 @@ export function AddressBookModal({
                 <Checkbox
                   id="ab-two-column"
                   checked={addressBookConfig.isTwoColumn}
-                  onCheckedChange={(checked) => setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, isTwoColumn: checked }))}
+                  onCheckedChange={(checked) =>
+                    setAddressBookConfig((prev: AddressBookConfig) => ({ ...prev, isTwoColumn: checked }))
+                  }
                   className="border-zinc-300 dark:border-zinc-600"
                 />
-                <label htmlFor="ab-two-column" className="ml-2 text-sm text-zinc-600 dark:text-zinc-400 cursor-pointer">双栏排版 (适合字段较少)</label>
+                <label htmlFor="ab-two-column" className="ml-2 text-sm text-zinc-600 dark:text-zinc-400 cursor-pointer">
+                  双栏排版 (适合字段较少)
+                </label>
               </div>
             </div>
             <div className="flex items-center justify-between pt-2">
@@ -317,7 +337,12 @@ export function AddressBookModal({
                   }
                   className="border-zinc-300 dark:border-zinc-600"
                 />
-                <label htmlFor="ab-merge-depts" className="ml-2 text-sm text-zinc-600 dark:text-zinc-400 cursor-pointer">按部门合并并统计人数</label>
+                <label
+                  htmlFor="ab-merge-depts"
+                  className="ml-2 text-sm text-zinc-600 dark:text-zinc-400 cursor-pointer"
+                >
+                  按部门合并并统计人数
+                </label>
               </div>
             </div>
           </div>
@@ -360,7 +385,10 @@ export function AddressBookModal({
             <span>打印预览</span>
             <PreviewZoomControl zoom={zoom} onChange={change} onReset={reset} />
           </div>
-          <div style={zoomStyle(zoom)} className="w-full bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl p-8">
+          <div
+            style={zoomStyle(zoom)}
+            className="w-full bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200/60 dark:border-zinc-700/60 rounded-xl p-8"
+          >
             <div className="text-center mb-6">
               {/* 纸张标题：页面已有 h1，打印 HTML 由 builder 单独生成 */}
               <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">{addressBookConfig.title}</h2>

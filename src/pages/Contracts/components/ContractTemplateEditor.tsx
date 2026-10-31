@@ -6,6 +6,7 @@ import { FileEdit, Upload, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { defaultTemplate } from '@/config/defaultContractTemplate';
 import { useContractStore } from '@/store/useContractStore';
+import { Button } from '@/components/ui/button';
 
 interface ContractTemplateEditorProps {
   isOpen: boolean;
@@ -62,38 +63,26 @@ export const ContractTemplateEditor = ({ isOpen, onClose }: ContractTemplateEdit
       footer={
         <div className="flex items-center w-full justify-between">
           <div className="flex items-center">
-            <input
-              type="file"
-              accept=".html,.txt"
-              className="hidden"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-            />
-            <Pressable
-              onClick={() => fileInputRef.current?.click()}
-              className="btn-secondary"
-            >
-              <Upload className="w-4 h-4 mr-1" />
+            <input type="file" accept=".html,.txt" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
+            <Button onClick={() => fileInputRef.current?.click()} variant="outline" size="toolbar">
+              <Upload className="w-4 h-4" />
               上传模板
-            </Pressable>
+            </Button>
           </div>
           <div className="flex items-center gap-3">
-            <Pressable
-              onClick={onClose}
-              className="btn-secondary"
-            >
+            <Button onClick={onClose} variant="outline" size="toolbar">
               取消
-            </Pressable>
-            <Pressable
+            </Button>
+            <Button
               onClick={() => {
                 setTemplate(editingTemplate);
                 onClose();
               }}
-              className="btn-primary"
+              size="toolbar"
             >
-              <Save className="w-4 h-4 mr-2" />
+              <Save className="w-4 h-4" />
               保存
-            </Pressable>
+            </Button>
           </div>
         </div>
       }

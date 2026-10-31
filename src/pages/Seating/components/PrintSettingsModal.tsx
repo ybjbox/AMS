@@ -1,4 +1,3 @@
-import { Pressable } from '@/components/ui/Pressable';
 import React, { useEffect, useRef } from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -9,6 +8,7 @@ import { usePreviewZoom, zoomStyle } from '@/hooks/usePreviewZoom';
 import { PrintSettings } from '../hooks/usePrintSettings';
 import { Table } from '../hooks/useSeatingArrange';
 import { User } from '@/types';
+import { Button } from '@/components/ui/button';
 
 interface PrintSettingsModalProps {
   isOpen: boolean;
@@ -54,22 +54,19 @@ export function PrintSettingsModal({
       bodyClassName="p-0 overflow-hidden"
       footer={
         <>
-          <Pressable
-            type="button"
-            onClick={onClose}
-            className="btn-secondary w-full sm:w-auto"
-          >
+          <Button type="button" onClick={onClose} variant="outline" size="toolbar" className="w-full sm:w-auto">
             取消
-          </Pressable>
-          <Pressable
+          </Button>
+          <Button
             ref={printRef}
             type="button"
             onClick={handlePrint}
             title="回车即可出纸"
-            className="btn-primary w-full sm:w-auto"
+            size="toolbar"
+            className="w-full sm:w-auto"
           >
             打印
-          </Pressable>
+          </Button>
         </>
       }
     >
@@ -200,7 +197,12 @@ export function PrintSettingsModal({
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">标题字体</label>
               <Select
                 value={printSettings.titleFontFamily}
-                onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, titleFontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif' }))}
+                onValueChange={(val) =>
+                  setPrintSettings((prev) => ({
+                    ...prev,
+                    titleFontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif',
+                  }))
+                }
               >
                 <SelectTrigger aria-label="标题字体" className="w-full">
                   <SelectValue placeholder="选择字体">
@@ -227,7 +229,12 @@ export function PrintSettingsModal({
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">桌号字体</label>
               <Select
                 value={printSettings.numberFontFamily}
-                onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, numberFontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif' }))}
+                onValueChange={(val) =>
+                  setPrintSettings((prev) => ({
+                    ...prev,
+                    numberFontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif',
+                  }))
+                }
               >
                 <SelectTrigger aria-label="桌号字体" className="w-full">
                   <SelectValue placeholder="选择字体">
@@ -254,7 +261,12 @@ export function PrintSettingsModal({
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">内容字体</label>
               <Select
                 value={printSettings.contentFontFamily}
-                onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, contentFontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif' }))}
+                onValueChange={(val) =>
+                  setPrintSettings((prev) => ({
+                    ...prev,
+                    contentFontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif',
+                  }))
+                }
               >
                 <SelectTrigger aria-label="内容字体" className="w-full">
                   <SelectValue placeholder="选择字体">
@@ -282,7 +294,12 @@ export function PrintSettingsModal({
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">底部字体</label>
                 <Select
                   value={printSettings.footerFontFamily}
-                  onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, footerFontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif' }))}
+                  onValueChange={(val) =>
+                    setPrintSettings((prev) => ({
+                      ...prev,
+                      footerFontFamily: val || '"Microsoft YaHei", "SimHei", sans-serif',
+                    }))
+                  }
                 >
                   <SelectTrigger aria-label="底部字体" className="w-full">
                     <SelectValue placeholder="选择字体">
@@ -332,7 +349,9 @@ export function PrintSettingsModal({
                       <Checkbox
                         id="print-show-department"
                         checked={printSettings.showDepartment}
-                        onCheckedChange={(checked) => setPrintSettings((prev) => ({ ...prev, showDepartment: checked }))}
+                        onCheckedChange={(checked) =>
+                          setPrintSettings((prev) => ({ ...prev, showDepartment: checked }))
+                        }
                       />
                       <span className="text-sm text-zinc-700 dark:text-zinc-300">显示部门</span>
                     </label>
@@ -363,7 +382,12 @@ export function PrintSettingsModal({
                         </label>
                         <Select
                           value={printSettings.textAlign}
-                          onValueChange={(val) => setPrintSettings((prev) => ({ ...prev, textAlign: (val || 'left') as 'left' | 'center' | 'right' }))}
+                          onValueChange={(val) =>
+                            setPrintSettings((prev) => ({
+                              ...prev,
+                              textAlign: (val || 'left') as 'left' | 'center' | 'right',
+                            }))
+                          }
                         >
                           <SelectTrigger aria-label="内容对齐" className="w-full">
                             <SelectValue placeholder="选择对齐方式">
@@ -391,9 +415,7 @@ export function PrintSettingsModal({
 
             {printSettings.cardStyle === 'style2' && (
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  内容字号 (px)
-                </label>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">内容字号 (px)</label>
                 <Input
                   type="number"
                   value={printSettings.contentFontSize}

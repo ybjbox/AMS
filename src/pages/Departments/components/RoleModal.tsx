@@ -1,8 +1,8 @@
-import { Pressable } from '@/components/ui/Pressable';
 import React from 'react';
 import { BaseModal } from '@/components/ui/BaseModal';
 import { Input } from '@/components/ui/input';
 import { RoleModalState } from '../hooks/useDepartments';
+import { Button } from '@/components/ui/button';
 
 interface RoleModalProps {
   modal: RoleModalState;
@@ -19,20 +19,12 @@ export function RoleModal({ modal, onClose, onSubmit }: RoleModalProps) {
       size="md"
       footer={
         <>
-          <Pressable
-            type="button"
-            onClick={onClose}
-            className="btn-secondary w-full sm:w-auto"
-          >
+          <Button type="button" onClick={onClose} variant="outline" size="toolbar" className="w-full sm:w-auto">
             取消
-          </Pressable>
-          <Pressable
-            type="submit"
-            form="role-form"
-            className="btn-primary w-full sm:w-auto"
-          >
+          </Button>
+          <Button type="submit" form="role-form" size="toolbar" className="w-full sm:w-auto">
             保存
-          </Pressable>
+          </Button>
         </>
       }
     >
@@ -53,7 +45,9 @@ export function RoleModal({ modal, onClose, onSubmit }: RoleModalProps) {
           />
         </div>
         <div>
-          <label htmlFor="role-priority" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">优先级</label>
+          <label htmlFor="role-priority" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+            优先级
+          </label>
           <Input
             id="role-priority"
             name="priority"
