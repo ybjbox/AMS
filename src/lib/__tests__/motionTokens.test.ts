@@ -1,12 +1,12 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useMotionPrefs } from '@/lib/motionTokens';
+import { MOTION, useMotionPrefs } from '@/lib/motionTokens';
 
-function setMobile(matches: boolean) {
+function setReduced(reduced: boolean) {
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
     value: vi.fn((query: string) => ({
-      matches,
+      matches: query.includes('prefers-reduced-motion') ? reduced : false,
       media: query,
       onchange: null,
       addListener: () => undefined,
@@ -18,21 +18,24 @@ function setMobile(matches: boolean) {
   });
 }
 
-afterEach(() => setMobile(false));
+afterEach(() => setReduced(false));
 
-describe('动效令牌（qa-16）', () => {
-  it('桌面 220ms 不缩放，stagger 上限 5 项 = 200ms', () => {
-    setMobile(false);
+describe('动效令牌（qa-16 / S2）', () => {
+  it('时长与缓动和 CSS token 一致', () => {
+    setReduced(false);
     const { result } = renderHook(() => useMotionPrefs());
-    expect(result.current.t(0.22).duration).toBeCloseTo(0.22);
+    expect(result.current.t(MOTION.quick).duration).toBeCloseTo(0.15);
+    expect(result.current.t(MOTION.fast).duration).toBeCloseTo(0.25);
+    expect(result.current.t(MOTION.slow).duration).toBeCloseTo(0.4);
+    expect(result.current.t(MOTION.fast).ease).toEqual([0.22, 1, 0.36, 1]);
     expect(result.current.staggerDelay(8)).toBeCloseTo(0.2);
   });
 
-  it('移动端（<768）整体 ×0.8', () => {
-    setMobile(true);
+  it('reduced-motion 首帧即归零，stagger 同归零', () => {
+    setReduced(true);
     const { result } = renderHook(() => useMotionPrefs());
-    expect(result.current.t(0.22).duration).toBeCloseTo(0.176);
-    expect(result.current.t(0.2).duration).toBeCloseTo(0.16);
-    expect(result.current.staggerDelay(8)).toBeCloseTo(0.16);
+    expect(result.current.reduced).toBe(true);
+    expect(result.current.t(MOTION.fast).duration).toBe(0);
+    expect(result.current.staggerDelay(8)).toBe(0);
   });
 });

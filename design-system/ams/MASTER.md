@@ -280,7 +280,8 @@ AMS 是单人自用的企业后台（员工/部门/考勤/合同/审批/文档/�
 - 开/关非对称是允许的（开 250 / 关 150 一类），别为"统一"把它抹平。
 - 时长已注册为 `duration-stagger / micro / quick / fast / medium / slow / very-slow / ambient` utility；功能代码只写语义类，**不写数字时长**（`duration-200/300` 不在令牌表内）。未显式声明时长/缓动的 `transition-*` 默认走 150ms + `ease-smooth-out`。
 - 缓动统一用 utility `ease-smooth-out`，禁止 `ease-[var(…)]` 任意值写法。
-- `prefers-reduced-motion: reduce` 已在 index.css 全局兜底（时长压到 0.01ms），新增动效不需要各自处理。
+- motion/react 的时长/缓动统一从 `src/lib/motionTokens.ts` 的 `MOTION` + `useMotionPrefs()` 取（quick 150 / standard 250 / slow 400ms），组件里不写 `duration` / `ease` 字面量；`main.tsx` 的 `MotionConfig reducedMotion="user"` 兜底。
+- `prefers-reduced-motion: reduce`：CSS 由 index.css 全局兜底（时长压到 0.01ms）；JS 动效由 `useMotionPrefs()` 把时长归零，组件不要再单独判断。
 - 登录 / 认领页背景光晕：一次性 900ms 淡入 + `translateY(18px) scale(0.82→1)`，首团延后 150ms、第二团延后 300ms；不做循环背景动效。
 
 ### hover 反馈（v4 裁定：改写禁令的理由）
@@ -395,7 +396,7 @@ Before delivering any UI code, verify:
 - [ ] Hover states use registered duration tokens + `card-lift`（无内联重复、无布局盒变化）
 - [ ] **双主题** text contrast ≥4.5:1（不是只量亮色；disabled 态豁免但需解释文案）
 - [ ] Focus indicator ≥3:1 且为品牌环（UA 默认环不算过）
-- [ ] `prefers-reduced-motion` respected（全局已兜底，勿在组件里另写）
+- [ ] `prefers-reduced-motion` respected（CSS 全局 + JS `useMotionPrefs`/`MotionConfig`，勿在组件里另写判断）
 - [ ] Responsive: 390 / 768 / 1280 三档 `page.scrollWidth === innerWidth`；宽表只在容器内横滑
 - [ ] 固定宽度子项（A4 预览 / 画布）所在 grid item 有 `min-w-0`
 - [ ] 宽表首列与操作列冻结，表头与表体同步 sticky

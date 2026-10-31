@@ -1,46 +1,43 @@
 import { useEffect, useState } from 'react';
-import { useReducedMotion } from 'motion/react';
 
 /**
- * 动效令牌（与 spark-output/motion/ams-employee-portal.md 对齐）。
+ * JS 动效令牌（与 src/styles/transitions-tokens.css 一一对应）。
  *
- * Corporate：quick 120 / standard 220 / slow 320ms，统一缓动 cubic-bezier(0.2,0,0,1)；
- * 移动端（<768）整体 ×0.8。只用于"状态变化被看见"，不做装饰；
- * reduced-motion 下时长归零、位移取消（见 useMotionPrefs）。
+ * 所有 motion/react 组件只从这里取时长与缓动；不要在组件里写 duration/ease 字面量。
+ * reduced-motion 在首帧就同步读取，避免依赖库的异步探测让第一段动画照常播放。
  */
 export const MOTION = {
-  quick: 0.12,
-  standard: 0.22,
-  slow: 0.32,
-  ease: [0.2, 0, 0, 1] as const,
+  quick: 0.15,
+  fast: 0.25,
+  medium: 0.35,
+  slow: 0.4,
+  verySlow: 0.5,
+  ease: [0.22, 1, 0.36, 1] as const,
   /** 列表 stagger：40ms/项，总预算 ≤ 200ms */
   stagger: 0.04,
   staggerMax: 5,
 } as const;
 
-const MOBILE_QUERY = '(width < 48rem)';
+const REDUCED_QUERY = '(prefers-reduced-motion: reduce)';
 
-function useCompactViewport() {
-  const [compact, setCompact] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia(MOBILE_QUERY).matches
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(REDUCED_QUERY).matches
   );
   useEffect(() => {
-    const mq = window.matchMedia(MOBILE_QUERY);
-    const onChange = () => setCompact(mq.matches);
+    const mq = window.matchMedia(REDUCED_QUERY);
+    const onChange = () => setReduced(mq.matches);
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
   }, []);
-  return compact;
+  return reduced;
 }
 
 export function useMotionPrefs() {
-  const reduced = useReducedMotion();
-  const compact = useCompactViewport();
-  /** 移动端 ×0.8；reduced-motion 优先，时长直接归零 */
-  const factor = compact && !reduced ? 0.8 : 1;
+  const reduced = usePrefersReducedMotion();
   /** 秒制过渡；reduced 时长度为 0（元素直接出现，不滑入） */
-  const t = (seconds: number) => ({ duration: reduced ? 0 : seconds * factor, ease: MOTION.ease });
+  const t = (seconds: number) => ({ duration: reduced ? 0 : seconds, ease: MOTION.ease });
   const staggerDelay = (index: number) =>
-    reduced ? 0 : Math.min(index, MOTION.staggerMax) * MOTION.stagger * factor;
+    reduced ? 0 : Math.min(index, MOTION.staggerMax) * MOTION.stagger;
   return { reduced, t, staggerDelay };
 }

@@ -4,6 +4,7 @@ import { AlertCircle, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useBodyOverflow } from '../hooks/useBodyOverflow';
 import { onBackendProbeResult, requestBackendReprobe, useBackendStatus } from '../hooks/useBackendStatus';
+import { MOTION, useMotionPrefs } from '@/lib/motionTokens';
 
 /**
  * 后端失联遮罩。判定**只信一处**：useBackendStatus 的真 /api/health 轮询（与侧栏状态灯同源）。
@@ -13,6 +14,7 @@ import { onBackendProbeResult, requestBackendReprobe, useBackendStatus } from '.
  * navigator.onLine（浏览器一直在线），等于一点就把遮罩自欺欺人地关掉。
  */
 export default function ConnectivityListener() {
+  const { t } = useMotionPrefs();
   const status = useBackendStatus();
   const isDisconnected = status === 'offline';
   const [isChecking, setIsChecking] = useState(false);
@@ -36,6 +38,7 @@ export default function ConnectivityListener() {
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
+          transition={t(MOTION.fast)}
           className="bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-700 max-w-md w-full p-8 text-center"
         >
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">

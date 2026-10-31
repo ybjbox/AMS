@@ -17,11 +17,13 @@ import { BaseModal } from '@/components/ui/BaseModal';
 import { todoApi } from '@/services/todoApi';
 import RenewContractModal from '@/pages/Users/components/RenewContractModal';
 import { useEmployeeStore } from '@/store/useEmployeeStore';
+import { MOTION, useMotionPrefs } from '@/lib/motionTokens';
 import type { Todo, User } from '@/types';
 
 type Filter = 'all' | 'pending' | 'overdue' | 'today';
 
 export default function Todos() {
+  const { t } = useMotionPrefs();
   const confirm = useConfirm();
   const todos = useTodoStore((state) => state.todos);
   const loadError = useTodoStore((state) => state.loadError);
@@ -235,6 +237,7 @@ export default function Todos() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
+            transition={t(MOTION.fast)}
             className="card-base p-6"
           >
             <form onSubmit={handleAdd} className="space-y-4">
@@ -327,7 +330,7 @@ export default function Todos() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
+                  transition={t(MOTION.fast)}
                   className={`p-4 flex items-start space-x-4 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors group ${
                     todo.completed ? 'opacity-60' : ''
                   }`}

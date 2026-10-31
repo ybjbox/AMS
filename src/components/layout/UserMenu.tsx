@@ -11,6 +11,7 @@ import { DEFAULT_USER_AVATAR } from '@/config/constants';
 import ThemeToggle from './header/ThemeToggle';
 import NotificationContent from './header/NotificationContent';
 import { getRoleDisplayName } from '@/utils/roleUtils';
+import { MOTION, useMotionPrefs } from '@/lib/motionTokens';
 import BackendStatusIndicator from '@/components/BackendStatusIndicator';
 
 /** 按账号隔离前会残留的本地缓存（P1-8）：登出时统一清除 */
@@ -27,6 +28,7 @@ export default function UserMenu({
   isCollapsed?: boolean;
   onNavigate?: () => void;
 }) {
+  const { t } = useMotionPrefs();
   const userInfo = useUserStore((s) => s.userInfo);
   const logout = useUserStore((s) => s.logout);
   const hasPermission = useUserStore((s) => s.hasPermission);
@@ -155,8 +157,8 @@ export default function UserMenu({
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.12, ease: 'easeIn' } }}
-            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ opacity: 0, scale: 0.96, transition: t(MOTION.quick) }}
+            transition={t(MOTION.fast)}
             className={`absolute z-50 bg-white dark:bg-zinc-700 rounded-xl border border-zinc-300/80 dark:border-zinc-500/70 ring-1 ring-black/5 dark:ring-white/10 shadow-popover overflow-hidden ${
               isCollapsed
                 ? 'left-full bottom-0 ml-2 w-52 origin-bottom-left'

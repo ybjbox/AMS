@@ -6,8 +6,10 @@ import { AnimatePresence, motion } from 'motion/react';
 import { exportApi } from '@/services/exportApi';
 import { describeSaveError } from '@/store/saveFailureCore';
 import { Button } from '@/components/ui/button';
+import { MOTION, useMotionPrefs } from '@/lib/motionTokens';
 
 export default function ScriptsPanel() {
+  const { t } = useMotionPrefs();
   const [scripts, setScripts] = useState<{ name: string; code: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingScript, setEditingScript] = useState<{ name: string; code: string } | null>(null);
@@ -101,7 +103,7 @@ export default async function applyTemplate(worksheet, data, config) {
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -10 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
+            transition={t(MOTION.fast)}
             className="bg-white dark:bg-zinc-800 rounded-xl border border-brand-200 dark:border-brand-900 shadow-md overflow-hidden"
           >
             <div className="p-4 border-b border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-between">
@@ -144,7 +146,7 @@ export default async function applyTemplate(worksheet, data, config) {
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -10 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
+            transition={t(MOTION.fast)}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
           >
             {scripts.map((script) => (

@@ -6,6 +6,7 @@ import { exportApi } from '@/services/exportApi';
 import { describeSaveError } from '@/store/saveFailureCore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { MOTION, useMotionPrefs } from '@/lib/motionTokens';
 
 interface Theme {
   id: string;
@@ -51,6 +52,7 @@ function ColorField({
 }
 
 export default function ThemesPanel() {
+  const { t } = useMotionPrefs();
   const [themes, setThemes] = useState<Record<string, Theme>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -141,7 +143,7 @@ export default function ThemesPanel() {
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
+              transition={t(MOTION.fast)}
               className={`bg-white dark:bg-zinc-800 rounded-xl border transition overflow-hidden ${
                 editingId === theme.id ? 'border-brand-400 ring-4 ring-brand-600/5' : 'border-zinc-200 dark:border-zinc-700 shadow-sm'
               }`}

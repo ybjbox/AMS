@@ -207,4 +207,15 @@ describe('设计契约：表单无障碍', () => {
       `改用 duration-quick / fast / medium / slow / very-slow 与 ease-smooth-out：\n${bad.join('\n')}`
     ).toEqual([]);
   });
+
+  it('motion/react 的时长与缓动只从 motionTokens 取', () => {
+    // 组件里写 duration/ease 就绕过 reduced-motion 与统一令牌；toast 的 duration 不在扫描范围。
+    const motionFiles = files.filter(
+      (f) => !f.includes('__tests__') && readFileSync(f, 'utf8').includes("from 'motion/react'")
+    );
+    const bad = motionFiles.flatMap((f) =>
+      linesWith(f, /\bduration:\s*[\d.]|\bease:\s*\[|\bease:\s*'/)
+    );
+    expect(bad, `motion/react 过渡请改用 useMotionPrefs()/MOTION：\n${bad.join('\n')}`).toEqual([]);
+  });
 });

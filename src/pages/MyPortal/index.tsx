@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { DEFAULT_USER_AVATAR } from '@/config/constants';
 import { useUserStore } from '@/store/useUserStore';
-import { useMotionPrefs } from '@/lib/motionTokens';
+import { MOTION, useMotionPrefs } from '@/lib/motionTokens';
 import { myApi, type MyAnomaly, type MySummary } from '@/services/myApi';
 import { approvalApi, type Approval } from '@/services/approvalApi';
 import { announcementApi, type Announcement } from '@/services/announcementApi';
@@ -339,7 +339,7 @@ export default function MyPortal() {
               key={tab}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={t(0.12)}
+              transition={t(MOTION.quick)}
               className="space-y-4"
             >
               {isLoading ? (
@@ -360,7 +360,7 @@ export default function MyPortal() {
                     <motion.section
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={t(0.22)}
+                      transition={t(MOTION.fast)}
                       className="rounded-card border border-zinc-200/60 bg-white p-4 dark:border-zinc-700/60 dark:bg-zinc-800 lg:p-5"
                     >
                       <div className="flex items-center justify-between">
@@ -438,7 +438,7 @@ export default function MyPortal() {
                             key={v.date}
                             initial={{ opacity: 0, y: 6 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ ...t(0.2), delay: staggerDelay(i) }}
+                            transition={{ ...t(MOTION.fast), delay: staggerDelay(i) }}
                             className="rounded-card border border-zinc-200/60 bg-white dark:border-zinc-700/60 dark:bg-zinc-800"
                           >
                             <Pressable

@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { MOTION, useMotionPrefs } from '@/lib/motionTokens';
 
 interface BaseModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ interface BaseModalProps {
 
 export const BaseModal: React.FC<BaseModalProps> = React.memo(
   ({ isOpen, onClose, title, children, footer, size = 'md', className = '', bodyClassName = 'p-4 sm:p-6' }) => {
+    const { t } = useMotionPrefs();
     const sizeClasses = {
       sm: 'sm:max-w-sm',
       md: 'sm:max-w-md',
@@ -131,6 +133,7 @@ export const BaseModal: React.FC<BaseModalProps> = React.memo(
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={t(MOTION.quick)}
               className="fixed inset-0 bg-black/40 backdrop-blur-sm"
               aria-hidden="true"
               onClick={onClose}
@@ -142,8 +145,8 @@ export const BaseModal: React.FC<BaseModalProps> = React.memo(
               tabIndex={-1}
               initial={{ opacity: 0, scale: 0.96, y: 8 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 4, transition: { duration: 0.15, ease: [0.22, 1, 0.36, 1] } }}
-              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              exit={{ opacity: 0, scale: 0.96, y: 4, transition: t(MOTION.quick) }}
+              transition={t(MOTION.fast)}
               className={`relative z-10 w-full bg-white dark:bg-zinc-800 rounded-2xl text-left shadow-xl flex flex-col outline-none ${size === 'full' ? 'h-[90vh] max-h-[90vh]' : 'max-h-[90vh]'} ${sizeClasses[size]} ${className}`}
             >
               {/* Header */}

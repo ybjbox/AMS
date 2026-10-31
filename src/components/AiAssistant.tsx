@@ -8,6 +8,7 @@ import AiOwnModelModal from '@/components/AiOwnModelModal';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
+import { MOTION, useMotionPrefs } from '@/lib/motionTokens';
 
 /**
  * 流式回复中的打字指示器。
@@ -30,6 +31,7 @@ function TypingIndicator() {
  * - 仅登录后外壳（Layout）挂载，未登录不会出现。
  */
 export default function AiAssistant() {
+  const { t } = useMotionPrefs();
   const [open, setOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showOwnModel, setShowOwnModel] = useState(false);
@@ -226,7 +228,7 @@ export default function AiAssistant() {
             initial={{ opacity: 0, y: 16, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            transition={t(MOTION.fast)}
             style={isFloatable && effectiveY != null ? { bottom: `calc(100vh - ${effectiveY}px + 12px)` } : undefined}
             className="fixed bottom-24 right-6 z-50 flex h-140 w-95 ai-assistant-panel flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-2xl"
           >
@@ -298,7 +300,7 @@ export default function AiAssistant() {
                     initial={{ width: 0, opacity: 0 }}
                     animate={{ width: 140, opacity: 1 }}
                     exit={{ width: 0, opacity: 0 }}
-                    transition={{ duration: 0.18, ease: 'easeOut' }}
+                    transition={t(MOTION.fast)}
                     className="shrink-0 overflow-hidden border-r border-border bg-muted/40"
                   >
                     <div className="flex h-full w-35 flex-col">
