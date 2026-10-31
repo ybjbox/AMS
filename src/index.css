@@ -322,6 +322,13 @@ main,
     rounded-2xl;
   }
 
+  /* 应用外壳玻璃层（MASTER 明确例外）：只允许侧栏 / 移动顶栏 / 状态药丸使用。
+     内容卡与弹层必须实色；不要把 backdrop-blur 用到业务表面。 */
+  .app-chrome {
+    @apply bg-white/80 dark:bg-zinc-800/80 backdrop-blur-xl
+    border-zinc-200/60 dark:border-white/10;
+  }
+
   .brand-gradient {
     @apply bg-gradient-to-b from-brand-500 to-brand-700 shadow-inner;
   }

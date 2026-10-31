@@ -250,7 +250,7 @@ AMS 是单人自用的企业后台（员工/部门/考勤/合同/审批/文档/�
 
 ## Elevation & Depth
 
-**风格 = 实色扁平（flat solid）。** 卡片与表面不透明，层次靠「边框 + 极轻阴影 + 背景色差」表达，不依赖玻璃拟态/毛玻璃。
+**风格 = 实色扁平（flat solid）。** 卡片与表面不透明，层次靠「边框 + 极轻阴影 + 背景色差」表达，不依赖玻璃拟态/毛玻璃。唯一例外是应用外壳 `.app-chrome`（侧栏 / 移动顶栏 / 状态药丸）：统一 80% 白/暗锌底 + `backdrop-blur-xl`，不得扩散到内容卡或弹层。
 
 | 层级 | 值 | 用例 |
 |------|----|------|
@@ -292,7 +292,7 @@ v3 写的是「❌ 布局位移型 hover（scale/translate 导致 reflow）」�
 - ✅ 图标可做 ≤1.1 的缩放强调（`group-hover:scale-110`），FAB 可用 `hover:scale-105 active:scale-95`。
 - ❌ 改变宽高/内边距/字号的 hover（真会造成 reflow）、无过渡的瞬变。
 
-> v2 的 Glassmorphism（backdrop-blur 半透明卡）已于 2026-09-19 废弃：实现已演进为实色扁平并经多轮验收。仅模态遮罩层保留 backdrop-filter。
+> v2 的 Glassmorphism（backdrop-blur 半透明卡）已于 2026-09-19 废弃：实现已演进为实色扁平并经多轮验收。仅模态遮罩层与应用外壳 `.app-chrome` 保留 backdrop-filter。
 
 ## Shapes
 
@@ -378,7 +378,7 @@ focus：outline-none + ring-4 ring-brand-600/20 + border-brand-600（dark 用 br
 - ✅ 状态徽章用语义色（amber/emerald/red），图标色用 brand
 - ✅ 交付前 `npx vitest run --project client src/__tests__/design-contract.test.ts` 必须绿
 - ❌ 引入 indigo/violet 等第二色相；❌ 用绿色作品牌色（绿=success 专用）
-- ❌ 玻璃拟态卡片、渐变文字、装饰性动画
+- ❌ 玻璃拟态卡片、渐变文字、装饰性动画（应用外壳 `.app-chrome` 是唯一例外）
 - ❌ 手搓 select/checkbox/dialog 原生替代（走 ui 原语，`ui/` 目录内也算）
 - ❌ 改变布局盒/尺寸的 hover、无过渡的瞬变（时长见 motion 表）
 - ❌ emoji 当图标；低对比文字（正文 <4.5:1、焦点指示 <3:1）

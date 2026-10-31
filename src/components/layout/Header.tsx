@@ -18,7 +18,7 @@ const Header = memo(function Header() {
   const pageTitle = currentRoute?.label ?? '';
 
   return (
-    <header className="relative z-40 md:hidden h-16 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-700/50 transition-colors duration-fast flex items-center justify-between px-4 print:hidden shrink-0">
+    <header className="relative z-40 md:hidden h-16 app-chrome border-b transition-colors duration-fast flex items-center justify-between px-4 print:hidden shrink-0">
       {/* 抽屉导航 */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetTrigger

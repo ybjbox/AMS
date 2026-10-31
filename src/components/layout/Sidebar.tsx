@@ -106,7 +106,7 @@ const Sidebar = React.memo(function Sidebar({ isCollapsed = false, className = '
   return (
     <aside
       aria-label="侧边导航"
-      className={`relative z-30 bg-white/80 dark:bg-zinc-800/70 backdrop-blur-xl border border-zinc-200/60 dark:border-white/10 shadow-sm dark:shadow-inset-glow rounded-2xl flex flex-col print:hidden shrink-0 transition duration-fast ease-smooth-out ${
+      className={`relative z-30 app-chrome border shadow-sm dark:shadow-inset-glow rounded-2xl flex flex-col print:hidden shrink-0 transition duration-fast ease-smooth-out ${
         isCollapsed ? 'w-20' : 'w-48'
       } ${className}`}
     >
